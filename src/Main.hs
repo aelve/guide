@@ -53,7 +53,7 @@ main = runSpock 8080 $ spockT id $ do
     _categories = [] }
   get root $ do
     s <- liftIO $ readIORef stateVar
-    renderRoot s
+    lucid $ renderRoot s
   post "/add/category" $ do
     title <- param' "title"
     thisId <- liftIO $ view nextId <$> readIORef stateVar
@@ -64,7 +64,7 @@ main = runSpock 8080 $ spockT id $ do
     liftIO $ modifyIORef stateVar $
       (categories %~ (++ [newCategory])) .
       (nextId %~ succ)
-    text (T.pack (show thisId))
+    lucid $ renderCategory newCategory
   post ("/add/item" <//> var) $ \catId -> do
     item <- param' "item"
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
@@ -72,32 +72,22 @@ main = runSpock 8080 $ spockT id $ do
     liftIO $ modifyIORef stateVar $
       categoryById catId . categoryItems %~ (++ [item])
 
-{-
-div id=categories
-  div id=<category id>
-    h2
-    ul
-      item 1
-      item 2
-      ...
-    button   // adds an item
-  ...
-button  // adds a category
--}
-
-renderRoot :: S -> ActionT IO ()
-renderRoot s = lucid $ do
+renderRoot :: S -> Html ()
+renderRoot s = do
   loadJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   loadJS "/js.js"
   div_ [id_ "categories"] $ do
-    for_ (s ^. categories) $ \Category{..} -> do
-      div_ [id_ (format "cat{}" [_categoryId])] $ do
-        h2_ (toHtml _categoryTitle)
-        ul_ $ do
-          mapM_ (li_ . toHtml) _categoryItems
-        let buttonHandler = format "addItem({}, 'new item')" [_categoryId]
-        with button_ [onclick_ buttonHandler] "add item"
+    mapM_ renderCategory (s ^. categories)
   with button_ [onclick_ "addCategory('new category')"] "add category"
+
+renderCategory :: Category -> Html ()
+renderCategory Category{..} =
+  div_ [id_ (format "cat{}" [_categoryId])] $ do
+    h2_ (toHtml _categoryTitle)
+    ul_ $ do
+      mapM_ (li_ . toHtml) _categoryItems
+    let buttonHandler = format "addItem({}, 'new item')" [_categoryId]
+    with button_ [onclick_ buttonHandler] "add item"
 
 -- Utils
 
