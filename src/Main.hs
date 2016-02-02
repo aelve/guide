@@ -29,10 +29,18 @@ import Web.Spock
 import Network.Wai.Middleware.Static
 
 
+data Item
+  = Library {
+      _name :: Text }
+  | Something {
+      _name :: Text }
+
+makeLenses ''Item
+
 data Category = Category {
   _categoryId :: Int,
   _categoryTitle :: Text,
-  _categoryItems :: [Text] }
+  _categoryItems :: [Item] }
 
 makeLenses ''Category
 
@@ -65,12 +73,15 @@ main = runSpock 8080 $ spockT id $ do
       (categories %~ (++ [newCategory])) .
       (nextId %~ succ)
     lucid $ renderCategory newCategory
-  post ("/add/item" <//> var) $ \catId -> do
-    item <- param' "item"
+  post ("/add/item/library" <//> var) $ \catId -> do
+    libName <- param' "name"
+    let newItem = Library {
+          _name = libName }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     liftIO $ modifyIORef stateVar $
-      categoryById catId . categoryItems %~ (++ [item])
+      categoryById catId . categoryItems %~ (++ [newItem])
+    lucid $ renderItem newItem
 
 renderRoot :: S -> Html ()
 renderRoot s = do
@@ -86,14 +97,21 @@ renderRoot s = do
 renderCategory :: Category -> Html ()
 renderCategory Category{..} =
   div_ [id_ (format "cat{}" [_categoryId])] $ do
+    -- TODO: make category headings links
     h2_ (toHtml _categoryTitle)
-    ul_ $ do
-      mapM_ (li_ . toHtml) _categoryItems
+    ul_ $ mapM_ (li_ . renderItem) _categoryItems
+    -- TODO: probably move handlers to the Javascript part
     let handler = format "if (event.keyCode == 13) {\
-                         \  addItem({}, this.value);\
+                         \  addLibrary({}, this.value);\
                          \  this.value = ''; }"
                          [_categoryId]
     input_ [type_ "text", placeholder_ "new item", onkeyup_ handler]
+
+renderItem :: Item -> Html ()
+renderItem Library{..} = a_ [href_ link] (toHtml _name)
+  where
+    link = format "https://hackage.haskell.org/package/{}" [_name]
+renderItem Something{..} = toHtml _name
 
 -- Utils
 

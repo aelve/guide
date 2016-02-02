@@ -1,11 +1,11 @@
-// add a new item to a category
-function addItem(catId, s) {
-  $.post("/add/item/" + catId, {item: s})
-   .done(function() {
+// add a new library
+function addLibrary(catId, s) {
+  $.post("/add/item/library/" + catId, {name: s})
+   .done(function(data) {
      var list = $("#cat"+catId+">ul");
 
      var newItem = document.createElement("li");
-     newItem.appendChild(document.createTextNode(s));
+     $(newItem).append(data);
      list.append(newItem);
      });
   }
