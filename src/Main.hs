@@ -78,7 +78,10 @@ renderRoot s = do
   loadJS "/js.js"
   div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
-  with button_ [onclick_ "addCategory('new category')"] "add category"
+  let handler = "if (event.keyCode == 13) {\
+                \  addCategory(this.value);\
+                \  this.value = ''; }"
+  input_ [type_ "text", placeholder_ "new category", onkeyup_ handler]
 
 renderCategory :: Category -> Html ()
 renderCategory Category{..} =
@@ -86,8 +89,11 @@ renderCategory Category{..} =
     h2_ (toHtml _categoryTitle)
     ul_ $ do
       mapM_ (li_ . toHtml) _categoryItems
-    let buttonHandler = format "addItem({}, 'new item')" [_categoryId]
-    with button_ [onclick_ buttonHandler] "add item"
+    let handler = format "if (event.keyCode == 13) {\
+                         \  addItem({}, this.value);\
+                         \  this.value = ''; }"
+                         [_categoryId]
+    input_ [type_ "text", placeholder_ "new item", onkeyup_ handler]
 
 -- Utils
 
