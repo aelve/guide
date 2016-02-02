@@ -13,7 +13,9 @@ maintainer:          yom@artyom.me
 category:            Web
 tested-with:         GHC == 7.10.3
 build-type:          Simple
-extra-source-files:  CHANGELOG.md
+extra-source-files:
+  CHANGELOG.md
+  static/*.js
 cabal-version:       >=1.10
 
 source-repository head
@@ -28,8 +30,11 @@ executable hslibs
                      , base >=4.8 && <4.9
                      , base-prelude
                      , lucid
+                     , microlens-platform
                      , text
+                     , text-format
                      , transformers
+                     , wai-middleware-static
   ghc-options:         -Wall -fno-warn-unused-do-bind
   hs-source-dirs:      src
   default-language:    Haskell2010
