@@ -152,6 +152,8 @@ renderCategory category =
                          [category^.catId]
     input_ [type_ "text", placeholder_ "new item", onkeyup_ handler]
 
+-- TODO: when the link for a HackageLibrary isn't empty, show it separately
+-- (as “site”), don't replace the Hackage link
 renderItem :: Item -> Html ()
 renderItem item =
   div_ [class_ "item"] $ do
@@ -179,10 +181,7 @@ includeJS :: Text -> Html ()
 includeJS url = with (script_ "") [src_ url]
 
 includeCSS :: Text -> Html ()
-includeCSS url = link_ [
-  rel_ "stylesheet",
-  type_ "text/css",
-  href_ url ]
+includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
 lucid :: Html a -> ActionT IO a
 lucid = html . TL.toStrict . renderText
