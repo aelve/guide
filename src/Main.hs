@@ -62,12 +62,38 @@ newId s = do
   modifyIORef s (nextId %~ succ)
   return i
 
+emptyState :: S
+emptyState = S {
+  _nextId = 0,
+  _categories = [] }
+
+sampleState :: S
+sampleState = S {
+  _nextId = 1,
+  _categories = [
+    Category {
+      _catId = 0,
+      _title = "lenses",
+      _items = [
+        Item {
+          _name = "lens",
+          _pros = ["the standard lenses library", "batteries included"],
+          _cons = ["huge"],
+          _link = Nothing,
+          _kind = HackageLibrary },
+        Item {
+          _name = "microlens",
+          _pros = ["very small", "good for libraries"],
+          _cons = ["doesn't have advanced features"],
+          _link = Nothing,
+          _kind = HackageLibrary }
+      ] }
+  ] }
+
 main :: IO ()
 main = runSpock 8080 $ spockT id $ do
   middleware (staticPolicy (addBase "static"))
-  stateVar <- liftIO $ newIORef S {
-    _nextId = 0,
-    _categories = [] }
+  stateVar <- liftIO $ newIORef sampleState
   get root $ do
     s <- liftIO $ readIORef stateVar
     lucid $ renderRoot s
