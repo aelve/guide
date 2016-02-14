@@ -94,9 +94,11 @@ main :: IO ()
 main = runSpock 8080 $ spockT id $ do
   middleware (staticPolicy (addBase "static"))
   stateVar <- liftIO $ newIORef sampleState
+
   get root $ do
     s <- liftIO $ readIORef stateVar
     lucid $ renderRoot s
+
   post "/add/category" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
@@ -107,6 +109,7 @@ main = runSpock 8080 $ spockT id $ do
     liftIO $ modifyIORef stateVar $
       categories %~ (++ [newCategory])
     lucid $ renderCategory newCategory
+
   post ("/add/item/library" <//> var) $ \catId' -> do
     name' <- param' "name"
     let newItem = Item {
@@ -154,10 +157,10 @@ renderItem item =
   div_ [class_ "item"] $ do
     h3_ itemHeader
     div_ [class_ "pros-cons"] $ do
-      div_ [] $ do
+      div_ [class_ "pros"] $ do
         p_ "Pros:"
         ul_ $ mapM_ (li_ . toHtml) (item^.pros)
-      div_ [] $ do
+      div_ [class_ "cons"] $ do
         p_ "Cons:"
         ul_ $ mapM_ (li_ . toHtml) (item^.cons)
   where
