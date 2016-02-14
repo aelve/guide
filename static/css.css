@@ -1,0 +1,7 @@
+.items {
+  display: flex; }
+.item {
+  border: 1px solid;
+  margin: 5px; }
+.pros-cons {
+  display: flex; }

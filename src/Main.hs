@@ -29,18 +29,21 @@ import Web.Spock
 import Network.Wai.Middleware.Static
 
 
-data Item
-  = Library {
-      _name :: Text }
-  | Something {
-      _name :: Text }
+data ItemKind = HackageLibrary | Library | Unknown
+
+data Item = Item {
+  _name :: Text,
+  _pros :: [Text],
+  _cons :: [Text],
+  _link :: Maybe Text,
+  _kind :: ItemKind }
 
 makeLenses ''Item
 
 data Category = Category {
-  _categoryId :: Int,
-  _categoryTitle :: Text,
-  _categoryItems :: [Item] }
+  _catId :: Int,
+  _title :: Text,
+  _items :: [Item] }
 
 makeLenses ''Category
 
@@ -51,7 +54,13 @@ data S = S {
 makeLenses ''S
 
 categoryById :: Int -> Traversal' S Category
-categoryById catId = categories . each . filtered ((== catId) . _categoryId)
+categoryById i = categories . each . filtered ((== i) . view catId)
+
+newId :: IORef S -> IO Int
+newId s = do
+  i <- view nextId <$> readIORef s
+  modifyIORef s (nextId %~ succ)
+  return i
 
 main :: IO ()
 main = runSpock 8080 $ spockT id $ do
@@ -63,30 +72,34 @@ main = runSpock 8080 $ spockT id $ do
     s <- liftIO $ readIORef stateVar
     lucid $ renderRoot s
   post "/add/category" $ do
-    title <- param' "title"
-    thisId <- liftIO $ view nextId <$> readIORef stateVar
+    title' <- param' "title"
+    id' <- liftIO (newId stateVar)
     let newCategory = Category {
-          _categoryId = thisId,
-          _categoryTitle = title,
-          _categoryItems = [] }
+          _catId = id',
+          _title = title',
+          _items = [] }
     liftIO $ modifyIORef stateVar $
-      (categories %~ (++ [newCategory])) .
-      (nextId %~ succ)
+      categories %~ (++ [newCategory])
     lucid $ renderCategory newCategory
-  post ("/add/item/library" <//> var) $ \catId -> do
-    libName <- param' "name"
-    let newItem = Library {
-          _name = libName }
+  post ("/add/item/library" <//> var) $ \catId' -> do
+    name' <- param' "name"
+    let newItem = Item {
+          _name = name',
+          _pros = [],
+          _cons = [],
+          _link = Nothing,
+          _kind = HackageLibrary }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     liftIO $ modifyIORef stateVar $
-      categoryById catId . categoryItems %~ (++ [newItem])
+      categoryById catId' . items %~ (++ [newItem])
     lucid $ renderItem newItem
 
 renderRoot :: S -> Html ()
 renderRoot s = do
-  loadJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
-  loadJS "/js.js"
+  includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
+  includeJS "/js.js"
+  includeCSS "/css.css"
   div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
   let handler = "if (event.keyCode == 13) {\
@@ -95,28 +108,52 @@ renderRoot s = do
   input_ [type_ "text", placeholder_ "new category", onkeyup_ handler]
 
 renderCategory :: Category -> Html ()
-renderCategory Category{..} =
-  div_ [id_ (format "cat{}" [_categoryId])] $ do
+renderCategory category =
+  div_ [id_ (format "cat{}" [category^.catId])] $ do
     -- TODO: make category headings links
-    h2_ (toHtml _categoryTitle)
-    ul_ $ mapM_ (li_ . renderItem) _categoryItems
+    h2_ (toHtml (category^.title))
+    -- Note: if you change anything here, look at js.js/addLibrary to see
+    -- whether it has to be updated.
+    div_ [class_ "items"] $
+      mapM_ renderItem (category^.items)
     -- TODO: probably move handlers to the Javascript part
     let handler = format "if (event.keyCode == 13) {\
                          \  addLibrary({}, this.value);\
                          \  this.value = ''; }"
-                         [_categoryId]
+                         [category^.catId]
     input_ [type_ "text", placeholder_ "new item", onkeyup_ handler]
 
 renderItem :: Item -> Html ()
-renderItem Library{..} = a_ [href_ link] (toHtml _name)
+renderItem item =
+  div_ [class_ "item"] $ do
+    h3_ itemHeader
+    div_ [class_ "pros-cons"] $ do
+      div_ [] $ do
+        p_ "Pros:"
+        ul_ $ mapM_ (li_ . toHtml) (item^.pros)
+      div_ [] $ do
+        p_ "Cons:"
+        ul_ $ mapM_ (li_ . toHtml) (item^.cons)
   where
-    link = format "https://hackage.haskell.org/package/{}" [_name]
-renderItem Something{..} = toHtml _name
+    hackageLink = format "https://hackage.haskell.org/package/{}"
+                         [item^.name]
+    itemHeader = case (item^.link, item^.kind) of
+      (Just l, _) ->
+        a_ [href_ l] (toHtml (item^.name))
+      (Nothing, HackageLibrary) ->
+        a_ [href_ hackageLink] (toHtml (item^.name))
+      _otherwise -> toHtml (item^.name)
 
 -- Utils
 
-loadJS :: Text -> Html ()
-loadJS url = with (script_ "") [src_ url]
+includeJS :: Text -> Html ()
+includeJS url = with (script_ "") [src_ url]
+
+includeCSS :: Text -> Html ()
+includeCSS url = link_ [
+  rel_ "stylesheet",
+  type_ "text/css",
+  href_ url ]
 
 lucid :: Html a -> ActionT IO a
 lucid = html . TL.toStrict . renderText
