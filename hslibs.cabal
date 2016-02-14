@@ -31,6 +31,7 @@ executable hslibs
                      , base-prelude
                      , lucid
                      , microlens-platform
+                     , mtl
                      , text
                      , text-format
                      , transformers
