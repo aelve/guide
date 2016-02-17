@@ -58,12 +58,13 @@ data S = S {
 
 makeLenses ''S
 
-categoryById :: UID -> Traversal' S Category
-categoryById uid = categories . each . filtered ((== uid) . view catId)
+categoryById :: UID -> Lens' S Category
+categoryById uid = singular $
+  categories.each . filtered ((== uid) . view catId)
 
-itemById :: UID -> Traversal' S Item
-itemById uid = categories . each .
-               items . each . filtered ((== uid) . view itemId)
+itemById :: UID -> Lens' S Item
+itemById uid = singular $
+  categories.each . items.each . filtered ((== uid) . view itemId)
 
 newId :: IORef S -> IO UID
 newId s = do
@@ -118,7 +119,6 @@ main = runSpock 8080 $ spockT id $ do
 
   -- TODO: rename methods to “category/add” etc
   -- TODO: move Javascript here
-  -- TODO: turn traversals into lenses
   Spock.post "/add/category" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
@@ -150,31 +150,29 @@ main = runSpock 8080 $ spockT id $ do
     content <- param' "content"    
     changedItem <- withS $ do
       itemById itemId' . pros %= (++ [content])
-      gets (^?! itemById itemId')
+      use (itemById itemId')
     lucid $ renderItem changedItem
 
   Spock.post ("/add/cons" <//> var) $ \itemId' -> do
     content <- param' "content"    
     changedItem <- withS $ do
       itemById itemId' . cons %= (++ [content])
-      gets (^?! itemById itemId')
+      use (itemById itemId')
     lucid $ renderItem changedItem
 
   Spock.post ("/edit/category" <//> var <//> "title") $ \catId' -> do
     title' <- param' "title"
     changedCategory <- withS $ do
       categoryById catId' . title .= title'
-      gets (^?! categoryById catId')
+      use (categoryById catId')
     lucid $ renderCategoryHeading changedCategory
 
   Spock.get ("/edit/category" <//> var <//> "title/edit") $ \catId' -> do
-    category <- withS $ do
-      gets (^?! categoryById catId')
+    category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeadingEdit category
 
   Spock.get ("/edit/category" <//> var <//> "title/cancel") $ \catId' -> do
-    category <- withS $ do
-      gets (^?! categoryById catId')
+    category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeading category
 
 renderRoot :: S -> Html ()

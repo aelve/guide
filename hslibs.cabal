@@ -30,7 +30,7 @@ executable hslibs
                      , base >=4.8 && <4.9
                      , base-prelude
                      , lucid
-                     , microlens-platform
+                     , microlens-platform >= 0.2.3
                      , mtl
                      , text
                      , text-format
