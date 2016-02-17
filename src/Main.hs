@@ -116,6 +116,9 @@ main = runSpock 8080 $ spockT id $ do
   -- them and inject into the page. We don't want to duplicate rendering on
   -- server side and on client side.
 
+  -- TODO: rename methods to “category/add” etc
+  -- TODO: move Javascript here
+  -- TODO: turn traversals into lenses
   Spock.post "/add/category" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
@@ -145,21 +148,34 @@ main = runSpock 8080 $ spockT id $ do
 
   Spock.post ("/add/pros" <//> var) $ \itemId' -> do
     content <- param' "content"    
-    changedItems <- withS $ do
+    changedItem <- withS $ do
       itemById itemId' . pros %= (++ [content])
-      gets (^.. itemById itemId')
-    case changedItems of
-      [x] -> lucid $ renderItem x
-      _   -> return ()
+      gets (^?! itemById itemId')
+    lucid $ renderItem changedItem
 
   Spock.post ("/add/cons" <//> var) $ \itemId' -> do
     content <- param' "content"    
-    changedItems <- withS $ do
+    changedItem <- withS $ do
       itemById itemId' . cons %= (++ [content])
-      gets (^.. itemById itemId')
-    case changedItems of
-      [x] -> lucid $ renderItem x
-      _   -> return ()
+      gets (^?! itemById itemId')
+    lucid $ renderItem changedItem
+
+  Spock.post ("/edit/category" <//> var <//> "title") $ \catId' -> do
+    title' <- param' "title"
+    changedCategory <- withS $ do
+      categoryById catId' . title .= title'
+      gets (^?! categoryById catId')
+    lucid $ renderCategoryHeading changedCategory
+
+  Spock.get ("/edit/category" <//> var <//> "title/edit") $ \catId' -> do
+    category <- withS $ do
+      gets (^?! categoryById catId')
+    lucid $ renderCategoryHeadingEdit category
+
+  Spock.get ("/edit/category" <//> var <//> "title/cancel") $ \catId' -> do
+    category <- withS $ do
+      gets (^?! categoryById catId')
+    lucid $ renderCategoryHeading category
 
 renderRoot :: S -> Html ()
 renderRoot s = do
@@ -171,11 +187,29 @@ renderRoot s = do
   let handler = "addCategory(this.value);"
   input_ [type_ "text", placeholder_ "new category", submitFunc handler]
 
+renderCategoryHeading :: Category -> Html ()
+renderCategoryHeading category =
+  h2_ $ do
+    -- TODO: make category headings anchor links
+    toHtml (category^.title)
+    " "
+    textButton "edit" $ format "startCategoryHeadingEditing({});"
+                               [category^.catId]
+
+renderCategoryHeadingEdit :: Category -> Html ()
+renderCategoryHeadingEdit category =
+  h2_ $ do
+    let handler = format "finishCategoryHeadingEditing({}, this.value);"
+                         [category^.catId]
+    input_ [type_ "text", value_ (category^.title), submitFunc handler]
+    " "
+    textButton "cancel" $ format "cancelCategoryHeadingEditing({});"
+                                 [category^.catId]
+
 renderCategory :: Category -> Html ()
 renderCategory category =
   div_ [id_ (format "cat{}" [category^.catId])] $ do
-    -- TODO: make category headings links
-    h2_ (toHtml (category^.title))
+    renderCategoryHeading category
     -- Note: if you change anything here, look at js.js/addLibrary to see
     -- whether it has to be updated.
     div_ [class_ "items"] $
@@ -224,6 +258,16 @@ submitFunc f = onkeyup_ $ format
   \  {}\
   \  this.value = ''; }"
   [f]
+
+-- A text button looks like “[cancel]”
+textButton
+  :: Text    -- ^ Button text
+  -> Text    -- ^ Onclick handler
+  -> Html ()
+textButton caption handler = span_ $ do
+  "["
+  a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
+  "]"
 
 lucid :: Html a -> ActionT IO a
 lucid = html . TL.toStrict . renderText
