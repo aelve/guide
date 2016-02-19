@@ -293,7 +293,7 @@ includeJS url = with (script_ "") [src_ url]
 includeCSS :: Monad m => Text -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
-submitFunc :: Text -> Attribute
+submitFunc :: JS -> Attribute
 submitFunc f = onkeyup_ $ format
   "if (event.keyCode == 13) {\
   \  {}\
@@ -302,7 +302,7 @@ submitFunc f = onkeyup_ $ format
 
 -- Javascript
 
-js_this_value :: Text
+js_this_value :: JS
 js_this_value = "this.value"
 
 -- TODO: try to make them more type-safe somehow?
@@ -310,7 +310,7 @@ js_this_value = "this.value"
 class JSFunction a where
   makeJSFunction
     :: Text          -- Name
-    -> Text          -- Definition
+    -> JS            -- Definition
     -> a
 
 -- This generates function name
@@ -318,12 +318,12 @@ instance JSFunction Text where
   makeJSFunction fName _ = fName
 
 -- This generates function definition and direct dependencies
-instance JSFunction (Text, Text) where
+instance JSFunction (Text, JS) where
   makeJSFunction fName fDef = (fName, fDef)
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
-instance Format.Params a => JSFunction (a -> Text) where
+instance Format.Params a => JSFunction (a -> JS) where
   makeJSFunction fName _ = \args -> do
     let argsText = map (TL.toStrict . TL.toLazyText) (Format.buildParams args)
     fName <> "(" <> T.intercalate "," argsText <> ");"
@@ -450,13 +450,12 @@ js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
-
--- TODO: add a “JS” type synonym
+type JS = Text
 
 -- A text button looks like “[cancel]”
 textButton
   :: Text         -- ^ Button text
-  -> Text         -- ^ Onclick handler
+  -> JS           -- ^ Onclick handler
   -> HtmlT IO ()
 textButton caption handler =
   span_ [class_ "textButton"] $
