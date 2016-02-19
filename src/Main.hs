@@ -197,10 +197,11 @@ renderRoot s = do
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ $ T.unlines (map snd (allJSFunctions :: [(Text, Text)]))
-  div_ [id_ "categories"] $ do
+  categoriesNode <- div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
+    thisNode
   input_ [type_ "text", placeholder_ "new category",
-          submitFunc (js_addCategory [js_this_value])]
+          submitFunc (js_addCategory (categoriesNode, js_this_value))]
 
 renderCategoryHeading :: Category -> HtmlT IO ()
 renderCategoryHeading category =
@@ -225,9 +226,10 @@ renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [id_ (tshow (category^.catId))] $ do
     renderCategoryHeading category
-    div_ [class_ "items"] $
+    itemsNode <- div_ [class_ "items"] $ do
       mapM_ renderItem (category^.items)
-    let handler = js_addLibrary (category^.catId, js_this_value)
+      thisNode
+    let handler = js_addLibrary (itemsNode, category^.catId, js_this_value)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
@@ -308,10 +310,10 @@ allJSFunctions = [
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
 js_addCategory = makeJSFunction "addCategory" [text|
-  function addCategory(s) {
+  function addCategory(node, s) {
     $.post("/category/add", {title: s})
      .done(function(data) {
-       $("#categories").append(data);
+       $(node).append(data);
        });
     }
   |]
@@ -319,10 +321,10 @@ js_addCategory = makeJSFunction "addCategory" [text|
 -- | Add a new library to some category.
 js_addLibrary :: JSFunction a => a
 js_addLibrary = makeJSFunction "addLibrary" [text|
-  function addLibrary(catId, s) {
+  function addLibrary(node, catId, s) {
     $.post("/category/"+catId+"/library/add", {name: s})
      .done(function(data) {
-       $("#"+catId+" > .items").append(data);
+       $(node).append(data);
        });
     }
   |]
