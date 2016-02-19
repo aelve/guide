@@ -5,6 +5,7 @@ RecordWildCards,
 RankNTypes,
 FlexibleInstances,
 QuasiQuotes,
+ScopedTypeVariables,
 NoImplicitPrelude
   #-}
 
@@ -27,6 +28,8 @@ import Data.Text.Format hiding (format)
 import qualified Data.Text.Format as Format
 import qualified Data.Text.Format.Params as Format
 import NeatInterpolation
+-- Randomness
+import System.Random
 -- Web
 import Lucid hiding (for_)
 import Web.Spock hiding (get, text)
@@ -192,7 +195,7 @@ main = runSpock 8080 $ spockT id $ do
     category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeadingEdit category
 
-renderRoot :: S -> Html ()
+renderRoot :: S -> HtmlT IO ()
 renderRoot s = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   includeCSS "/css.css"
@@ -204,28 +207,29 @@ renderRoot s = do
   input_ [type_ "text", placeholder_ "new category",
           submitFunc (js_addCategory [js_this_value])]
 
-renderCategoryHeading :: Category -> Html ()
+renderCategoryHeading :: Category -> HtmlT IO ()
 renderCategoryHeading category =
   h2_ $ do
+    headerNode <- thisNode
     -- TODO: make category headings anchor links
     toHtml (category^.title)
     textButton "edit" $
-      js_startCategoryHeadingEdit [category^.catId]
+      js_startCategoryHeadingEdit (headerNode, category^.catId)
 
-renderCategoryHeadingEdit :: Category -> Html ()
+renderCategoryHeadingEdit :: Category -> HtmlT IO ()
 renderCategoryHeadingEdit category =
   h2_ $ do
+    headerNode <- thisNode
     let handler = js_submitCategoryHeadingEdit
-                    (category^.catId, js_this_value)
+                    (headerNode, category^.catId, js_this_value)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
-    textButton "cancel" $ js_cancelCategoryHeadingEdit [category^.catId]
+    textButton "cancel" $
+      js_cancelCategoryHeadingEdit (headerNode, category^.catId)
 
-renderCategory :: Category -> Html ()
+renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [id_ (format "cat{}" [category^.catId])] $ do
     renderCategoryHeading category
-    -- Note: if you change anything here, look at js.js/addLibrary to see
-    -- whether it has to be updated.
     div_ [class_ "items"] $
       mapM_ renderItem (category^.items)
     let handler = js_addLibrary (category^.catId, js_this_value)
@@ -233,20 +237,21 @@ renderCategory category =
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
 -- (as “site”), don't replace the Hackage link
-renderItem :: Item -> Html ()
+renderItem :: Item -> HtmlT IO ()
 renderItem item =
   div_ [class_ "item", id_ (format "item{}" [item^.itemId])] $ do
+    itemNode <- thisNode
     h3_ itemHeader
     div_ [class_ "pros-cons"] $ do
       div_ [class_ "pros"] $ do
         p_ "Pros:"
         ul_ $ mapM_ (li_ . toHtml) (item^.pros)
-        let handler = js_addPros (item^.itemId, js_this_value)
+        let handler = js_addPros (itemNode, item^.itemId, js_this_value)
         input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         ul_ $ mapM_ (li_ . toHtml) (item^.cons)
-        let handler = js_addCons (item^.itemId, js_this_value)
+        let handler = js_addCons (itemNode, item^.itemId, js_this_value)
         input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -260,10 +265,10 @@ renderItem item =
 
 -- Utils
 
-includeJS :: Text -> Html ()
+includeJS :: Monad m => Text -> HtmlT m ()
 includeJS url = with (script_ "") [src_ url]
 
-includeCSS :: Text -> Html ()
+includeCSS :: Monad m => Text -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
 submitFunc :: Text -> Attribute
@@ -303,8 +308,7 @@ allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   js_addLibrary, js_addCategory,
   js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
-  js_addPros, js_addCons,
-  js_setItemHtml, js_setCategoryHeadingHtml ]
+  js_addPros, js_addCons ]
 
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
@@ -335,10 +339,10 @@ This turns the heading into an editbox, and adds a [cancel] link.
 -}
 js_startCategoryHeadingEdit :: JSFunction a => a
 js_startCategoryHeadingEdit = makeJSFunction "startCategoryHeadingEdit" [text|
-  function startCategoryHeadingEdit(catId) {
+  function startCategoryHeadingEdit(node, catId) {
     $.get("/category/"+catId+"/title/render-edit")
      .done(function(data) {
-       setCategoryHeadingHtml(catId, data);
+       $(node).replaceWith(data);
        });
     }
   |]
@@ -350,10 +354,10 @@ This turns the heading with the editbox back into a simple text heading.
 -}
 js_cancelCategoryHeadingEdit :: JSFunction a => a
 js_cancelCategoryHeadingEdit = makeJSFunction "cancelCategoryHeadingEdit" [text|
-  function cancelCategoryHeadingEdit(catId) {
+  function cancelCategoryHeadingEdit(node, catId) {
     $.get("/category/"+catId+"/title/render-normal")
      .done(function(data) {
-       setCategoryHeadingHtml(catId, data);
+       $(node).replaceWith(data);
        });
     }
   |]
@@ -365,10 +369,10 @@ This turns the heading with the editbox back into a simple text heading.
 -}
 js_submitCategoryHeadingEdit :: JSFunction a => a
 js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
-  function submitCategoryHeadingEdit(catId, s) {
+  function submitCategoryHeadingEdit(node, catId, s) {
     $.post("/category/"+catId+"/title/set", {title: s})
      .done(function(data) {
-       setCategoryHeadingHtml(catId, data);
+       $(node).replaceWith(data);
        });
     }
   |]
@@ -376,10 +380,10 @@ js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
 -- | Add pros to some item.
 js_addPros :: JSFunction a => a
 js_addPros = makeJSFunction "addPros" [text|
-  function addPros(itemId, s) {
+  function addPros(node, itemId, s) {
     $.post("/item/"+itemId+"/pros/add", {content: s})
      .done(function(data) {
-       setItemHtml(itemId, data);
+       $(node).replaceWith(data);
        });
     }
   |]
@@ -387,41 +391,38 @@ js_addPros = makeJSFunction "addPros" [text|
 -- | Add cons to some item.
 js_addCons :: JSFunction a => a
 js_addCons = makeJSFunction "addCons" [text|
-  function addCons(itemId, s) {
+  function addCons(node, itemId, s) {
     $.post("/item/"+itemId+"/cons/add", {content: s})
      .done(function(data) {
-       setItemHtml(itemId, data);
+       $(node).replaceWith(data);
        });
-    }
-  |]
-
--- | Reload an item.
-js_setItemHtml :: JSFunction a => a
-js_setItemHtml = makeJSFunction "setItemHtml" [text|
-  function setItemHtml(itemId, data) {
-    $("#item"+itemId).replaceWith(data);
-    }
-  |]
-
--- | Reload a category heading.
-js_setCategoryHeadingHtml :: JSFunction a => a
-js_setCategoryHeadingHtml = makeJSFunction "setCategoryHeadingHtml" [text|
-  function setCategoryHeadingHtml(catId, data) {
-    $("#cat"+catId+" > h2").replaceWith(data);
     }
   |]
 
 -- A text button looks like “[cancel]”
 textButton
-  :: Text    -- ^ Button text
-  -> Text    -- ^ Onclick handler
-  -> Html ()
+  :: Text         -- ^ Button text
+  -> Text         -- ^ Onclick handler
+  -> HtmlT IO ()
 textButton caption handler =
   span_ [class_ "textButton"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
-lucid :: Html a -> ActionT IO a
-lucid = html . TL.toStrict . renderText
+type JQuerySelector = Text
+
+thisNode :: HtmlT IO JQuerySelector
+thisNode = do
+  -- TODO: use random letters instead of numbers
+  -- TODO: generate ids for categories/items in the same fashion
+  randomId :: Word <- liftIO randomIO
+  let randomIdText = "x" <> T.pack (show randomId)
+  span_ [id_ randomIdText] mempty
+  return (T.pack (show (format ":has(> #{})" [randomIdText])))
+
+lucid :: HtmlT IO a -> ActionT IO a
+lucid h = do
+  htmlText <- liftIO (renderTextT h)
+  html (TL.toStrict htmlText)
 
 -- | Format a string (a bit 'Text.Printf.printf' but with different syntax).
 format :: Format.Params ps => Format -> ps -> Text
