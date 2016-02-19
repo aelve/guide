@@ -37,8 +37,12 @@ import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 
 
--- | Unique id, used for categories and items.
+-- | Unique id, used for many things – categories, items, and anchor ids.
+-- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
 type UID = Int
+
+randomUID :: MonadIO m => m UID
+randomUID = liftIO $ randomRIO (0, 10^(9::Int))
 
 data ItemKind = HackageLibrary | Library | Unknown
 
@@ -60,7 +64,6 @@ data Category = Category {
 makeLenses ''Category
 
 data S = S {
-  _nextId :: UID,
   _categories :: [Category] }
 
 makeLenses ''S
@@ -73,34 +76,26 @@ itemById :: UID -> Lens' S Item
 itemById uid = singular $
   categories.each . items.each . filtered ((== uid) . view itemId)
 
-newId :: IORef S -> IO UID
-newId s = do
-  uid <- view nextId <$> readIORef s
-  modifyIORef s (nextId %~ succ)
-  return uid
-
 emptyState :: S
 emptyState = S {
-  _nextId = 0,
   _categories = [] }
 
 sampleState :: S
 sampleState = S {
-  _nextId = 3,
   _categories = [
     Category {
-      _catId = 0,
+      _catId = 1,
       _title = "lenses",
       _items = [
         Item {
-          _itemId = 1,
+          _itemId = 2,
           _name   = "lens",
           _pros   = ["the standard lenses library", "batteries included"],
           _cons   = ["huge"],
           _link   = Nothing,
           _kind   = HackageLibrary },
         Item {
-          _itemId = 2,
+          _itemId = 3,
           _name   = "microlens",
           _pros   = ["very small", "good for libraries"],
           _cons   = ["doesn't have advanced features"],
@@ -133,9 +128,9 @@ main = runSpock 8080 $ spockT id $ do
   -- Create a new category, with its title submitted via a POST request.
   Spock.post "/category/add" $ do
     title' <- param' "title"
-    id' <- liftIO (newId stateVar)
+    uid <- randomUID
     let newCategory = Category {
-          _catId = id',
+          _catId = uid,
           _title = title',
           _items = [] }
     withS $
@@ -146,9 +141,9 @@ main = runSpock 8080 $ spockT id $ do
   -- and category id submitted via a POST request.
   Spock.post ("/category" <//> var <//> "library/add") $ \catId' -> do
     name' <- param' "name"
-    id' <- liftIO (newId stateVar)
+    uid <- randomUID
     let newItem = Item {
-          _itemId = id',
+          _itemId = uid,
           _name   = name',
           _pros   = [],
           _cons   = [],
@@ -228,7 +223,7 @@ renderCategoryHeadingEdit category =
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
-  div_ [id_ (format "cat{}" [category^.catId])] $ do
+  div_ [id_ (tshow (category^.catId))] $ do
     renderCategoryHeading category
     div_ [class_ "items"] $
       mapM_ renderItem (category^.items)
@@ -239,7 +234,7 @@ renderCategory category =
 -- (as “site”), don't replace the Hackage link
 renderItem :: Item -> HtmlT IO ()
 renderItem item =
-  div_ [class_ "item", id_ (format "item{}" [item^.itemId])] $ do
+  div_ [class_ "item", id_ (tshow (item^.itemId))] $ do
     itemNode <- thisNode
     h3_ itemHeader
     div_ [class_ "pros-cons"] $ do
@@ -327,7 +322,7 @@ js_addLibrary = makeJSFunction "addLibrary" [text|
   function addLibrary(catId, s) {
     $.post("/category/"+catId+"/library/add", {name: s})
      .done(function(data) {
-       $("#cat"+catId+" > .items").append(data);
+       $("#"+catId+" > .items").append(data);
        });
     }
   |]
@@ -412,12 +407,9 @@ type JQuerySelector = Text
 
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
-  -- TODO: use random letters instead of numbers
-  -- TODO: generate ids for categories/items in the same fashion
-  randomId :: Word <- liftIO randomIO
-  let randomIdText = "x" <> T.pack (show randomId)
-  span_ [id_ randomIdText] mempty
-  return (T.pack (show (format ":has(> #{})" [randomIdText])))
+  uid <- randomUID
+  span_ [id_ (tshow uid)] mempty
+  return (T.pack (show (format ":has(> #{})" [uid])))
 
 lucid :: HtmlT IO a -> ActionT IO a
 lucid h = do
@@ -427,3 +419,6 @@ lucid h = do
 -- | Format a string (a bit 'Text.Printf.printf' but with different syntax).
 format :: Format.Params ps => Format -> ps -> Text
 format f ps = TL.toStrict (Format.format f ps)
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
