@@ -153,7 +153,7 @@ main = runSpock 8080 $ spockT id $ do
     -- already deleted)
     withS $
       categoryById catId' . items %= (++ [newItem])
-    lucid $ renderItem newItem
+    lucid $ renderItem NonEditable newItem
 
   -- Add a pro (argument in favor of a library).
   Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
@@ -161,7 +161,7 @@ main = runSpock 8080 $ spockT id $ do
     changedItem <- withS $ do
       itemById itemId' . pros %= (++ [content])
       use (itemById itemId')
-    lucid $ renderItem changedItem
+    lucid $ renderItem Editable changedItem
 
   -- Add a con (argument against a library).
   Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
@@ -169,7 +169,7 @@ main = runSpock 8080 $ spockT id $ do
     changedItem <- withS $ do
       itemById itemId' . cons %= (++ [content])
       use (itemById itemId')
-    lucid $ renderItem changedItem
+    lucid $ renderItem Editable changedItem
 
   -- Set the title of a category (returns rendered new title).
   Spock.post ("/category" <//> var <//> "title/set") $ \catId' -> do
@@ -189,6 +189,16 @@ main = runSpock 8080 $ spockT id $ do
   Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId' -> do
     category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeadingEdit category
+
+  -- Return rendered item the way it should normally look.
+  Spock.get ("/item" <//> var <//> "render-normal") $ \itemId' -> do
+    item <- withS $ use (itemById itemId')
+    lucid $ renderItem NonEditable item
+
+  -- Return rendered item the way it should look when it's being edited.
+  Spock.get ("/item" <//> var <//> "render-edit") $ \itemId' -> do
+    item <- withS $ use (itemById itemId')
+    lucid $ renderItem Editable item
 
 renderRoot :: S -> HtmlT IO ()
 renderRoot s = do
@@ -227,29 +237,44 @@ renderCategory category =
   div_ [id_ (tshow (category^.catId))] $ do
     renderCategoryHeading category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ renderItem (category^.items)
+      mapM_ (renderItem NonEditable) (category^.items)
       thisNode
     let handler = js_addLibrary (itemsNode, category^.catId, js_this_value)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
 -- (as “site”), don't replace the Hackage link
-renderItem :: Item -> HtmlT IO ()
-renderItem item =
+renderItem
+  :: Editable         -- ^ Show edit buttons?
+  -> Item
+  -> HtmlT IO ()
+renderItem editable item =
   div_ [class_ "item", id_ (tshow (item^.itemId))] $ do
     itemNode <- thisNode
-    h3_ itemHeader
+    h3_ $ do
+      itemHeader
+      case editable of
+        NonEditable -> textButton "edit" $
+          js_enableItemEdit (itemNode, item^.itemId)
+        Editable -> textButton "edit off" $
+          js_disableItemEdit (itemNode, item^.itemId)
     div_ [class_ "pros-cons"] $ do
       div_ [class_ "pros"] $ do
         p_ "Pros:"
         ul_ $ mapM_ (li_ . toHtml) (item^.pros)
-        let handler = js_addPros (itemNode, item^.itemId, js_this_value)
-        input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
+        case editable of
+          NonEditable -> return ()
+          Editable -> do
+            let handler = js_addPros (itemNode, item^.itemId, js_this_value)
+            input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         ul_ $ mapM_ (li_ . toHtml) (item^.cons)
-        let handler = js_addCons (itemNode, item^.itemId, js_this_value)
-        input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
+        case editable of
+          NonEditable -> return ()
+          Editable -> do
+            let handler = js_addCons (itemNode, item^.itemId, js_this_value)
+            input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
                          [item^.name]
@@ -280,6 +305,8 @@ submitFunc f = onkeyup_ $ format
 js_this_value :: Text
 js_this_value = "this.value"
 
+-- TODO: try to make them more type-safe somehow?
+
 class JSFunction a where
   makeJSFunction
     :: Text          -- Name
@@ -305,7 +332,8 @@ allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   js_addLibrary, js_addCategory,
   js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
-  js_addPros, js_addCons ]
+  js_addPros, js_addCons,
+  js_enableItemEdit, js_disableItemEdit ]
 
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
@@ -380,6 +408,7 @@ js_addPros = makeJSFunction "addPros" [text|
   function addPros(node, itemId, s) {
     $.post("/item/"+itemId+"/pros/add", {content: s})
      .done(function(data) {
+       // update the whole item container
        $(node).replaceWith(data);
        });
     }
@@ -391,10 +420,38 @@ js_addCons = makeJSFunction "addCons" [text|
   function addCons(node, itemId, s) {
     $.post("/item/"+itemId+"/cons/add", {content: s})
      .done(function(data) {
+       // update the whole item container
        $(node).replaceWith(data);
        });
     }
   |]
+
+-- | Add “[edit]” buttons to everything in an item.
+js_enableItemEdit :: JSFunction a => a
+js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
+  function enableItemEdit (node, itemId) {
+    $.get("/item/"+itemId+"/render-edit")
+     .done(function(data) {
+       $(node).replaceWith(data);
+       });
+    }
+  |]
+
+-- | Remove “[edit]” buttons from everything in an item.
+js_disableItemEdit :: JSFunction a => a
+js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
+  function disableItemEdit (node, itemId) {
+    $.get("/item/"+itemId+"/render-normal")
+     .done(function(data) {
+       $(node).replaceWith(data);
+       });
+    }
+  |]
+
+-- When adding a function, don't forget to add it to 'allJSFunctions'!
+
+
+-- TODO: add a “JS” type synonym
 
 -- A text button looks like “[cancel]”
 textButton
@@ -424,3 +481,5 @@ format f ps = TL.toStrict (Format.format f ps)
 
 tshow :: Show a => a -> Text
 tshow = T.pack . show
+
+data Editable = Editable | NonEditable
