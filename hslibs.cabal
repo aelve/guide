@@ -32,6 +32,7 @@ executable hslibs
                      , lucid
                      , microlens-platform >= 0.2.3
                      , mtl
+                     , neat-interpolation == 0.3.*
                      , text
                      , text-format
                      , transformers

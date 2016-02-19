@@ -3,6 +3,8 @@ OverloadedStrings,
 TemplateHaskell,
 RecordWildCards,
 RankNTypes,
+FlexibleInstances,
+QuasiQuotes,
 NoImplicitPrelude
   #-}
 
@@ -20,12 +22,14 @@ import Lens.Micro.Platform
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as TL
 import Data.Text.Format hiding (format)
 import qualified Data.Text.Format as Format
-import Data.Text.Format.Params (Params)
+import qualified Data.Text.Format.Params as Format
+import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
-import Web.Spock hiding (get)
+import Web.Spock hiding (get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 
@@ -106,7 +110,8 @@ main :: IO ()
 main = runSpock 8080 $ spockT id $ do
   middleware (staticPolicy (addBase "static"))
   stateVar <- liftIO $ newIORef sampleState
-  let withS f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
+  let withS :: MonadIO m => State S a -> m a
+      withS f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
 
   Spock.get root $ do
     s <- liftIO $ readIORef stateVar
@@ -118,7 +123,6 @@ main = runSpock 8080 $ spockT id $ do
   -- server side and on client side.
 
   -- TODO: rename methods to “category/add” etc
-  -- TODO: move Javascript here
   Spock.post "/add/category" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
@@ -178,12 +182,12 @@ main = runSpock 8080 $ spockT id $ do
 renderRoot :: S -> Html ()
 renderRoot s = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
-  includeJS "/js.js"
   includeCSS "/css.css"
+  script_ $ T.unlines (map snd (allJSFunctions :: [(Text, Text)]))
   div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
-  let handler = "addCategory(this.value);"
-  input_ [type_ "text", placeholder_ "new category", submitFunc handler]
+  input_ [type_ "text", placeholder_ "new category",
+          submitFunc (js_addCategory [js_thisValue])]
 
 renderCategoryHeading :: Category -> Html ()
 renderCategoryHeading category =
@@ -191,18 +195,16 @@ renderCategoryHeading category =
     -- TODO: make category headings anchor links
     toHtml (category^.title)
     " "
-    textButton "edit" $ format "startCategoryHeadingEditing({});"
-                               [category^.catId]
+    textButton "edit" $ js_startCategoryHeadingEditing [category^.catId]
 
 renderCategoryHeadingEdit :: Category -> Html ()
 renderCategoryHeadingEdit category =
   h2_ $ do
-    let handler = format "finishCategoryHeadingEditing({}, this.value);"
-                         [category^.catId]
+    let handler = js_finishCategoryHeadingEditing
+                    (category^.catId, js_thisValue)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
     " "
-    textButton "cancel" $ format "cancelCategoryHeadingEditing({});"
-                                 [category^.catId]
+    textButton "cancel" $ js_cancelCategoryHeadingEditing [category^.catId]
 
 renderCategory :: Category -> Html ()
 renderCategory category =
@@ -212,7 +214,7 @@ renderCategory category =
     -- whether it has to be updated.
     div_ [class_ "items"] $
       mapM_ renderItem (category^.items)
-    let handler = format "addLibrary({}, this.value);" [category^.catId]
+    let handler = js_addLibrary (category^.catId, js_thisValue)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
@@ -225,12 +227,12 @@ renderItem item =
       div_ [class_ "pros"] $ do
         p_ "Pros:"
         ul_ $ mapM_ (li_ . toHtml) (item^.pros)
-        let handler = format "addPros({}, this.value);" [item^.itemId]
+        let handler = js_addPros (item^.itemId, js_thisValue)
         input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         ul_ $ mapM_ (li_ . toHtml) (item^.cons)
-        let handler = format "addCons({}, this.value);" [item^.itemId]
+        let handler = js_addCons (item^.itemId, js_thisValue)
         input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -257,6 +259,144 @@ submitFunc f = onkeyup_ $ format
   \  this.value = ''; }"
   [f]
 
+-- Javascript
+
+js_thisValue :: Text
+js_thisValue = "this.value"
+
+class JSFunction a where
+  makeJSFunction
+    :: Text          -- Name
+    -> Text          -- Definition
+    -> a
+
+-- This generates function name
+instance JSFunction Text where
+  makeJSFunction fName _ = fName
+
+-- This generates function definition and direct dependencies
+instance JSFunction (Text, Text) where
+  makeJSFunction fName fDef = (fName, fDef)
+
+-- This generates a function that takes arguments and produces a Javascript
+-- function call
+instance Format.Params a => JSFunction (a -> Text) where
+  makeJSFunction fName _ = \args -> do
+    let argsText = map (TL.toStrict . TL.toLazyText) (Format.buildParams args)
+    fName <> "(" <> T.intercalate "," argsText <> ");"
+
+allJSFunctions :: JSFunction a => [a]
+allJSFunctions = [
+  js_addLibrary, js_addCategory,
+  js_startCategoryHeadingEditing, js_finishCategoryHeadingEditing, js_cancelCategoryHeadingEditing,
+  js_addPros, js_addCons,
+  js_setItemHtml, js_setCategoryHeadingHtml ]
+
+-- | Add a new library to some category.
+js_addLibrary :: JSFunction a => a
+js_addLibrary = makeJSFunction "addLibrary" [text|
+  function addLibrary(catId, s) {
+    $.post("/add/item/library/" + catId, {name: s})
+     .done(function(data) {
+       $("#cat"+catId+" > .items").append(data);
+       });
+    }
+  |]
+
+-- | Create a new category.
+js_addCategory :: JSFunction a => a
+js_addCategory = makeJSFunction "addCategory" [text|
+  function addCategory(s) {
+    $.post("/add/category", {title: s})
+     .done(function(data) {
+       $("#categories").append(data);
+       });
+    }
+  |]
+
+{- |
+Start category heading editing (this happens when you click on “[edit]”).
+
+This turns the heading into an editbox, and adds a [cancel] link.
+-}
+js_startCategoryHeadingEditing :: JSFunction a => a
+js_startCategoryHeadingEditing = makeJSFunction "startCategoryHeadingEditing" [text|
+  function startCategoryHeadingEditing(catId) {
+    $.get("/edit/category/"+catId+"/title/edit")
+     .done(function(data) {
+       setCategoryHeadingHtml(catId, data);
+       });
+    }
+  |]
+
+{- |
+Finish category heading editing (this happens when you submit the field).
+
+This turns the heading with the editbox back into a simple text heading.
+-}
+js_finishCategoryHeadingEditing :: JSFunction a => a
+js_finishCategoryHeadingEditing = makeJSFunction "finishCategoryHeadingEditing" [text|
+  function finishCategoryHeadingEditing(catId, s) {
+    $.post("/edit/category/"+catId+"/title", {title: s})
+     .done(function(data) {
+       setCategoryHeadingHtml(catId, data);
+       });
+    }
+  |]
+
+{- |
+Cancel category heading editing.
+
+This turns the heading with the editbox back into a simple text heading.
+-}
+js_cancelCategoryHeadingEditing :: JSFunction a => a
+js_cancelCategoryHeadingEditing = makeJSFunction "cancelCategoryHeadingEditing" [text|
+  function cancelCategoryHeadingEditing(catId) {
+    $.get("/edit/category/"+catId+"/title/cancel")
+     .done(function(data) {
+       setCategoryHeadingHtml(catId, data);
+       });
+    }
+  |]
+
+-- | Add pros to some item.
+js_addPros :: JSFunction a => a
+js_addPros = makeJSFunction "addPros" [text|
+  function addPros(itemId, s) {
+    $.post("/add/pros/" + itemId, {content: s})
+     .done(function(data) {
+       setItemHtml(itemId, data);
+       });
+    }
+  |]
+
+-- | Add cons to some item.
+js_addCons :: JSFunction a => a
+js_addCons = makeJSFunction "addCons" [text|
+  function addCons(itemId, s) {
+    $.post("/add/cons/" + itemId, {content: s})
+     .done(function(data) {
+       setItemHtml(itemId, data);
+       });
+    }
+  |]
+
+-- | Reload an item.
+js_setItemHtml :: JSFunction a => a
+js_setItemHtml = makeJSFunction "setItemHtml" [text|
+  function setItemHtml(itemId, data) {
+    $("#item"+itemId).replaceWith(data);
+    }
+  |]
+
+-- | Reload a category heading.
+js_setCategoryHeadingHtml :: JSFunction a => a
+js_setCategoryHeadingHtml = makeJSFunction "setCategoryHeadingHtml" [text|
+  function setCategoryHeadingHtml(catId, data) {
+    $("#cat"+catId+" > h2").replaceWith(data);
+    }
+  |]
+
 -- A text button looks like “[cancel]”
 textButton
   :: Text    -- ^ Button text
@@ -271,5 +411,5 @@ lucid :: Html a -> ActionT IO a
 lucid = html . TL.toStrict . renderText
 
 -- | Format a string (a bit 'Text.Printf.printf' but with different syntax).
-format :: Params ps => Format -> ps -> Text
+format :: Format.Params ps => Format -> ps -> Text
 format f ps = TL.toStrict (Format.format f ps)
