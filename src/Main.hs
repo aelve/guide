@@ -209,7 +209,6 @@ renderCategoryHeading category =
   h2_ $ do
     -- TODO: make category headings anchor links
     toHtml (category^.title)
-    " "
     textButton "edit" $ js_startCategoryHeadingEdit [category^.catId]
 
 renderCategoryHeadingEdit :: Category -> Html ()
@@ -218,7 +217,6 @@ renderCategoryHeadingEdit category =
     let handler = js_submitCategoryHeadingEdit
                     (category^.catId, js_thisValue)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
-    " "
     textButton "cancel" $ js_cancelCategoryHeadingEdit [category^.catId]
 
 renderCategory :: Category -> Html ()
@@ -417,10 +415,9 @@ textButton
   :: Text    -- ^ Button text
   -> Text    -- ^ Onclick handler
   -> Html ()
-textButton caption handler = span_ $ do
-  "["
-  a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
-  "]"
+textButton caption handler =
+  span_ [class_ "textButton"] $
+    a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
 lucid :: Html a -> ActionT IO a
 lucid = html . TL.toStrict . renderText
