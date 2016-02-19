@@ -113,6 +113,7 @@ main = runSpock 8080 $ spockT id $ do
   let withS :: MonadIO m => State S a -> m a
       withS f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
 
+  -- Render the main page.
   Spock.get root $ do
     s <- liftIO $ readIORef stateVar
     lucid $ renderRoot s
@@ -126,6 +127,7 @@ main = runSpock 8080 $ spockT id $ do
   -- (category|item)/id/action
   -- (category|item)/id/thing/action
 
+  -- Create a new category, with its title submitted via a POST request.
   Spock.post "/category/add" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
@@ -137,6 +139,8 @@ main = runSpock 8080 $ spockT id $ do
       categories %= (++ [newCategory])
     lucid $ renderCategory newCategory
 
+  -- Create a new library in the specified category, with the library name
+  -- and category id submitted via a POST request.
   Spock.post ("/category" <//> var <//> "library/add") $ \catId' -> do
     name' <- param' "name"
     id' <- liftIO (newId stateVar)
@@ -153,6 +157,7 @@ main = runSpock 8080 $ spockT id $ do
       categoryById catId' . items %= (++ [newItem])
     lucid $ renderItem newItem
 
+  -- Add a pro (argument in favor of a library).
   Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
     content <- param' "content"    
     changedItem <- withS $ do
@@ -160,6 +165,7 @@ main = runSpock 8080 $ spockT id $ do
       use (itemById itemId')
     lucid $ renderItem changedItem
 
+  -- Add a con (argument against a library).
   Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
     content <- param' "content"    
     changedItem <- withS $ do
@@ -167,6 +173,7 @@ main = runSpock 8080 $ spockT id $ do
       use (itemById itemId')
     lucid $ renderItem changedItem
 
+  -- Set the title of a category (returns rendered new title).
   Spock.post ("/category" <//> var <//> "title/set") $ \catId' -> do
     title' <- param' "title"
     changedCategory <- withS $ do
@@ -174,10 +181,13 @@ main = runSpock 8080 $ spockT id $ do
       use (categoryById catId')
     lucid $ renderCategoryHeading changedCategory
 
+  -- Return rendered title of a category.
   Spock.get ("/category" <//> var <//> "title/render-normal") $ \catId' -> do
     category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeading category
 
+  -- Return rendered title of a category the way it should look when the
+  -- category is being edited.
   Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId' -> do
     category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeadingEdit category
@@ -186,6 +196,8 @@ renderRoot :: S -> Html ()
 renderRoot s = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   includeCSS "/css.css"
+  -- Include definitions of all Javascript functions that we have defined in
+  -- this file.
   script_ $ T.unlines (map snd (allJSFunctions :: [(Text, Text)]))
   div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
@@ -198,16 +210,16 @@ renderCategoryHeading category =
     -- TODO: make category headings anchor links
     toHtml (category^.title)
     " "
-    textButton "edit" $ js_startCategoryHeadingEditing [category^.catId]
+    textButton "edit" $ js_startCategoryHeadingEdit [category^.catId]
 
 renderCategoryHeadingEdit :: Category -> Html ()
 renderCategoryHeadingEdit category =
   h2_ $ do
-    let handler = js_finishCategoryHeadingEditing
+    let handler = js_submitCategoryHeadingEdit
                     (category^.catId, js_thisValue)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
     " "
-    textButton "cancel" $ js_cancelCategoryHeadingEditing [category^.catId]
+    textButton "cancel" $ js_cancelCategoryHeadingEdit [category^.catId]
 
 renderCategory :: Category -> Html ()
 renderCategory category =
@@ -291,7 +303,7 @@ instance Format.Params a => JSFunction (a -> Text) where
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   js_addLibrary, js_addCategory,
-  js_startCategoryHeadingEditing, js_finishCategoryHeadingEditing, js_cancelCategoryHeadingEditing,
+  js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
   js_addPros, js_addCons,
   js_setItemHtml, js_setCategoryHeadingHtml ]
 
@@ -322,9 +334,9 @@ Start category heading editing (this happens when you click on “[edit]”).
 
 This turns the heading into an editbox, and adds a [cancel] link.
 -}
-js_startCategoryHeadingEditing :: JSFunction a => a
-js_startCategoryHeadingEditing = makeJSFunction "startCategoryHeadingEditing" [text|
-  function startCategoryHeadingEditing(catId) {
+js_startCategoryHeadingEdit :: JSFunction a => a
+js_startCategoryHeadingEdit = makeJSFunction "startCategoryHeadingEdit" [text|
+  function startCategoryHeadingEdit(catId) {
     $.get("/category/"+catId+"/title/render-edit")
      .done(function(data) {
        setCategoryHeadingHtml(catId, data);
@@ -337,9 +349,9 @@ Cancel category heading editing.
 
 This turns the heading with the editbox back into a simple text heading.
 -}
-js_cancelCategoryHeadingEditing :: JSFunction a => a
-js_cancelCategoryHeadingEditing = makeJSFunction "cancelCategoryHeadingEditing" [text|
-  function cancelCategoryHeadingEditing(catId) {
+js_cancelCategoryHeadingEdit :: JSFunction a => a
+js_cancelCategoryHeadingEdit = makeJSFunction "cancelCategoryHeadingEdit" [text|
+  function cancelCategoryHeadingEdit(catId) {
     $.get("/category/"+catId+"/title/render-normal")
      .done(function(data) {
        setCategoryHeadingHtml(catId, data);
@@ -352,9 +364,9 @@ Finish category heading editing (this happens when you submit the field).
 
 This turns the heading with the editbox back into a simple text heading.
 -}
-js_finishCategoryHeadingEditing :: JSFunction a => a
-js_finishCategoryHeadingEditing = makeJSFunction "finishCategoryHeadingEditing" [text|
-  function finishCategoryHeadingEditing(catId, s) {
+js_submitCategoryHeadingEdit :: JSFunction a => a
+js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
+  function submitCategoryHeadingEdit(catId, s) {
     $.post("/category/"+catId+"/title/set", {title: s})
      .done(function(data) {
        setCategoryHeadingHtml(catId, data);
