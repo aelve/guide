@@ -202,20 +202,21 @@ renderRoot s = do
   div_ [id_ "categories"] $ do
     mapM_ renderCategory (s ^. categories)
   input_ [type_ "text", placeholder_ "new category",
-          submitFunc (js_addCategory [js_thisValue])]
+          submitFunc (js_addCategory [js_this_value])]
 
 renderCategoryHeading :: Category -> Html ()
 renderCategoryHeading category =
   h2_ $ do
     -- TODO: make category headings anchor links
     toHtml (category^.title)
-    textButton "edit" $ js_startCategoryHeadingEdit [category^.catId]
+    textButton "edit" $
+      js_startCategoryHeadingEdit [category^.catId]
 
 renderCategoryHeadingEdit :: Category -> Html ()
 renderCategoryHeadingEdit category =
   h2_ $ do
     let handler = js_submitCategoryHeadingEdit
-                    (category^.catId, js_thisValue)
+                    (category^.catId, js_this_value)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
     textButton "cancel" $ js_cancelCategoryHeadingEdit [category^.catId]
 
@@ -227,7 +228,7 @@ renderCategory category =
     -- whether it has to be updated.
     div_ [class_ "items"] $
       mapM_ renderItem (category^.items)
-    let handler = js_addLibrary (category^.catId, js_thisValue)
+    let handler = js_addLibrary (category^.catId, js_this_value)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
@@ -240,12 +241,12 @@ renderItem item =
       div_ [class_ "pros"] $ do
         p_ "Pros:"
         ul_ $ mapM_ (li_ . toHtml) (item^.pros)
-        let handler = js_addPros (item^.itemId, js_thisValue)
+        let handler = js_addPros (item^.itemId, js_this_value)
         input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         ul_ $ mapM_ (li_ . toHtml) (item^.cons)
-        let handler = js_addCons (item^.itemId, js_thisValue)
+        let handler = js_addCons (item^.itemId, js_this_value)
         input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -274,8 +275,8 @@ submitFunc f = onkeyup_ $ format
 
 -- Javascript
 
-js_thisValue :: Text
-js_thisValue = "this.value"
+js_this_value :: Text
+js_this_value = "this.value"
 
 class JSFunction a where
   makeJSFunction
