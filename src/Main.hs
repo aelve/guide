@@ -122,8 +122,11 @@ main = runSpock 8080 $ spockT id $ do
   -- them and inject into the page. We don't want to duplicate rendering on
   -- server side and on client side.
 
-  -- TODO: rename methods to “category/add” etc
-  Spock.post "/add/category" $ do
+  -- (category|item)/action
+  -- (category|item)/id/action
+  -- (category|item)/id/thing/action
+
+  Spock.post "/category/add" $ do
     title' <- param' "title"
     id' <- liftIO (newId stateVar)
     let newCategory = Category {
@@ -134,7 +137,7 @@ main = runSpock 8080 $ spockT id $ do
       categories %= (++ [newCategory])
     lucid $ renderCategory newCategory
 
-  Spock.post ("/add/item/library" <//> var) $ \catId' -> do
+  Spock.post ("/category" <//> var <//> "library/add") $ \catId' -> do
     name' <- param' "name"
     id' <- liftIO (newId stateVar)
     let newItem = Item {
@@ -150,34 +153,34 @@ main = runSpock 8080 $ spockT id $ do
       categoryById catId' . items %= (++ [newItem])
     lucid $ renderItem newItem
 
-  Spock.post ("/add/pros" <//> var) $ \itemId' -> do
+  Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
     content <- param' "content"    
     changedItem <- withS $ do
       itemById itemId' . pros %= (++ [content])
       use (itemById itemId')
     lucid $ renderItem changedItem
 
-  Spock.post ("/add/cons" <//> var) $ \itemId' -> do
+  Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
     content <- param' "content"    
     changedItem <- withS $ do
       itemById itemId' . cons %= (++ [content])
       use (itemById itemId')
     lucid $ renderItem changedItem
 
-  Spock.post ("/edit/category" <//> var <//> "title") $ \catId' -> do
+  Spock.post ("/category" <//> var <//> "title/set") $ \catId' -> do
     title' <- param' "title"
     changedCategory <- withS $ do
       categoryById catId' . title .= title'
       use (categoryById catId')
     lucid $ renderCategoryHeading changedCategory
 
-  Spock.get ("/edit/category" <//> var <//> "title/edit") $ \catId' -> do
-    category <- withS $ use (categoryById catId')
-    lucid $ renderCategoryHeadingEdit category
-
-  Spock.get ("/edit/category" <//> var <//> "title/cancel") $ \catId' -> do
+  Spock.get ("/category" <//> var <//> "title/render-normal") $ \catId' -> do
     category <- withS $ use (categoryById catId')
     lucid $ renderCategoryHeading category
+
+  Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId' -> do
+    category <- withS $ use (categoryById catId')
+    lucid $ renderCategoryHeadingEdit category
 
 renderRoot :: S -> Html ()
 renderRoot s = do
@@ -292,24 +295,24 @@ allJSFunctions = [
   js_addPros, js_addCons,
   js_setItemHtml, js_setCategoryHeadingHtml ]
 
--- | Add a new library to some category.
-js_addLibrary :: JSFunction a => a
-js_addLibrary = makeJSFunction "addLibrary" [text|
-  function addLibrary(catId, s) {
-    $.post("/add/item/library/" + catId, {name: s})
-     .done(function(data) {
-       $("#cat"+catId+" > .items").append(data);
-       });
-    }
-  |]
-
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
 js_addCategory = makeJSFunction "addCategory" [text|
   function addCategory(s) {
-    $.post("/add/category", {title: s})
+    $.post("/category/add", {title: s})
      .done(function(data) {
        $("#categories").append(data);
+       });
+    }
+  |]
+
+-- | Add a new library to some category.
+js_addLibrary :: JSFunction a => a
+js_addLibrary = makeJSFunction "addLibrary" [text|
+  function addLibrary(catId, s) {
+    $.post("/category/"+catId+"/library/add", {name: s})
+     .done(function(data) {
+       $("#cat"+catId+" > .items").append(data);
        });
     }
   |]
@@ -322,22 +325,7 @@ This turns the heading into an editbox, and adds a [cancel] link.
 js_startCategoryHeadingEditing :: JSFunction a => a
 js_startCategoryHeadingEditing = makeJSFunction "startCategoryHeadingEditing" [text|
   function startCategoryHeadingEditing(catId) {
-    $.get("/edit/category/"+catId+"/title/edit")
-     .done(function(data) {
-       setCategoryHeadingHtml(catId, data);
-       });
-    }
-  |]
-
-{- |
-Finish category heading editing (this happens when you submit the field).
-
-This turns the heading with the editbox back into a simple text heading.
--}
-js_finishCategoryHeadingEditing :: JSFunction a => a
-js_finishCategoryHeadingEditing = makeJSFunction "finishCategoryHeadingEditing" [text|
-  function finishCategoryHeadingEditing(catId, s) {
-    $.post("/edit/category/"+catId+"/title", {title: s})
+    $.get("/category/"+catId+"/title/render-edit")
      .done(function(data) {
        setCategoryHeadingHtml(catId, data);
        });
@@ -352,7 +340,22 @@ This turns the heading with the editbox back into a simple text heading.
 js_cancelCategoryHeadingEditing :: JSFunction a => a
 js_cancelCategoryHeadingEditing = makeJSFunction "cancelCategoryHeadingEditing" [text|
   function cancelCategoryHeadingEditing(catId) {
-    $.get("/edit/category/"+catId+"/title/cancel")
+    $.get("/category/"+catId+"/title/render-normal")
+     .done(function(data) {
+       setCategoryHeadingHtml(catId, data);
+       });
+    }
+  |]
+
+{- |
+Finish category heading editing (this happens when you submit the field).
+
+This turns the heading with the editbox back into a simple text heading.
+-}
+js_finishCategoryHeadingEditing :: JSFunction a => a
+js_finishCategoryHeadingEditing = makeJSFunction "finishCategoryHeadingEditing" [text|
+  function finishCategoryHeadingEditing(catId, s) {
+    $.post("/category/"+catId+"/title/set", {title: s})
      .done(function(data) {
        setCategoryHeadingHtml(catId, data);
        });
@@ -363,7 +366,7 @@ js_cancelCategoryHeadingEditing = makeJSFunction "cancelCategoryHeadingEditing" 
 js_addPros :: JSFunction a => a
 js_addPros = makeJSFunction "addPros" [text|
   function addPros(itemId, s) {
-    $.post("/add/pros/" + itemId, {content: s})
+    $.post("/item/"+itemId+"/pros/add", {content: s})
      .done(function(data) {
        setItemHtml(itemId, data);
        });
@@ -374,7 +377,7 @@ js_addPros = makeJSFunction "addPros" [text|
 js_addCons :: JSFunction a => a
 js_addCons = makeJSFunction "addCons" [text|
   function addCons(itemId, s) {
-    $.post("/add/cons/" + itemId, {content: s})
+    $.post("/item/"+itemId+"/cons/add", {content: s})
      .done(function(data) {
        setItemHtml(itemId, data);
        });
