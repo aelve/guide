@@ -94,30 +94,29 @@ emptyState = S {
   _categories = [] }
 
 sampleState :: S
-sampleState = S {
-  _categories = [
-    Category {
-      _categoryUid = 1,
-      _categoryTitle = "lenses",
-      _categoryItems = [
-        Item {
-          _itemUid = 2,
-          _itemName = "lens",
-          _itemPros = [ProCon 3 "the standard lenses library",
-                       ProCon 4 "batteries included"],
-          _itemCons = [ProCon 5 "huge"],
-          _itemLink = Nothing,
-          _itemKind = HackageLibrary },
-        Item {
-          _itemUid = 6,
-          _itemName = "microlens",
-          _itemPros = [ProCon 7 "very small",
-                       ProCon 8 "good for libraries"],
-          _itemCons = [ProCon 9 "doesn't have advanced features"],
-          _itemLink = Nothing,
-          _itemKind = HackageLibrary }
-      ] }
-  ] }
+sampleState = do
+  let lensItem = Item {
+        _itemUid = 12,
+        _itemName = "lens",
+        _itemPros = [ProCon 121 "the standard lenses library",
+                     ProCon 122 "batteries included"],
+        _itemCons = [ProCon 123 "huge"],
+        _itemLink = Nothing,
+        _itemKind = HackageLibrary }
+  let microlensItem = Item {
+        _itemUid = 13,
+        _itemName = "microlens",
+        _itemPros = [ProCon 131 "very small",
+                     ProCon 132 "good for libraries"],
+        _itemCons = [ProCon 133 "doesn't have advanced features"],
+        _itemLink = Nothing,
+        _itemKind = HackageLibrary }
+  let lensesCategory = Category {
+        _categoryUid = 1,
+        _categoryTitle = "lenses",
+        _categoryItems = [lensItem, microlensItem] }
+
+  S {_categories = [lensesCategory]}
 
 main :: IO ()
 main = runSpock 8080 $ spockT id $ do
