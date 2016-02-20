@@ -37,6 +37,7 @@ import Lucid hiding (for_)
 import Web.Spock hiding (get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
+import Web.PathPieces
 
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
@@ -193,40 +194,26 @@ main = runSpock 8080 $ spockT id $ do
     changedCategory <- withS $ do
       categoryById catId . title .= title'
       use (categoryById catId)
-    lucid $ renderCategoryHeading changedCategory
+    lucid $ renderCategoryHeading Editable changedCategory
 
-  -- Return rendered title of a category.
-  Spock.get ("/category" <//> var <//> "title/render-normal") $ \catId -> do
+  -- Rendered the title of a category.
+  Spock.get ("/category" <//> var <//> "title/render") $ \catId -> do
     category <- withS $ use (categoryById catId)
-    lucid $ renderCategoryHeading category
+    renderMode <- param' "mode"
+    lucid $ renderCategoryHeading renderMode category
 
-  -- Return rendered title of a category the way it should look when the
-  -- category is being edited.
-  Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId -> do
-    category <- withS $ use (categoryById catId)
-    lucid $ renderCategoryHeadingEdit category
-
-  -- Return rendered item the way it should normally look.
-  Spock.get ("/item" <//> var <//> "render-normal") $ \itemId -> do
+  -- Render an item.
+  Spock.get ("/item" <//> var <//> "render") $ \itemId -> do
     item <- withS $ use (itemById itemId)
-    lucid $ renderItem Normal item
-
-  -- Return rendered item the way it should look when it's editable.
-  Spock.get ("/item" <//> var <//> "render-edit") $ \itemId -> do
-    item <- withS $ use (itemById itemId)
-    lucid $ renderItem Editable item
+    renderMode <- param' "mode"
+    lucid $ renderItem renderMode item
 
   -- Return rendered pro/con the way it should normally look.
-  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-normal") $
+  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render") $
     \itemId thingId -> do
        thing <- withS $ use (itemById itemId . proConById thingId)
-       lucid $ renderProCon Editable itemId thing
-
-  -- Return rendered pro/con the way it should look when it's being edited.
-  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-edit") $
-    \itemId thingId -> do
-       thing <- withS $ use (itemById itemId . proConById thingId)
-       lucid $ renderProCon InEdit itemId thing
+       renderMode <- param' "mode"
+       lucid $ renderProCon renderMode itemId thing
 
   -- Change a pro/con.
   Spock.post ("/item" <//> var <//> "pro-con" <//> var <//> "set") $
@@ -250,29 +237,27 @@ renderRoot s = do
   input_ [type_ "text", placeholder_ "new category",
           submitFunc (js_addCategory (categoriesNode, js_this_value))]
 
-renderCategoryHeading :: Category -> HtmlT IO ()
-renderCategoryHeading category =
+renderCategoryHeading :: Editable -> Category -> HtmlT IO ()
+renderCategoryHeading editable category =
   h2_ $ do
     headerNode <- thisNode
-    -- TODO: make category headings anchor links
-    toHtml (category^.title)
-    textButton "edit" $
-      js_startCategoryHeadingEdit (headerNode, category^.uid)
-
-renderCategoryHeadingEdit :: Category -> HtmlT IO ()
-renderCategoryHeadingEdit category =
-  h2_ $ do
-    headerNode <- thisNode
-    let handler = js_submitCategoryHeadingEdit
-                    (headerNode, category^.uid, js_this_value)
-    input_ [type_ "text", value_ (category^.title), submitFunc handler]
-    textButton "cancel" $
-      js_cancelCategoryHeadingEdit (headerNode, category^.uid)
+    case editable of
+      Editable -> do
+        -- TODO: make category headings anchor links
+        toHtml (category^.title)
+        textButton "edit" $
+          js_startCategoryHeadingEdit (headerNode, category^.uid)
+      InEdit -> do
+        let handler = js_submitCategoryHeadingEdit
+                        (headerNode, category^.uid, js_this_value)
+        input_ [type_ "text", value_ (category^.title), submitFunc handler]
+        textButton "cancel" $
+          js_cancelCategoryHeadingEdit (headerNode, category^.uid)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [id_ (tshow (category^.uid))] $ do
-    renderCategoryHeading category
+    renderCategoryHeading Editable category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal) (category^.items)
       thisNode
@@ -433,7 +418,7 @@ This turns the heading into an editbox, and adds a [cancel] link.
 js_startCategoryHeadingEdit :: JSFunction a => a
 js_startCategoryHeadingEdit = makeJSFunction "startCategoryHeadingEdit" [text|
   function startCategoryHeadingEdit(node, catId) {
-    $.get("/category/"+catId+"/title/render-edit")
+    $.get("/category/"+catId+"/title/render", {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
@@ -446,7 +431,7 @@ This turns the heading with the editbox back into a simple text heading.
 js_cancelCategoryHeadingEdit :: JSFunction a => a
 js_cancelCategoryHeadingEdit = makeJSFunction "cancelCategoryHeadingEdit" [text|
   function cancelCategoryHeadingEdit(node, catId) {
-    $.get("/category/"+catId+"/title/render-normal")
+    $.get("/category/"+catId+"/title/render", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -486,7 +471,7 @@ js_addCon = makeJSFunction "addCon" [text|
 js_enableItemEdit :: JSFunction a => a
 js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
   function enableItemEdit (node, itemId) {
-    $.get("/item/"+itemId+"/render-edit")
+    $.get("/item/"+itemId+"/render", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -495,7 +480,7 @@ js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
 js_disableItemEdit :: JSFunction a => a
 js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
   function disableItemEdit (node, itemId) {
-    $.get("/item/"+itemId+"/render-normal")
+    $.get("/item/"+itemId+"/render", {mode: "normal"})
      .done(replaceWithData(node));
     }
   |]
@@ -503,7 +488,7 @@ js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
 js_startProConEdit :: JSFunction a => a
 js_startProConEdit = makeJSFunction "startProConEdit" [text|
   function startProConEdit(node, itemId, thingId) {
-    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-edit")
+    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render", {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
@@ -511,7 +496,7 @@ js_startProConEdit = makeJSFunction "startProConEdit" [text|
 js_cancelProConEdit :: JSFunction a => a
 js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
   function cancelProConEdit(node, itemId, thingId) {
-    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-normal")
+    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -558,3 +543,12 @@ tshow :: Show a => a -> Text
 tshow = T.pack . show
 
 data Editable = Normal | Editable | InEdit
+
+instance PathPiece Editable where
+  fromPathPiece "normal"   = Just Normal
+  fromPathPiece "editable" = Just Editable
+  fromPathPiece "in-edit"  = Just InEdit
+  fromPathPiece _          = Nothing
+  toPathPiece Normal   = "normal"
+  toPathPiece Editable = "editable"
+  toPathPiece InEdit   = "in-edit"

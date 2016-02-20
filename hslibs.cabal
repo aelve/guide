@@ -33,6 +33,7 @@ executable hslibs
                      , microlens-platform >= 0.2.3
                      , mtl
                      , neat-interpolation == 0.3.*
+                     , path-pieces
                      , random >= 1.1
                      , text
                      , text-format
