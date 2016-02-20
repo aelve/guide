@@ -80,24 +80,24 @@ data Category = Category {
 
 makeFields ''Category
 
-data S = S {
+data GlobalState = GlobalState {
   _categories :: [Category] }
 
-makeLenses ''S
+makeLenses ''GlobalState
 
-categoryById :: Uid -> Lens' S Category
+categoryById :: Uid -> Lens' GlobalState Category
 categoryById uid' = singular $
   categories.each . filtered ((== uid') . view uid)
 
-itemById :: Uid -> Lens' S Item
+itemById :: Uid -> Lens' GlobalState Item
 itemById uid' = singular $
   categories.each . items.each . filtered ((== uid') . view uid)
 
-emptyState :: S
-emptyState = S {
+emptyState :: GlobalState
+emptyState = GlobalState {
   _categories = [] }
 
-sampleState :: S
+sampleState :: GlobalState
 sampleState = do
   let lensItem = Item {
         _itemUid = 12,
@@ -121,7 +121,7 @@ sampleState = do
         _categoryDescription = "Lenses are first-class composable accessors.",
         _categoryItems = [lensItem, microlensItem] }
 
-  S {_categories = [lensesCategory]}
+  GlobalState {_categories = [lensesCategory]}
 
 itemVar :: Path '[Uid]
 itemVar = "item" <//> var
@@ -133,8 +133,8 @@ main :: IO ()
 main = runSpock 8080 $ spockT id $ do
   middleware (staticPolicy (addBase "static"))
   stateVar <- liftIO $ newIORef sampleState
-  let withS :: MonadIO m => State S a -> m a
-      withS f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
+  let withGlobal :: MonadIO m => State GlobalState a -> m a
+      withGlobal f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
 
   -- Main page
   Spock.get root $ do
@@ -145,23 +145,23 @@ main = runSpock 8080 $ spockT id $ do
   Spock.subcomponent "render" $ do
     -- Title of a category
     Spock.get (categoryVar <//> "title") $ \catId -> do
-      category <- withS $ use (categoryById catId)
+      category <- withGlobal $ use (categoryById catId)
       renderMode <- param' "mode"
       lucid $ renderCategoryTitle renderMode category
     -- Description of a category
     Spock.get (categoryVar <//> "description") $ \catId -> do
-      category <- withS $ use (categoryById catId)
+      category <- withGlobal $ use (categoryById catId)
       renderMode <- param' "mode"
       lucid $ renderCategoryDescription renderMode category
     -- Item
     Spock.get itemVar $ \itemId -> do
-      item <- withS $ use (itemById itemId)
+      item <- withGlobal $ use (itemById itemId)
       renderMode <- param' "mode"
       lucid $ renderItem renderMode item
     -- Pro/con
     Spock.get (itemVar <//> "pro-con" <//> var) $
       \itemId thingId -> do
-         thing <- withS $ use (itemById itemId . proConById thingId)
+         thing <- withGlobal $ use (itemById itemId . proConById thingId)
          renderMode <- param' "mode"
          lucid $ renderProCon renderMode itemId thing
 
@@ -175,14 +175,14 @@ main = runSpock 8080 $ spockT id $ do
     -- Title of a category
     Spock.post (categoryVar <//> "title") $ \catId -> do
       content' <- param' "content"
-      changedCategory <- withS $ do
+      changedCategory <- withGlobal $ do
         categoryById catId . title .= content'
         use (categoryById catId)
       lucid $ renderCategoryTitle Editable changedCategory
     -- Description of a category
     Spock.post (categoryVar <//> "description") $ \catId -> do
       content' <- param' "content"
-      changedCategory <- withS $ do
+      changedCategory <- withGlobal $ do
         categoryById catId . description .= content'
         use (categoryById catId)
       lucid $ renderCategoryDescription Editable changedCategory
@@ -190,7 +190,7 @@ main = runSpock 8080 $ spockT id $ do
     Spock.post (itemVar <//> "pro-con" <//> var) $
       \itemId thingId -> do
          content' <- param' "content"
-         changedThing <- withS $ do
+         changedThing <- withGlobal $ do
            itemById itemId . proConById thingId . content .= content'
            use (itemById itemId . proConById thingId)
          lucid $ renderProCon Editable itemId changedThing
@@ -206,7 +206,7 @@ main = runSpock 8080 $ spockT id $ do
             _categoryTitle = title',
             _categoryDescription = "<write a description here>",
             _categoryItems = [] }
-      withS $ categories %= (++ [newCategory])
+      withGlobal $ categories %= (++ [newCategory])
       lucid $ renderCategory newCategory
     -- New library in a category
     Spock.post (categoryVar <//> "library") $ \catId -> do
@@ -221,24 +221,24 @@ main = runSpock 8080 $ spockT id $ do
             _itemKind = HackageLibrary }
       -- TODO: maybe do something if the category doesn't exist (e.g. has been
       -- already deleted)
-      withS $ categoryById catId . items %= (++ [newItem])
+      withGlobal $ categoryById catId . items %= (++ [newItem])
       lucid $ renderItem Normal newItem
     -- Pro (argument in favor of a library)
     Spock.post (itemVar <//> "pro") $ \itemId -> do
       content' <- param' "content"
       uid' <- randomUid
       let newThing = ProCon uid' content'
-      withS $ itemById itemId . pros %= (++ [newThing])
+      withGlobal $ itemById itemId . pros %= (++ [newThing])
       lucid $ renderProCon Editable itemId newThing
     -- Con (argument against a library)
     Spock.post (itemVar <//> "con") $ \itemId -> do
       content' <- param' "content"
       uid' <- randomUid
       let newThing = ProCon uid' content'
-      withS $ itemById itemId . cons %= (++ [newThing])
+      withGlobal $ itemById itemId . cons %= (++ [newThing])
       lucid $ renderProCon Editable itemId newThing
 
-renderRoot :: S -> HtmlT IO ()
+renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   includeCSS "/css.css"
