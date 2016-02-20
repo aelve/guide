@@ -152,8 +152,7 @@ main = runSpock 8080 $ spockT id $ do
           _categoryTitle = title',
           _categoryDescription = "<write a description here>",
           _categoryItems = [] }
-    withS $
-      categories %= (++ [newCategory])
+    withS $ categories %= (++ [newCategory])
     lucid $ renderCategory newCategory
 
   -- Create a new library in the specified category, with the library name
@@ -170,8 +169,7 @@ main = runSpock 8080 $ spockT id $ do
           _itemKind = HackageLibrary }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
-    withS $
-      categoryById catId . items %= (++ [newItem])
+    withS $ categoryById catId . items %= (++ [newItem])
     lucid $ renderItem Normal newItem
 
   -- Add a pro (argument in favor of a library).
@@ -179,8 +177,7 @@ main = runSpock 8080 $ spockT id $ do
     content' <- param' "content"
     uid' <- randomUid
     let newThing = ProCon uid' content'
-    withS $ do
-      itemById itemId . pros %= (++ [newThing])
+    withS $ itemById itemId . pros %= (++ [newThing])
     lucid $ renderProCon Editable itemId newThing
 
   -- Add a con (argument against a library).
@@ -188,8 +185,7 @@ main = runSpock 8080 $ spockT id $ do
     content' <- param' "content"
     uid' <- randomUid
     let newThing = ProCon uid' content'
-    withS $ do
-      itemById itemId . cons %= (++ [newThing])
+    withS $ itemById itemId . cons %= (++ [newThing])
     lucid $ renderProCon Editable itemId newThing
 
   -- Set the title of a category (returns rendered title).
