@@ -157,8 +157,17 @@ main = runSpock 8080 $ spockT id $ do
     -- Item
     Spock.get itemVar $ \itemId -> do
       item <- withGlobal $ use (itemById itemId)
+      lucid $ renderItem item
+    -- Item info
+    Spock.get (itemVar <//> "info") $ \itemId -> do
+      item <- withGlobal $ use (itemById itemId)
       renderMode <- param' "mode"
-      lucid $ renderItem renderMode item
+      lucid $ renderItemInfo renderMode item
+    -- Item pros-cons
+    Spock.get (itemVar <//> "pros-cons") $ \itemId -> do
+      item <- withGlobal $ use (itemById itemId)
+      renderMode <- param' "mode"
+      lucid $ renderItemProsCons renderMode item
     -- Pro/con
     Spock.get (itemVar <//> "pro-con" <//> var) $
       \itemId thingId -> do
@@ -223,7 +232,7 @@ main = runSpock 8080 $ spockT id $ do
       -- TODO: maybe do something if the category doesn't exist (e.g. has been
       -- already deleted)
       withGlobal $ categoryById catId . items %= (++ [newItem])
-      lucid $ renderItem Normal newItem
+      lucid $ renderItem newItem
     -- Pro (argument in favor of a library)
     Spock.post (itemVar <//> "pro") $ \itemId -> do
       content' <- param' "content"
@@ -269,6 +278,8 @@ renderCategoryTitle editable category =
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
+-- TODO: render descriptions and pros/cons as Markdown
+
 renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
 renderCategoryDescription editable category =
   p_ $ do
@@ -291,59 +302,71 @@ renderCategory category =
     renderCategoryTitle Editable category
     renderCategoryDescription Editable category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ (renderItem Normal) (category^.items)
+      mapM_ renderItem (category^.items)
       thisNode
     let handler s = js_addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
-renderItem
-  :: Editable         -- ^ Show edit buttons?
-  -> Item
-  -> HtmlT IO ()
-renderItem editable item =
+renderItem :: Item -> HtmlT IO ()
+renderItem item =
   div_ [class_ "item"] $ do
-    itemNode <- thisNode
-    h3_ $ do
-      -- If the library is on Hackage, the title links to its Hackage page;
-      -- otherwise, it doesn't link anywhere. Even if the link field is
-      -- present, it's going to be rendered as “(site)”, not linked in the
-      -- title.
-      case item^.kind of
-        HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
-        _otherwise     -> toHtml (item^.name)
-      case item^.link of
-        Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-        Nothing -> return ()
-      case editable of
-        Normal -> textButton "edit" $
-          js_setItemMode (itemNode, item^.uid, Editable)
-        Editable -> textButton "edit off" $
-          js_setItemMode (itemNode, item^.uid, Normal)
-    div_ [class_ "pros-cons"] $ do
-      div_ [class_ "pros"] $ do
-        p_ "Pros:"
-        case editable of
-          Normal ->
-            ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.pros)
-          Editable -> do
-            listNode <- ul_ $ do
-              mapM_ (renderProCon Editable (item^.uid)) (item^.pros)
-              thisNode
-            let handler s = js_addPro (listNode, item^.uid, s)
-            input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
-      div_ [class_ "cons"] $ do
-        p_ "Cons:"
-        case editable of
-          Normal ->
-            ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.cons)
-          Editable -> do
-            listNode <- ul_ $ do
-              mapM_ (renderProCon Editable (item^.uid)) (item^.cons)
-              thisNode
-            let handler s = js_addCon (listNode, item^.uid, s)
-            input_ [type_ "text", placeholder_ "add con", submitFunc handler]
+    renderItemInfo Normal item
+    renderItemProsCons Normal item
+
+renderItemInfo :: Editable -> Item -> HtmlT IO ()
+renderItemInfo editable item =
+  h3_ $ do
+    this <- thisNode
+    -- If the library is on Hackage, the title links to its Hackage page;
+    -- otherwise, it doesn't link anywhere. Even if the link field is
+    -- present, it's going to be rendered as “(site)”, not linked in the
+    -- title.
+    case item^.kind of
+      HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
+      _otherwise     -> toHtml (item^.name)
+    case item^.link of
+      Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+      Nothing -> return ()
+    case editable of
+      Normal -> textButton "edit" $
+        js_setItemInfoMode (this, item^.uid, Editable)
+      -- TODO: change to an actual button, “Submit”, etc.
+      Editable -> textButton "edit off" $
+        js_setItemInfoMode (this, item^.uid, Normal)
   where
     hackageLink = "https://hackage.haskell.org/package/" <> item^.name
+
+renderItemProsCons :: Editable -> Item -> HtmlT IO ()
+renderItemProsCons editable item =
+  div_ [class_ "pros-cons"] $ do
+    this <- thisNode
+    case editable of
+      Normal -> textButton "edit" $
+        js_setItemProsConsMode (this, item^.uid, Editable)
+      Editable -> textButton "edit off" $
+        js_setItemProsConsMode (this, item^.uid, Normal)
+    div_ [class_ "pros"] $ do
+      p_ "Pros:"
+      case editable of
+        Normal ->
+          ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.pros)
+        Editable -> do
+          listNode <- ul_ $ do
+            mapM_ (renderProCon Editable (item^.uid)) (item^.pros)
+            thisNode
+          let handler s = js_addPro (listNode, item^.uid, s)
+          input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
+    div_ [class_ "cons"] $ do
+      p_ "Cons:"
+      case editable of
+        Normal ->
+          ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.cons)
+        Editable -> do
+          listNode <- ul_ $ do
+            mapM_ (renderProCon Editable (item^.uid)) (item^.cons)
+            thisNode
+          let handler s = js_addCon (listNode, item^.uid, s)
+          input_ [type_ "text", placeholder_ "add con", submitFunc handler]
 
 renderProCon :: Editable -> Uid -> ProCon -> HtmlT IO ()
 renderProCon Normal _ proCon = li_ (toHtml (proCon^.content))
@@ -400,6 +423,8 @@ instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _ = \args ->
     fName <> "(" <> T.intercalate "," (jsParams args) <> ");"
 
+-- TODO: rename pros/cons to traits
+
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   -- Utilities
@@ -408,9 +433,8 @@ allJSFunctions = [
   js_addLibrary, js_addCategory,
   js_addPro, js_addCon,
   -- Render-as-editable methods
-  js_setCategoryTitleMode,
-  js_setCategoryDescriptionMode,
-  js_setItemMode,
+  js_setCategoryTitleMode, js_setCategoryDescriptionMode,
+  js_setItemInfoMode, js_setItemProsConsMode,
   js_setProConMode,
   -- Set methods
   js_submitCategoryTitleEdit,
@@ -507,11 +531,18 @@ js_addCon = makeJSFunction "addCon" [text|
     }
   |]
 
--- | Add “[edit]” buttons to everything in an item, or remove them.
-js_setItemMode :: JSFunction a => a
-js_setItemMode = makeJSFunction "setItemMode" [text|
-  function setItemMode(node, itemId, mode) {
-    $.get("/render/item/"+itemId, {mode: mode})
+js_setItemInfoMode :: JSFunction a => a
+js_setItemInfoMode = makeJSFunction "setItemInfoMode" [text|
+  function setItemInfoMode(node, itemId, mode) {
+    $.get("/render/item/"+itemId+"/info", {mode: mode})
+     .done(replaceWithData(node));
+    }
+  |]
+
+js_setItemProsConsMode :: JSFunction a => a
+js_setItemProsConsMode = makeJSFunction "setItemProsConsMode" [text|
+  function setItemProsConsMode(node, itemId, mode) {
+    $.get("/render/item/"+itemId+"/pros-cons", {mode: mode})
      .done(replaceWithData(node));
     }
   |]
