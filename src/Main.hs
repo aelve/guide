@@ -113,7 +113,7 @@ sampleState = do
         _itemPros = [ProCon 131 "very small",
                      ProCon 132 "good for libraries"],
         _itemCons = [ProCon 133 "doesn't have advanced features"],
-        _itemLink = Nothing,
+        _itemLink = Just "https://github.com/aelve/microlens",
         _itemKind = HackageLibrary }
   let lensesCategory = Category {
         _categoryUid = 1,
@@ -295,8 +295,6 @@ renderCategory category =
     let handler s = js_addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
--- TODO: when the link for a HackageLibrary isn't empty, show it separately
--- (as “site”), don't replace the Hackage link
 renderItem
   :: Editable         -- ^ Show edit buttons?
   -> Item
@@ -305,7 +303,16 @@ renderItem editable item =
   div_ [class_ "item", id_ (tshow (item^.uid))] $ do
     itemNode <- thisNode
     h3_ $ do
-      itemHeader
+      -- If the library is on Hackage, the title links to its Hackage page;
+      -- otherwise, it doesn't link anywhere. Even if the link field is
+      -- present, it's going to be rendered as “(site)”, not linked in the
+      -- title.
+      case item^.kind of
+        HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
+        _otherwise     -> toHtml (item^.name)
+      case item^.link of
+        Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+        Nothing -> return ()
       case editable of
         Normal -> textButton "edit" $
           js_enableItemEdit (itemNode, item^.uid)
@@ -335,14 +342,7 @@ renderItem editable item =
             let handler s = js_addCon (listNode, item^.uid, s)
             input_ [type_ "text", placeholder_ "add con", submitFunc handler]
   where
-    hackageLink = format "https://hackage.haskell.org/package/{}"
-                         [item^.name]
-    itemHeader = case (item^.link, item^.kind) of
-      (Just l, _) ->
-        a_ [href_ l] (toHtml (item^.name))
-      (Nothing, HackageLibrary) ->
-        a_ [href_ hackageLink] (toHtml (item^.name))
-      _otherwise -> toHtml (item^.name)
+    hackageLink = "https://hackage.haskell.org/package/" <> item^.name
 
 renderProCon :: Editable -> Uid -> ProCon -> HtmlT IO ()
 renderProCon Normal _ proCon = li_ (toHtml (proCon^.content))
