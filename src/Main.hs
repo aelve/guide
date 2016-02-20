@@ -198,11 +198,11 @@ main = runSpock 8080 $ spockT id $ do
   Spock.subcomponent "add" $ do
     -- New category
     Spock.post "category" $ do
-      title' <- param' "content"
+      content' <- param' "content"
       uid' <- randomUid
       let newCategory = Category {
             _categoryUid = uid',
-            _categoryTitle = title',
+            _categoryTitle = content',
             _categoryDescription = "<write a description here>",
             _categoryItems = [] }
       withGlobal $ categories %= (++ [newCategory])
@@ -431,7 +431,7 @@ js_appendData = makeJSFunction "appendData" [text|
 js_addCategory :: JSFunction a => a
 js_addCategory = makeJSFunction "addCategory" [text|
   function addCategory(node, s) {
-    $.post("/add/category", {title: s})
+    $.post("/add/category", {content: s})
      .done(appendData(node));
     }
   |]
@@ -594,3 +594,5 @@ instance (LiftJS a, LiftJS b, LiftJS c) => JSParams (a,b,c) where
   jsParams (a,b,c) = [liftJS a, liftJS b, liftJS c]
 instance (LiftJS a, LiftJS b, LiftJS c, LiftJS d) => JSParams (a,b,c,d) where
   jsParams (a,b,c,d) = [liftJS a, liftJS b, liftJS c, liftJS d]
+
+-- TODO: why not compare Haskellers too?
