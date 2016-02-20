@@ -172,19 +172,19 @@ main = runSpock 8080 $ spockT id $ do
   Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
     content <- param' "content"
     uid <- randomUID
-    changedItem <- withS $ do
-      itemById itemId' . pros %= (++ [ProCon uid content])
-      use (itemById itemId')
-    lucid $ renderItem Editable changedItem
+    let newThing = ProCon uid content
+    withS $ do
+      itemById itemId' . pros %= (++ [newThing])
+    lucid $ renderProCon Editable itemId' newThing
 
   -- Add a con (argument against a library).
   Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
     content <- param' "content"
     uid <- randomUID
-    changedItem <- withS $ do
-      itemById itemId' . cons %= (++ [ProCon uid content])
-      use (itemById itemId')
-    lucid $ renderItem Editable changedItem
+    let newThing = ProCon uid content
+    withS $ do
+      itemById itemId' . cons %= (++ [newThing])
+    lucid $ renderProCon Editable itemId' newThing
 
   -- Set the title of a category (returns rendered new title).
   Spock.post ("/category" <//> var <//> "title/set") $ \catId' -> do
@@ -301,8 +301,10 @@ renderItem editable item =
           Normal ->
             ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.pros)
           Editable -> do
-            ul_ $ mapM_ (renderProCon Editable (item^.itemId)) (item^.pros)
-            let handler = js_addPros (itemNode, item^.itemId, js_this_value)
+            listNode <- ul_ $ do
+              mapM_ (renderProCon Editable (item^.itemId)) (item^.pros)
+              thisNode
+            let handler = js_addPros (listNode, item^.itemId, js_this_value)
             input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
@@ -310,8 +312,10 @@ renderItem editable item =
           Normal ->
             ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.cons)
           Editable -> do
-            ul_ $ mapM_ (renderProCon Editable (item^.itemId)) (item^.cons)
-            let handler = js_addCons (itemNode, item^.itemId, js_this_value)
+            listNode <- ul_ $ do
+              mapM_ (renderProCon Editable (item^.itemId)) (item^.cons)
+              thisNode
+            let handler = js_addCons (listNode, item^.itemId, js_this_value)
             input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -462,8 +466,7 @@ js_addPros = makeJSFunction "addPros" [text|
   function addPros(node, itemId, s) {
     $.post("/item/"+itemId+"/pros/add", {content: s})
      .done(function(data) {
-       // update the whole item container
-       $(node).replaceWith(data);
+       $(node).append(data);
        });
     }
   |]
@@ -474,8 +477,7 @@ js_addCons = makeJSFunction "addCons" [text|
   function addCons(node, itemId, s) {
     $.post("/item/"+itemId+"/cons/add", {content: s})
      .done(function(data) {
-       // update the whole item container
-       $(node).replaceWith(data);
+       $(node).append(data);
        });
     }
   |]
