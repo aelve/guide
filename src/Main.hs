@@ -4,6 +4,7 @@ TemplateHaskell,
 RecordWildCards,
 RankNTypes,
 FlexibleInstances,
+FlexibleContexts,
 QuasiQuotes,
 ScopedTypeVariables,
 MultiParamTypeClasses,
@@ -242,17 +243,17 @@ main = runSpock 8080 $ spockT id $ do
        lucid $ renderProCon Editable itemId changedThing
 
 renderRoot :: S -> HtmlT IO ()
-renderRoot s = do
+renderRoot globalState = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   includeCSS "/css.css"
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ $ T.unlines (map snd (allJSFunctions :: [(Text, Text)]))
   categoriesNode <- div_ [id_ "categories"] $ do
-    mapM_ renderCategory (s ^. categories)
+    mapM_ renderCategory (globalState ^. categories)
     thisNode
-  input_ [type_ "text", placeholder_ "new category",
-          submitFunc (js_addCategory (categoriesNode, js_this_value))]
+  let handler s = js_addCategory (categoriesNode, s)
+  input_ [type_ "text", placeholder_ "new category", submitFunc handler]
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =
@@ -265,8 +266,8 @@ renderCategoryTitle editable category =
         textButton "edit" $
           js_startCategoryTitleEdit (titleNode, category^.uid)
       InEdit -> do
-        let handler = js_submitCategoryTitleEdit
-                        (titleNode, category^.uid, js_this_value)
+        let handler s = js_submitCategoryTitleEdit
+                          (titleNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.title), submitFunc handler]
         textButton "cancel" $
           js_cancelCategoryTitleEdit (titleNode, category^.uid)
@@ -281,8 +282,8 @@ renderCategoryDescription editable category =
         textButton "edit" $
           js_startCategoryDescriptionEdit (descrNode, category^.uid)
       InEdit -> do
-        let handler = js_submitCategoryDescriptionEdit
-                        (descrNode, category^.uid, js_this_value)
+        let handler s = js_submitCategoryDescriptionEdit
+                         (descrNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.description), submitFunc handler]
         textButton "cancel" $
           js_cancelCategoryDescriptionEdit (descrNode, category^.uid)
@@ -295,7 +296,7 @@ renderCategory category =
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal) (category^.items)
       thisNode
-    let handler = js_addLibrary (itemsNode, category^.uid, js_this_value)
+    let handler s = js_addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
@@ -324,7 +325,7 @@ renderItem editable item =
             listNode <- ul_ $ do
               mapM_ (renderProCon Editable (item^.uid)) (item^.pros)
               thisNode
-            let handler = js_addPro (listNode, item^.uid, js_this_value)
+            let handler s = js_addPro (listNode, item^.uid, s)
             input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
@@ -335,7 +336,7 @@ renderItem editable item =
             listNode <- ul_ $ do
               mapM_ (renderProCon Editable (item^.uid)) (item^.cons)
               thisNode
-            let handler = js_addCon (listNode, item^.uid, js_this_value)
+            let handler s = js_addCon (listNode, item^.uid, s)
             input_ [type_ "text", placeholder_ "add con", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -356,8 +357,8 @@ renderProCon Editable itemId proCon = li_ $ do
     js_startProConEdit (this, itemId, proCon^.uid)
 renderProCon InEdit itemId thing = li_ $ do
   this <- thisNode
-  let handler = js_submitProConEdit
-                  (this, itemId, thing^.uid, js_this_value)
+  let handler s = js_submitProConEdit
+                    (this, itemId, thing^.uid, s)
   input_ [type_ "text", value_ (thing^.content), submitFunc handler]
   textButton "cancel" $
     js_cancelProConEdit (this, itemId, thing^.uid)
@@ -370,17 +371,15 @@ includeJS url = with (script_ "") [src_ url]
 includeCSS :: Monad m => Text -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
-submitFunc :: JS -> Attribute
+-- The function is passed a JS expression that refers to text being submitted.
+submitFunc :: (JS -> JS) -> Attribute
 submitFunc f = onkeyup_ $ format
   "if (event.keyCode == 13) {\
   \  {}\
   \  this.value = ''; }"
-  [f]
+  [f "this.value"]
 
 -- Javascript
-
-js_this_value :: JS
-js_this_value = "this.value"
 
 -- TODO: try to make them more type-safe somehow?
 
