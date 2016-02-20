@@ -44,17 +44,28 @@ type UID = Int
 randomUID :: MonadIO m => m UID
 randomUID = liftIO $ randomRIO (0, 10^(9::Int))
 
+data ProCon = ProCon {
+  _proConId :: UID,
+  _proConText :: Text }
+
+makeLenses ''ProCon
+
 data ItemKind = HackageLibrary | Library | Unknown
 
 data Item = Item {
   _itemId :: UID,
   _name   :: Text,
-  _pros   :: [Text],
-  _cons   :: [Text],
+  _pros   :: [ProCon],
+  _cons   :: [ProCon],
   _link   :: Maybe Text,
   _kind   :: ItemKind }
 
 makeLenses ''Item
+
+proConById :: UID -> Lens' Item ProCon
+proConById uid = singular $
+  (pros.each . filtered ((== uid) . view proConId)) `failing`
+  (cons.each . filtered ((== uid) . view proConId))
 
 data Category = Category {
   _catId :: UID,
@@ -90,15 +101,17 @@ sampleState = S {
         Item {
           _itemId = 2,
           _name   = "lens",
-          _pros   = ["the standard lenses library", "batteries included"],
-          _cons   = ["huge"],
+          _pros   = [ProCon 3 "the standard lenses library",
+                     ProCon 4 "batteries included"],
+          _cons   = [ProCon 5 "huge"],
           _link   = Nothing,
           _kind   = HackageLibrary },
         Item {
-          _itemId = 3,
+          _itemId = 6,
           _name   = "microlens",
-          _pros   = ["very small", "good for libraries"],
-          _cons   = ["doesn't have advanced features"],
+          _pros   = [ProCon 7 "very small",
+                     ProCon 8 "good for libraries"],
+          _cons   = [ProCon 9 "doesn't have advanced features"],
           _link   = Nothing,
           _kind   = HackageLibrary }
       ] }
@@ -153,21 +166,23 @@ main = runSpock 8080 $ spockT id $ do
     -- already deleted)
     withS $
       categoryById catId' . items %= (++ [newItem])
-    lucid $ renderItem NonEditable newItem
+    lucid $ renderItem Normal newItem
 
   -- Add a pro (argument in favor of a library).
   Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
-    content <- param' "content"    
+    content <- param' "content"
+    uid <- randomUID
     changedItem <- withS $ do
-      itemById itemId' . pros %= (++ [content])
+      itemById itemId' . pros %= (++ [ProCon uid content])
       use (itemById itemId')
     lucid $ renderItem Editable changedItem
 
   -- Add a con (argument against a library).
   Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
-    content <- param' "content"    
+    content <- param' "content"
+    uid <- randomUID
     changedItem <- withS $ do
-      itemById itemId' . cons %= (++ [content])
+      itemById itemId' . cons %= (++ [ProCon uid content])
       use (itemById itemId')
     lucid $ renderItem Editable changedItem
 
@@ -193,12 +208,33 @@ main = runSpock 8080 $ spockT id $ do
   -- Return rendered item the way it should normally look.
   Spock.get ("/item" <//> var <//> "render-normal") $ \itemId' -> do
     item <- withS $ use (itemById itemId')
-    lucid $ renderItem NonEditable item
+    lucid $ renderItem Normal item
 
-  -- Return rendered item the way it should look when it's being edited.
+  -- Return rendered item the way it should look when it's editable.
   Spock.get ("/item" <//> var <//> "render-edit") $ \itemId' -> do
     item <- withS $ use (itemById itemId')
     lucid $ renderItem Editable item
+
+  -- Return rendered pro/con the way it should normally look.
+  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-normal") $
+    \itemId' proConId' -> do
+       thing <- withS $ use (itemById itemId' . proConById proConId')
+       lucid $ renderProCon Editable itemId' thing
+
+  -- Return rendered pro/con the way it should look when it's being edited.
+  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-edit") $
+    \itemId' proConId' -> do
+       thing <- withS $ use (itemById itemId' . proConById proConId')
+       lucid $ renderProCon InEdit itemId' thing
+
+  -- Change a pro/con.
+  Spock.post ("/item" <//> var <//> "pro-con" <//> var <//> "set") $
+    \itemId' proConId' -> do
+       content <- param' "content"
+       changedThing <- withS $ do
+         itemById itemId' . proConById proConId' . proConText .= content
+         use (itemById itemId' . proConById proConId')
+       lucid $ renderProCon Editable itemId' changedThing
 
 renderRoot :: S -> HtmlT IO ()
 renderRoot s = do
@@ -237,7 +273,7 @@ renderCategory category =
   div_ [id_ (tshow (category^.catId))] $ do
     renderCategoryHeading category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ (renderItem NonEditable) (category^.items)
+      mapM_ (renderItem Normal) (category^.items)
       thisNode
     let handler = js_addLibrary (itemsNode, category^.catId, js_this_value)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
@@ -254,25 +290,27 @@ renderItem editable item =
     h3_ $ do
       itemHeader
       case editable of
-        NonEditable -> textButton "edit" $
+        Normal -> textButton "edit" $
           js_enableItemEdit (itemNode, item^.itemId)
         Editable -> textButton "edit off" $
           js_disableItemEdit (itemNode, item^.itemId)
     div_ [class_ "pros-cons"] $ do
       div_ [class_ "pros"] $ do
         p_ "Pros:"
-        ul_ $ mapM_ (li_ . toHtml) (item^.pros)
         case editable of
-          NonEditable -> return ()
+          Normal ->
+            ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.pros)
           Editable -> do
+            ul_ $ mapM_ (renderProCon Editable (item^.itemId)) (item^.pros)
             let handler = js_addPros (itemNode, item^.itemId, js_this_value)
             input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
-        ul_ $ mapM_ (li_ . toHtml) (item^.cons)
         case editable of
-          NonEditable -> return ()
+          Normal ->
+            ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.cons)
           Editable -> do
+            ul_ $ mapM_ (renderProCon Editable (item^.itemId)) (item^.cons)
             let handler = js_addCons (itemNode, item^.itemId, js_this_value)
             input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
   where
@@ -284,6 +322,21 @@ renderItem editable item =
       (Nothing, HackageLibrary) ->
         a_ [href_ hackageLink] (toHtml (item^.name))
       _otherwise -> toHtml (item^.name)
+
+renderProCon :: Editable -> UID -> ProCon -> HtmlT IO ()
+renderProCon Normal _ thing = li_ (toHtml (thing^.proConText))
+renderProCon Editable itemId' thing = li_ $ do
+  this <- thisNode
+  toHtml (thing^.proConText)
+  textButton "edit" $
+    js_startProConEdit (this, itemId', thing^.proConId)
+renderProCon InEdit itemId' thing = li_ $ do
+  this <- thisNode
+  let handler = js_submitProConEdit
+                  (this, itemId', thing^.proConId, js_this_value)
+  input_ [type_ "text", value_ (thing^.proConText), submitFunc handler]
+  textButton "cancel" $
+    js_cancelProConEdit (this, itemId', thing^.proConId)
 
 -- Utils
 
@@ -333,7 +386,8 @@ allJSFunctions = [
   js_addLibrary, js_addCategory,
   js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
   js_addPros, js_addCons,
-  js_enableItemEdit, js_disableItemEdit ]
+  js_enableItemEdit, js_disableItemEdit,
+  js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
 
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
@@ -448,6 +502,36 @@ js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
     }
   |]
 
+js_startProConEdit :: JSFunction a => a
+js_startProConEdit = makeJSFunction "startProConEdit" [text|
+  function startProConEdit(node, itemId, thingId) {
+    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-edit")
+     .done(function(data) {
+       $(node).replaceWith(data);
+       });
+    }
+  |]
+
+js_cancelProConEdit :: JSFunction a => a
+js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
+  function cancelProConEdit(node, itemId, thingId) {
+    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-normal")
+     .done(function(data) {
+       $(node).replaceWith(data);
+       });
+    }
+  |]
+
+js_submitProConEdit :: JSFunction a => a
+js_submitProConEdit = makeJSFunction "submitProConEdit" [text|
+  function submitProConEdit(node, itemId, thingId, s) {
+    $.post("/item/"+itemId+"/pro-con/"+thingId+"/set", {content: s})
+     .done(function(data) {
+       $(node).replaceWith(data);
+       });
+    }
+  |]
+
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
 type JS = Text
@@ -481,4 +565,4 @@ format f ps = TL.toStrict (Format.format f ps)
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
-data Editable = Editable | NonEditable
+data Editable = Normal | Editable | InEdit
