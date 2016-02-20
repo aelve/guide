@@ -244,7 +244,7 @@ renderRoot globalState = do
   includeCSS "/css.css"
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
-  script_ $ T.unlines (map snd (allJSFunctions :: [(Text, Text)]))
+  script_ $ T.unlines (map snd (allJSFunctions :: [(Text, JS)]))
   categoriesNode <- div_ [id_ "categories"] $ do
     mapM_ renderCategory (globalState ^. categories)
     thisNode
@@ -279,7 +279,7 @@ renderCategoryDescription editable category =
           js_startCategoryDescriptionEdit (descrNode, category^.uid)
       InEdit -> do
         let handler s = js_submitCategoryDescriptionEdit
-                         (descrNode, category^.uid, s)
+                          (descrNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.description), submitFunc handler]
         textButton "cancel" $
           js_cancelCategoryDescriptionEdit (descrNode, category^.uid)
