@@ -457,23 +457,27 @@ onFormSubmit f = onsubmit_ $ format "{} return false;" [f "this"]
 
 class JSFunction a where
   makeJSFunction
-    :: Text          -- Name
-    -> JS            -- Definition
+    :: Text          -- ^ Name
+    -> [Text]        -- ^ Parameter names
+    -> JS            -- ^ Definition
     -> a
 
 -- This generates function name
 instance JSFunction Text where
-  makeJSFunction fName _ = fName
+  makeJSFunction fName _fParams _fDef = fName
 
--- This generates function definition and direct dependencies
+-- This generates function name and definition
 instance JSFunction (Text, JS) where
-  makeJSFunction fName fDef = (fName, fDef)
+  makeJSFunction fName fParams fDef = (fName, fullDef)
+    where
+      fullDef = format "function {}({}) {\n{}}\n"
+                       (fName, T.intercalate "," fParams, fDef)
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
 instance JSParams a => JSFunction (a -> JS) where
-  makeJSFunction fName _ = \args ->
-    fName <> "(" <> T.intercalate "," (jsParams args) <> ");"
+  makeJSFunction fName _fParams _fDef = \args ->
+    format "{}({});" (fName, T.intercalate "," (jsParams args))
 
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
@@ -495,67 +499,69 @@ allJSFunctions = [
   js_moveTraitUp, js_moveTraitDown ]
 
 js_replaceWithData :: JSFunction a => a
-js_replaceWithData = makeJSFunction "replaceWithData" [text|
-  function replaceWithData(node) {
-    return function(data) {$(node).replaceWith(data); }; }
+js_replaceWithData =
+  makeJSFunction "replaceWithData" ["node"]
+  [text|
+    return function(data) {$(node).replaceWith(data);};
   |]
 
 js_appendData :: JSFunction a => a
-js_appendData = makeJSFunction "appendData" [text|
-  function appendData(node) {
-    return function(data) {$(node).append(data); }; }
+js_appendData =
+  makeJSFunction "appendData" ["node"]
+  [text|
+    return function(data) {$(node).append(data);};
   |]
 
 -- | Move node up (in a list of sibling nodes), ignoring anchor elements
 -- inserted by 'thisNode'.
 js_moveNodeUp :: JSFunction a => a
-js_moveNodeUp = makeJSFunction "moveNodeUp" [text|
-  function moveNodeUp(node) {
+js_moveNodeUp =
+  makeJSFunction "moveNodeUp" ["node"]
+  [text|
     var el = $(node);
     while (el.prev().is(".dummy"))
       el.prev().before(el);
     if (el.not(':first-child'))
       el.prev().before(el);
-    }
   |]
 
 -- | Move node down (in a list of sibling nodes), ignoring anchor elements
 -- inserted by 'thisNode'.
 js_moveNodeDown :: JSFunction a => a
-js_moveNodeDown = makeJSFunction "moveNodeDown" [text|
-  function moveNodeDown(node) {
+js_moveNodeDown =
+  makeJSFunction "moveNodeDown" ["node"]
+  [text|
     var el = $(node);
     while (el.next().is(".dummy"))
       el.next().after(el);
     if (el.not(':last-child'))
       el.next().after(el);
-    }
   |]
 
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
-js_addCategory = makeJSFunction "addCategory" [text|
-  function addCategory(node, s) {
+js_addCategory =
+  makeJSFunction "addCategory" ["node", "s"]
+  [text|
     $.post("/add/category", {content: s})
      .done(appendData(node));
-    }
   |]
 
 -- | Add a new library to some category.
 js_addLibrary :: JSFunction a => a
-js_addLibrary = makeJSFunction "addLibrary" [text|
-  function addLibrary(node, catId, s) {
+js_addLibrary =
+  makeJSFunction "addLibrary" ["node", "catId", "s"]
+  [text|
     $.post("/add/category/"+catId+"/library", {name: s})
      .done(appendData(node));
-    }
   |]
 
 js_setCategoryTitleMode :: JSFunction a => a
-js_setCategoryTitleMode = makeJSFunction "setCategoryTitleMode" [text|
-  function setCategoryTitleMode(node, catId, mode) {
+js_setCategoryTitleMode =
+  makeJSFunction "setCategoryTitleMode" ["node", "catId", "mode"]
+  [text|
     $.get("/render/category/"+catId+"/title", {mode: mode})
      .done(replaceWithData(node));
-    }
   |]
 
 {- |
@@ -564,101 +570,101 @@ Finish category title editing (this happens when you submit the field).
 This turns the title with the editbox back into a simple text title.
 -}
 js_submitCategoryTitle :: JSFunction a => a
-js_submitCategoryTitle = makeJSFunction "submitCategoryTitle" [text|
-  function submitCategoryTitle(node, catId, s) {
+js_submitCategoryTitle =
+  makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
+  [text|
     $.post("/set/category/"+catId+"/title", {content: s})
      .done(replaceWithData(node));
-    }
   |]
 
 js_setCategoryDescriptionMode :: JSFunction a => a
-js_setCategoryDescriptionMode = makeJSFunction "setCategoryDescriptionMode" [text|
-  function setCategoryDescriptionMode(node, catId, mode) {
+js_setCategoryDescriptionMode =
+  makeJSFunction "setCategoryDescriptionMode" ["node", "catId", "mode"]
+  [text|
     $.get("/render/category/"+catId+"/description", {mode: mode})
      .done(replaceWithData(node));
-    }
   |]
 
 js_submitCategoryDescription :: JSFunction a => a
-js_submitCategoryDescription = makeJSFunction "submitCategoryDescription" [text|
-  function submitCategoryDescription(node, catId, s) {
+js_submitCategoryDescription =
+  makeJSFunction "submitCategoryDescription" ["node", "catId", "s"]
+  [text|
     $.post("/set/category/"+catId+"/description", {content: s})
      .done(replaceWithData(node));
-    }
   |]
 
 -- | Add a pro to some item.
 js_addPro :: JSFunction a => a
-js_addPro = makeJSFunction "addPro" [text|
-  function addPro(node, itemId, s) {
+js_addPro =
+  makeJSFunction "addPro" ["node", "itemId", "s"]
+  [text|
     $.post("/add/item/"+itemId+"/pro", {content: s})
      .done(appendData(node));
-    }
   |]
 
 -- | Add a con to some item.
 js_addCon :: JSFunction a => a
-js_addCon = makeJSFunction "addCon" [text|
-  function addCon(node, itemId, s) {
+js_addCon =
+  makeJSFunction "addCon" ["node", "itemId", "s"]
+  [text|
     $.post("/add/item/"+itemId+"/con", {content: s})
      .done(appendData(node));
-    }
   |]
 
 js_setItemInfoMode :: JSFunction a => a
-js_setItemInfoMode = makeJSFunction "setItemInfoMode" [text|
-  function setItemInfoMode(node, itemId, mode) {
+js_setItemInfoMode =
+  makeJSFunction "setItemInfoMode" ["node", "itemId", "mode"]
+  [text|
     $.get("/render/item/"+itemId+"/info", {mode: mode})
      .done(replaceWithData(node));
-    }
   |]
 
 js_setItemTraitsMode :: JSFunction a => a
-js_setItemTraitsMode = makeJSFunction "setItemTraitsMode" [text|
-  function setItemTraitsMode(node, itemId, mode) {
+js_setItemTraitsMode =
+  makeJSFunction "setItemTraitsMode" ["node", "itemId", "mode"]
+  [text|
     $.get("/render/item/"+itemId+"/traits", {mode: mode})
      .done(replaceWithData(node));
-    }
   |]
 
 js_setTraitMode :: JSFunction a => a
-js_setTraitMode = makeJSFunction "setTraitMode" [text|
-  function setTraitMode(node, itemId, traitId, mode) {
+js_setTraitMode =
+  makeJSFunction "setTraitMode" ["node", "itemId", "traitId", "mode"]
+  [text|
     $.get("/render/item/"+itemId+"/trait/"+traitId, {mode: mode})
      .done(replaceWithData(node));
-    }
   |]
 
 js_submitTrait :: JSFunction a => a
-js_submitTrait = makeJSFunction "submitTrait" [text|
-  function submitTrait(node, itemId, traitId, s) {
+js_submitTrait =
+  makeJSFunction "submitTrait" ["node", "itemId", "traitId", "s"]
+  [text|
     $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
      .done(replaceWithData(node));
-    }
   |]
 
 js_submitItemInfo :: JSFunction a => a
-js_submitItemInfo = makeJSFunction "submitItemInfo" [text|
-  function submitItemInfo(node, itemId, form) {
+js_submitItemInfo =
+  makeJSFunction "submitItemInfo" ["node", "itemId", "form"]
+  [text|
     $.post("/set/item/"+itemId+"/info", $(form).serialize())
      .done(replaceWithData(node));
-    }
   |]
 
 js_moveTraitUp :: JSFunction a => a
-js_moveTraitUp = makeJSFunction "moveTraitUp" [text|
-  function moveTraitUp(itemId, traitId, traitNode) {
+js_moveTraitUp =
+  makeJSFunction "moveTraitUp" ["itemId", "traitId", "traitNode"]
+  [text|
     $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
     moveNodeUp(traitNode);
-    }
   |]
 
 js_moveTraitDown :: JSFunction a => a
-js_moveTraitDown = makeJSFunction "moveTraitDown" [text|
-  function moveTraitDown(itemId, traitId, traitNode) {
+js_moveTraitDown =
+  makeJSFunction "moveTraitDown" ["itemId", "traitId", "traitNode"]
+  [text|
     $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
     moveNodeDown(traitNode);
-    }
   |]
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
