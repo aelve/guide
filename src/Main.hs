@@ -290,8 +290,7 @@ renderCategoryTitle editable category =
         textButton "edit" $
           js_setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
-        let handler s = js_submitCategoryTitleEdit
-                          (titleNode, category^.uid, s)
+        let handler s = js_submitCategoryTitle (titleNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.title), onInputSubmit handler]
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
@@ -308,7 +307,7 @@ renderCategoryDescription editable category =
         textButton "edit" $
           js_setCategoryDescriptionMode (descrNode, category^.uid, InEdit)
       InEdit -> do
-        let handler s = js_submitCategoryDescriptionEdit
+        let handler s = js_submitCategoryDescription
                           (descrNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.description), onInputSubmit handler]
         textButton "cancel" $
@@ -354,7 +353,7 @@ renderItemInfo editable item =
           js_setItemInfoMode (this, item^.uid, Editable)
       -- TODO: this should actually be InEdit
       Editable -> do
-        let handler s = js_submitItemInfoEdit (this, item^.uid, s)
+        let handler s = js_submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
           label_ $ do
             "Package name: "
@@ -414,8 +413,7 @@ renderTrait Editable itemId trait = li_ $ do
     js_setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
-  let handler s = js_submitTraitEdit
-                    (this, itemId, trait^.uid, s)
+  let handler s = js_submitTrait (this, itemId, trait^.uid, s)
   input_ [type_ "text", value_ (trait^.content), onInputSubmit handler]
   textButton "cancel" $
     js_setTraitMode (this, itemId, trait^.uid, Editable)
@@ -475,9 +473,9 @@ allJSFunctions = [
   js_setItemInfoMode, js_setItemTraitsMode,
   js_setTraitMode,
   -- Set methods
-  js_submitCategoryTitleEdit, js_submitCategoryDescriptionEdit,
-  js_submitTraitEdit,
-  js_submitItemInfoEdit ]
+  js_submitCategoryTitle, js_submitCategoryDescription,
+  js_submitTrait,
+  js_submitItemInfo ]
 
 js_replaceWithData :: JSFunction a => a
 js_replaceWithData = makeJSFunction "replaceWithData" [text|
@@ -522,9 +520,9 @@ Finish category title editing (this happens when you submit the field).
 
 This turns the title with the editbox back into a simple text title.
 -}
-js_submitCategoryTitleEdit :: JSFunction a => a
-js_submitCategoryTitleEdit = makeJSFunction "submitCategoryTitleEdit" [text|
-  function submitCategoryTitleEdit(node, catId, s) {
+js_submitCategoryTitle :: JSFunction a => a
+js_submitCategoryTitle = makeJSFunction "submitCategoryTitle" [text|
+  function submitCategoryTitle(node, catId, s) {
     $.post("/set/category/"+catId+"/title", {content: s})
      .done(replaceWithData(node));
     }
@@ -538,9 +536,9 @@ js_setCategoryDescriptionMode = makeJSFunction "setCategoryDescriptionMode" [tex
     }
   |]
 
-js_submitCategoryDescriptionEdit :: JSFunction a => a
-js_submitCategoryDescriptionEdit = makeJSFunction "submitCategoryDescriptionEdit" [text|
-  function submitCategoryDescriptionEdit(node, catId, s) {
+js_submitCategoryDescription :: JSFunction a => a
+js_submitCategoryDescription = makeJSFunction "submitCategoryDescription" [text|
+  function submitCategoryDescription(node, catId, s) {
     $.post("/set/category/"+catId+"/description", {content: s})
      .done(replaceWithData(node));
     }
@@ -588,17 +586,17 @@ js_setTraitMode = makeJSFunction "setTraitMode" [text|
     }
   |]
 
-js_submitTraitEdit :: JSFunction a => a
-js_submitTraitEdit = makeJSFunction "submitTraitEdit" [text|
-  function submitTraitEdit(node, itemId, traitId, s) {
+js_submitTrait :: JSFunction a => a
+js_submitTrait = makeJSFunction "submitTrait" [text|
+  function submitTrait(node, itemId, traitId, s) {
     $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
      .done(replaceWithData(node));
     }
   |]
 
-js_submitItemInfoEdit :: JSFunction a => a
-js_submitItemInfoEdit = makeJSFunction "submitItemInfoEdit" [text|
-  function submitItemInfoEdit(node, itemId, form) {
+js_submitItemInfo :: JSFunction a => a
+js_submitItemInfo = makeJSFunction "submitItemInfo" [text|
+  function submitItemInfo(node, itemId, form) {
     $.post("/set/item/"+itemId+"/info", $(form).serialize())
      .done(replaceWithData(node));
     }
