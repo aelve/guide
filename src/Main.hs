@@ -9,6 +9,7 @@ QuasiQuotes,
 ScopedTypeVariables,
 MultiParamTypeClasses,
 FunctionalDependencies,
+DataKinds,
 NoImplicitPrelude
   #-}
 
@@ -122,6 +123,12 @@ sampleState = do
 
   S {_categories = [lensesCategory]}
 
+itemVar :: Path '[Uid]
+itemVar = "item" <//> var
+
+categoryVar :: Path '[Uid]
+categoryVar = "category" <//> var
+
 main :: IO ()
 main = runSpock 8080 $ spockT id $ do
   middleware (staticPolicy (addBase "static"))
@@ -129,114 +136,107 @@ main = runSpock 8080 $ spockT id $ do
   let withS :: MonadIO m => State S a -> m a
       withS f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
 
-  -- Render the main page.
+  -- Main page
   Spock.get root $ do
     s <- liftIO $ readIORef stateVar
     lucid $ renderRoot s
 
-  -- The “/add” methods return rendered parts of the structure (added
+  -- Render methods
+  Spock.subcomponent "render" $ do
+    -- Title of a category
+    Spock.get (categoryVar <//> "title") $ \catId -> do
+      category <- withS $ use (categoryById catId)
+      renderMode <- param' "mode"
+      lucid $ renderCategoryTitle renderMode category
+    -- Description of a category
+    Spock.get (categoryVar <//> "description") $ \catId -> do
+      category <- withS $ use (categoryById catId)
+      renderMode <- param' "mode"
+      lucid $ renderCategoryDescription renderMode category
+    -- Item
+    Spock.get itemVar $ \itemId -> do
+      item <- withS $ use (itemById itemId)
+      renderMode <- param' "mode"
+      lucid $ renderItem renderMode item
+    -- Pro/con
+    Spock.get (itemVar <//> "pro-con" <//> var) $
+      \itemId thingId -> do
+         thing <- withS $ use (itemById itemId . proConById thingId)
+         renderMode <- param' "mode"
+         lucid $ renderProCon renderMode itemId thing
+
+  -- The add/set methods return rendered parts of the structure (added
   -- categories, changed items, etc) so that the Javascript part could take
   -- them and inject into the page. We don't want to duplicate rendering on
   -- server side and on client side.
 
-  -- (category|item)/action
-  -- (category|item)/id/action
-  -- (category|item)/id/thing/action
+  -- Set methods
+  Spock.subcomponent "set" $ do
+    -- Title of a category
+    Spock.post (categoryVar <//> "title") $ \catId -> do
+      content' <- param' "content"
+      changedCategory <- withS $ do
+        categoryById catId . title .= content'
+        use (categoryById catId)
+      lucid $ renderCategoryTitle Editable changedCategory
+    -- Description of a category
+    Spock.post (categoryVar <//> "description") $ \catId -> do
+      content' <- param' "content"
+      changedCategory <- withS $ do
+        categoryById catId . description .= content'
+        use (categoryById catId)
+      lucid $ renderCategoryDescription Editable changedCategory
+    -- Pro/con
+    Spock.post (itemVar <//> "pro-con" <//> var) $
+      \itemId thingId -> do
+         content' <- param' "content"
+         changedThing <- withS $ do
+           itemById itemId . proConById thingId . content .= content'
+           use (itemById itemId . proConById thingId)
+         lucid $ renderProCon Editable itemId changedThing
 
-  -- Create a new category, with its title submitted via a POST request.
-  Spock.post "/category/add" $ do
-    title' <- param' "content"
-    uid' <- randomUid
-    let newCategory = Category {
-          _categoryUid = uid',
-          _categoryTitle = title',
-          _categoryDescription = "<write a description here>",
-          _categoryItems = [] }
-    withS $ categories %= (++ [newCategory])
-    lucid $ renderCategory newCategory
-
-  -- Create a new library in the specified category, with the library name
-  -- and category id submitted via a POST request.
-  Spock.post ("/category" <//> var <//> "library/add") $ \catId -> do
-    name' <- param' "name"
-    uid' <- randomUid
-    let newItem = Item {
-          _itemUid  = uid',
-          _itemName = name',
-          _itemPros = [],
-          _itemCons = [],
-          _itemLink = Nothing,
-          _itemKind = HackageLibrary }
-    -- TODO: maybe do something if the category doesn't exist (e.g. has been
-    -- already deleted)
-    withS $ categoryById catId . items %= (++ [newItem])
-    lucid $ renderItem Normal newItem
-
-  -- Add a pro (argument in favor of a library).
-  Spock.post ("/item" <//> var <//> "pro/add") $ \itemId -> do
-    content' <- param' "content"
-    uid' <- randomUid
-    let newThing = ProCon uid' content'
-    withS $ itemById itemId . pros %= (++ [newThing])
-    lucid $ renderProCon Editable itemId newThing
-
-  -- Add a con (argument against a library).
-  Spock.post ("/item" <//> var <//> "con/add") $ \itemId -> do
-    content' <- param' "content"
-    uid' <- randomUid
-    let newThing = ProCon uid' content'
-    withS $ itemById itemId . cons %= (++ [newThing])
-    lucid $ renderProCon Editable itemId newThing
-
-  -- Set the title of a category (returns rendered title).
-  Spock.post ("/category" <//> var <//> "title/set") $ \catId -> do
-    content' <- param' "content"
-    changedCategory <- withS $ do
-      categoryById catId . title .= content'
-      use (categoryById catId)
-    lucid $ renderCategoryTitle Editable changedCategory
-
-  -- Render the title of a category.
-  Spock.get ("/category" <//> var <//> "title/render") $ \catId -> do
-    category <- withS $ use (categoryById catId)
-    renderMode <- param' "mode"
-    lucid $ renderCategoryTitle renderMode category
-
-  -- Set the description of a category (returns rendered description).
-  Spock.post ("/category" <//> var <//> "description/set") $ \catId -> do
-    content' <- param' "content"
-    changedCategory <- withS $ do
-      categoryById catId . description .= content'
-      use (categoryById catId)
-    lucid $ renderCategoryDescription Editable changedCategory
-
-  -- Render the description of a category.
-  Spock.get ("/category" <//> var <//> "description/render") $ \catId -> do
-    category <- withS $ use (categoryById catId)
-    renderMode <- param' "mode"
-    lucid $ renderCategoryDescription renderMode category
-
-  -- Render an item.
-  Spock.get ("/item" <//> var <//> "render") $ \itemId -> do
-    item <- withS $ use (itemById itemId)
-    renderMode <- param' "mode"
-    lucid $ renderItem renderMode item
-
-  -- Render a pro/con.
-  Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render") $
-    \itemId thingId -> do
-       thing <- withS $ use (itemById itemId . proConById thingId)
-       renderMode <- param' "mode"
-       lucid $ renderProCon renderMode itemId thing
-
-  -- Change a pro/con.
-  Spock.post ("/item" <//> var <//> "pro-con" <//> var <//> "set") $
-    \itemId thingId -> do
-       content' <- param' "content"
-       changedThing <- withS $ do
-         itemById itemId . proConById thingId . content .= content'
-         use (itemById itemId . proConById thingId)
-       lucid $ renderProCon Editable itemId changedThing
+  -- Add methods
+  Spock.subcomponent "add" $ do
+    -- New category
+    Spock.post "category" $ do
+      title' <- param' "content"
+      uid' <- randomUid
+      let newCategory = Category {
+            _categoryUid = uid',
+            _categoryTitle = title',
+            _categoryDescription = "<write a description here>",
+            _categoryItems = [] }
+      withS $ categories %= (++ [newCategory])
+      lucid $ renderCategory newCategory
+    -- New library in a category
+    Spock.post (categoryVar <//> "library") $ \catId -> do
+      name' <- param' "name"
+      uid' <- randomUid
+      let newItem = Item {
+            _itemUid  = uid',
+            _itemName = name',
+            _itemPros = [],
+            _itemCons = [],
+            _itemLink = Nothing,
+            _itemKind = HackageLibrary }
+      -- TODO: maybe do something if the category doesn't exist (e.g. has been
+      -- already deleted)
+      withS $ categoryById catId . items %= (++ [newItem])
+      lucid $ renderItem Normal newItem
+    -- Pro (argument in favor of a library)
+    Spock.post (itemVar <//> "pro") $ \itemId -> do
+      content' <- param' "content"
+      uid' <- randomUid
+      let newThing = ProCon uid' content'
+      withS $ itemById itemId . pros %= (++ [newThing])
+      lucid $ renderProCon Editable itemId newThing
+    -- Con (argument against a library)
+    Spock.post (itemVar <//> "con") $ \itemId -> do
+      content' <- param' "content"
+      uid' <- randomUid
+      let newThing = ProCon uid' content'
+      withS $ itemById itemId . cons %= (++ [newThing])
+      lucid $ renderProCon Editable itemId newThing
 
 renderRoot :: S -> HtmlT IO ()
 renderRoot globalState = do
@@ -426,7 +426,7 @@ js_appendData = makeJSFunction "appendData" [text|
 js_addCategory :: JSFunction a => a
 js_addCategory = makeJSFunction "addCategory" [text|
   function addCategory(node, s) {
-    $.post("/category/add", {title: s})
+    $.post("/add/category", {title: s})
      .done(appendData(node));
     }
   |]
@@ -435,7 +435,7 @@ js_addCategory = makeJSFunction "addCategory" [text|
 js_addLibrary :: JSFunction a => a
 js_addLibrary = makeJSFunction "addLibrary" [text|
   function addLibrary(node, catId, s) {
-    $.post("/category/"+catId+"/library/add", {name: s})
+    $.post("/add/category/"+catId+"/library", {name: s})
      .done(appendData(node));
     }
   |]
@@ -448,7 +448,7 @@ This turns the title into an editbox, and adds a [cancel] link.
 js_startCategoryTitleEdit :: JSFunction a => a
 js_startCategoryTitleEdit = makeJSFunction "startCategoryTitleEdit" [text|
   function startCategoryTitleEdit(node, catId) {
-    $.get("/category/"+catId+"/title/render", {mode: "in-edit"})
+    $.get("/render/category/"+catId+"/title", {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
@@ -461,7 +461,7 @@ This turns the title with the editbox back into a simple text title.
 js_cancelCategoryTitleEdit :: JSFunction a => a
 js_cancelCategoryTitleEdit = makeJSFunction "cancelCategoryTitleEdit" [text|
   function cancelCategoryTitleEdit(node, catId) {
-    $.get("/category/"+catId+"/title/render", {mode: "editable"})
+    $.get("/render/category/"+catId+"/title", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -474,7 +474,7 @@ This turns the title with the editbox back into a simple text title.
 js_submitCategoryTitleEdit :: JSFunction a => a
 js_submitCategoryTitleEdit = makeJSFunction "submitCategoryTitleEdit" [text|
   function submitCategoryTitleEdit(node, catId, s) {
-    $.post("/category/"+catId+"/title/set", {content: s})
+    $.post("/set/category/"+catId+"/title", {content: s})
      .done(replaceWithData(node));
     }
   |]
@@ -487,7 +487,7 @@ This turns the description into an editbox, and adds a [cancel] link.
 js_startCategoryDescriptionEdit :: JSFunction a => a
 js_startCategoryDescriptionEdit = makeJSFunction "startCategoryDescriptionEdit" [text|
   function startCategoryDescriptionEdit(node, catId) {
-    $.get("/category/"+catId+"/description/render", {mode: "in-edit"})
+    $.get("/render/category/"+catId+"/description", {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
@@ -500,7 +500,7 @@ This turns the description with the editbox back into a simple text description.
 js_cancelCategoryDescriptionEdit :: JSFunction a => a
 js_cancelCategoryDescriptionEdit = makeJSFunction "cancelCategoryDescriptionEdit" [text|
   function cancelCategoryDescriptionEdit(node, catId) {
-    $.get("/category/"+catId+"/description/render", {mode: "editable"})
+    $.get("/render/category/"+catId+"/description", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -513,7 +513,7 @@ This turns the description with the editbox back into a simple text description.
 js_submitCategoryDescriptionEdit :: JSFunction a => a
 js_submitCategoryDescriptionEdit = makeJSFunction "submitCategoryDescriptionEdit" [text|
   function submitCategoryDescriptionEdit(node, catId, s) {
-    $.post("/category/"+catId+"/description/set", {content: s})
+    $.post("/set/category/"+catId+"/description", {content: s})
      .done(replaceWithData(node));
     }
   |]
@@ -522,7 +522,7 @@ js_submitCategoryDescriptionEdit = makeJSFunction "submitCategoryDescriptionEdit
 js_addPro :: JSFunction a => a
 js_addPro = makeJSFunction "addPro" [text|
   function addPro(node, itemId, s) {
-    $.post("/item/"+itemId+"/pro/add", {content: s})
+    $.post("/add/item/"+itemId+"/pro", {content: s})
      .done(appendData(node));
     }
   |]
@@ -531,7 +531,7 @@ js_addPro = makeJSFunction "addPro" [text|
 js_addCon :: JSFunction a => a
 js_addCon = makeJSFunction "addCon" [text|
   function addCon(node, itemId, s) {
-    $.post("/item/"+itemId+"/con/add", {content: s})
+    $.post("/add/item/"+itemId+"/con", {content: s})
      .done(appendData(node));
     }
   |]
@@ -540,7 +540,7 @@ js_addCon = makeJSFunction "addCon" [text|
 js_enableItemEdit :: JSFunction a => a
 js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
   function enableItemEdit (node, itemId) {
-    $.get("/item/"+itemId+"/render", {mode: "editable"})
+    $.get("/render/item/"+itemId, {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -549,7 +549,7 @@ js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
 js_disableItemEdit :: JSFunction a => a
 js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
   function disableItemEdit (node, itemId) {
-    $.get("/item/"+itemId+"/render", {mode: "normal"})
+    $.get("/render/item/"+itemId, {mode: "normal"})
      .done(replaceWithData(node));
     }
   |]
@@ -557,7 +557,7 @@ js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
 js_startProConEdit :: JSFunction a => a
 js_startProConEdit = makeJSFunction "startProConEdit" [text|
   function startProConEdit(node, itemId, thingId) {
-    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render", {mode: "in-edit"})
+    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
@@ -565,7 +565,7 @@ js_startProConEdit = makeJSFunction "startProConEdit" [text|
 js_cancelProConEdit :: JSFunction a => a
 js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
   function cancelProConEdit(node, itemId, thingId) {
-    $.get("/item/"+itemId+"/pro-con/"+thingId+"/render", {mode: "editable"})
+    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
@@ -573,7 +573,7 @@ js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
 js_submitProConEdit :: JSFunction a => a
 js_submitProConEdit = makeJSFunction "submitProConEdit" [text|
   function submitProConEdit(node, itemId, thingId, s) {
-    $.post("/item/"+itemId+"/pro-con/"+thingId+"/set", {content: s})
+    $.post("/set/item/"+itemId+"/pro-con/"+thingId, {content: s})
      .done(replaceWithData(node));
     }
   |]
