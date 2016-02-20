@@ -387,20 +387,31 @@ instance Format.Params a => JSFunction (a -> JS) where
 
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
+  js_replaceWithData, js_appendData,
   js_addLibrary, js_addCategory,
   js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
   js_addPro, js_addCon,
   js_enableItemEdit, js_disableItemEdit,
   js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
 
+js_replaceWithData :: JSFunction a => a
+js_replaceWithData = makeJSFunction "replaceWithData" [text|
+  function replaceWithData(node) {
+    return function(data) {$(node).replaceWith(data); }; }
+  |]
+
+js_appendData :: JSFunction a => a
+js_appendData = makeJSFunction "appendData" [text|
+  function appendData(node) {
+    return function(data) {$(node).append(data); }; }
+  |]
+
 -- | Create a new category.
 js_addCategory :: JSFunction a => a
 js_addCategory = makeJSFunction "addCategory" [text|
   function addCategory(node, s) {
     $.post("/category/add", {title: s})
-     .done(function(data) {
-       $(node).append(data);
-       });
+     .done(appendData(node));
     }
   |]
 
@@ -409,9 +420,7 @@ js_addLibrary :: JSFunction a => a
 js_addLibrary = makeJSFunction "addLibrary" [text|
   function addLibrary(node, catId, s) {
     $.post("/category/"+catId+"/library/add", {name: s})
-     .done(function(data) {
-       $(node).append(data);
-       });
+     .done(appendData(node));
     }
   |]
 
@@ -424,9 +433,7 @@ js_startCategoryHeadingEdit :: JSFunction a => a
 js_startCategoryHeadingEdit = makeJSFunction "startCategoryHeadingEdit" [text|
   function startCategoryHeadingEdit(node, catId) {
     $.get("/category/"+catId+"/title/render-edit")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -439,9 +446,7 @@ js_cancelCategoryHeadingEdit :: JSFunction a => a
 js_cancelCategoryHeadingEdit = makeJSFunction "cancelCategoryHeadingEdit" [text|
   function cancelCategoryHeadingEdit(node, catId) {
     $.get("/category/"+catId+"/title/render-normal")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -454,9 +459,7 @@ js_submitCategoryHeadingEdit :: JSFunction a => a
 js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
   function submitCategoryHeadingEdit(node, catId, s) {
     $.post("/category/"+catId+"/title/set", {title: s})
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -465,9 +468,7 @@ js_addPro :: JSFunction a => a
 js_addPro = makeJSFunction "addPro" [text|
   function addPro(node, itemId, s) {
     $.post("/item/"+itemId+"/pro/add", {content: s})
-     .done(function(data) {
-       $(node).append(data);
-       });
+     .done(appendData(node));
     }
   |]
 
@@ -476,9 +477,7 @@ js_addCon :: JSFunction a => a
 js_addCon = makeJSFunction "addCon" [text|
   function addCon(node, itemId, s) {
     $.post("/item/"+itemId+"/con/add", {content: s})
-     .done(function(data) {
-       $(node).append(data);
-       });
+     .done(appendData(node));
     }
   |]
 
@@ -487,9 +486,7 @@ js_enableItemEdit :: JSFunction a => a
 js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
   function enableItemEdit (node, itemId) {
     $.get("/item/"+itemId+"/render-edit")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -498,9 +495,7 @@ js_disableItemEdit :: JSFunction a => a
 js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
   function disableItemEdit (node, itemId) {
     $.get("/item/"+itemId+"/render-normal")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -508,9 +503,7 @@ js_startProConEdit :: JSFunction a => a
 js_startProConEdit = makeJSFunction "startProConEdit" [text|
   function startProConEdit(node, itemId, thingId) {
     $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-edit")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -518,9 +511,7 @@ js_cancelProConEdit :: JSFunction a => a
 js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
   function cancelProConEdit(node, itemId, thingId) {
     $.get("/item/"+itemId+"/pro-con/"+thingId+"/render-normal")
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
@@ -528,9 +519,7 @@ js_submitProConEdit :: JSFunction a => a
 js_submitProConEdit = makeJSFunction "submitProConEdit" [text|
   function submitProConEdit(node, itemId, thingId, s) {
     $.post("/item/"+itemId+"/pro-con/"+thingId+"/set", {content: s})
-     .done(function(data) {
-       $(node).replaceWith(data);
-       });
+     .done(replaceWithData(node));
     }
   |]
 
