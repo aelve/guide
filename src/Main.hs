@@ -173,11 +173,10 @@ main = runSpock 8080 $ spockT id $ do
       renderMode <- param' "mode"
       lucid $ renderItemTraits renderMode item
     -- A single trait
-    Spock.get (itemVar <//> traitVar) $
-      \itemId traitId -> do
-         trait <- withGlobal $ use (itemById itemId . traitById traitId)
-         renderMode <- param' "mode"
-         lucid $ renderTrait renderMode itemId trait
+    Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
+      trait <- withGlobal $ use (itemById itemId . traitById traitId)
+      renderMode <- param' "mode"
+      lucid $ renderTrait renderMode itemId trait
 
   -- The add/set methods return rendered parts of the structure (added
   -- categories, changed items, etc) so that the Javascript part could take
@@ -215,13 +214,12 @@ main = runSpock 8080 $ spockT id $ do
         use (itemById itemId)
       lucid $ renderItemInfo Normal changedItem
     -- Trait
-    Spock.post (itemVar <//> traitVar) $
-      \itemId traitId -> do
-         content' <- param' "content"
-         changedTrait <- withGlobal $ do
-           itemById itemId . traitById traitId . content .= content'
-           use (itemById itemId . traitById traitId)
-         lucid $ renderTrait Editable itemId changedTrait
+    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      content' <- param' "content"
+      changedTrait <- withGlobal $ do
+        itemById itemId . traitById traitId . content .= content'
+        use (itemById itemId . traitById traitId)
+      lucid $ renderTrait Editable itemId changedTrait
 
   -- Add methods
   Spock.subcomponent "add" $ do
@@ -405,7 +403,7 @@ renderItemTraits editable item =
           input_ [type_ "text", placeholder_ "add con", onInputSubmit handler]
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
-renderTrait Normal _ trait = li_ (toHtml (trait^.content))
+renderTrait Normal _itemId trait = li_ (toHtml (trait^.content))
 renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
   toHtml (trait^.content)
