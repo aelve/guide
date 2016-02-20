@@ -27,7 +27,6 @@ import Lens.Micro.Platform
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Builder as TL
 import Data.Text.Format hiding (format)
 import qualified Data.Text.Format as Format
 import qualified Data.Text.Format.Params as Format
@@ -315,9 +314,9 @@ renderItem editable item =
         Nothing -> return ()
       case editable of
         Normal -> textButton "edit" $
-          js_enableItemEdit (itemNode, item^.uid)
+          js_setItemMode (itemNode, item^.uid, Editable)
         Editable -> textButton "edit off" $
-          js_disableItemEdit (itemNode, item^.uid)
+          js_setItemMode (itemNode, item^.uid, Normal)
     div_ [class_ "pros-cons"] $ do
       div_ [class_ "pros"] $ do
         p_ "Pros:"
@@ -395,10 +394,9 @@ instance JSFunction (Text, JS) where
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
-instance Format.Params a => JSFunction (a -> JS) where
-  makeJSFunction fName _ = \args -> do
-    let argsText = map (TL.toStrict . TL.toLazyText) (Format.buildParams args)
-    fName <> "(" <> T.intercalate "," argsText <> ");"
+instance JSParams a => JSFunction (a -> JS) where
+  makeJSFunction fName _ = \args ->
+    fName <> "(" <> T.intercalate "," (jsParams args) <> ");"
 
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
@@ -407,7 +405,7 @@ allJSFunctions = [
   js_startCategoryTitleEdit, js_submitCategoryTitleEdit, js_cancelCategoryTitleEdit,
   js_startCategoryDescriptionEdit, js_submitCategoryDescriptionEdit, js_cancelCategoryDescriptionEdit,
   js_addPro, js_addCon,
-  js_enableItemEdit, js_disableItemEdit,
+  js_setItemMode,
   js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
 
 js_replaceWithData :: JSFunction a => a
@@ -536,20 +534,11 @@ js_addCon = makeJSFunction "addCon" [text|
     }
   |]
 
--- | Add “[edit]” buttons to everything in an item.
-js_enableItemEdit :: JSFunction a => a
-js_enableItemEdit = makeJSFunction "enableItemEdit" [text|
-  function enableItemEdit (node, itemId) {
-    $.get("/render/item/"+itemId, {mode: "editable"})
-     .done(replaceWithData(node));
-    }
-  |]
-
--- | Remove “[edit]” buttons from everything in an item.
-js_disableItemEdit :: JSFunction a => a
-js_disableItemEdit = makeJSFunction "disableItemEdit" [text|
-  function disableItemEdit (node, itemId) {
-    $.get("/render/item/"+itemId, {mode: "normal"})
+-- | Add “[edit]” buttons to everything in an item, or remove them.
+js_setItemMode :: JSFunction a => a
+js_setItemMode = makeJSFunction "setItemMode" [text|
+  function setItemMode(node, itemId, mode) {
+    $.get("/render/item/"+itemId, {mode: mode})
      .done(replaceWithData(node));
     }
   |]
@@ -621,3 +610,24 @@ instance PathPiece Editable where
   toPathPiece Normal   = "normal"
   toPathPiece Editable = "editable"
   toPathPiece InEdit   = "in-edit"
+
+class LiftJS a where liftJS :: a -> Text
+
+instance LiftJS Text where liftJS = id
+instance LiftJS Integer where liftJS = tshow
+instance LiftJS Int where liftJS = tshow
+instance LiftJS Editable where liftJS = tshow . toPathPiece
+
+class JSParams a where
+  jsParams :: a -> [Text]
+
+instance JSParams () where
+  jsParams () = []
+instance LiftJS a => JSParams [a] where
+  jsParams = map liftJS
+instance (LiftJS a, LiftJS b) => JSParams (a,b) where
+  jsParams (a,b) = [liftJS a, liftJS b]
+instance (LiftJS a, LiftJS b, LiftJS c) => JSParams (a,b,c) where
+  jsParams (a,b,c) = [liftJS a, liftJS b, liftJS c]
+instance (LiftJS a, LiftJS b, LiftJS c, LiftJS d) => JSParams (a,b,c,d) where
+  jsParams (a,b,c,d) = [liftJS a, liftJS b, liftJS c, liftJS d]
