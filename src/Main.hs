@@ -680,6 +680,7 @@ textButton caption handler =
   span_ [class_ "textButton"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
+-- So far all icons used here have been from <https://useiconic.com/open/>
 imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton src attrs handler =
   a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
