@@ -169,7 +169,7 @@ main = runSpock 8080 $ spockT id $ do
     lucid $ renderItem Normal newItem
 
   -- Add a pro (argument in favor of a library).
-  Spock.post ("/item" <//> var <//> "pros/add") $ \itemId' -> do
+  Spock.post ("/item" <//> var <//> "pro/add") $ \itemId' -> do
     content <- param' "content"
     uid <- randomUID
     let newThing = ProCon uid content
@@ -178,7 +178,7 @@ main = runSpock 8080 $ spockT id $ do
     lucid $ renderProCon Editable itemId' newThing
 
   -- Add a con (argument against a library).
-  Spock.post ("/item" <//> var <//> "cons/add") $ \itemId' -> do
+  Spock.post ("/item" <//> var <//> "con/add") $ \itemId' -> do
     content <- param' "content"
     uid <- randomUID
     let newThing = ProCon uid content
@@ -304,8 +304,8 @@ renderItem editable item =
             listNode <- ul_ $ do
               mapM_ (renderProCon Editable (item^.itemId)) (item^.pros)
               thisNode
-            let handler = js_addPros (listNode, item^.itemId, js_this_value)
-            input_ [type_ "text", placeholder_ "add pros", submitFunc handler]
+            let handler = js_addPro (listNode, item^.itemId, js_this_value)
+            input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         case editable of
@@ -315,8 +315,8 @@ renderItem editable item =
             listNode <- ul_ $ do
               mapM_ (renderProCon Editable (item^.itemId)) (item^.cons)
               thisNode
-            let handler = js_addCons (listNode, item^.itemId, js_this_value)
-            input_ [type_ "text", placeholder_ "add cons", submitFunc handler]
+            let handler = js_addCon (listNode, item^.itemId, js_this_value)
+            input_ [type_ "text", placeholder_ "add con", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
                          [item^.name]
@@ -389,7 +389,7 @@ allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   js_addLibrary, js_addCategory,
   js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
-  js_addPros, js_addCons,
+  js_addPro, js_addCon,
   js_enableItemEdit, js_disableItemEdit,
   js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
 
@@ -460,22 +460,22 @@ js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
     }
   |]
 
--- | Add pros to some item.
-js_addPros :: JSFunction a => a
-js_addPros = makeJSFunction "addPros" [text|
-  function addPros(node, itemId, s) {
-    $.post("/item/"+itemId+"/pros/add", {content: s})
+-- | Add a pro to some item.
+js_addPro :: JSFunction a => a
+js_addPro = makeJSFunction "addPro" [text|
+  function addPro(node, itemId, s) {
+    $.post("/item/"+itemId+"/pro/add", {content: s})
      .done(function(data) {
        $(node).append(data);
        });
     }
   |]
 
--- | Add cons to some item.
-js_addCons :: JSFunction a => a
-js_addCons = makeJSFunction "addCons" [text|
-  function addCons(node, itemId, s) {
-    $.post("/item/"+itemId+"/cons/add", {content: s})
+-- | Add a con to some item.
+js_addCon :: JSFunction a => a
+js_addCon = makeJSFunction "addCon" [text|
+  function addCon(node, itemId, s) {
+    $.post("/item/"+itemId+"/con/add", {content: s})
      .done(function(data) {
        $(node).append(data);
        });
