@@ -41,6 +41,8 @@ import Network.Wai.Middleware.Static
 import Web.PathPieces
 
 
+type Url = Text
+
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
 type Uid = Int
@@ -61,7 +63,7 @@ data Item = Item {
   _itemName :: Text,
   _itemPros :: [ProCon],
   _itemCons :: [ProCon],
-  _itemLink :: Maybe Text,
+  _itemLink :: Maybe Url,
   _itemKind :: ItemKind }
 
 makeFields ''Item
@@ -360,10 +362,10 @@ renderProCon InEdit itemId thing = li_ $ do
 
 -- Utils
 
-includeJS :: Monad m => Text -> HtmlT m ()
+includeJS :: Monad m => Url -> HtmlT m ()
 includeJS url = with (script_ "") [src_ url]
 
-includeCSS :: Monad m => Text -> HtmlT m ()
+includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
 -- The function is passed a JS expression that refers to text being submitted.
