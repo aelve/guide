@@ -6,6 +6,8 @@ RankNTypes,
 FlexibleInstances,
 QuasiQuotes,
 ScopedTypeVariables,
+MultiParamTypeClasses,
+FunctionalDependencies,
 NoImplicitPrelude
   #-}
 
@@ -39,53 +41,53 @@ import Network.Wai.Middleware.Static
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
-type UID = Int
+type Uid = Int
 
-randomUID :: MonadIO m => m UID
-randomUID = liftIO $ randomRIO (0, 10^(9::Int))
+randomUid :: MonadIO m => m Uid
+randomUid = liftIO $ randomRIO (0, 10^(9::Int))
 
 data ProCon = ProCon {
-  _proConId :: UID,
-  _proConText :: Text }
+  _proConUid :: Uid,
+  _proConContent :: Text }
 
-makeLenses ''ProCon
+makeFields ''ProCon
 
 data ItemKind = HackageLibrary | Library | Unknown
 
 data Item = Item {
-  _itemId :: UID,
-  _name   :: Text,
-  _pros   :: [ProCon],
-  _cons   :: [ProCon],
-  _link   :: Maybe Text,
-  _kind   :: ItemKind }
+  _itemUid  :: Uid,
+  _itemName :: Text,
+  _itemPros :: [ProCon],
+  _itemCons :: [ProCon],
+  _itemLink :: Maybe Text,
+  _itemKind :: ItemKind }
 
-makeLenses ''Item
+makeFields ''Item
 
-proConById :: UID -> Lens' Item ProCon
-proConById uid = singular $
-  (pros.each . filtered ((== uid) . view proConId)) `failing`
-  (cons.each . filtered ((== uid) . view proConId))
+proConById :: Uid -> Lens' Item ProCon
+proConById uid' = singular $
+  (pros.each . filtered ((== uid') . view uid)) `failing`
+  (cons.each . filtered ((== uid') . view uid))
 
 data Category = Category {
-  _catId :: UID,
-  _title :: Text,
-  _items :: [Item] }
+  _categoryUid :: Uid,
+  _categoryTitle :: Text,
+  _categoryItems :: [Item] }
 
-makeLenses ''Category
+makeFields ''Category
 
 data S = S {
   _categories :: [Category] }
 
 makeLenses ''S
 
-categoryById :: UID -> Lens' S Category
-categoryById uid = singular $
-  categories.each . filtered ((== uid) . view catId)
+categoryById :: Uid -> Lens' S Category
+categoryById uid' = singular $
+  categories.each . filtered ((== uid') . view uid)
 
-itemById :: UID -> Lens' S Item
-itemById uid = singular $
-  categories.each . items.each . filtered ((== uid) . view itemId)
+itemById :: Uid -> Lens' S Item
+itemById uid' = singular $
+  categories.each . items.each . filtered ((== uid') . view uid)
 
 emptyState :: S
 emptyState = S {
@@ -95,25 +97,25 @@ sampleState :: S
 sampleState = S {
   _categories = [
     Category {
-      _catId = 1,
-      _title = "lenses",
-      _items = [
+      _categoryUid = 1,
+      _categoryTitle = "lenses",
+      _categoryItems = [
         Item {
-          _itemId = 2,
-          _name   = "lens",
-          _pros   = [ProCon 3 "the standard lenses library",
-                     ProCon 4 "batteries included"],
-          _cons   = [ProCon 5 "huge"],
-          _link   = Nothing,
-          _kind   = HackageLibrary },
+          _itemUid = 2,
+          _itemName = "lens",
+          _itemPros = [ProCon 3 "the standard lenses library",
+                       ProCon 4 "batteries included"],
+          _itemCons = [ProCon 5 "huge"],
+          _itemLink = Nothing,
+          _itemKind = HackageLibrary },
         Item {
-          _itemId = 6,
-          _name   = "microlens",
-          _pros   = [ProCon 7 "very small",
-                     ProCon 8 "good for libraries"],
-          _cons   = [ProCon 9 "doesn't have advanced features"],
-          _link   = Nothing,
-          _kind   = HackageLibrary }
+          _itemUid = 6,
+          _itemName = "microlens",
+          _itemPros = [ProCon 7 "very small",
+                       ProCon 8 "good for libraries"],
+          _itemCons = [ProCon 9 "doesn't have advanced features"],
+          _itemLink = Nothing,
+          _itemKind = HackageLibrary }
       ] }
   ] }
 
@@ -141,100 +143,100 @@ main = runSpock 8080 $ spockT id $ do
   -- Create a new category, with its title submitted via a POST request.
   Spock.post "/category/add" $ do
     title' <- param' "title"
-    uid <- randomUID
+    uid' <- randomUid
     let newCategory = Category {
-          _catId = uid,
-          _title = title',
-          _items = [] }
+          _categoryUid = uid',
+          _categoryTitle = title',
+          _categoryItems = [] }
     withS $
       categories %= (++ [newCategory])
     lucid $ renderCategory newCategory
 
   -- Create a new library in the specified category, with the library name
   -- and category id submitted via a POST request.
-  Spock.post ("/category" <//> var <//> "library/add") $ \catId' -> do
+  Spock.post ("/category" <//> var <//> "library/add") $ \catId -> do
     name' <- param' "name"
-    uid <- randomUID
+    uid' <- randomUid
     let newItem = Item {
-          _itemId = uid,
-          _name   = name',
-          _pros   = [],
-          _cons   = [],
-          _link   = Nothing,
-          _kind   = HackageLibrary }
+          _itemUid  = uid',
+          _itemName = name',
+          _itemPros = [],
+          _itemCons = [],
+          _itemLink = Nothing,
+          _itemKind = HackageLibrary }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     withS $
-      categoryById catId' . items %= (++ [newItem])
+      categoryById catId . items %= (++ [newItem])
     lucid $ renderItem Normal newItem
 
   -- Add a pro (argument in favor of a library).
-  Spock.post ("/item" <//> var <//> "pro/add") $ \itemId' -> do
-    content <- param' "content"
-    uid <- randomUID
-    let newThing = ProCon uid content
+  Spock.post ("/item" <//> var <//> "pro/add") $ \itemId -> do
+    content' <- param' "content"
+    uid' <- randomUid
+    let newThing = ProCon uid' content'
     withS $ do
-      itemById itemId' . pros %= (++ [newThing])
-    lucid $ renderProCon Editable itemId' newThing
+      itemById itemId . pros %= (++ [newThing])
+    lucid $ renderProCon Editable itemId newThing
 
   -- Add a con (argument against a library).
-  Spock.post ("/item" <//> var <//> "con/add") $ \itemId' -> do
-    content <- param' "content"
-    uid <- randomUID
-    let newThing = ProCon uid content
+  Spock.post ("/item" <//> var <//> "con/add") $ \itemId -> do
+    content' <- param' "content"
+    uid' <- randomUid
+    let newThing = ProCon uid' content'
     withS $ do
-      itemById itemId' . cons %= (++ [newThing])
-    lucid $ renderProCon Editable itemId' newThing
+      itemById itemId . cons %= (++ [newThing])
+    lucid $ renderProCon Editable itemId newThing
 
   -- Set the title of a category (returns rendered new title).
-  Spock.post ("/category" <//> var <//> "title/set") $ \catId' -> do
+  Spock.post ("/category" <//> var <//> "title/set") $ \catId -> do
     title' <- param' "title"
     changedCategory <- withS $ do
-      categoryById catId' . title .= title'
-      use (categoryById catId')
+      categoryById catId . title .= title'
+      use (categoryById catId)
     lucid $ renderCategoryHeading changedCategory
 
   -- Return rendered title of a category.
-  Spock.get ("/category" <//> var <//> "title/render-normal") $ \catId' -> do
-    category <- withS $ use (categoryById catId')
+  Spock.get ("/category" <//> var <//> "title/render-normal") $ \catId -> do
+    category <- withS $ use (categoryById catId)
     lucid $ renderCategoryHeading category
 
   -- Return rendered title of a category the way it should look when the
   -- category is being edited.
-  Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId' -> do
-    category <- withS $ use (categoryById catId')
+  Spock.get ("/category" <//> var <//> "title/render-edit") $ \catId -> do
+    category <- withS $ use (categoryById catId)
     lucid $ renderCategoryHeadingEdit category
 
   -- Return rendered item the way it should normally look.
-  Spock.get ("/item" <//> var <//> "render-normal") $ \itemId' -> do
-    item <- withS $ use (itemById itemId')
+  Spock.get ("/item" <//> var <//> "render-normal") $ \itemId -> do
+    item <- withS $ use (itemById itemId)
     lucid $ renderItem Normal item
 
   -- Return rendered item the way it should look when it's editable.
-  Spock.get ("/item" <//> var <//> "render-edit") $ \itemId' -> do
-    item <- withS $ use (itemById itemId')
+  Spock.get ("/item" <//> var <//> "render-edit") $ \itemId -> do
+    item <- withS $ use (itemById itemId)
     lucid $ renderItem Editable item
 
   -- Return rendered pro/con the way it should normally look.
   Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-normal") $
-    \itemId' proConId' -> do
-       thing <- withS $ use (itemById itemId' . proConById proConId')
-       lucid $ renderProCon Editable itemId' thing
+    \itemId thingId -> do
+       thing <- withS $ use (itemById itemId . proConById thingId)
+       lucid $ renderProCon Editable itemId thing
 
   -- Return rendered pro/con the way it should look when it's being edited.
   Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render-edit") $
-    \itemId' proConId' -> do
-       thing <- withS $ use (itemById itemId' . proConById proConId')
-       lucid $ renderProCon InEdit itemId' thing
+    \itemId thingId -> do
+       thing <- withS $ use (itemById itemId . proConById thingId)
+       lucid $ renderProCon InEdit itemId thing
 
   -- Change a pro/con.
   Spock.post ("/item" <//> var <//> "pro-con" <//> var <//> "set") $
-    \itemId' proConId' -> do
-       content <- param' "content"
+    \itemId thingId -> do
+       content' <- param' "content"
        changedThing <- withS $ do
-         itemById itemId' . proConById proConId' . proConText .= content
-         use (itemById itemId' . proConById proConId')
-       lucid $ renderProCon Editable itemId' changedThing
+         itemById itemId . proConById thingId . content .= content'
+         use (itemById itemId . proConById thingId)
+       lucid $ renderProCon Editable itemId changedThing
 
 renderRoot :: S -> HtmlT IO ()
 renderRoot s = do
@@ -256,26 +258,26 @@ renderCategoryHeading category =
     -- TODO: make category headings anchor links
     toHtml (category^.title)
     textButton "edit" $
-      js_startCategoryHeadingEdit (headerNode, category^.catId)
+      js_startCategoryHeadingEdit (headerNode, category^.uid)
 
 renderCategoryHeadingEdit :: Category -> HtmlT IO ()
 renderCategoryHeadingEdit category =
   h2_ $ do
     headerNode <- thisNode
     let handler = js_submitCategoryHeadingEdit
-                    (headerNode, category^.catId, js_this_value)
+                    (headerNode, category^.uid, js_this_value)
     input_ [type_ "text", value_ (category^.title), submitFunc handler]
     textButton "cancel" $
-      js_cancelCategoryHeadingEdit (headerNode, category^.catId)
+      js_cancelCategoryHeadingEdit (headerNode, category^.uid)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
-  div_ [id_ (tshow (category^.catId))] $ do
+  div_ [id_ (tshow (category^.uid))] $ do
     renderCategoryHeading category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal) (category^.items)
       thisNode
-    let handler = js_addLibrary (itemsNode, category^.catId, js_this_value)
+    let handler = js_addLibrary (itemsNode, category^.uid, js_this_value)
     input_ [type_ "text", placeholder_ "new item", submitFunc handler]
 
 -- TODO: when the link for a HackageLibrary isn't empty, show it separately
@@ -285,37 +287,37 @@ renderItem
   -> Item
   -> HtmlT IO ()
 renderItem editable item =
-  div_ [class_ "item", id_ (tshow (item^.itemId))] $ do
+  div_ [class_ "item", id_ (tshow (item^.uid))] $ do
     itemNode <- thisNode
     h3_ $ do
       itemHeader
       case editable of
         Normal -> textButton "edit" $
-          js_enableItemEdit (itemNode, item^.itemId)
+          js_enableItemEdit (itemNode, item^.uid)
         Editable -> textButton "edit off" $
-          js_disableItemEdit (itemNode, item^.itemId)
+          js_disableItemEdit (itemNode, item^.uid)
     div_ [class_ "pros-cons"] $ do
       div_ [class_ "pros"] $ do
         p_ "Pros:"
         case editable of
           Normal ->
-            ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.pros)
+            ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.pros)
           Editable -> do
             listNode <- ul_ $ do
-              mapM_ (renderProCon Editable (item^.itemId)) (item^.pros)
+              mapM_ (renderProCon Editable (item^.uid)) (item^.pros)
               thisNode
-            let handler = js_addPro (listNode, item^.itemId, js_this_value)
+            let handler = js_addPro (listNode, item^.uid, js_this_value)
             input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
       div_ [class_ "cons"] $ do
         p_ "Cons:"
         case editable of
           Normal ->
-            ul_ $ mapM_ (renderProCon Normal (item^.itemId)) (item^.cons)
+            ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.cons)
           Editable -> do
             listNode <- ul_ $ do
-              mapM_ (renderProCon Editable (item^.itemId)) (item^.cons)
+              mapM_ (renderProCon Editable (item^.uid)) (item^.cons)
               thisNode
-            let handler = js_addCon (listNode, item^.itemId, js_this_value)
+            let handler = js_addCon (listNode, item^.uid, js_this_value)
             input_ [type_ "text", placeholder_ "add con", submitFunc handler]
   where
     hackageLink = format "https://hackage.haskell.org/package/{}"
@@ -327,20 +329,20 @@ renderItem editable item =
         a_ [href_ hackageLink] (toHtml (item^.name))
       _otherwise -> toHtml (item^.name)
 
-renderProCon :: Editable -> UID -> ProCon -> HtmlT IO ()
-renderProCon Normal _ thing = li_ (toHtml (thing^.proConText))
-renderProCon Editable itemId' thing = li_ $ do
+renderProCon :: Editable -> Uid -> ProCon -> HtmlT IO ()
+renderProCon Normal _ proCon = li_ (toHtml (proCon^.content))
+renderProCon Editable itemId proCon = li_ $ do
   this <- thisNode
-  toHtml (thing^.proConText)
+  toHtml (proCon^.content)
   textButton "edit" $
-    js_startProConEdit (this, itemId', thing^.proConId)
-renderProCon InEdit itemId' thing = li_ $ do
+    js_startProConEdit (this, itemId, proCon^.uid)
+renderProCon InEdit itemId thing = li_ $ do
   this <- thisNode
   let handler = js_submitProConEdit
-                  (this, itemId', thing^.proConId, js_this_value)
-  input_ [type_ "text", value_ (thing^.proConText), submitFunc handler]
+                  (this, itemId, thing^.uid, js_this_value)
+  input_ [type_ "text", value_ (thing^.content), submitFunc handler]
   textButton "cancel" $
-    js_cancelProConEdit (this, itemId', thing^.proConId)
+    js_cancelProConEdit (this, itemId, thing^.uid)
 
 -- Utils
 
@@ -540,9 +542,9 @@ type JQuerySelector = Text
 
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
-  uid <- randomUID
-  span_ [id_ (tshow uid)] mempty
-  return (T.pack (show (format ":has(> #{})" [uid])))
+  uid' <- randomUid
+  span_ [id_ (tshow uid')] mempty
+  return (T.pack (show (format ":has(> #{})" [uid'])))
 
 lucid :: HtmlT IO a -> ActionT IO a
 lucid h = do
