@@ -39,6 +39,7 @@ import Web.Spock hiding (get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 import Web.PathPieces
+import Text.HTML.SanitizeXSS (sanitaryURI)
 
 
 type Url = Text
@@ -199,6 +200,20 @@ main = runSpock 8080 $ spockT id $ do
         categoryById catId . description .= content'
         use (categoryById catId)
       lucid $ renderCategoryDescription Editable changedCategory
+    -- Item info
+    Spock.post (itemVar <//> "info") $ \itemId -> do
+      name' <- T.strip <$> param' "name"
+      link' <- T.strip <$> param' "link"
+      changedItem <- withGlobal $ do
+        -- TODO: actually validate the form and report errors
+        unless (T.null name') $
+          itemById itemId . name .= name'
+        case (T.null link', sanitiseUrl link') of
+          (True, _)   -> itemById itemId . link .= Nothing
+          (_, Just l) -> itemById itemId . link .= Just l
+          _otherwise  -> return ()
+        use (itemById itemId)
+      lucid $ renderItemInfo Normal changedItem
     -- Trait
     Spock.post (itemVar <//> traitVar) $
       \itemId traitId -> do
@@ -262,7 +277,7 @@ renderRoot globalState = do
     mapM_ renderCategory (globalState ^. categories)
     thisNode
   let handler s = js_addCategory (categoriesNode, s)
-  input_ [type_ "text", placeholder_ "new category", submitFunc handler]
+  input_ [type_ "text", placeholder_ "new category", onInputSubmit handler]
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =
@@ -277,7 +292,7 @@ renderCategoryTitle editable category =
       InEdit -> do
         let handler s = js_submitCategoryTitleEdit
                           (titleNode, category^.uid, s)
-        input_ [type_ "text", value_ (category^.title), submitFunc handler]
+        input_ [type_ "text", value_ (category^.title), onInputSubmit handler]
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
@@ -295,7 +310,7 @@ renderCategoryDescription editable category =
       InEdit -> do
         let handler s = js_submitCategoryDescriptionEdit
                           (descrNode, category^.uid, s)
-        input_ [type_ "text", value_ (category^.description), submitFunc handler]
+        input_ [type_ "text", value_ (category^.description), onInputSubmit handler]
         textButton "cancel" $
           js_setCategoryDescriptionMode (descrNode, category^.uid, Editable)
 
@@ -308,7 +323,7 @@ renderCategory category =
       mapM_ renderItem (category^.items)
       thisNode
     let handler s = js_addLibrary (itemsNode, category^.uid, s)
-    input_ [type_ "text", placeholder_ "new item", submitFunc handler]
+    input_ [type_ "text", placeholder_ "new item", onInputSubmit handler]
 
 renderItem :: Item -> HtmlT IO ()
 renderItem item =
@@ -316,28 +331,47 @@ renderItem item =
     renderItemInfo Normal item
     renderItemTraits Normal item
 
+-- TODO: warn when a library isn't on Hackage but is supposed to be
+-- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: Editable -> Item -> HtmlT IO ()
 renderItemInfo editable item =
-  h3_ $ do
+  div_ $ do
     this <- thisNode
-    -- If the library is on Hackage, the title links to its Hackage page;
-    -- otherwise, it doesn't link anywhere. Even if the link field is
-    -- present, it's going to be rendered as “(site)”, not linked in the
-    -- title.
-    case item^.kind of
-      HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
-      _otherwise     -> toHtml (item^.name)
-    case item^.link of
-      Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-      Nothing -> return ()
     case editable of
-      Normal -> textButton "edit" $
-        js_setItemInfoMode (this, item^.uid, Editable)
-      -- TODO: change to an actual button, “Submit”, etc.
-      Editable -> textButton "edit off" $
-        js_setItemInfoMode (this, item^.uid, Normal)
-  where
-    hackageLink = "https://hackage.haskell.org/package/" <> item^.name
+      Normal -> h3_ $ do
+        -- If the library is on Hackage, the title links to its Hackage page;
+        -- otherwise, it doesn't link anywhere. Even if the link field is
+        -- present, it's going to be rendered as “(site)”, not linked in the
+        -- title.
+        let hackageLink = "https://hackage.haskell.org/package/" <> item^.name
+        case item^.kind of
+          HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
+          _otherwise     -> toHtml (item^.name)
+        case item^.link of
+          Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+          Nothing -> return ()
+        textButton "edit" $
+          js_setItemInfoMode (this, item^.uid, Editable)
+      -- TODO: this should actually be InEdit
+      Editable -> do
+        let handler s = js_submitItemInfoEdit (this, item^.uid, s)
+        form_ [onFormSubmit handler] $ do
+          label_ $ do
+            "Package name: "
+            input_ [type_ "text", name_ "name",
+                    value_ (item^.name)]
+          br_ []
+          label_ $ do
+            "Site (optional): "
+            input_ [type_ "text", name_ "link",
+                    value_ (fromMaybe "" (item^.link))]
+          br_ []
+          input_ [type_ "submit", value_ "Submit"]
+          let cancelHandler = js_setItemInfoMode (this, item^.uid, Normal)
+          input_ [type_ "button", value_ "Cancel", onclick_ cancelHandler]
+
+-- TODO: categories that don't directly compare libraries but just list all
+-- libraries about something (e.g. Yesod plugins, or whatever)
 
 renderItemTraits :: Editable -> Item -> HtmlT IO ()
 renderItemTraits editable item =
@@ -358,7 +392,7 @@ renderItemTraits editable item =
             mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
             thisNode
           let handler s = js_addPro (listNode, item^.uid, s)
-          input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
+          input_ [type_ "text", placeholder_ "add pro", onInputSubmit handler]
     div_ [class_ "traits-group"] $ do
       p_ "Cons:"
       case editable of
@@ -369,7 +403,7 @@ renderItemTraits editable item =
             mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
             thisNode
           let handler s = js_addCon (listNode, item^.uid, s)
-          input_ [type_ "text", placeholder_ "add con", submitFunc handler]
+          input_ [type_ "text", placeholder_ "add con", onInputSubmit handler]
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
 renderTrait Normal _ trait = li_ (toHtml (trait^.content))
@@ -382,7 +416,7 @@ renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
   let handler s = js_submitTraitEdit
                     (this, itemId, trait^.uid, s)
-  input_ [type_ "text", value_ (trait^.content), submitFunc handler]
+  input_ [type_ "text", value_ (trait^.content), onInputSubmit handler]
   textButton "cancel" $
     js_setTraitMode (this, itemId, trait^.uid, Editable)
 
@@ -395,12 +429,15 @@ includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
 -- The function is passed a JS expression that refers to text being submitted.
-submitFunc :: (JS -> JS) -> Attribute
-submitFunc f = onkeyup_ $ format
+onInputSubmit :: (JS -> JS) -> Attribute
+onInputSubmit f = onkeyup_ $ format
   "if (event.keyCode == 13) {\
   \  {}\
   \  this.value = ''; }"
   [f "this.value"]
+
+onFormSubmit :: (JS -> JS) -> Attribute
+onFormSubmit f = onsubmit_ $ format "{} return false;" [f "this"]
 
 -- Javascript
 
@@ -438,9 +475,9 @@ allJSFunctions = [
   js_setItemInfoMode, js_setItemTraitsMode,
   js_setTraitMode,
   -- Set methods
-  js_submitCategoryTitleEdit,
+  js_submitCategoryTitleEdit, js_submitCategoryDescriptionEdit,
   js_submitTraitEdit,
-  js_submitCategoryDescriptionEdit ]
+  js_submitItemInfoEdit ]
 
 js_replaceWithData :: JSFunction a => a
 js_replaceWithData = makeJSFunction "replaceWithData" [text|
@@ -501,11 +538,6 @@ js_setCategoryDescriptionMode = makeJSFunction "setCategoryDescriptionMode" [tex
     }
   |]
 
-{- |
-Finish category description editing (this happens when you submit the field).
-
-This turns the description with the editbox back into a simple text description.
--}
 js_submitCategoryDescriptionEdit :: JSFunction a => a
 js_submitCategoryDescriptionEdit = makeJSFunction "submitCategoryDescriptionEdit" [text|
   function submitCategoryDescriptionEdit(node, catId, s) {
@@ -560,6 +592,14 @@ js_submitTraitEdit :: JSFunction a => a
 js_submitTraitEdit = makeJSFunction "submitTraitEdit" [text|
   function submitTraitEdit(node, itemId, traitId, s) {
     $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
+     .done(replaceWithData(node));
+    }
+  |]
+
+js_submitItemInfoEdit :: JSFunction a => a
+js_submitItemInfoEdit = makeJSFunction "submitItemInfoEdit" [text|
+  function submitItemInfoEdit(node, itemId, form) {
+    $.post("/set/item/"+itemId+"/info", $(form).serialize())
      .done(replaceWithData(node));
     }
   |]
@@ -630,3 +670,10 @@ instance (LiftJS a, LiftJS b, LiftJS c, LiftJS d) => JSParams (a,b,c,d) where
   jsParams (a,b,c,d) = [liftJS a, liftJS b, liftJS c, liftJS d]
 
 -- TODO: why not compare Haskellers too?
+
+sanitiseUrl :: Url -> Maybe Url
+sanitiseUrl u
+  | not (sanitaryURI u)       = Nothing
+  | "http:" `T.isPrefixOf` u  = Just u
+  | "https:" `T.isPrefixOf` u = Just u
+  | otherwise                 = Just ("http://" <> u)
