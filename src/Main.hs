@@ -73,6 +73,7 @@ proConById uid' = singular $
 data Category = Category {
   _categoryUid :: Uid,
   _categoryTitle :: Text,
+  _categoryDescription :: Text,
   _categoryItems :: [Item] }
 
 makeFields ''Category
@@ -115,6 +116,7 @@ sampleState = do
   let lensesCategory = Category {
         _categoryUid = 1,
         _categoryTitle = "lenses",
+        _categoryDescription = "Lenses are first-class composable accessors.",
         _categoryItems = [lensItem, microlensItem] }
 
   S {_categories = [lensesCategory]}
@@ -142,11 +144,12 @@ main = runSpock 8080 $ spockT id $ do
 
   -- Create a new category, with its title submitted via a POST request.
   Spock.post "/category/add" $ do
-    title' <- param' "title"
+    title' <- param' "content"
     uid' <- randomUid
     let newCategory = Category {
           _categoryUid = uid',
           _categoryTitle = title',
+          _categoryDescription = "<write a description here>",
           _categoryItems = [] }
     withS $
       categories %= (++ [newCategory])
@@ -188,19 +191,33 @@ main = runSpock 8080 $ spockT id $ do
       itemById itemId . cons %= (++ [newThing])
     lucid $ renderProCon Editable itemId newThing
 
-  -- Set the title of a category (returns rendered new title).
+  -- Set the title of a category (returns rendered title).
   Spock.post ("/category" <//> var <//> "title/set") $ \catId -> do
-    title' <- param' "title"
+    content' <- param' "content"
     changedCategory <- withS $ do
-      categoryById catId . title .= title'
+      categoryById catId . title .= content'
       use (categoryById catId)
-    lucid $ renderCategoryHeading Editable changedCategory
+    lucid $ renderCategoryTitle Editable changedCategory
 
-  -- Rendered the title of a category.
+  -- Render the title of a category.
   Spock.get ("/category" <//> var <//> "title/render") $ \catId -> do
     category <- withS $ use (categoryById catId)
     renderMode <- param' "mode"
-    lucid $ renderCategoryHeading renderMode category
+    lucid $ renderCategoryTitle renderMode category
+
+  -- Set the description of a category (returns rendered description).
+  Spock.post ("/category" <//> var <//> "description/set") $ \catId -> do
+    content' <- param' "content"
+    changedCategory <- withS $ do
+      categoryById catId . description .= content'
+      use (categoryById catId)
+    lucid $ renderCategoryDescription Editable changedCategory
+
+  -- Render the description of a category.
+  Spock.get ("/category" <//> var <//> "description/render") $ \catId -> do
+    category <- withS $ use (categoryById catId)
+    renderMode <- param' "mode"
+    lucid $ renderCategoryDescription renderMode category
 
   -- Render an item.
   Spock.get ("/item" <//> var <//> "render") $ \itemId -> do
@@ -208,7 +225,7 @@ main = runSpock 8080 $ spockT id $ do
     renderMode <- param' "mode"
     lucid $ renderItem renderMode item
 
-  -- Return rendered pro/con the way it should normally look.
+  -- Render a pro/con.
   Spock.get ("/item" <//> var <//> "pro-con" <//> var <//> "render") $
     \itemId thingId -> do
        thing <- withS $ use (itemById itemId . proConById thingId)
@@ -237,27 +254,44 @@ renderRoot s = do
   input_ [type_ "text", placeholder_ "new category",
           submitFunc (js_addCategory (categoriesNode, js_this_value))]
 
-renderCategoryHeading :: Editable -> Category -> HtmlT IO ()
-renderCategoryHeading editable category =
+renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
+renderCategoryTitle editable category =
   h2_ $ do
-    headerNode <- thisNode
+    titleNode <- thisNode
     case editable of
       Editable -> do
         -- TODO: make category headings anchor links
         toHtml (category^.title)
         textButton "edit" $
-          js_startCategoryHeadingEdit (headerNode, category^.uid)
+          js_startCategoryTitleEdit (titleNode, category^.uid)
       InEdit -> do
-        let handler = js_submitCategoryHeadingEdit
-                        (headerNode, category^.uid, js_this_value)
+        let handler = js_submitCategoryTitleEdit
+                        (titleNode, category^.uid, js_this_value)
         input_ [type_ "text", value_ (category^.title), submitFunc handler]
         textButton "cancel" $
-          js_cancelCategoryHeadingEdit (headerNode, category^.uid)
+          js_cancelCategoryTitleEdit (titleNode, category^.uid)
+
+renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
+renderCategoryDescription editable category =
+  p_ $ do
+    descrNode <- thisNode
+    case editable of
+      Editable -> do
+        toHtml (category^.description)
+        textButton "edit" $
+          js_startCategoryDescriptionEdit (descrNode, category^.uid)
+      InEdit -> do
+        let handler = js_submitCategoryDescriptionEdit
+                        (descrNode, category^.uid, js_this_value)
+        input_ [type_ "text", value_ (category^.description), submitFunc handler]
+        textButton "cancel" $
+          js_cancelCategoryDescriptionEdit (descrNode, category^.uid)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [id_ (tshow (category^.uid))] $ do
-    renderCategoryHeading Editable category
+    renderCategoryTitle Editable category
+    renderCategoryDescription Editable category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal) (category^.items)
       thisNode
@@ -375,7 +409,8 @@ allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   js_replaceWithData, js_appendData,
   js_addLibrary, js_addCategory,
-  js_startCategoryHeadingEdit, js_submitCategoryHeadingEdit, js_cancelCategoryHeadingEdit,
+  js_startCategoryTitleEdit, js_submitCategoryTitleEdit, js_cancelCategoryTitleEdit,
+  js_startCategoryDescriptionEdit, js_submitCategoryDescriptionEdit, js_cancelCategoryDescriptionEdit,
   js_addPro, js_addCon,
   js_enableItemEdit, js_disableItemEdit,
   js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
@@ -411,40 +446,79 @@ js_addLibrary = makeJSFunction "addLibrary" [text|
   |]
 
 {- |
-Start category heading editing (this happens when you click on “[edit]”).
+Start category title editing (this happens when you click on “[edit]”).
 
-This turns the heading into an editbox, and adds a [cancel] link.
+This turns the title into an editbox, and adds a [cancel] link.
 -}
-js_startCategoryHeadingEdit :: JSFunction a => a
-js_startCategoryHeadingEdit = makeJSFunction "startCategoryHeadingEdit" [text|
-  function startCategoryHeadingEdit(node, catId) {
+js_startCategoryTitleEdit :: JSFunction a => a
+js_startCategoryTitleEdit = makeJSFunction "startCategoryTitleEdit" [text|
+  function startCategoryTitleEdit(node, catId) {
     $.get("/category/"+catId+"/title/render", {mode: "in-edit"})
      .done(replaceWithData(node));
     }
   |]
 
 {- |
-Cancel category heading editing.
+Cancel category title editing.
 
-This turns the heading with the editbox back into a simple text heading.
+This turns the title with the editbox back into a simple text title.
 -}
-js_cancelCategoryHeadingEdit :: JSFunction a => a
-js_cancelCategoryHeadingEdit = makeJSFunction "cancelCategoryHeadingEdit" [text|
-  function cancelCategoryHeadingEdit(node, catId) {
+js_cancelCategoryTitleEdit :: JSFunction a => a
+js_cancelCategoryTitleEdit = makeJSFunction "cancelCategoryTitleEdit" [text|
+  function cancelCategoryTitleEdit(node, catId) {
     $.get("/category/"+catId+"/title/render", {mode: "editable"})
      .done(replaceWithData(node));
     }
   |]
 
 {- |
-Finish category heading editing (this happens when you submit the field).
+Finish category title editing (this happens when you submit the field).
 
-This turns the heading with the editbox back into a simple text heading.
+This turns the title with the editbox back into a simple text title.
 -}
-js_submitCategoryHeadingEdit :: JSFunction a => a
-js_submitCategoryHeadingEdit = makeJSFunction "submitCategoryHeadingEdit" [text|
-  function submitCategoryHeadingEdit(node, catId, s) {
-    $.post("/category/"+catId+"/title/set", {title: s})
+js_submitCategoryTitleEdit :: JSFunction a => a
+js_submitCategoryTitleEdit = makeJSFunction "submitCategoryTitleEdit" [text|
+  function submitCategoryTitleEdit(node, catId, s) {
+    $.post("/category/"+catId+"/title/set", {content: s})
+     .done(replaceWithData(node));
+    }
+  |]
+
+{- |
+Start category description editing (this happens when you click on “[edit]”).
+
+This turns the description into an editbox, and adds a [cancel] link.
+-}
+js_startCategoryDescriptionEdit :: JSFunction a => a
+js_startCategoryDescriptionEdit = makeJSFunction "startCategoryDescriptionEdit" [text|
+  function startCategoryDescriptionEdit(node, catId) {
+    $.get("/category/"+catId+"/description/render", {mode: "in-edit"})
+     .done(replaceWithData(node));
+    }
+  |]
+
+{- |
+Cancel category description editing.
+
+This turns the description with the editbox back into a simple text description.
+-}
+js_cancelCategoryDescriptionEdit :: JSFunction a => a
+js_cancelCategoryDescriptionEdit = makeJSFunction "cancelCategoryDescriptionEdit" [text|
+  function cancelCategoryDescriptionEdit(node, catId) {
+    $.get("/category/"+catId+"/description/render", {mode: "editable"})
+     .done(replaceWithData(node));
+    }
+  |]
+
+{- |
+Finish category description editing (this happens when you submit the field).
+
+This turns the description with the editbox back into a simple text description.
+-}
+js_submitCategoryDescriptionEdit :: JSFunction a => a
+js_submitCategoryDescriptionEdit = makeJSFunction "submitCategoryDescriptionEdit" [text|
+  function submitCategoryDescriptionEdit(node, catId, s) {
+    $.post("/category/"+catId+"/description/set", {content: s})
      .done(replaceWithData(node));
     }
   |]
