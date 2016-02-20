@@ -264,6 +264,16 @@ main = runSpock 8080 $ spockT id $ do
       withGlobal $ itemById itemId . cons %= (++ [newTrait])
       lucid $ renderTrait Editable itemId newTrait
 
+  -- Moving things
+  Spock.subcomponent "move" $ do
+    -- Move trait
+    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      direction :: Text <- param' "direction"
+      let move = if direction == "up" then moveUp else moveDown
+      withGlobal $ do
+        itemById itemId . pros %= move ((== traitId) . view uid)
+        itemById itemId . cons %= move ((== traitId) . view uid)
+
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
@@ -321,6 +331,8 @@ renderCategory category =
       thisNode
     let handler s = js_addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", onInputSubmit handler]
+
+-- TODO: add arrows for moving items left-and-right in the category
 
 renderItem :: Item -> HtmlT IO ()
 renderItem item =
@@ -407,6 +419,10 @@ renderTrait Normal _itemId trait = li_ (toHtml (trait^.content))
 renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
   toHtml (trait^.content)
+  imgButton "/arrow-thick-top.svg" [width_ "12px"] $
+    js_moveTraitUp (itemId, trait^.uid, this)
+  imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
+    js_moveTraitDown (itemId, trait^.uid, this)
   textButton "edit" $
     js_setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do
@@ -463,6 +479,7 @@ allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   -- Utilities
   js_replaceWithData, js_appendData,
+  js_moveNodeUp, js_moveNodeDown,
   -- Add methods
   js_addLibrary, js_addCategory,
   js_addPro, js_addCon,
@@ -473,7 +490,9 @@ allJSFunctions = [
   -- Set methods
   js_submitCategoryTitle, js_submitCategoryDescription,
   js_submitTrait,
-  js_submitItemInfo ]
+  js_submitItemInfo,
+  -- Other things
+  js_moveTraitUp, js_moveTraitDown ]
 
 js_replaceWithData :: JSFunction a => a
 js_replaceWithData = makeJSFunction "replaceWithData" [text|
@@ -485,6 +504,32 @@ js_appendData :: JSFunction a => a
 js_appendData = makeJSFunction "appendData" [text|
   function appendData(node) {
     return function(data) {$(node).append(data); }; }
+  |]
+
+-- | Move node up (in a list of sibling nodes), ignoring anchor elements
+-- inserted by 'thisNode'.
+js_moveNodeUp :: JSFunction a => a
+js_moveNodeUp = makeJSFunction "moveNodeUp" [text|
+  function moveNodeUp(node) {
+    var el = $(node);
+    while (el.prev().is(".dummy"))
+      el.prev().before(el);
+    if (el.not(':first-child'))
+      el.prev().before(el);
+    }
+  |]
+
+-- | Move node down (in a list of sibling nodes), ignoring anchor elements
+-- inserted by 'thisNode'.
+js_moveNodeDown :: JSFunction a => a
+js_moveNodeDown = makeJSFunction "moveNodeDown" [text|
+  function moveNodeDown(node) {
+    var el = $(node);
+    while (el.next().is(".dummy"))
+      el.next().after(el);
+    if (el.not(':last-child'))
+      el.next().after(el);
+    }
   |]
 
 -- | Create a new category.
@@ -600,6 +645,22 @@ js_submitItemInfo = makeJSFunction "submitItemInfo" [text|
     }
   |]
 
+js_moveTraitUp :: JSFunction a => a
+js_moveTraitUp = makeJSFunction "moveTraitUp" [text|
+  function moveTraitUp(itemId, traitId, traitNode) {
+    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
+    moveNodeUp(traitNode);
+    }
+  |]
+
+js_moveTraitDown :: JSFunction a => a
+js_moveTraitDown = makeJSFunction "moveTraitDown" [text|
+  function moveTraitDown(itemId, traitId, traitNode) {
+    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
+    moveNodeDown(traitNode);
+    }
+  |]
+
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
 type JS = Text
@@ -613,12 +674,18 @@ textButton caption handler =
   span_ [class_ "textButton"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
+imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
+imgButton src attrs handler =
+  a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
+
 type JQuerySelector = Text
 
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
   uid' <- randomUid
-  span_ [id_ (tshow uid')] mempty
+  -- If the class name ever changes, fix 'js_moveNodeUp' and
+  -- 'js_moveNodeDown'.
+  span_ [id_ (tshow uid'), class_ "dummy"] mempty
   return (T.pack (show (format ":has(> #{})" [uid'])))
 
 lucid :: HtmlT IO a -> ActionT IO a
@@ -673,3 +740,13 @@ sanitiseUrl u
   | "http:" `T.isPrefixOf` u  = Just u
   | "https:" `T.isPrefixOf` u = Just u
   | otherwise                 = Just ("http://" <> u)
+
+-- | Move the -1st element that satisfies the predicate- up.
+moveUp :: (a -> Bool) -> [a] -> [a]
+moveUp p (x:y:xs) = if p y then (y:x:xs) else x : moveUp p (y:xs)
+moveUp _ xs = xs
+
+-- | Move the -1st element that satisfies the predicate- down.
+moveDown :: (a -> Bool) -> [a] -> [a]
+moveDown p (x:y:xs) = if p x then (y:x:xs) else x : moveDown p (y:xs)
+moveDown _ xs = xs
