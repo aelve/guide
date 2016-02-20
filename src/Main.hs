@@ -287,7 +287,7 @@ renderCategoryDescription editable category =
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
-  div_ [id_ (tshow (category^.uid))] $ do
+  div_ $ do
     renderCategoryTitle Editable category
     renderCategoryDescription Editable category
     itemsNode <- div_ [class_ "items"] $ do
@@ -301,7 +301,7 @@ renderItem
   -> Item
   -> HtmlT IO ()
 renderItem editable item =
-  div_ [class_ "item", id_ (tshow (item^.uid))] $ do
+  div_ [class_ "item"] $ do
     itemNode <- thisNode
     h3_ $ do
       -- If the library is on Hackage, the title links to its Hackage page;
