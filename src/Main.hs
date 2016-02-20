@@ -259,13 +259,13 @@ renderCategoryTitle editable category =
         -- TODO: make category headings anchor links
         toHtml (category^.title)
         textButton "edit" $
-          js_startCategoryTitleEdit (titleNode, category^.uid)
+          js_setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
         let handler s = js_submitCategoryTitleEdit
                           (titleNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.title), submitFunc handler]
         textButton "cancel" $
-          js_cancelCategoryTitleEdit (titleNode, category^.uid)
+          js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
 renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
 renderCategoryDescription editable category =
@@ -275,13 +275,13 @@ renderCategoryDescription editable category =
       Editable -> do
         toHtml (category^.description)
         textButton "edit" $
-          js_startCategoryDescriptionEdit (descrNode, category^.uid)
+          js_setCategoryDescriptionMode (descrNode, category^.uid, InEdit)
       InEdit -> do
         let handler s = js_submitCategoryDescriptionEdit
                           (descrNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.description), submitFunc handler]
         textButton "cancel" $
-          js_cancelCategoryDescriptionEdit (descrNode, category^.uid)
+          js_setCategoryDescriptionMode (descrNode, category^.uid, Editable)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
@@ -349,14 +349,14 @@ renderProCon Editable itemId proCon = li_ $ do
   this <- thisNode
   toHtml (proCon^.content)
   textButton "edit" $
-    js_startProConEdit (this, itemId, proCon^.uid)
+    js_setProConMode (this, itemId, proCon^.uid, InEdit)
 renderProCon InEdit itemId thing = li_ $ do
   this <- thisNode
   let handler s = js_submitProConEdit
                     (this, itemId, thing^.uid, s)
   input_ [type_ "text", value_ (thing^.content), submitFunc handler]
   textButton "cancel" $
-    js_cancelProConEdit (this, itemId, thing^.uid)
+    js_setProConMode (this, itemId, thing^.uid, Editable)
 
 -- Utils
 
@@ -400,13 +400,20 @@ instance JSParams a => JSFunction (a -> JS) where
 
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
+  -- Utilities
   js_replaceWithData, js_appendData,
+  -- Add methods
   js_addLibrary, js_addCategory,
-  js_startCategoryTitleEdit, js_submitCategoryTitleEdit, js_cancelCategoryTitleEdit,
-  js_startCategoryDescriptionEdit, js_submitCategoryDescriptionEdit, js_cancelCategoryDescriptionEdit,
   js_addPro, js_addCon,
+  -- Render-as-editable methods
+  js_setCategoryTitleMode,
+  js_setCategoryDescriptionMode,
   js_setItemMode,
-  js_startProConEdit, js_submitProConEdit, js_cancelProConEdit ]
+  js_setProConMode,
+  -- Set methods
+  js_submitCategoryTitleEdit,
+  js_submitProConEdit,
+  js_submitCategoryDescriptionEdit ]
 
 js_replaceWithData :: JSFunction a => a
 js_replaceWithData = makeJSFunction "replaceWithData" [text|
@@ -438,28 +445,10 @@ js_addLibrary = makeJSFunction "addLibrary" [text|
     }
   |]
 
-{- |
-Start category title editing (this happens when you click on “[edit]”).
-
-This turns the title into an editbox, and adds a [cancel] link.
--}
-js_startCategoryTitleEdit :: JSFunction a => a
-js_startCategoryTitleEdit = makeJSFunction "startCategoryTitleEdit" [text|
-  function startCategoryTitleEdit(node, catId) {
-    $.get("/render/category/"+catId+"/title", {mode: "in-edit"})
-     .done(replaceWithData(node));
-    }
-  |]
-
-{- |
-Cancel category title editing.
-
-This turns the title with the editbox back into a simple text title.
--}
-js_cancelCategoryTitleEdit :: JSFunction a => a
-js_cancelCategoryTitleEdit = makeJSFunction "cancelCategoryTitleEdit" [text|
-  function cancelCategoryTitleEdit(node, catId) {
-    $.get("/render/category/"+catId+"/title", {mode: "editable"})
+js_setCategoryTitleMode :: JSFunction a => a
+js_setCategoryTitleMode = makeJSFunction "setCategoryTitleMode" [text|
+  function setCategoryTitleMode(node, catId, mode) {
+    $.get("/render/category/"+catId+"/title", {mode: mode})
      .done(replaceWithData(node));
     }
   |]
@@ -477,28 +466,10 @@ js_submitCategoryTitleEdit = makeJSFunction "submitCategoryTitleEdit" [text|
     }
   |]
 
-{- |
-Start category description editing (this happens when you click on “[edit]”).
-
-This turns the description into an editbox, and adds a [cancel] link.
--}
-js_startCategoryDescriptionEdit :: JSFunction a => a
-js_startCategoryDescriptionEdit = makeJSFunction "startCategoryDescriptionEdit" [text|
-  function startCategoryDescriptionEdit(node, catId) {
-    $.get("/render/category/"+catId+"/description", {mode: "in-edit"})
-     .done(replaceWithData(node));
-    }
-  |]
-
-{- |
-Cancel category description editing.
-
-This turns the description with the editbox back into a simple text description.
--}
-js_cancelCategoryDescriptionEdit :: JSFunction a => a
-js_cancelCategoryDescriptionEdit = makeJSFunction "cancelCategoryDescriptionEdit" [text|
-  function cancelCategoryDescriptionEdit(node, catId) {
-    $.get("/render/category/"+catId+"/description", {mode: "editable"})
+js_setCategoryDescriptionMode :: JSFunction a => a
+js_setCategoryDescriptionMode = makeJSFunction "setCategoryDescriptionMode" [text|
+  function setCategoryDescriptionMode(node, catId, mode) {
+    $.get("/render/category/"+catId+"/description", {mode: mode})
      .done(replaceWithData(node));
     }
   |]
@@ -543,18 +514,10 @@ js_setItemMode = makeJSFunction "setItemMode" [text|
     }
   |]
 
-js_startProConEdit :: JSFunction a => a
-js_startProConEdit = makeJSFunction "startProConEdit" [text|
-  function startProConEdit(node, itemId, thingId) {
-    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: "in-edit"})
-     .done(replaceWithData(node));
-    }
-  |]
-
-js_cancelProConEdit :: JSFunction a => a
-js_cancelProConEdit = makeJSFunction "cancelProConEdit" [text|
-  function cancelProConEdit(node, itemId, thingId) {
-    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: "editable"})
+js_setProConMode :: JSFunction a => a
+js_setProConMode = makeJSFunction "setProConMode" [text|
+  function setProConMode(node, itemId, thingId, mode) {
+    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: mode})
      .done(replaceWithData(node));
     }
   |]
