@@ -11,6 +11,10 @@
 .pros, .cons {
   margin: 0px 5px; }
 
+.anchor {
+  margin-right: 0.5em;
+  color: gray; }
+
 .textButton {
   margin-left: 1em; }
 

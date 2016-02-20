@@ -254,11 +254,11 @@ renderRoot globalState = do
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =
-  h2_ $ do
+  h2_ [id_ (tshow (category^.uid))] $ do
+    a_ [class_ "anchor", href_ ("#" <> tshow (category^.uid))] "#"
     titleNode <- thisNode
     case editable of
       Editable -> do
-        -- TODO: make category headings anchor links
         toHtml (category^.title)
         textButton "edit" $
           js_setCategoryTitleMode (titleNode, category^.uid, InEdit)
