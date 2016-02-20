@@ -5,10 +5,10 @@
   border: 1px solid;
   margin: 5px; }
 
-.pros-cons {
+.traits {
   display: flex }
 
-.pros, .cons {
+.traits-group {
   margin: 0px 5px; }
 
 .anchor {

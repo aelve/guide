@@ -50,26 +50,26 @@ type Uid = Int
 randomUid :: MonadIO m => m Uid
 randomUid = liftIO $ randomRIO (0, 10^(9::Int))
 
-data ProCon = ProCon {
-  _proConUid :: Uid,
-  _proConContent :: Text }
+data Trait = Trait {
+  _traitUid :: Uid,
+  _traitContent :: Text }
 
-makeFields ''ProCon
+makeFields ''Trait
 
 data ItemKind = HackageLibrary | Library | Unknown
 
 data Item = Item {
   _itemUid  :: Uid,
   _itemName :: Text,
-  _itemPros :: [ProCon],
-  _itemCons :: [ProCon],
+  _itemPros :: [Trait],
+  _itemCons :: [Trait],
   _itemLink :: Maybe Url,
   _itemKind :: ItemKind }
 
 makeFields ''Item
 
-proConById :: Uid -> Lens' Item ProCon
-proConById uid' = singular $
+traitById :: Uid -> Lens' Item Trait
+traitById uid' = singular $
   (pros.each . filtered ((== uid') . view uid)) `failing`
   (cons.each . filtered ((== uid') . view uid))
 
@@ -103,17 +103,17 @@ sampleState = do
   let lensItem = Item {
         _itemUid = 12,
         _itemName = "lens",
-        _itemPros = [ProCon 121 "the standard lenses library",
-                     ProCon 122 "batteries included"],
-        _itemCons = [ProCon 123 "huge"],
+        _itemPros = [Trait 121 "the standard lenses library",
+                     Trait 122 "batteries included"],
+        _itemCons = [Trait 123 "huge"],
         _itemLink = Nothing,
         _itemKind = HackageLibrary }
   let microlensItem = Item {
         _itemUid = 13,
         _itemName = "microlens",
-        _itemPros = [ProCon 131 "very small",
-                     ProCon 132 "good for libraries"],
-        _itemCons = [ProCon 133 "doesn't have advanced features"],
+        _itemPros = [Trait 131 "very small",
+                     Trait 132 "good for libraries"],
+        _itemCons = [Trait 133 "doesn't have advanced features"],
         _itemLink = Just "https://github.com/aelve/microlens",
         _itemKind = HackageLibrary }
   let lensesCategory = Category {
@@ -129,6 +129,9 @@ itemVar = "item" <//> var
 
 categoryVar :: Path '[Uid]
 categoryVar = "category" <//> var
+
+traitVar :: Path '[Uid]
+traitVar = "trait" <//> var
 
 main :: IO ()
 main = runSpock 8080 $ spockT id $ do
@@ -163,17 +166,17 @@ main = runSpock 8080 $ spockT id $ do
       item <- withGlobal $ use (itemById itemId)
       renderMode <- param' "mode"
       lucid $ renderItemInfo renderMode item
-    -- Item pros-cons
-    Spock.get (itemVar <//> "pros-cons") $ \itemId -> do
+    -- All item traits
+    Spock.get (itemVar <//> "traits") $ \itemId -> do
       item <- withGlobal $ use (itemById itemId)
       renderMode <- param' "mode"
-      lucid $ renderItemProsCons renderMode item
-    -- Pro/con
-    Spock.get (itemVar <//> "pro-con" <//> var) $
-      \itemId thingId -> do
-         thing <- withGlobal $ use (itemById itemId . proConById thingId)
+      lucid $ renderItemTraits renderMode item
+    -- A single trait
+    Spock.get (itemVar <//> traitVar) $
+      \itemId traitId -> do
+         trait <- withGlobal $ use (itemById itemId . traitById traitId)
          renderMode <- param' "mode"
-         lucid $ renderProCon renderMode itemId thing
+         lucid $ renderTrait renderMode itemId trait
 
   -- The add/set methods return rendered parts of the structure (added
   -- categories, changed items, etc) so that the Javascript part could take
@@ -196,14 +199,14 @@ main = runSpock 8080 $ spockT id $ do
         categoryById catId . description .= content'
         use (categoryById catId)
       lucid $ renderCategoryDescription Editable changedCategory
-    -- Pro/con
-    Spock.post (itemVar <//> "pro-con" <//> var) $
-      \itemId thingId -> do
+    -- Trait
+    Spock.post (itemVar <//> traitVar) $
+      \itemId traitId -> do
          content' <- param' "content"
-         changedThing <- withGlobal $ do
-           itemById itemId . proConById thingId . content .= content'
-           use (itemById itemId . proConById thingId)
-         lucid $ renderProCon Editable itemId changedThing
+         changedTrait <- withGlobal $ do
+           itemById itemId . traitById traitId . content .= content'
+           use (itemById itemId . traitById traitId)
+         lucid $ renderTrait Editable itemId changedTrait
 
   -- Add methods
   Spock.subcomponent "add" $ do
@@ -237,16 +240,16 @@ main = runSpock 8080 $ spockT id $ do
     Spock.post (itemVar <//> "pro") $ \itemId -> do
       content' <- param' "content"
       uid' <- randomUid
-      let newThing = ProCon uid' content'
-      withGlobal $ itemById itemId . pros %= (++ [newThing])
-      lucid $ renderProCon Editable itemId newThing
+      let newTrait = Trait uid' content'
+      withGlobal $ itemById itemId . pros %= (++ [newTrait])
+      lucid $ renderTrait Editable itemId newTrait
     -- Con (argument against a library)
     Spock.post (itemVar <//> "con") $ \itemId -> do
       content' <- param' "content"
       uid' <- randomUid
-      let newThing = ProCon uid' content'
-      withGlobal $ itemById itemId . cons %= (++ [newThing])
-      lucid $ renderProCon Editable itemId newThing
+      let newTrait = Trait uid' content'
+      withGlobal $ itemById itemId . cons %= (++ [newTrait])
+      lucid $ renderTrait Editable itemId newTrait
 
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
@@ -278,7 +281,7 @@ renderCategoryTitle editable category =
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
--- TODO: render descriptions and pros/cons as Markdown
+-- TODO: render descriptions and traits as Markdown
 
 renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
 renderCategoryDescription editable category =
@@ -311,7 +314,7 @@ renderItem :: Item -> HtmlT IO ()
 renderItem item =
   div_ [class_ "item"] $ do
     renderItemInfo Normal item
-    renderItemProsCons Normal item
+    renderItemTraits Normal item
 
 renderItemInfo :: Editable -> Item -> HtmlT IO ()
 renderItemInfo editable item =
@@ -336,52 +339,52 @@ renderItemInfo editable item =
   where
     hackageLink = "https://hackage.haskell.org/package/" <> item^.name
 
-renderItemProsCons :: Editable -> Item -> HtmlT IO ()
-renderItemProsCons editable item =
-  div_ [class_ "pros-cons"] $ do
+renderItemTraits :: Editable -> Item -> HtmlT IO ()
+renderItemTraits editable item =
+  div_ [class_ "traits"] $ do
     this <- thisNode
     case editable of
       Normal -> textButton "edit" $
-        js_setItemProsConsMode (this, item^.uid, Editable)
+        js_setItemTraitsMode (this, item^.uid, Editable)
       Editable -> textButton "edit off" $
-        js_setItemProsConsMode (this, item^.uid, Normal)
-    div_ [class_ "pros"] $ do
+        js_setItemTraitsMode (this, item^.uid, Normal)
+    div_ [class_ "traits-group"] $ do
       p_ "Pros:"
       case editable of
         Normal ->
-          ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.pros)
+          ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.pros)
         Editable -> do
           listNode <- ul_ $ do
-            mapM_ (renderProCon Editable (item^.uid)) (item^.pros)
+            mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
             thisNode
           let handler s = js_addPro (listNode, item^.uid, s)
           input_ [type_ "text", placeholder_ "add pro", submitFunc handler]
-    div_ [class_ "cons"] $ do
+    div_ [class_ "traits-group"] $ do
       p_ "Cons:"
       case editable of
         Normal ->
-          ul_ $ mapM_ (renderProCon Normal (item^.uid)) (item^.cons)
+          ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.cons)
         Editable -> do
           listNode <- ul_ $ do
-            mapM_ (renderProCon Editable (item^.uid)) (item^.cons)
+            mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
             thisNode
           let handler s = js_addCon (listNode, item^.uid, s)
           input_ [type_ "text", placeholder_ "add con", submitFunc handler]
 
-renderProCon :: Editable -> Uid -> ProCon -> HtmlT IO ()
-renderProCon Normal _ proCon = li_ (toHtml (proCon^.content))
-renderProCon Editable itemId proCon = li_ $ do
+renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
+renderTrait Normal _ trait = li_ (toHtml (trait^.content))
+renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
-  toHtml (proCon^.content)
+  toHtml (trait^.content)
   textButton "edit" $
-    js_setProConMode (this, itemId, proCon^.uid, InEdit)
-renderProCon InEdit itemId thing = li_ $ do
+    js_setTraitMode (this, itemId, trait^.uid, InEdit)
+renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
-  let handler s = js_submitProConEdit
-                    (this, itemId, thing^.uid, s)
-  input_ [type_ "text", value_ (thing^.content), submitFunc handler]
+  let handler s = js_submitTraitEdit
+                    (this, itemId, trait^.uid, s)
+  input_ [type_ "text", value_ (trait^.content), submitFunc handler]
   textButton "cancel" $
-    js_setProConMode (this, itemId, thing^.uid, Editable)
+    js_setTraitMode (this, itemId, trait^.uid, Editable)
 
 -- Utils
 
@@ -423,8 +426,6 @@ instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _ = \args ->
     fName <> "(" <> T.intercalate "," (jsParams args) <> ");"
 
--- TODO: rename pros/cons to traits
-
 allJSFunctions :: JSFunction a => [a]
 allJSFunctions = [
   -- Utilities
@@ -434,11 +435,11 @@ allJSFunctions = [
   js_addPro, js_addCon,
   -- Render-as-editable methods
   js_setCategoryTitleMode, js_setCategoryDescriptionMode,
-  js_setItemInfoMode, js_setItemProsConsMode,
-  js_setProConMode,
+  js_setItemInfoMode, js_setItemTraitsMode,
+  js_setTraitMode,
   -- Set methods
   js_submitCategoryTitleEdit,
-  js_submitProConEdit,
+  js_submitTraitEdit,
   js_submitCategoryDescriptionEdit ]
 
 js_replaceWithData :: JSFunction a => a
@@ -539,26 +540,26 @@ js_setItemInfoMode = makeJSFunction "setItemInfoMode" [text|
     }
   |]
 
-js_setItemProsConsMode :: JSFunction a => a
-js_setItemProsConsMode = makeJSFunction "setItemProsConsMode" [text|
-  function setItemProsConsMode(node, itemId, mode) {
-    $.get("/render/item/"+itemId+"/pros-cons", {mode: mode})
+js_setItemTraitsMode :: JSFunction a => a
+js_setItemTraitsMode = makeJSFunction "setItemTraitsMode" [text|
+  function setItemTraitsMode(node, itemId, mode) {
+    $.get("/render/item/"+itemId+"/traits", {mode: mode})
      .done(replaceWithData(node));
     }
   |]
 
-js_setProConMode :: JSFunction a => a
-js_setProConMode = makeJSFunction "setProConMode" [text|
-  function setProConMode(node, itemId, thingId, mode) {
-    $.get("/render/item/"+itemId+"/pro-con/"+thingId, {mode: mode})
+js_setTraitMode :: JSFunction a => a
+js_setTraitMode = makeJSFunction "setTraitMode" [text|
+  function setTraitMode(node, itemId, traitId, mode) {
+    $.get("/render/item/"+itemId+"/trait/"+traitId, {mode: mode})
      .done(replaceWithData(node));
     }
   |]
 
-js_submitProConEdit :: JSFunction a => a
-js_submitProConEdit = makeJSFunction "submitProConEdit" [text|
-  function submitProConEdit(node, itemId, thingId, s) {
-    $.post("/set/item/"+itemId+"/pro-con/"+thingId, {content: s})
+js_submitTraitEdit :: JSFunction a => a
+js_submitTraitEdit = makeJSFunction "submitTraitEdit" [text|
+  function submitTraitEdit(node, itemId, traitId, s) {
+    $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
      .done(replaceWithData(node));
     }
   |]
