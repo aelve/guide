@@ -5,6 +5,7 @@ RecordWildCards,
 RankNTypes,
 FlexibleInstances,
 FlexibleContexts,
+GeneralizedNewtypeDeriving,
 QuasiQuotes,
 ScopedTypeVariables,
 MultiParamTypeClasses,
@@ -30,6 +31,7 @@ import qualified Data.Text.Lazy as TL
 import Data.Text.Format hiding (format)
 import qualified Data.Text.Format as Format
 import qualified Data.Text.Format.Params as Format
+import qualified Data.Text.Buildable as Format
 import NeatInterpolation
 -- Randomness
 import System.Random
@@ -280,7 +282,7 @@ renderRoot globalState = do
   includeCSS "/css.css"
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
-  script_ $ T.unlines (map snd (allJSFunctions :: [(Text, JS)]))
+  script_ (fromJS allJSFunctions)
   categoriesNode <- div_ [id_ "categories"] $ do
     mapM_ renderCategory (globalState ^. categories)
     thisNode
@@ -377,7 +379,8 @@ renderItemInfo editable item =
           br_ []
           input_ [type_ "submit", value_ "Submit"]
           let cancelHandler = js_setItemInfoMode (this, item^.uid, Normal)
-          input_ [type_ "button", value_ "Cancel", onclick_ cancelHandler]
+          input_ [type_ "button", value_ "Cancel",
+                  onclick_ (fromJS cancelHandler)]
 
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
@@ -446,10 +449,10 @@ onInputSubmit f = onkeyup_ $ format
   "if (event.keyCode == 13) {\
   \  {}\
   \  this.value = ''; }"
-  [f "this.value"]
+  [f (JS "this.value")]
 
 onFormSubmit :: (JS -> JS) -> Attribute
-onFormSubmit f = onsubmit_ $ format "{} return false;" [f "this"]
+onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
 
 -- Javascript
 
@@ -459,28 +462,24 @@ class JSFunction a where
   makeJSFunction
     :: Text          -- ^ Name
     -> [Text]        -- ^ Parameter names
-    -> JS            -- ^ Definition
+    -> Text          -- ^ Definition
     -> a
 
--- This generates function name
-instance JSFunction Text where
-  makeJSFunction fName _fParams _fDef = fName
-
--- This generates function name and definition
-instance JSFunction (Text, JS) where
-  makeJSFunction fName fParams fDef = (fName, fullDef)
-    where
-      fullDef = format "function {}({}) {\n{}}\n"
-                       (fName, T.intercalate "," fParams, fDef)
+-- This generates function definition
+instance JSFunction JS where
+  makeJSFunction fName fParams fDef =
+    JS $ format "function {}({}) {\n{}}\n"
+                (fName, T.intercalate "," fParams, fDef)
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
 instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _fParams _fDef = \args ->
-    format "{}({});" (fName, T.intercalate "," (jsParams args))
+    JS $ format "{}({});"
+                (fName, T.intercalate "," (map fromJS (jsParams args)))
 
-allJSFunctions :: JSFunction a => [a]
-allJSFunctions = [
+allJSFunctions :: JS
+allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
   js_replaceWithData, js_appendData,
   js_moveNodeUp, js_moveNodeDown,
@@ -669,20 +668,21 @@ js_moveTraitDown =
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
-type JS = Text
+newtype JS = JS {fromJS :: Text}
+  deriving (Show, Format.Buildable)
 
 -- A text button looks like “[cancel]”
 textButton
   :: Text         -- ^ Button text
   -> JS           -- ^ Onclick handler
   -> HtmlT IO ()
-textButton caption handler =
+textButton caption (JS handler) =
   span_ [class_ "textButton"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
 -- So far all icons used here have been from <https://useiconic.com/open/>
 imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
-imgButton src attrs handler =
+imgButton src attrs (JS handler) =
   a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
 
 type JQuerySelector = Text
@@ -693,7 +693,7 @@ thisNode = do
   -- If the class name ever changes, fix 'js_moveNodeUp' and
   -- 'js_moveNodeDown'.
   span_ [id_ (tshow uid'), class_ "dummy"] mempty
-  return (T.pack (show (format ":has(> #{})" [uid'])))
+  return (format ":has(> #{})" [uid'])
 
 lucid :: HtmlT IO a -> ActionT IO a
 lucid h = do
@@ -718,15 +718,16 @@ instance PathPiece Editable where
   toPathPiece Editable = "editable"
   toPathPiece InEdit   = "in-edit"
 
-class LiftJS a where liftJS :: a -> Text
+class LiftJS a where liftJS :: a -> JS
 
-instance LiftJS Text where liftJS = id
-instance LiftJS Integer where liftJS = tshow
-instance LiftJS Int where liftJS = tshow
-instance LiftJS Editable where liftJS = tshow . toPathPiece
+instance LiftJS JS where liftJS = id
+instance LiftJS Text where liftJS = JS . tshow
+instance LiftJS Integer where liftJS = JS . tshow
+instance LiftJS Int where liftJS = JS . tshow
+instance LiftJS Editable where liftJS = JS . tshow . toPathPiece
 
 class JSParams a where
-  jsParams :: a -> [Text]
+  jsParams :: a -> [JS]
 
 instance JSParams () where
   jsParams () = []
