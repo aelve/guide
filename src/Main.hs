@@ -43,6 +43,12 @@ import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 import Web.PathPieces
 import Text.HTML.SanitizeXSS (sanitaryURI)
+-- blaze-html (cheapskate uses it, so we need to be able to convert)
+import qualified Text.Blaze.Html.Renderer.Text as Blaze
+import qualified Text.Blaze.Html as Blaze
+-- Markdown
+import Cheapskate
+import Cheapskate.Html
 
 
 type Url = Text
@@ -336,15 +342,13 @@ renderCategoryTitle editable category =
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
--- TODO: render descriptions and traits as Markdown
-
 renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
 renderCategoryDescription editable category =
-  p_ $ do
+  div_ $ do
     descrNode <- thisNode
     case editable of
       Editable -> do
-        toHtml (category^.description)
+        renderMarkdownLong (category^.description)
         textButton "edit" $
           js_setCategoryDescriptionMode (descrNode, category^.uid, InEdit)
       InEdit -> do
@@ -454,10 +458,10 @@ renderItemTraits editable item =
           input_ [type_ "text", placeholder_ "add con", onInputSubmit handler]
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
-renderTrait Normal _itemId trait = li_ (toHtml (trait^.content))
+renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
 renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
-  toHtml (trait^.content)
+  renderMarkdownLine (trait^.content)
   imgButton "/arrow-thick-top.svg" [width_ "12px"] $
     js_moveTraitUp (itemId, trait^.uid, this)
   imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
@@ -807,3 +811,24 @@ moveUp _ xs = xs
 moveDown :: (a -> Bool) -> [a] -> [a]
 moveDown p (x:y:xs) = if p x then (y:x:xs) else x : moveDown p (y:xs)
 moveDown _ xs = xs
+
+renderMarkdownLine :: Monad m => Text -> HtmlT m ()
+renderMarkdownLine s = do
+  let Doc opts blocks = markdown def{allowRawHtml=False} s
+      inlines = extractInlines =<< blocks
+  blazeToLucid (renderInlines opts inlines)
+  where
+    extractInlines (Para xs) = xs
+    extractInlines (Header _ xs) = xs
+    extractInlines (Blockquote bs) = extractInlines =<< bs
+    extractInlines (List _ _ bss) = extractInlines =<< mconcat bss
+    extractInlines (CodeBlock _ x) = pure (Code x)
+    extractInlines (HtmlBlock x) = pure (Code x)
+    extractInlines HRule = mempty
+
+renderMarkdownLong :: Monad m => Text -> HtmlT m ()
+renderMarkdownLong =
+  blazeToLucid . renderDoc . markdown def{allowRawHtml=False}
+
+blazeToLucid :: Monad m => Blaze.Html -> HtmlT m ()
+blazeToLucid = toHtmlRaw . Blaze.renderHtml
