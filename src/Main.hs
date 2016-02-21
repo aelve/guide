@@ -320,6 +320,22 @@ renderRoot globalState = do
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ (fromJS allJSFunctions)
+  div_ [id_ "help"] $ renderMarkdownLong [text|
+    You can edit everything without registration. Here are some
+    guidelines/observations/etc that probably make sense:
+
+      * sort pros/cons by importance
+      * if you don't something for any reason, edit it
+      * if you're unsure about something, still write it
+        (just warn others that you're unsure)
+      * if you have useful information of any kind that doesn't fit,
+        add it to the category notes
+
+    Subjective judgements and incomplete entries are completely alright –
+    it's not Wikipedia, it's collaborative notes, so don't be afraid to
+    write anything here. Also, Markdown is supported, so use
+    bold/italics/code if you need to.
+    |]
   categoriesNode <- div_ [id_ "categories"] $ do
     mapM_ renderCategory (globalState ^. categories)
     thisNode
