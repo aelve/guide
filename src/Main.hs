@@ -60,7 +60,15 @@ data Trait = Trait {
 
 makeFields ''Trait
 
-data ItemKind = HackageLibrary | Library | Unknown
+data ItemKind
+  = Library {_itemKindOnHackage :: Bool}
+  | Other
+  deriving (Eq, Show)
+
+hackageLibrary :: ItemKind
+hackageLibrary = Library True
+
+makeFields ''ItemKind
 
 data Item = Item {
   _itemUid  :: Uid,
@@ -111,7 +119,7 @@ sampleState = do
                      Trait 122 "batteries included"],
         _itemCons = [Trait 123 "huge"],
         _itemLink = Nothing,
-        _itemKind = HackageLibrary }
+        _itemKind = hackageLibrary }
   let microlensItem = Item {
         _itemUid = 13,
         _itemName = "microlens",
@@ -119,7 +127,7 @@ sampleState = do
                      Trait 132 "good for libraries"],
         _itemCons = [Trait 133 "doesn't have advanced features"],
         _itemLink = Just "https://github.com/aelve/microlens",
-        _itemKind = HackageLibrary }
+        _itemKind = hackageLibrary }
   let lensesCategory = Category {
         _categoryUid = 1,
         _categoryTitle = "lenses",
@@ -195,15 +203,19 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (itemVar <//> "info") $ \itemId -> do
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
+    onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
     changedItem <- withGlobal $ do
+      let thisItem :: Lens' GlobalState Item
+          thisItem = itemById itemId
       -- TODO: actually validate the form and report errors
       unless (T.null name') $
-        itemById itemId . name .= name'
+        thisItem.name .= name'
       case (T.null link', sanitiseUrl link') of
-        (True, _)   -> itemById itemId . link .= Nothing
-        (_, Just l) -> itemById itemId . link .= Just l
+        (True, _)   -> thisItem.link .= Nothing
+        (_, Just l) -> thisItem.link .= Just l
         _otherwise  -> return ()
-      use (itemById itemId)
+      thisItem.kind.onHackage .= onHackage'
+      use thisItem
     lucid $ renderItemInfo Normal changedItem
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
@@ -236,7 +248,7 @@ addMethods = Spock.subcomponent "add" $ do
           _itemPros = [],
           _itemCons = [],
           _itemLink = Nothing,
-          _itemKind = HackageLibrary }
+          _itemKind = hackageLibrary }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     withGlobal $ categoryById catId . items %= (++ [newItem])
@@ -374,9 +386,9 @@ renderItemInfo editable item =
         -- present, it's going to be rendered as “(site)”, not linked in the
         -- title.
         let hackageLink = "https://hackage.haskell.org/package/" <> item^.name
-        case item^.kind of
-          HackageLibrary -> a_ [href_ hackageLink] (toHtml (item^.name))
-          _otherwise     -> toHtml (item^.name)
+        case item^?kind.onHackage of
+          Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
+          _otherwise -> toHtml (item^.name)
         case item^.link of
           Just l  -> " (" >> a_ [href_ l] "site" >> ")"
           Nothing -> return ()
@@ -390,6 +402,11 @@ renderItemInfo editable item =
             "Package name: "
             input_ [type_ "text", name_ "name",
                     value_ (item^.name)]
+          br_ []
+          label_ $ do
+            "On Hackage: "
+            input_ $ [type_ "checkbox", name_ "on-hackage"] ++
+                     [checked_ | item^?kind.onHackage == Just True]
           br_ []
           label_ $ do
             "Site (optional): "
