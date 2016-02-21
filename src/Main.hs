@@ -276,6 +276,14 @@ main = runSpock 8080 $ spockT id $ do
         itemById itemId . pros %= move ((== traitId) . view uid)
         itemById itemId . cons %= move ((== traitId) . view uid)
 
+  -- Deleting things
+  Spock.subcomponent "delete" $ do
+    -- Delete trait
+    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      withGlobal $ do
+        itemById itemId . pros %= filter ((/= traitId) . view uid)
+        itemById itemId . cons %= filter ((/= traitId) . view uid)
+
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
@@ -426,6 +434,11 @@ renderTrait Editable itemId trait = li_ $ do
     js_moveTraitUp (itemId, trait^.uid, this)
   imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
     js_moveTraitDown (itemId, trait^.uid, this)
+  -- TODO: these 3 icons in a row don't look nice
+  -- TODO: it's too easy to delete something accidentally – there should be
+  -- some way to revert everything
+  imgButton "/x.svg" [width_ "12px"] $
+    js_deleteTrait (itemId, trait^.uid, this)
   textButton "edit" $
     js_setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do
@@ -495,7 +508,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   js_submitTrait,
   js_submitItemInfo,
   -- Other things
-  js_moveTraitUp, js_moveTraitDown ]
+  js_moveTraitUp, js_moveTraitDown, js_deleteTrait ]
 
 js_replaceWithData :: JSFunction a => a
 js_replaceWithData =
@@ -664,6 +677,14 @@ js_moveTraitDown =
   [text|
     $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
     moveNodeDown(traitNode);
+  |]
+
+js_deleteTrait :: JSFunction a => a
+js_deleteTrait =
+  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
+  [text|
+    $.post("/delete/item/"+itemId+"/trait/"+traitId);
+    $(traitNode).remove();
   |]
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
