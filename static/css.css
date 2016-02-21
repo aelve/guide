@@ -11,12 +11,17 @@
 .traits-group {
   margin: 0px 5px; }
 
-.anchor {
-  margin-right: 0.5em;
-  color: gray; }
-
 .textButton {
   margin-left: 1em; }
 
 .textButton::before {content: "[";}
 .textButton::after  {content: "]";}
+
+a:link    {color: #008ACE; text-decoration: none;}
+a:visited {color: #B40EB4; text-decoration: none;}
+a:hover   {text-decoration: underline;}
+a:active  {text-decoration: underline;}
+
+a.anchor {
+  margin-right: 0.5em;
+  color: gray; }
