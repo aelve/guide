@@ -10,6 +10,7 @@ QuasiQuotes,
 ScopedTypeVariables,
 MultiParamTypeClasses,
 FunctionalDependencies,
+TypeFamilies,
 DataKinds,
 NoImplicitPrelude
   #-}
@@ -136,136 +137,127 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid]
 traitVar = "trait" <//> var
 
-main :: IO ()
-main = runSpock 8080 $ spockT id $ do
-  middleware (staticPolicy (addBase "static"))
-  stateVar <- liftIO $ newIORef sampleState
-  let withGlobal :: MonadIO m => State GlobalState a -> m a
-      withGlobal f = liftIO $ atomicModifyIORef' stateVar (swap . runState f)
+withGlobal :: (MonadIO m, HasSpock m, SpockState m ~ IORef GlobalState)
+           => State GlobalState a -> m a
+withGlobal act = do
+  stateVar <- Spock.getState
+  liftIO $ atomicModifyIORef' stateVar (swap . runState act)
 
-  -- Main page
-  Spock.get root $ do
-    s <- liftIO $ readIORef stateVar
-    lucid $ renderRoot s
+renderMethods :: SpockM () () (IORef GlobalState) ()
+renderMethods = Spock.subcomponent "render" $ do
+  -- Title of a category
+  Spock.get (categoryVar <//> "title") $ \catId -> do
+    category <- withGlobal $ use (categoryById catId)
+    renderMode <- param' "mode"
+    lucid $ renderCategoryTitle renderMode category
+  -- Description of a category
+  Spock.get (categoryVar <//> "description") $ \catId -> do
+    category <- withGlobal $ use (categoryById catId)
+    renderMode <- param' "mode"
+    lucid $ renderCategoryDescription renderMode category
+  -- Item
+  Spock.get itemVar $ \itemId -> do
+    item <- withGlobal $ use (itemById itemId)
+    lucid $ renderItem item
+  -- Item info
+  Spock.get (itemVar <//> "info") $ \itemId -> do
+    item <- withGlobal $ use (itemById itemId)
+    renderMode <- param' "mode"
+    lucid $ renderItemInfo renderMode item
+  -- All item traits
+  Spock.get (itemVar <//> "traits") $ \itemId -> do
+    item <- withGlobal $ use (itemById itemId)
+    renderMode <- param' "mode"
+    lucid $ renderItemTraits renderMode item
+  -- A single trait
+  Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
+    trait <- withGlobal $ use (itemById itemId . traitById traitId)
+    renderMode <- param' "mode"
+    lucid $ renderTrait renderMode itemId trait
 
-  -- Render methods
-  Spock.subcomponent "render" $ do
-    -- Title of a category
-    Spock.get (categoryVar <//> "title") $ \catId -> do
-      category <- withGlobal $ use (categoryById catId)
-      renderMode <- param' "mode"
-      lucid $ renderCategoryTitle renderMode category
-    -- Description of a category
-    Spock.get (categoryVar <//> "description") $ \catId -> do
-      category <- withGlobal $ use (categoryById catId)
-      renderMode <- param' "mode"
-      lucid $ renderCategoryDescription renderMode category
-    -- Item
-    Spock.get itemVar $ \itemId -> do
-      item <- withGlobal $ use (itemById itemId)
-      lucid $ renderItem item
-    -- Item info
-    Spock.get (itemVar <//> "info") $ \itemId -> do
-      item <- withGlobal $ use (itemById itemId)
-      renderMode <- param' "mode"
-      lucid $ renderItemInfo renderMode item
-    -- All item traits
-    Spock.get (itemVar <//> "traits") $ \itemId -> do
-      item <- withGlobal $ use (itemById itemId)
-      renderMode <- param' "mode"
-      lucid $ renderItemTraits renderMode item
-    -- A single trait
-    Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
-      trait <- withGlobal $ use (itemById itemId . traitById traitId)
-      renderMode <- param' "mode"
-      lucid $ renderTrait renderMode itemId trait
+setMethods :: SpockM () () (IORef GlobalState) ()
+setMethods = Spock.subcomponent "set" $ do
+  -- Title of a category
+  Spock.post (categoryVar <//> "title") $ \catId -> do
+    content' <- param' "content"
+    changedCategory <- withGlobal $ do
+      categoryById catId . title .= content'
+      use (categoryById catId)
+    lucid $ renderCategoryTitle Editable changedCategory
+  -- Description of a category
+  Spock.post (categoryVar <//> "description") $ \catId -> do
+    content' <- param' "content"
+    changedCategory <- withGlobal $ do
+      categoryById catId . description .= content'
+      use (categoryById catId)
+    lucid $ renderCategoryDescription Editable changedCategory
+  -- Item info
+  Spock.post (itemVar <//> "info") $ \itemId -> do
+    name' <- T.strip <$> param' "name"
+    link' <- T.strip <$> param' "link"
+    changedItem <- withGlobal $ do
+      -- TODO: actually validate the form and report errors
+      unless (T.null name') $
+        itemById itemId . name .= name'
+      case (T.null link', sanitiseUrl link') of
+        (True, _)   -> itemById itemId . link .= Nothing
+        (_, Just l) -> itemById itemId . link .= Just l
+        _otherwise  -> return ()
+      use (itemById itemId)
+    lucid $ renderItemInfo Normal changedItem
+  -- Trait
+  Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+    content' <- param' "content"
+    changedTrait <- withGlobal $ do
+      itemById itemId . traitById traitId . content .= content'
+      use (itemById itemId . traitById traitId)
+    lucid $ renderTrait Editable itemId changedTrait
 
-  -- The add/set methods return rendered parts of the structure (added
-  -- categories, changed items, etc) so that the Javascript part could take
-  -- them and inject into the page. We don't want to duplicate rendering on
-  -- server side and on client side.
+addMethods :: SpockM () () (IORef GlobalState) ()
+addMethods = Spock.subcomponent "add" $ do
+  -- New category
+  Spock.post "category" $ do
+    content' <- param' "content"
+    uid' <- randomUid
+    let newCategory = Category {
+          _categoryUid = uid',
+          _categoryTitle = content',
+          _categoryDescription = "<write a description here>",
+          _categoryItems = [] }
+    withGlobal $ categories %= (++ [newCategory])
+    lucid $ renderCategory newCategory
+  -- New library in a category
+  Spock.post (categoryVar <//> "library") $ \catId -> do
+    name' <- param' "name"
+    uid' <- randomUid
+    let newItem = Item {
+          _itemUid  = uid',
+          _itemName = name',
+          _itemPros = [],
+          _itemCons = [],
+          _itemLink = Nothing,
+          _itemKind = HackageLibrary }
+    -- TODO: maybe do something if the category doesn't exist (e.g. has been
+    -- already deleted)
+    withGlobal $ categoryById catId . items %= (++ [newItem])
+    lucid $ renderItem newItem
+  -- Pro (argument in favor of a library)
+  Spock.post (itemVar <//> "pro") $ \itemId -> do
+    content' <- param' "content"
+    uid' <- randomUid
+    let newTrait = Trait uid' content'
+    withGlobal $ itemById itemId . pros %= (++ [newTrait])
+    lucid $ renderTrait Editable itemId newTrait
+  -- Con (argument against a library)
+  Spock.post (itemVar <//> "con") $ \itemId -> do
+    content' <- param' "content"
+    uid' <- randomUid
+    let newTrait = Trait uid' content'
+    withGlobal $ itemById itemId . cons %= (++ [newTrait])
+    lucid $ renderTrait Editable itemId newTrait
 
-  -- Set methods
-  Spock.subcomponent "set" $ do
-    -- Title of a category
-    Spock.post (categoryVar <//> "title") $ \catId -> do
-      content' <- param' "content"
-      changedCategory <- withGlobal $ do
-        categoryById catId . title .= content'
-        use (categoryById catId)
-      lucid $ renderCategoryTitle Editable changedCategory
-    -- Description of a category
-    Spock.post (categoryVar <//> "description") $ \catId -> do
-      content' <- param' "content"
-      changedCategory <- withGlobal $ do
-        categoryById catId . description .= content'
-        use (categoryById catId)
-      lucid $ renderCategoryDescription Editable changedCategory
-    -- Item info
-    Spock.post (itemVar <//> "info") $ \itemId -> do
-      name' <- T.strip <$> param' "name"
-      link' <- T.strip <$> param' "link"
-      changedItem <- withGlobal $ do
-        -- TODO: actually validate the form and report errors
-        unless (T.null name') $
-          itemById itemId . name .= name'
-        case (T.null link', sanitiseUrl link') of
-          (True, _)   -> itemById itemId . link .= Nothing
-          (_, Just l) -> itemById itemId . link .= Just l
-          _otherwise  -> return ()
-        use (itemById itemId)
-      lucid $ renderItemInfo Normal changedItem
-    -- Trait
-    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
-      content' <- param' "content"
-      changedTrait <- withGlobal $ do
-        itemById itemId . traitById traitId . content .= content'
-        use (itemById itemId . traitById traitId)
-      lucid $ renderTrait Editable itemId changedTrait
-
-  -- Add methods
-  Spock.subcomponent "add" $ do
-    -- New category
-    Spock.post "category" $ do
-      content' <- param' "content"
-      uid' <- randomUid
-      let newCategory = Category {
-            _categoryUid = uid',
-            _categoryTitle = content',
-            _categoryDescription = "<write a description here>",
-            _categoryItems = [] }
-      withGlobal $ categories %= (++ [newCategory])
-      lucid $ renderCategory newCategory
-    -- New library in a category
-    Spock.post (categoryVar <//> "library") $ \catId -> do
-      name' <- param' "name"
-      uid' <- randomUid
-      let newItem = Item {
-            _itemUid  = uid',
-            _itemName = name',
-            _itemPros = [],
-            _itemCons = [],
-            _itemLink = Nothing,
-            _itemKind = HackageLibrary }
-      -- TODO: maybe do something if the category doesn't exist (e.g. has been
-      -- already deleted)
-      withGlobal $ categoryById catId . items %= (++ [newItem])
-      lucid $ renderItem newItem
-    -- Pro (argument in favor of a library)
-    Spock.post (itemVar <//> "pro") $ \itemId -> do
-      content' <- param' "content"
-      uid' <- randomUid
-      let newTrait = Trait uid' content'
-      withGlobal $ itemById itemId . pros %= (++ [newTrait])
-      lucid $ renderTrait Editable itemId newTrait
-    -- Con (argument against a library)
-    Spock.post (itemVar <//> "con") $ \itemId -> do
-      content' <- param' "content"
-      uid' <- randomUid
-      let newTrait = Trait uid' content'
-      withGlobal $ itemById itemId . cons %= (++ [newTrait])
-      lucid $ renderTrait Editable itemId newTrait
-
+otherMethods :: SpockM () () (IORef GlobalState) ()
+otherMethods = do
   -- Moving things
   Spock.subcomponent "move" $ do
     -- Move trait
@@ -283,6 +275,25 @@ main = runSpock 8080 $ spockT id $ do
       withGlobal $ do
         itemById itemId . pros %= filter ((/= traitId) . view uid)
         itemById itemId . cons %= filter ((/= traitId) . view uid)
+
+main :: IO ()
+main = do
+  stateVar <- newIORef sampleState
+  let config = defaultSpockCfg () PCNoDatabase stateVar
+  runSpock 8080 $ spock config $ do
+    middleware (staticPolicy (addBase "static"))
+    -- Main page
+    Spock.get root $ do
+      s <- liftIO $ readIORef stateVar
+      lucid $ renderRoot s
+    -- The add/set methods return rendered parts of the structure (added
+    -- categories, changed items, etc) so that the Javascript part could take
+    -- them and inject into the page. We don't want to duplicate rendering on
+    -- server side and on client side.
+    renderMethods
+    setMethods
+    addMethods
+    otherMethods
 
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
@@ -716,7 +727,7 @@ thisNode = do
   span_ [id_ (tshow uid'), class_ "dummy"] mempty
   return (format ":has(> #{})" [uid'])
 
-lucid :: HtmlT IO a -> ActionT IO a
+lucid :: MonadIO m => HtmlT IO a -> ActionCtxT ctx m a
 lucid h = do
   htmlText <- liftIO (renderTextT h)
   html (TL.toStrict htmlText)
