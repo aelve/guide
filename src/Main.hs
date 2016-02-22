@@ -94,7 +94,7 @@ traitById uid' = singular $
 data Category = Category {
   _categoryUid :: Uid,
   _categoryTitle :: Text,
-  _categoryDescription :: Text,
+  _categoryNotes :: Text,
   _categoryItems :: [Item] }
 
 makeFields ''Category
@@ -137,7 +137,7 @@ sampleState = do
   let lensesCategory = Category {
         _categoryUid = 1,
         _categoryTitle = "lenses",
-        _categoryDescription = "Lenses are first-class composable accessors.",
+        _categoryNotes = "Lenses are first-class composable accessors.",
         _categoryItems = [lensItem, microlensItem] }
 
   GlobalState {_categories = [lensesCategory]}
@@ -164,11 +164,11 @@ renderMethods = Spock.subcomponent "render" $ do
     category <- withGlobal $ use (categoryById catId)
     renderMode <- param' "mode"
     lucid $ renderCategoryTitle renderMode category
-  -- Description of a category
-  Spock.get (categoryVar <//> "description") $ \catId -> do
+  -- Notes for a category
+  Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- withGlobal $ use (categoryById catId)
     renderMode <- param' "mode"
-    lucid $ renderCategoryDescription renderMode category
+    lucid $ renderCategoryNotes renderMode category
   -- Item
   Spock.get itemVar $ \itemId -> do
     item <- withGlobal $ use (itemById itemId)
@@ -198,13 +198,13 @@ setMethods = Spock.subcomponent "set" $ do
       categoryById catId . title .= content'
       use (categoryById catId)
     lucid $ renderCategoryTitle Editable changedCategory
-  -- Description of a category
-  Spock.post (categoryVar <//> "description") $ \catId -> do
+  -- Notes for a category
+  Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
     changedCategory <- withGlobal $ do
-      categoryById catId . description .= content'
+      categoryById catId . notes .= content'
       use (categoryById catId)
-    lucid $ renderCategoryDescription Editable changedCategory
+    lucid $ renderCategoryNotes Editable changedCategory
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
     name' <- T.strip <$> param' "name"
@@ -240,7 +240,7 @@ addMethods = Spock.subcomponent "add" $ do
     let newCategory = Category {
           _categoryUid = uid',
           _categoryTitle = content',
-          _categoryDescription = "<write a description here>",
+          _categoryNotes = "(write some notes here, describe the category, etc)",
           _categoryItems = [] }
     withGlobal $ categories %= (++ [newCategory])
     lucid $ renderCategory newCategory
@@ -358,27 +358,26 @@ renderCategoryTitle editable category =
         textButton "cancel" $
           js_setCategoryTitleMode (titleNode, category^.uid, Editable)
 
-renderCategoryDescription :: Editable -> Category -> HtmlT IO ()
-renderCategoryDescription editable category =
+renderCategoryNotes :: Editable -> Category -> HtmlT IO ()
+renderCategoryNotes editable category =
   div_ $ do
-    descrNode <- thisNode
+    this <- thisNode
     case editable of
       Editable -> do
-        renderMarkdownLong (category^.description)
+        renderMarkdownLong (category^.notes)
         textButton "edit" $
-          js_setCategoryDescriptionMode (descrNode, category^.uid, InEdit)
+          js_setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
-        let handler s = js_submitCategoryDescription
-                          (descrNode, category^.uid, s)
-        input_ [type_ "text", value_ (category^.description), onInputSubmit handler]
+        let handler s = js_submitCategoryNotes (this, category^.uid, s)
+        input_ [type_ "text", value_ (category^.notes), onInputSubmit handler]
         textButton "cancel" $
-          js_setCategoryDescriptionMode (descrNode, category^.uid, Editable)
+          js_setCategoryNotesMode (this, category^.uid, Editable)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ $ do
     renderCategoryTitle Editable category
-    renderCategoryDescription Editable category
+    renderCategoryNotes Editable category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ renderItem (category^.items)
       thisNode
@@ -548,11 +547,11 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   js_addLibrary, js_addCategory,
   js_addPro, js_addCon,
   -- Render-as-editable methods
-  js_setCategoryTitleMode, js_setCategoryDescriptionMode,
+  js_setCategoryTitleMode, js_setCategoryNotesMode,
   js_setItemInfoMode, js_setItemTraitsMode,
   js_setTraitMode,
   -- Set methods
-  js_submitCategoryTitle, js_submitCategoryDescription,
+  js_submitCategoryTitle, js_submitCategoryNotes,
   js_submitTrait,
   js_submitItemInfo,
   -- Other things
@@ -637,19 +636,19 @@ js_submitCategoryTitle =
      .done(replaceWithData(node));
   |]
 
-js_setCategoryDescriptionMode :: JSFunction a => a
-js_setCategoryDescriptionMode =
-  makeJSFunction "setCategoryDescriptionMode" ["node", "catId", "mode"]
+js_setCategoryNotesMode :: JSFunction a => a
+js_setCategoryNotesMode =
+  makeJSFunction "setCategoryNotesMode" ["node", "catId", "mode"]
   [text|
-    $.get("/render/category/"+catId+"/description", {mode: mode})
+    $.get("/render/category/"+catId+"/notes", {mode: mode})
      .done(replaceWithData(node));
   |]
 
-js_submitCategoryDescription :: JSFunction a => a
-js_submitCategoryDescription =
-  makeJSFunction "submitCategoryDescription" ["node", "catId", "s"]
+js_submitCategoryNotes :: JSFunction a => a
+js_submitCategoryNotes =
+  makeJSFunction "submitCategoryNotes" ["node", "catId", "s"]
   [text|
-    $.post("/set/category/"+catId+"/description", {content: s})
+    $.post("/set/category/"+catId+"/notes", {content: s})
      .done(replaceWithData(node));
   |]
 
