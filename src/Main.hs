@@ -198,17 +198,17 @@ setMethods = Spock.subcomponent "set" $ do
     link' <- T.strip <$> param' "link"
     onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
     changedItem <- withGlobal $ do
-      let thisItem :: Lens' GlobalState Item
-          thisItem = itemById itemId
+      let item :: Lens' GlobalState Item
+          item = itemById itemId
       -- TODO: actually validate the form and report errors
       unless (T.null name') $
-        thisItem.name .= name'
+        item.name .= name'
       case (T.null link', sanitiseUrl link') of
-        (True, _)   -> thisItem.link .= Nothing
-        (_, Just l) -> thisItem.link .= Just l
+        (True, _)   -> item.link .= Nothing
+        (_, Just l) -> item.link .= Just l
         _otherwise  -> return ()
-      thisItem.kind.onHackage .= onHackage'
-      use thisItem
+      item.kind.onHackage .= onHackage'
+      use item
     lucid $ renderItemInfo Normal changedItem
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
@@ -371,7 +371,8 @@ renderCategory category =
     let handler s = JS.addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", onInputSubmit handler]
 
--- TODO: add arrows for moving items left-and-right in the category
+-- TODO: add arrows for moving items left-and-right in the category (or sort
+-- them by popularity?)
 
 renderItem :: Item -> HtmlT IO ()
 renderItem item =
