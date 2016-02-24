@@ -209,7 +209,7 @@ setMethods = Spock.subcomponent "set" $ do
         _otherwise  -> return ()
       item.kind.onHackage .= onHackage'
       use item
-    lucid $ renderItemInfo Normal changedItem
+    lucid $ renderItemInfo Editable changedItem
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
@@ -377,7 +377,7 @@ renderCategory category =
 renderItem :: Item -> HtmlT IO ()
 renderItem item =
   div_ [class_ "item"] $ do
-    renderItemInfo Normal item
+    renderItemInfo Editable item
     renderItemTraits Normal item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
@@ -387,7 +387,7 @@ renderItemInfo editable item =
   div_ $ do
     this <- thisNode
     case editable of
-      Normal -> h3_ $ do
+      Editable -> h3_ $ do
         -- If the library is on Hackage, the title links to its Hackage page;
         -- otherwise, it doesn't link anywhere. Even if the link field is
         -- present, it's going to be rendered as “(site)”, not linked in the
@@ -400,9 +400,8 @@ renderItemInfo editable item =
           Just l  -> " (" >> a_ [href_ l] "site" >> ")"
           Nothing -> return ()
         textButton "edit" $
-          JS.setItemInfoMode (this, item^.uid, Editable)
-      -- TODO: this should actually be InEdit
-      Editable -> do
+          JS.setItemInfoMode (this, item^.uid, InEdit)
+      InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
           label_ $ do
@@ -421,7 +420,7 @@ renderItemInfo editable item =
                     value_ (fromMaybe "" (item^.link))]
           br_ []
           input_ [type_ "submit", value_ "Submit"]
-          let cancelHandler = JS.setItemInfoMode (this, item^.uid, Normal)
+          let cancelHandler = JS.setItemInfoMode (this, item^.uid, Editable)
           input_ [type_ "button", value_ "Cancel",
                   onclick_ (fromJS cancelHandler)]
 
