@@ -469,10 +469,10 @@ renderTrait Editable itemId trait = li_ $ do
   imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
     JS.moveTraitDown (itemId, trait^.uid, this)
   -- TODO: these 3 icons in a row don't look nice
-  -- TODO: it's too easy to delete something accidentally – there should be
-  -- some way to revert everything
+  -- TODO: there should be some way to undelete things (e.g. a list of
+  -- deleted traits under each item)
   imgButton "/x.svg" [width_ "12px"] $
-    JS.deleteTrait (itemId, trait^.uid, this)
+    JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
   textButton "edit" $
     JS.setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do

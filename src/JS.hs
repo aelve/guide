@@ -278,10 +278,12 @@ moveTraitDown =
 
 deleteTrait :: JSFunction a => a
 deleteTrait =
-  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
+  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode", "traitText"]
   [text|
-    $.post("/delete/item/"+itemId+"/trait/"+traitId);
-    $(traitNode).remove();
+    if (confirm("Confirm deletion: “"+traitText+"”")) {
+      $.post("/delete/item/"+itemId+"/trait/"+traitId);
+      $(traitNode).remove();
+    }
   |]
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
