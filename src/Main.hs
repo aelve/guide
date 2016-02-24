@@ -1,14 +1,10 @@
 {-# LANGUAGE
 OverloadedStrings,
 TemplateHaskell,
-RecordWildCards,
 RankNTypes,
 FlexibleInstances,
-FlexibleContexts,
-GeneralizedNewtypeDeriving,
 QuasiQuotes,
 ScopedTypeVariables,
-MultiParamTypeClasses,
 FunctionalDependencies,
 TypeFamilies,
 DataKinds,
@@ -28,11 +24,6 @@ import Lens.Micro.Platform
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import Data.Text.Format hiding (format)
-import qualified Data.Text.Format as Format
-import qualified Data.Text.Format.Params as Format
-import qualified Data.Text.Buildable as Format
 import NeatInterpolation
 -- Randomness
 import System.Random
@@ -42,16 +33,12 @@ import Web.Spock hiding (get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 import Web.PathPieces
-import Text.HTML.SanitizeXSS (sanitaryURI)
--- blaze-html (cheapskate uses it, so we need to be able to convert)
-import qualified Text.Blaze.Html.Renderer.Text as Blaze
-import qualified Text.Blaze.Html as Blaze
--- Markdown
-import Cheapskate
-import Cheapskate.Html
 
+-- Local
+import JS (JS(..), ToJS, allJSFunctions)
+import qualified JS
+import Utils
 
-type Url = Text
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
@@ -320,7 +307,7 @@ renderRoot globalState = do
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ (fromJS allJSFunctions)
-  div_ [id_ "help"] $ renderMarkdownLong [text|
+  div_ [id_ "help"] $ renderMarkdownBlock [text|
     You can edit everything without registration. Here are some
     guidelines/observations/etc that probably make sense:
 
@@ -339,7 +326,7 @@ renderRoot globalState = do
   categoriesNode <- div_ [id_ "categories"] $ do
     mapM_ renderCategory (globalState ^. categories)
     thisNode
-  let handler s = js_addCategory (categoriesNode, s)
+  let handler s = JS.addCategory (categoriesNode, s)
   input_ [type_ "text", placeholder_ "new category", onInputSubmit handler]
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
@@ -351,12 +338,12 @@ renderCategoryTitle editable category =
       Editable -> do
         toHtml (category^.title)
         textButton "edit" $
-          js_setCategoryTitleMode (titleNode, category^.uid, InEdit)
+          JS.setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
-        let handler s = js_submitCategoryTitle (titleNode, category^.uid, s)
+        let handler s = JS.submitCategoryTitle (titleNode, category^.uid, s)
         input_ [type_ "text", value_ (category^.title), onInputSubmit handler]
         textButton "cancel" $
-          js_setCategoryTitleMode (titleNode, category^.uid, Editable)
+          JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
 
 renderCategoryNotes :: Editable -> Category -> HtmlT IO ()
 renderCategoryNotes editable category =
@@ -364,14 +351,14 @@ renderCategoryNotes editable category =
     this <- thisNode
     case editable of
       Editable -> do
-        renderMarkdownLong (category^.notes)
+        renderMarkdownBlock (category^.notes)
         textButton "edit" $
-          js_setCategoryNotesMode (this, category^.uid, InEdit)
+          JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
-        let handler s = js_submitCategoryNotes (this, category^.uid, s)
+        let handler s = JS.submitCategoryNotes (this, category^.uid, s)
         input_ [type_ "text", value_ (category^.notes), onInputSubmit handler]
         textButton "cancel" $
-          js_setCategoryNotesMode (this, category^.uid, Editable)
+          JS.setCategoryNotesMode (this, category^.uid, Editable)
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
@@ -381,7 +368,7 @@ renderCategory category =
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ renderItem (category^.items)
       thisNode
-    let handler s = js_addLibrary (itemsNode, category^.uid, s)
+    let handler s = JS.addLibrary (itemsNode, category^.uid, s)
     input_ [type_ "text", placeholder_ "new item", onInputSubmit handler]
 
 -- TODO: add arrows for moving items left-and-right in the category
@@ -412,10 +399,10 @@ renderItemInfo editable item =
           Just l  -> " (" >> a_ [href_ l] "site" >> ")"
           Nothing -> return ()
         textButton "edit" $
-          js_setItemInfoMode (this, item^.uid, Editable)
+          JS.setItemInfoMode (this, item^.uid, Editable)
       -- TODO: this should actually be InEdit
       Editable -> do
-        let handler s = js_submitItemInfo (this, item^.uid, s)
+        let handler s = JS.submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
           label_ $ do
             "Package name: "
@@ -433,7 +420,7 @@ renderItemInfo editable item =
                     value_ (fromMaybe "" (item^.link))]
           br_ []
           input_ [type_ "submit", value_ "Submit"]
-          let cancelHandler = js_setItemInfoMode (this, item^.uid, Normal)
+          let cancelHandler = JS.setItemInfoMode (this, item^.uid, Normal)
           input_ [type_ "button", value_ "Cancel",
                   onclick_ (fromJS cancelHandler)]
 
@@ -446,9 +433,9 @@ renderItemTraits editable item =
     this <- thisNode
     case editable of
       Normal -> textButton "edit" $
-        js_setItemTraitsMode (this, item^.uid, Editable)
+        JS.setItemTraitsMode (this, item^.uid, Editable)
       Editable -> textButton "edit off" $
-        js_setItemTraitsMode (this, item^.uid, Normal)
+        JS.setItemTraitsMode (this, item^.uid, Normal)
     div_ [class_ "traits-group"] $ do
       p_ "Pros:"
       case editable of
@@ -458,7 +445,7 @@ renderItemTraits editable item =
           listNode <- ul_ $ do
             mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
             thisNode
-          let handler s = js_addPro (listNode, item^.uid, s)
+          let handler s = JS.addPro (listNode, item^.uid, s)
           input_ [type_ "text", placeholder_ "add pro", onInputSubmit handler]
     div_ [class_ "traits-group"] $ do
       p_ "Cons:"
@@ -469,7 +456,7 @@ renderItemTraits editable item =
           listNode <- ul_ $ do
             mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
             thisNode
-          let handler s = js_addCon (listNode, item^.uid, s)
+          let handler s = JS.addCon (listNode, item^.uid, s)
           input_ [type_ "text", placeholder_ "add con", onInputSubmit handler]
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
@@ -478,30 +465,24 @@ renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
   renderMarkdownLine (trait^.content)
   imgButton "/arrow-thick-top.svg" [width_ "12px"] $
-    js_moveTraitUp (itemId, trait^.uid, this)
+    JS.moveTraitUp (itemId, trait^.uid, this)
   imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
-    js_moveTraitDown (itemId, trait^.uid, this)
+    JS.moveTraitDown (itemId, trait^.uid, this)
   -- TODO: these 3 icons in a row don't look nice
   -- TODO: it's too easy to delete something accidentally – there should be
   -- some way to revert everything
   imgButton "/x.svg" [width_ "12px"] $
-    js_deleteTrait (itemId, trait^.uid, this)
+    JS.deleteTrait (itemId, trait^.uid, this)
   textButton "edit" $
-    js_setTraitMode (this, itemId, trait^.uid, InEdit)
+    JS.setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
-  let handler s = js_submitTrait (this, itemId, trait^.uid, s)
+  let handler s = JS.submitTrait (this, itemId, trait^.uid, s)
   input_ [type_ "text", value_ (trait^.content), onInputSubmit handler]
   textButton "cancel" $
-    js_setTraitMode (this, itemId, trait^.uid, Editable)
+    JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
 -- Utils
-
-includeJS :: Monad m => Url -> HtmlT m ()
-includeJS url = with (script_ "") [src_ url]
-
-includeCSS :: Monad m => Url -> HtmlT m ()
-includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
 -- The function is passed a JS expression that refers to text being submitted.
 onInputSubmit :: (JS -> JS) -> Attribute
@@ -513,231 +494,6 @@ onInputSubmit f = onkeyup_ $ format
 
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
-
--- Javascript
-
--- TODO: try to make them more type-safe somehow?
-
-class JSFunction a where
-  makeJSFunction
-    :: Text          -- ^ Name
-    -> [Text]        -- ^ Parameter names
-    -> Text          -- ^ Definition
-    -> a
-
--- This generates function definition
-instance JSFunction JS where
-  makeJSFunction fName fParams fDef =
-    JS $ format "function {}({}) {\n{}}\n"
-                (fName, T.intercalate "," fParams, fDef)
-
--- This generates a function that takes arguments and produces a Javascript
--- function call
-instance JSParams a => JSFunction (a -> JS) where
-  makeJSFunction fName _fParams _fDef = \args ->
-    JS $ format "{}({});"
-                (fName, T.intercalate "," (map fromJS (jsParams args)))
-
-allJSFunctions :: JS
-allJSFunctions = JS . T.unlines . map fromJS $ [
-  -- Utilities
-  js_replaceWithData, js_appendData,
-  js_moveNodeUp, js_moveNodeDown,
-  -- Add methods
-  js_addLibrary, js_addCategory,
-  js_addPro, js_addCon,
-  -- Render-as-editable methods
-  js_setCategoryTitleMode, js_setCategoryNotesMode,
-  js_setItemInfoMode, js_setItemTraitsMode,
-  js_setTraitMode,
-  -- Set methods
-  js_submitCategoryTitle, js_submitCategoryNotes,
-  js_submitTrait,
-  js_submitItemInfo,
-  -- Other things
-  js_moveTraitUp, js_moveTraitDown, js_deleteTrait ]
-
-js_replaceWithData :: JSFunction a => a
-js_replaceWithData =
-  makeJSFunction "replaceWithData" ["node"]
-  [text|
-    return function(data) {$(node).replaceWith(data);};
-  |]
-
-js_appendData :: JSFunction a => a
-js_appendData =
-  makeJSFunction "appendData" ["node"]
-  [text|
-    return function(data) {$(node).append(data);};
-  |]
-
--- | Move node up (in a list of sibling nodes), ignoring anchor elements
--- inserted by 'thisNode'.
-js_moveNodeUp :: JSFunction a => a
-js_moveNodeUp =
-  makeJSFunction "moveNodeUp" ["node"]
-  [text|
-    var el = $(node);
-    while (el.prev().is(".dummy"))
-      el.prev().before(el);
-    if (el.not(':first-child'))
-      el.prev().before(el);
-  |]
-
--- | Move node down (in a list of sibling nodes), ignoring anchor elements
--- inserted by 'thisNode'.
-js_moveNodeDown :: JSFunction a => a
-js_moveNodeDown =
-  makeJSFunction "moveNodeDown" ["node"]
-  [text|
-    var el = $(node);
-    while (el.next().is(".dummy"))
-      el.next().after(el);
-    if (el.not(':last-child'))
-      el.next().after(el);
-  |]
-
--- | Create a new category.
-js_addCategory :: JSFunction a => a
-js_addCategory =
-  makeJSFunction "addCategory" ["node", "s"]
-  [text|
-    $.post("/add/category", {content: s})
-     .done(appendData(node));
-  |]
-
--- | Add a new library to some category.
-js_addLibrary :: JSFunction a => a
-js_addLibrary =
-  makeJSFunction "addLibrary" ["node", "catId", "s"]
-  [text|
-    $.post("/add/category/"+catId+"/library", {name: s})
-     .done(appendData(node));
-  |]
-
-js_setCategoryTitleMode :: JSFunction a => a
-js_setCategoryTitleMode =
-  makeJSFunction "setCategoryTitleMode" ["node", "catId", "mode"]
-  [text|
-    $.get("/render/category/"+catId+"/title", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-{- |
-Finish category title editing (this happens when you submit the field).
-
-This turns the title with the editbox back into a simple text title.
--}
-js_submitCategoryTitle :: JSFunction a => a
-js_submitCategoryTitle =
-  makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
-  [text|
-    $.post("/set/category/"+catId+"/title", {content: s})
-     .done(replaceWithData(node));
-  |]
-
-js_setCategoryNotesMode :: JSFunction a => a
-js_setCategoryNotesMode =
-  makeJSFunction "setCategoryNotesMode" ["node", "catId", "mode"]
-  [text|
-    $.get("/render/category/"+catId+"/notes", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-js_submitCategoryNotes :: JSFunction a => a
-js_submitCategoryNotes =
-  makeJSFunction "submitCategoryNotes" ["node", "catId", "s"]
-  [text|
-    $.post("/set/category/"+catId+"/notes", {content: s})
-     .done(replaceWithData(node));
-  |]
-
--- | Add a pro to some item.
-js_addPro :: JSFunction a => a
-js_addPro =
-  makeJSFunction "addPro" ["node", "itemId", "s"]
-  [text|
-    $.post("/add/item/"+itemId+"/pro", {content: s})
-     .done(appendData(node));
-  |]
-
--- | Add a con to some item.
-js_addCon :: JSFunction a => a
-js_addCon =
-  makeJSFunction "addCon" ["node", "itemId", "s"]
-  [text|
-    $.post("/add/item/"+itemId+"/con", {content: s})
-     .done(appendData(node));
-  |]
-
-js_setItemInfoMode :: JSFunction a => a
-js_setItemInfoMode =
-  makeJSFunction "setItemInfoMode" ["node", "itemId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/info", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-js_setItemTraitsMode :: JSFunction a => a
-js_setItemTraitsMode =
-  makeJSFunction "setItemTraitsMode" ["node", "itemId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/traits", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-js_setTraitMode :: JSFunction a => a
-js_setTraitMode =
-  makeJSFunction "setTraitMode" ["node", "itemId", "traitId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/trait/"+traitId, {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-js_submitTrait :: JSFunction a => a
-js_submitTrait =
-  makeJSFunction "submitTrait" ["node", "itemId", "traitId", "s"]
-  [text|
-    $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
-     .done(replaceWithData(node));
-  |]
-
-js_submitItemInfo :: JSFunction a => a
-js_submitItemInfo =
-  makeJSFunction "submitItemInfo" ["node", "itemId", "form"]
-  [text|
-    $.post("/set/item/"+itemId+"/info", $(form).serialize())
-     .done(replaceWithData(node));
-  |]
-
-js_moveTraitUp :: JSFunction a => a
-js_moveTraitUp =
-  makeJSFunction "moveTraitUp" ["itemId", "traitId", "traitNode"]
-  [text|
-    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
-    moveNodeUp(traitNode);
-  |]
-
-js_moveTraitDown :: JSFunction a => a
-js_moveTraitDown =
-  makeJSFunction "moveTraitDown" ["itemId", "traitId", "traitNode"]
-  [text|
-    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
-    moveNodeDown(traitNode);
-  |]
-
-js_deleteTrait :: JSFunction a => a
-js_deleteTrait =
-  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
-  [text|
-    $.post("/delete/item/"+itemId+"/trait/"+traitId);
-    $(traitNode).remove();
-  |]
-
--- When adding a function, don't forget to add it to 'allJSFunctions'!
-
-newtype JS = JS {fromJS :: Text}
-  deriving (Show, Format.Buildable)
 
 -- A text button looks like “[cancel]”
 textButton
@@ -758,22 +514,10 @@ type JQuerySelector = Text
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
   uid' <- randomUid
-  -- If the class name ever changes, fix 'js_moveNodeUp' and
-  -- 'js_moveNodeDown'.
+  -- If the class name ever changes, fix 'JS.moveNodeUp' and
+  -- 'JS.moveNodeDown'.
   span_ [id_ (tshow uid'), class_ "dummy"] mempty
   return (format ":has(> #{})" [uid'])
-
-lucid :: MonadIO m => HtmlT IO a -> ActionCtxT ctx m a
-lucid h = do
-  htmlText <- liftIO (renderTextT h)
-  html (TL.toStrict htmlText)
-
--- | Format a string (a bit 'Text.Printf.printf' but with different syntax).
-format :: Format.Params ps => Format -> ps -> Text
-format f ps = TL.toStrict (Format.format f ps)
-
-tshow :: Show a => a -> Text
-tshow = T.pack . show
 
 data Editable = Normal | Editable | InEdit
 
@@ -786,64 +530,7 @@ instance PathPiece Editable where
   toPathPiece Editable = "editable"
   toPathPiece InEdit   = "in-edit"
 
-class LiftJS a where liftJS :: a -> JS
-
-instance LiftJS JS where liftJS = id
-instance LiftJS Text where liftJS = JS . tshow
-instance LiftJS Integer where liftJS = JS . tshow
-instance LiftJS Int where liftJS = JS . tshow
-instance LiftJS Editable where liftJS = JS . tshow . toPathPiece
-
-class JSParams a where
-  jsParams :: a -> [JS]
-
-instance JSParams () where
-  jsParams () = []
-instance LiftJS a => JSParams [a] where
-  jsParams = map liftJS
-instance (LiftJS a, LiftJS b) => JSParams (a,b) where
-  jsParams (a,b) = [liftJS a, liftJS b]
-instance (LiftJS a, LiftJS b, LiftJS c) => JSParams (a,b,c) where
-  jsParams (a,b,c) = [liftJS a, liftJS b, liftJS c]
-instance (LiftJS a, LiftJS b, LiftJS c, LiftJS d) => JSParams (a,b,c,d) where
-  jsParams (a,b,c,d) = [liftJS a, liftJS b, liftJS c, liftJS d]
+instance ToJS Editable where
+  toJS = JS . tshow . toPathPiece
 
 -- TODO: why not compare Haskellers too?
-
-sanitiseUrl :: Url -> Maybe Url
-sanitiseUrl u
-  | not (sanitaryURI u)       = Nothing
-  | "http:" `T.isPrefixOf` u  = Just u
-  | "https:" `T.isPrefixOf` u = Just u
-  | otherwise                 = Just ("http://" <> u)
-
--- | Move the -1st element that satisfies the predicate- up.
-moveUp :: (a -> Bool) -> [a] -> [a]
-moveUp p (x:y:xs) = if p y then (y:x:xs) else x : moveUp p (y:xs)
-moveUp _ xs = xs
-
--- | Move the -1st element that satisfies the predicate- down.
-moveDown :: (a -> Bool) -> [a] -> [a]
-moveDown p (x:y:xs) = if p x then (y:x:xs) else x : moveDown p (y:xs)
-moveDown _ xs = xs
-
-renderMarkdownLine :: Monad m => Text -> HtmlT m ()
-renderMarkdownLine s = do
-  let Doc opts blocks = markdown def{allowRawHtml=False} s
-      inlines = extractInlines =<< blocks
-  blazeToLucid (renderInlines opts inlines)
-  where
-    extractInlines (Para xs) = xs
-    extractInlines (Header _ xs) = xs
-    extractInlines (Blockquote bs) = extractInlines =<< bs
-    extractInlines (List _ _ bss) = extractInlines =<< mconcat bss
-    extractInlines (CodeBlock _ x) = pure (Code x)
-    extractInlines (HtmlBlock x) = pure (Code x)
-    extractInlines HRule = mempty
-
-renderMarkdownLong :: Monad m => Text -> HtmlT m ()
-renderMarkdownLong =
-  blazeToLucid . renderDoc . markdown def{allowRawHtml=False}
-
-blazeToLucid :: Monad m => Blaze.Html -> HtmlT m ()
-blazeToLucid = toHtmlRaw . Blaze.renderHtml

@@ -24,7 +24,9 @@ source-repository head
 
 executable hslibs
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       
+    Utils
+    JS
   -- other-extensions:    
   build-depends:       Spock
                      , base >=4.8 && <4.9
