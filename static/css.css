@@ -26,6 +26,9 @@ body {
 .traits-group {
   margin: 0px 5px; }
 
+.traits-group > ul li {
+  margin: 10px 0px; }
+
 .text-button {
   font-size: 10pt;
   font-weight: normal; }
@@ -35,6 +38,9 @@ body {
 
 textarea {
   font-family: sans-serif;
+  font-size: 100%; }
+
+input {
   font-size: 100%; }
 
 a:link    {color: #008ACE; text-decoration: none;}
