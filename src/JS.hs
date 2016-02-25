@@ -26,7 +26,7 @@ import Utils
 
 -- | Javascript code.
 newtype JS = JS {fromJS :: Text}
-  deriving (Show, Format.Buildable)
+  deriving (Show, Format.Buildable, Monoid)
 
 -- | A concatenation of all Javascript functions defined in this module.
 allJSFunctions :: JS

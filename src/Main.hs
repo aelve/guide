@@ -339,13 +339,11 @@ renderRoot globalState = do
     write anything here. Also, Markdown is supported, so use
     bold/italics/code if you need to.
     |]
-  let searchHandler s = JS.search ("#categories" :: Text, s)
-  input_ [type_ "text", placeholder_ "search",
-          onInputSubmit searchHandler]
+  textInput [placeholder_ "search"] $
+    JS.search ("#categories" :: Text, inputValue)
   renderCategoryList (globalState^.categories)
-  let addCategoryHandler s = JS.addCategory ("#categories" :: Text, s)
-  input_ [type_ "text", placeholder_ "new category",
-          onInputSubmit addCategoryHandler]
+  textInput [placeholder_ "new category"] $
+    JS.addCategory ("#categories" :: Text, inputValue) <> clearInput
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -363,8 +361,9 @@ renderCategoryTitle editable category =
         textButton "edit" $
           JS.setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
-        let handler s = JS.submitCategoryTitle (titleNode, category^.uid, s)
-        input_ [type_ "text", value_ (category^.title), onInputSubmit handler]
+        textInput [value_ (category^.title)] $
+          JS.submitCategoryTitle (titleNode, category^.uid, inputValue) <>
+          clearInput
         textButton "cancel" $
           JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
 
@@ -378,8 +377,9 @@ renderCategoryNotes editable category =
         textButton "edit" $
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
-        let handler s = JS.submitCategoryNotes (this, category^.uid, s)
-        input_ [type_ "text", value_ (category^.notes), onInputSubmit handler]
+        textInput [value_ (category^.notes)] $
+          JS.submitCategoryNotes (this, category^.uid, inputValue) <>
+          clearInput
         textButton "cancel" $
           JS.setCategoryNotesMode (this, category^.uid, Editable)
 
@@ -391,8 +391,8 @@ renderCategory category =
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ renderItem (category^.items)
       thisNode
-    let handler s = JS.addLibrary (itemsNode, category^.uid, s)
-    input_ [type_ "text", placeholder_ "new item", onInputSubmit handler]
+    textInput [placeholder_ "new item"] $
+      JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
 
 -- TODO: add arrows for moving items left-and-right in the category (or sort
 -- them by popularity?)
@@ -468,8 +468,8 @@ renderItemTraits editable item =
           listNode <- ul_ $ do
             mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
             thisNode
-          let handler s = JS.addPro (listNode, item^.uid, s)
-          input_ [type_ "text", placeholder_ "add pro", onInputSubmit handler]
+          textInput [placeholder_ "add pro"] $
+            JS.addPro (listNode, item^.uid, inputValue) <> clearInput
     div_ [class_ "traits-group"] $ do
       p_ "Cons:"
       case editable of
@@ -479,8 +479,8 @@ renderItemTraits editable item =
           listNode <- ul_ $ do
             mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
             thisNode
-          let handler s = JS.addCon (listNode, item^.uid, s)
-          input_ [type_ "text", placeholder_ "add con", onInputSubmit handler]
+          textInput [placeholder_ "add con"] $
+            JS.addCon (listNode, item^.uid, inputValue) <> clearInput
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
 renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
@@ -500,20 +500,24 @@ renderTrait Editable itemId trait = li_ $ do
     JS.setTraitMode (this, itemId, trait^.uid, InEdit)
 renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
-  let handler s = JS.submitTrait (this, itemId, trait^.uid, s)
-  input_ [type_ "text", value_ (trait^.content), onInputSubmit handler]
+  textInput [value_ (trait^.content)] $
+    JS.submitTrait (this, itemId, trait^.uid, inputValue) <> clearInput
   textButton "cancel" $
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
 -- Utils
 
--- The function is passed a JS expression that refers to text being submitted.
-onInputSubmit :: (JS -> JS) -> Attribute
-onInputSubmit f = onkeyup_ $ format
-  "if (event.keyCode == 13) {\
-  \  {}\
-  \  this.value = ''; }"
-  [f (JS "this.value")]
+textInput :: [Attribute] -> JS -> HtmlT IO ()
+textInput attrs handler =
+  input_ (type_ "text" : onkeyup_ handler' : attrs)
+  where
+    handler' = format "if (event.keyCode == 13) {{}}" [handler]
+
+inputValue :: JS
+inputValue = JS "this.value"
+
+clearInput :: JS
+clearInput = JS "this.value = '';"
 
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
