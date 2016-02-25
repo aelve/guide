@@ -441,7 +441,7 @@ renderItemInfo editable item =
           Just l  -> " (" >> a_ [href_ l] "site" >> ")"
           Nothing -> return ()
         emptySpan "1em"
-        textButton "edit" $
+        textButton "edit details" $
           JS.setItemInfoMode (this, item^.uid, InEdit)
       InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
@@ -461,7 +461,7 @@ renderItemInfo editable item =
             input_ [type_ "text", name_ "link",
                     value_ (fromMaybe "" (item^.link))]
           br_ []
-          input_ [type_ "submit", value_ "Submit"]
+          input_ [type_ "submit", value_ "Save"]
           button "Cancel" [] $
             JS.setItemInfoMode (this, item^.uid, Editable)
 
