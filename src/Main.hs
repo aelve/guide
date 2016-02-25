@@ -104,6 +104,7 @@ emptyState :: GlobalState
 emptyState = GlobalState {
   _categories = [] }
 
+-- TODO: make the example longer
 sampleState :: GlobalState
 sampleState = do
   let lensItem = Item {
@@ -347,7 +348,11 @@ renderRoot globalState = do
     JS.search ("#categories" :: Text, inputValue)
   textInput [placeholder_ "add a category"] $
     JS.addCategory ("#categories" :: Text, inputValue) <> clearInput
+  -- TODO: sort categories by popularity, somehow? or provide a list of
+  -- “commonly used categories” or even a nested catalog
   renderCategoryList (globalState^.categories)
+  -- TODO: perhaps use infinite scrolling/loading?
+  -- TODO: add links to source and donation buttons
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -389,7 +394,8 @@ renderCategoryNotes editable category =
                    rows_ "10", style_ "width:100%;resize:vertical"] $
           toHtml (category^.notes)
         button "Save" [] $ do
-          -- results in this jQuery thingy: $("#<id>").val()
+          -- «$("#<textareaId>").val()» is a Javascript expression that
+          -- returns text contained in the textarea
           let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
           JS.submitCategoryNotes (this, category^.uid, textareaValue)
         emptySpan "6px"
@@ -410,9 +416,8 @@ renderCategory category =
     textInput [placeholder_ "add an item"] $
       JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
 
--- TODO: add arrows for moving items left-and-right in the category (or sort
--- them by popularity?)
-
+-- TODO: add arrows for moving items up and down in category, and something
+-- to delete an item – those things could be at the left side, like on Reddit
 renderItem :: Editable -> Item -> HtmlT IO ()
 renderItem editable item =
   div_ [class_ "item"] $ do
@@ -505,6 +510,7 @@ renderItemTraits editable item =
         JS.setItemTraitsMode (this, item^.uid, Normal)
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
+-- TODO: probably use renderMarkdownBlock here as well
 renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
 renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
@@ -520,6 +526,7 @@ renderTrait Editable itemId trait = li_ $ do
     JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
   textButton "edit" $
     JS.setTraitMode (this, itemId, trait^.uid, InEdit)
+-- TODO: and textarea here
 renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
   textInput [value_ (trait^.content)] $
