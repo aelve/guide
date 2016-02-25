@@ -32,7 +32,7 @@ newtype JS = JS {fromJS :: Text}
 allJSFunctions :: JS
 allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
-  replaceWithData, appendData,
+  replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
   -- Search
   search,
@@ -116,6 +116,13 @@ replaceWithData =
     return function(data) {$(node).replaceWith(data);};
   |]
 
+prependData :: JSFunction a => a
+prependData =
+  makeJSFunction "prependData" ["node"]
+  [text|
+    return function(data) {$(node).prepend(data);};
+  |]
+
 appendData :: JSFunction a => a
 appendData =
   makeJSFunction "appendData" ["node"]
@@ -165,7 +172,7 @@ addCategory =
   makeJSFunction "addCategory" ["node", "s"]
   [text|
     $.post("/add/category", {content: s})
-     .done(appendData(node));
+     .done(prependData(node));
   |]
 
 -- | Add a new library to some category.

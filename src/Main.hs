@@ -226,7 +226,7 @@ addMethods = Spock.subcomponent "add" $ do
           _categoryTitle = content',
           _categoryNotes = "(write some notes here, describe the category, etc)",
           _categoryItems = [] }
-    withGlobal $ categories %= (++ [newCategory])
+    withGlobal $ categories %= (newCategory :)
     lucid $ renderCategory newCategory
   -- New library in a category
   Spock.post (categoryVar <//> "library") $ \catId -> do
