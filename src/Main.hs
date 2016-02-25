@@ -157,10 +157,6 @@ renderMethods = Spock.subcomponent "render" $ do
     category <- withGlobal $ use (categoryById catId)
     renderMode <- param' "mode"
     lucid $ renderCategoryNotes renderMode category
-  -- Item
-  Spock.get itemVar $ \itemId -> do
-    item <- withGlobal $ use (itemById itemId)
-    lucid $ renderItem item
   -- Item info
   Spock.get (itemVar <//> "info") $ \itemId -> do
     item <- withGlobal $ use (itemById itemId)
@@ -246,7 +242,7 @@ addMethods = Spock.subcomponent "add" $ do
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     withGlobal $ categoryById catId . items %= (++ [newItem])
-    lucid $ renderItem newItem
+    lucid $ renderItem Editable newItem
   -- Pro (argument in favor of a library)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
@@ -395,7 +391,7 @@ renderCategory category =
     renderCategoryTitle Editable category
     renderCategoryNotes Editable category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ renderItem (category^.items)
+      mapM_ (renderItem Normal) (category^.items)
       thisNode
     textInput [placeholder_ "add an item"] $
       JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
@@ -403,11 +399,16 @@ renderCategory category =
 -- TODO: add arrows for moving items left-and-right in the category (or sort
 -- them by popularity?)
 
-renderItem :: Item -> HtmlT IO ()
-renderItem item =
+renderItem :: Editable -> Item -> HtmlT IO ()
+renderItem editable item =
   div_ [class_ "item"] $ do
-    renderItemInfo Editable item
-    renderItemTraits Normal item
+    case editable of
+      Normal -> do
+        renderItemInfo Editable item
+        renderItemTraits Normal item
+      Editable -> do
+        renderItemInfo Editable item
+        renderItemTraits Editable item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 -- TODO: give a link to oldest available docs when the new docs aren't there
