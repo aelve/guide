@@ -124,7 +124,7 @@ sampleState = do
         _itemKind = hackageLibrary }
   let lensesCategory = Category {
         _categoryUid = 1,
-        _categoryTitle = "lenses",
+        _categoryTitle = "Lenses",
         _categoryNotes = "Lenses are first-class composable accessors.",
         _categoryItems = [lensItem, microlensItem] }
 

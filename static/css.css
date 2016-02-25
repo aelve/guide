@@ -1,5 +1,5 @@
 body {
-  padding: 2em 0em;
+  padding: 2em;
   margin: auto;
   max-width: 800px;
   font-family: sans-serif; }
@@ -27,9 +27,9 @@ body {
   margin: 0px 5px; }
 
 .text-button {
-  font-size: 80%;
-  margin-left: 2em;
-  vertical-align: 1px; }
+  font-size: 10pt;
+  font-weight: normal;
+  margin-left: 2em; }
 
 .text-button::before {content: "[";}
 .text-button::after  {content: "]";}
