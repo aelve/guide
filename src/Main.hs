@@ -3,6 +3,7 @@ OverloadedStrings,
 TemplateHaskell,
 RankNTypes,
 FlexibleInstances,
+FlexibleContexts,
 QuasiQuotes,
 ScopedTypeVariables,
 FunctionalDependencies,
@@ -263,6 +264,21 @@ addMethods = Spock.subcomponent "add" $ do
 
 otherMethods :: SpockM () () (IORef GlobalState) ()
 otherMethods = do
+  -- Search
+  Spock.post "search" $ do
+    query <- param' "query"
+    let queryWords = T.words query
+    let rank :: Category -> Int
+        rank cat = sum [
+          length (queryWords `intersect` (cat^..items.each.name)),
+          length (queryWords `intersect` T.words (cat^.title)) ]
+    cats <- withGlobal (use categories)
+    let rankedCats
+          | null queryWords = cats
+          | otherwise       = filter ((/= 0) . rank) .
+                              reverse . sortOn rank $ cats
+    lucid $ renderCategoryList rankedCats
+
   -- Moving things
   Spock.subcomponent "move" $ do
     -- Move trait
@@ -323,11 +339,18 @@ renderRoot globalState = do
     write anything here. Also, Markdown is supported, so use
     bold/italics/code if you need to.
     |]
-  categoriesNode <- div_ [id_ "categories"] $ do
-    mapM_ renderCategory (globalState ^. categories)
-    thisNode
-  let handler s = JS.addCategory (categoriesNode, s)
-  input_ [type_ "text", placeholder_ "new category", onInputSubmit handler]
+  let searchHandler s = JS.search ("#categories" :: Text, s)
+  input_ [type_ "text", placeholder_ "search",
+          onInputSubmit searchHandler]
+  renderCategoryList (globalState^.categories)
+  let addCategoryHandler s = JS.addCategory ("#categories" :: Text, s)
+  input_ [type_ "text", placeholder_ "new category",
+          onInputSubmit addCategoryHandler]
+
+renderCategoryList :: [Category] -> HtmlT IO ()
+renderCategoryList cats =
+  div_ [id_ "categories"] $
+    mapM_ renderCategory cats
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =

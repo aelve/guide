@@ -34,6 +34,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
   replaceWithData, appendData,
   moveNodeUp, moveNodeDown,
+  -- Search
+  search,
   -- Add methods
   addLibrary, addCategory,
   addPro, addCon,
@@ -145,6 +147,16 @@ moveNodeDown =
       el.next().after(el);
     if (el.not(':last-child'))
       el.next().after(el);
+  |]
+
+search :: JSFunction a => a
+search =
+  makeJSFunction "search" ["node", "s"]
+  -- TODO: set address bar to “/?query=...” so that the user would be able to
+  -- see/share the search URL
+  [text|
+    $.post("/search", {query: s})
+     .done(replaceWithData(node));
   |]
 
 -- | Create a new category.
