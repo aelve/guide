@@ -28,8 +28,7 @@ body {
 
 .text-button {
   font-size: 10pt;
-  font-weight: normal;
-  margin-left: 2em; }
+  font-weight: normal; }
 
 .text-button::before {content: "[";}
 .text-button::after  {content: "]";}

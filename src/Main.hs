@@ -359,12 +359,14 @@ renderCategoryTitle editable category =
     case editable of
       Editable -> do
         toHtml (category^.title)
+        emptySpan "1em"
         textButton "edit" $
           JS.setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
         textInput [value_ (category^.title)] $
           JS.submitCategoryTitle (titleNode, category^.uid, inputValue) <>
           clearInput
+        emptySpan "1em"
         textButton "cancel" $
           JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
 
@@ -376,7 +378,7 @@ renderCategoryNotes editable category =
       Editable -> do
         -- TODO: use shortcut-links
         renderMarkdownBlock (category^.notes)
-        textButton "edit" $
+        textButton "edit description" $
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
         textInput [value_ (category^.notes)] $
@@ -429,6 +431,7 @@ renderItemInfo editable item =
         case item^.link of
           Just l  -> " (" >> a_ [href_ l] "site" >> ")"
           Nothing -> return ()
+        emptySpan "1em"
         textButton "edit" $
           JS.setItemInfoMode (this, item^.uid, InEdit)
       InEdit -> do
@@ -512,6 +515,9 @@ renderTrait InEdit itemId trait = li_ $ do
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
 -- Utils
+
+emptySpan :: Text -> HtmlT IO ()
+emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
 textInput :: [Attribute] -> JS -> HtmlT IO ()
 textInput attrs handler =
