@@ -33,6 +33,10 @@ body {
 .text-button::before {content: "[";}
 .text-button::after  {content: "]";}
 
+textarea {
+  font-family: sans-serif;
+  font-size: 100%; }
+
 a:link    {color: #008ACE; text-decoration: none;}
 a:visited {color: #B40EB4; text-decoration: none;}
 a:hover   {text-decoration: underline;}

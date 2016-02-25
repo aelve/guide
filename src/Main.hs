@@ -381,11 +381,20 @@ renderCategoryNotes editable category =
         textButton "edit description" $
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
-        textInput [value_ (category^.notes)] $
-          JS.submitCategoryNotes (this, category^.uid, inputValue) <>
-          clearInput
-        textButton "cancel" $
+        textareaId <- randomUid
+        textarea_ [id_ (tshow textareaId),
+                   rows_ "10", style_ "width:100%;resize:vertical"] $
+          toHtml (category^.notes)
+        button "Save" [] $ do
+          -- results in this jQuery thingy: $("#<id>").val()
+          let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
+          JS.submitCategoryNotes (this, category^.uid, textareaValue)
+        emptySpan "6px"
+        button "Cancel" [] $
           JS.setCategoryNotesMode (this, category^.uid, Editable)
+        emptySpan "6px"
+        span_ [style_ "font-size:80%"]
+          "Markdown is supported"
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
@@ -436,7 +445,7 @@ renderItemInfo editable item =
           JS.setItemInfoMode (this, item^.uid, InEdit)
       InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
-        form_ [onFormSubmit handler] $ do
+        form_ [style_ "font-size:80%", onFormSubmit handler] $ do
           label_ $ do
             "Package name: "
             input_ [type_ "text", name_ "name",
