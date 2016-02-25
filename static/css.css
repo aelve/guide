@@ -13,18 +13,20 @@ body {
 .category {
   margin-top: 3em; }
 
-.items {
+.item {
+  background-color: #f0f0f0;
+  margin-top: 20px;
+  padding: 10px 15px; }
+
+.traits-groups-container {
   display: flex; }
 
-.item {
-  border: 1px solid;
-  margin: 5px; }
-
-.traits {
-  display: flex }
-
 .traits-group {
-  margin: 0px 5px; }
+  margin: 0px 5px;
+  flex: 1; }
+
+.traits-group > ul {
+  padding-left: 1em; }
 
 .traits-group > ul li {
   margin: 10px 0px; }

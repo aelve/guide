@@ -329,9 +329,12 @@ renderRoot globalState = do
     Here are some guidelines/observations/etc that probably make sense:
 
       * sort pros/cons by importance
+
       * if you don't like something for any reason, edit it
+
       * if you're unsure about something, still write it
         (just warn others that you're unsure)
+
       * if you have useful information of any kind that doesn't fit,
         add it to the category notes
 
@@ -428,7 +431,7 @@ renderItemInfo editable item =
   div_ $ do
     this <- thisNode
     case editable of
-      Editable -> h3_ $ do
+      Editable -> span_ [style_ "font-size:150%"] $ do
         -- If the library is on Hackage, the title links to its Hackage page;
         -- otherwise, it doesn't link anywhere. Even if the link field is
         -- present, it's going to be rendered as “(site)”, not linked in the
@@ -472,33 +475,34 @@ renderItemTraits :: Editable -> Item -> HtmlT IO ()
 renderItemTraits editable item =
   div_ [class_ "traits"] $ do
     this <- thisNode
+    div_ [class_ "traits-groups-container"] $ do
+      div_ [class_ "traits-group"] $ do
+        p_ "Pros:"
+        case editable of
+          Normal ->
+            ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.pros)
+          Editable -> do
+            listNode <- ul_ $ do
+              mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
+              thisNode
+            textInput [placeholder_ "add pro"] $
+              JS.addPro (listNode, item^.uid, inputValue) <> clearInput
+      div_ [class_ "traits-group"] $ do
+        p_ "Cons:"
+        case editable of
+          Normal ->
+            ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.cons)
+          Editable -> do
+            listNode <- ul_ $ do
+              mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
+              thisNode
+            textInput [placeholder_ "add con"] $
+              JS.addCon (listNode, item^.uid, inputValue) <> clearInput
     case editable of
-      Normal -> textButton "edit" $
+      Normal -> textButton "edit pros/cons" $
         JS.setItemTraitsMode (this, item^.uid, Editable)
       Editable -> textButton "edit off" $
         JS.setItemTraitsMode (this, item^.uid, Normal)
-    div_ [class_ "traits-group"] $ do
-      p_ "Pros:"
-      case editable of
-        Normal ->
-          ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.pros)
-        Editable -> do
-          listNode <- ul_ $ do
-            mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
-            thisNode
-          textInput [placeholder_ "add pro"] $
-            JS.addPro (listNode, item^.uid, inputValue) <> clearInput
-    div_ [class_ "traits-group"] $ do
-      p_ "Cons:"
-      case editable of
-        Normal ->
-          ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.cons)
-        Editable -> do
-          listNode <- ul_ $ do
-            mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
-            thisNode
-          textInput [placeholder_ "add con"] $
-            JS.addCon (listNode, item^.uid, inputValue) <> clearInput
 
 renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
 renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
