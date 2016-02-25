@@ -1,3 +1,18 @@
+body {
+  padding: 2em 0em;
+  margin: auto;
+  max-width: 800px;
+  font-family: sans-serif; }
+
+#search {
+  font-size: 200%;
+  border: 1px solid #d0d0d0;
+  padding: 3px 10px;
+  width: 100%; }
+
+.category {
+  margin-top: 3em; }
+
 .items {
   display: flex; }
 
@@ -11,11 +26,13 @@
 .traits-group {
   margin: 0px 5px; }
 
-.textButton {
-  margin-left: 1em; }
+.text-button {
+  font-size: 80%;
+  margin-left: 2em;
+  vertical-align: 1px; }
 
-.textButton::before {content: "[";}
-.textButton::after  {content: "]";}
+.text-button::before {content: "[";}
+.text-button::after  {content: "]";}
 
 a:link    {color: #008ACE; text-decoration: none;}
 a:visited {color: #B40EB4; text-decoration: none;}

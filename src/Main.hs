@@ -323,12 +323,17 @@ renderRoot globalState = do
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ (fromJS allJSFunctions)
+  h1_ "A collaborative guide to Haskell libraries and tools"
+  -- TODO: add a way to hide the rules
   div_ [id_ "help"] $ renderMarkdownBlock [text|
-    You can edit everything without registration. Here are some
-    guidelines/observations/etc that probably make sense:
+    You can edit everything, without registration. (But if you delete
+    everything, I'll roll it back and then make a voodoo doll of you
+    and stick some needles into it).
+
+    Here are some guidelines/observations/etc that probably make sense:
 
       * sort pros/cons by importance
-      * if you don't something for any reason, edit it
+      * if you don't like something for any reason, edit it
       * if you're unsure about something, still write it
         (just warn others that you're unsure)
       * if you have useful information of any kind that doesn't fit,
@@ -336,14 +341,14 @@ renderRoot globalState = do
 
     Subjective judgements and incomplete entries are completely alright –
     it's not Wikipedia, it's collaborative notes, so don't be afraid to
-    write anything here. Also, Markdown is supported, so use
-    bold/italics/code if you need to.
+    write anything here. Also, use bold/italics/code/links freely
+    (Markdown is supported).
     |]
-  textInput [placeholder_ "search"] $
+  textInput [id_ "search", placeholder_ "search"] $
     JS.search ("#categories" :: Text, inputValue)
-  renderCategoryList (globalState^.categories)
-  textInput [placeholder_ "new category"] $
+  textInput [placeholder_ "add a category"] $
     JS.addCategory ("#categories" :: Text, inputValue) <> clearInput
+  renderCategoryList (globalState^.categories)
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -352,7 +357,7 @@ renderCategoryList cats =
 
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =
-  h2_ [id_ (tshow (category^.uid))] $ do
+  h2_ $ do
     a_ [class_ "anchor", href_ ("#" <> tshow (category^.uid))] "#"
     titleNode <- thisNode
     case editable of
@@ -373,6 +378,7 @@ renderCategoryNotes editable category =
     this <- thisNode
     case editable of
       Editable -> do
+        -- TODO: use shortcut-links
         renderMarkdownBlock (category^.notes)
         textButton "edit" $
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
@@ -385,13 +391,13 @@ renderCategoryNotes editable category =
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
-  div_ $ do
+  div_ [class_ "category", id_ (tshow (category^.uid))] $ do
     renderCategoryTitle Editable category
     renderCategoryNotes Editable category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ renderItem (category^.items)
       thisNode
-    textInput [placeholder_ "new item"] $
+    textInput [placeholder_ "add an item"] $
       JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
 
 -- TODO: add arrows for moving items left-and-right in the category (or sort
@@ -443,9 +449,8 @@ renderItemInfo editable item =
                     value_ (fromMaybe "" (item^.link))]
           br_ []
           input_ [type_ "submit", value_ "Submit"]
-          let cancelHandler = JS.setItemInfoMode (this, item^.uid, Editable)
-          input_ [type_ "button", value_ "Cancel",
-                  onclick_ (fromJS cancelHandler)]
+          button "Cancel" [] $
+            JS.setItemInfoMode (this, item^.uid, Editable)
 
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
@@ -522,13 +527,19 @@ clearInput = JS "this.value = '';"
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
 
+button :: Text -> [Attribute] -> JS -> HtmlT IO ()
+button value attrs handler =
+  input_ (type_ "button" : value_ value : onclick_ handler' : attrs)
+  where
+    handler' = fromJS handler
+
 -- A text button looks like “[cancel]”
 textButton
   :: Text         -- ^ Button text
   -> JS           -- ^ Onclick handler
   -> HtmlT IO ()
 textButton caption (JS handler) =
-  span_ [class_ "textButton"] $
+  span_ [class_ "text-button"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
 -- So far all icons used here have been from <https://useiconic.com/open/>
