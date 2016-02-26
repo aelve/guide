@@ -34,6 +34,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
   replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
+  -- Help
+  showOrHideHelp, showHelp, hideHelp,
   -- Search
   search,
   -- Add methods
@@ -154,6 +156,36 @@ moveNodeDown =
       el.next().after(el);
     if (el.not(':last-child'))
       el.next().after(el);
+  |]
+
+showHelp :: JSFunction a => a
+showHelp =
+  makeJSFunction "showHelp" ["node", "version"]
+  [text|
+    localStorage.removeItem("help-hidden-"+version);
+    $.get("/render/help", {mode: "shown"})
+     .done(replaceWithData(node));
+  |]
+
+hideHelp :: JSFunction a => a
+hideHelp =
+  makeJSFunction "hideHelp" ["node", "version"]
+  [text|
+    localStorage.setItem("help-hidden-"+version, "");
+    $.get("/render/help", {mode: "hidden"})
+     .done(replaceWithData(node));
+  |]
+
+showOrHideHelp :: JSFunction a => a
+showOrHideHelp =
+  makeJSFunction "showOrHideHelp" ["node", "version"]
+  [text|
+    if (localStorage.getItem("help-hidden-"+version) === null)
+      $.get("/render/help", {mode: "shown"})
+       .done(replaceWithData(node))
+    else
+      $.get("/render/help", {mode: "hidden"})
+       .done(replaceWithData(node));
   |]
 
 search :: JSFunction a => a

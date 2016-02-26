@@ -210,6 +210,10 @@ withGlobal act = do
 
 renderMethods :: SpockM () () (IORef GlobalState) ()
 renderMethods = Spock.subcomponent "render" $ do
+  -- Help
+  Spock.get "help" $ do
+    visible <- param' "mode"
+    lucid $ renderHelp visible
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
     category <- withGlobal $ use (categoryById catId)
@@ -383,39 +387,64 @@ renderRoot globalState = do
   -- this file.
   script_ (fromJS allJSFunctions)
   h1_ "Collaborative notes on Haskell libraries and tools"
-  -- TODO: add a way to hide the rules
-  div_ [id_ "help"] $ renderMarkdownBlock [text|
-    You can edit everything, without registration. (But if you delete
-    everything, I'll roll it back and then make a voodoo doll of you
-    and stick some needles into it). The most important rule is:
-    **it's collaborative notes, not Wikipedia**. In other words,
-    incomplete entries like this are welcome here:
-
-    > **pros:** pretty nice API\
-    > **cons:** buggy (see an example on my Github, here's the link)
-
-    Some additional guidelines/observations/etc that probably make sense:
-
-      * sort pros/cons by importance
-
-      * if you don't like something for any reason, edit it
-
-      * if you're unsure about something, still write it
-        (just warn others that you're unsure)
-
-      * if you have useful information of any kind that doesn't fit,
-        add it to the category notes
-    |]
+  -- By default help is rendered hidden, and then showOrHideHelp reads a
+  -- value from local storage and decides whether to show help or not. On one
+  -- hand, it means that people with Javascript turned off won't be able to
+  -- see help; on another hand, those people don't need help anyway because
+  -- they won't be able to edit anything either.
+  renderHelp Hidden
+  onPageLoad $ JS.showOrHideHelp ("#help" :: JQuerySelector, helpVersion)
+  -- TODO: use ordinary form-post search instead of Javascript search (for
+  -- people with NoScript)
   textInput [id_ "search", placeholder_ "search"] $
-    JS.search ("#categories" :: Text, inputValue)
+    JS.search ("#categories" :: JQuerySelector, inputValue)
   textInput [placeholder_ "add a category"] $
-    JS.addCategory ("#categories" :: Text, inputValue) <> clearInput
+    JS.addCategory ("#categories" :: JQuerySelector, inputValue) <> clearInput
   -- TODO: sort categories by popularity, somehow? or provide a list of
   -- “commonly used categories” or even a nested catalog
   renderCategoryList (globalState^.categories)
   -- TODO: perhaps use infinite scrolling/loading?
   -- TODO: add links to source and donation buttons
   -- TODO: maybe add a button like “give me random category that is unfinished”
+  -- TODO: add CSS for blocks of code
+
+-- Don't forget to change helpVersion when the text changes substantially
+-- and you think the users should reread it.
+helpVersion :: Int
+helpVersion = 1
+
+renderHelp :: Visible -> HtmlT IO ()
+renderHelp Hidden =
+  div_ [id_ "help"] $
+    textButton "show help" $
+      JS.showHelp ("#help" :: JQuerySelector, helpVersion)
+renderHelp Shown =
+  div_ [id_ "help"] $ do
+    textButton "hide help" $
+      JS.hideHelp ("#help" :: JQuerySelector, helpVersion)
+    renderMarkdownBlock [text|
+      You can edit everything, without registration. (But if you delete
+      everything, I'll roll it back and then make a voodoo doll of you
+      and stick some needles into it).
+  
+      The most important rule is: **it's collaborative notes, not Wikipedia**.
+      In other words, incomplete entries like this are welcome here:
+  
+      > **pros:** pretty nice API\
+      > **cons:** buggy (see an example on my Github, here's the link)
+  
+      Some additional guidelines/observations/etc that probably make sense:
+  
+        * sort pros/cons by importance
+  
+        * if you don't like something for any reason, edit it
+  
+        * if you're unsure about something, still write it
+          (just warn others that you're unsure)
+  
+        * if you have useful information of any kind that doesn't fit,
+          add it to the category notes
+      |]
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -605,6 +634,9 @@ renderTrait InEdit itemId trait = li_ $ do
 
 -- Utils
 
+onPageLoad :: JS -> HtmlT IO ()
+onPageLoad js = script_ $ format "$(document).ready(function(){{}});" [js]
+
 emptySpan :: Text -> HtmlT IO ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
@@ -668,6 +700,18 @@ instance PathPiece Editable where
   toPathPiece InEdit   = "in-edit"
 
 instance ToJS Editable where
+  toJS = JS . tshow . toPathPiece
+
+data Visible = Hidden | Shown
+
+instance PathPiece Visible where
+  fromPathPiece "hidden" = Just Hidden
+  fromPathPiece "shown"  = Just Shown
+  fromPathPiece _        = Nothing
+  toPathPiece Hidden = "hidden"
+  toPathPiece Shown  = "shown"
+
+instance ToJS Visible where
   toJS = JS . tshow . toPathPiece
 
 -- TODO: why not compare Haskellers too?
