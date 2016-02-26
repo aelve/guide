@@ -464,8 +464,7 @@ renderCategoryNotes editable category =
         button "Cancel" [] $
           JS.setCategoryNotesMode (this, category^.uid, Editable)
         emptySpan "6px"
-        span_ [style_ "font-size:80%"]
-          "Markdown is supported"
+        "Markdown"
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
@@ -519,7 +518,7 @@ renderItemInfo editable item =
           JS.setItemInfoMode (this, item^.uid, InEdit)
       InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
-        form_ [style_ "font-size:80%", onFormSubmit handler] $ do
+        form_ [onFormSubmit handler] $ do
           label_ $ do
             "Package name: "
             input_ [type_ "text", name_ "name",
