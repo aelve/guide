@@ -415,6 +415,7 @@ renderRoot globalState = do
   renderCategoryList (globalState^.categories)
   -- TODO: perhaps use infinite scrolling/loading?
   -- TODO: add links to source and donation buttons
+  -- TODO: maybe add a button like “give me random category that is unfinished”
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -516,6 +517,7 @@ renderItemInfo editable item =
         emptySpan "1em"
         textButton "edit details" $
           JS.setItemInfoMode (this, item^.uid, InEdit)
+        -- TODO: maybe some space here?
       InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
@@ -557,8 +559,10 @@ renderItemTraits editable item =
               thisNode
             textInput [placeholder_ "add pro"] $
               JS.addPro (listNode, item^.uid, inputValue) <> clearInput
+      -- TODO: maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
+        -- TODO: maybe add a line here?
         case editable of
           Normal ->
             ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.cons)
@@ -626,6 +630,9 @@ button value attrs handler =
     handler' = fromJS handler
 
 -- A text button looks like “[cancel]”
+-- 
+-- TODO: consider dotted links instead?
+-- TODO: text button links shouldn't be marked as visited
 textButton
   :: Text         -- ^ Button text
   -> JS           -- ^ Onclick handler
