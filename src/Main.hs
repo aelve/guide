@@ -382,14 +382,19 @@ renderRoot globalState = do
   -- Include definitions of all Javascript functions that we have defined in
   -- this file.
   script_ (fromJS allJSFunctions)
-  h1_ "A collaborative guide to Haskell libraries and tools"
+  h1_ "Collaborative notes on Haskell libraries and tools"
   -- TODO: add a way to hide the rules
   div_ [id_ "help"] $ renderMarkdownBlock [text|
     You can edit everything, without registration. (But if you delete
     everything, I'll roll it back and then make a voodoo doll of you
-    and stick some needles into it).
+    and stick some needles into it). The most important rule is:
+    **it's collaborative notes, not Wikipedia**. In other words,
+    incomplete entries like this are welcome here:
 
-    Here are some guidelines/observations/etc that probably make sense:
+    > **pros:** pretty nice API\
+    > **cons:** buggy (see an example on my Github, here's the link)
+
+    Some additional guidelines/observations/etc that probably make sense:
 
       * sort pros/cons by importance
 
@@ -400,11 +405,6 @@ renderRoot globalState = do
 
       * if you have useful information of any kind that doesn't fit,
         add it to the category notes
-
-    Subjective judgements and incomplete entries are completely alright –
-    it's not Wikipedia, it's collaborative notes, so don't be afraid to
-    write anything here. Also, use bold/italics/code/links freely
-    (Markdown is supported).
     |]
   textInput [id_ "search", placeholder_ "search"] $
     JS.search ("#categories" :: Text, inputValue)
@@ -480,6 +480,10 @@ renderCategory category =
 
 -- TODO: add arrows for moving items up and down in category, and something
 -- to delete an item – those things could be at the left side, like on Reddit
+
+-- TODO: allow colors for grouping (e.g. van Laarhoven lens libraries go one
+-- way, other libraries go another way) (and provide a legend under the
+-- category)
 renderItem :: Editable -> Item -> HtmlT IO ()
 renderItem editable item =
   div_ [class_ "item"] $ do
