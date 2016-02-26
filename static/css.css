@@ -53,3 +53,9 @@ a:active  {text-decoration: underline;}
 a.anchor {
   margin-right: 0.5em;
   color: gray; }
+
+code {
+  background: rgba(10, 10, 10, 0.1);
+  font-size: 95%;
+  vertical-align: 0.5px;
+  padding: 2px 4px 1px 4px; }
