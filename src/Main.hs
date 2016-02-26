@@ -590,7 +590,7 @@ renderItemInfo editable item =
         let handler s = JS.submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
           label_ $ do
-            "Package name: "
+            "Package name"
             br_ []
             input_ [type_ "text", name_ "name",
                     value_ (item^.name)]
@@ -601,7 +601,7 @@ renderItemInfo editable item =
                      [checked_ | item^?kind.onHackage == Just True]
           br_ []
           label_ $ do
-            "Site (optional): "
+            "Site (optional)"
             br_ []
             input_ [type_ "text", name_ "link",
                     value_ (fromMaybe "" (item^.link))]
