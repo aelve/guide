@@ -104,23 +104,54 @@ emptyState :: GlobalState
 emptyState = GlobalState {
   _categories = [] }
 
--- TODO: make the example longer
 sampleState :: GlobalState
 sampleState = do
   let lensItem = Item {
         _itemUid = 12,
         _itemName = "lens",
-        _itemPros = [Trait 121 "the standard lenses library",
-                     Trait 122 "batteries included"],
-        _itemCons = [Trait 123 "huge"],
+        _itemPros = [Trait 121 "The most widely used lenses library, by a \
+                               \huge margin.",
+                     Trait 123 "Contains pretty much everything you could \
+                               \want – while other lens libraries mostly \
+                               \only provide lenses for manipulating lists, \
+                               \maps, tuples, and standard types like \
+                               \`Maybe`/`Either`/etc, lens has functions \
+                               \for manipulating filepaths, Template Haskell \
+                               \structures, generics, complex numbers, \
+                               \exceptions, and everything else in the \
+                               \Haskell Platform.",
+                     Trait 125 "Unlike most other libraries, has prisms – \
+                               \a kind of lenses that can act both as \
+                               \constructors and deconstructors at once. \
+                               \They can be pretty useful when you're \
+                               \dealing with exceptions, Template Haskell, \
+                               \or JSON."],
+        _itemCons = [Trait 122 "Takes a lot of time to compile, and has \
+                               \a lot of dependencies as well.",
+                     Trait 124 "Some of its advanced features are very \
+                               \intimidating, and the whole library \
+                               \may seem overengineered \
+                               \(see [this post](http://fvisser.nl/post/2013/okt/11/why-i-dont-like-the-lens-library.html)).",
+                     Trait 126 "Once you start using lenses for *everything* \
+                               \(which is easier to do with lens than with \
+                               \other libraries), your code may start \
+                               \not looking like Haskell much \
+                               \(see [this post](https://ro-che.info/articles/2014-04-24-lens-unidiomatic))."],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let microlensItem = Item {
         _itemUid = 13,
         _itemName = "microlens",
-        _itemPros = [Trait 131 "very small",
-                     Trait 132 "good for libraries"],
-        _itemCons = [Trait 133 "doesn't have advanced features"],
+        _itemPros = [Trait 131 "Very small (the base package has no \
+                               \dependencies at all, and features like \
+                               \Template Haskell lens generation or \
+                               \instances for `Vector`/`Text`/`HashMap` \
+                               \are separated into other packages)."],
+        _itemCons = [Trait 132 "Doesn't provide lens's more advanced \
+                               \features (like prisms or indexed traversals).",
+                     Trait 134 "Doesn't let you write code in fully “lensy” \
+                               \style (since it omits lots of operators \
+                               \and `*Of` functions from lens)."],
         _itemLink = Just "https://github.com/aelve/microlens",
         _itemKind = hackageLibrary }
   let lensesCategory = Category {
@@ -129,7 +160,38 @@ sampleState = do
         _categoryNotes = "Lenses are first-class composable accessors.",
         _categoryItems = [lensItem, microlensItem] }
 
-  GlobalState {_categories = [lensesCategory]}
+  let parsecItem = Item {
+        _itemUid = 21,
+        _itemName = "parsec",
+        _itemPros = [Trait 211 "the most widely used package",
+                     Trait 213 "has lots of tutorials, book coverage, etc"],
+        _itemCons = [Trait 212 "development has stagnated"],
+        _itemLink = Nothing,
+        _itemKind = hackageLibrary }
+  let megaparsecItem = Item {
+        _itemUid = 22,
+        _itemName = "megaparsec",
+        _itemPros = [Trait 221 "the API is largely similar to Parsec, \
+                               \so existing tutorials/code samples \
+                               \could be reused and migration is easy"],
+        _itemCons = [],
+        _itemLink = Nothing,
+        _itemKind = hackageLibrary }
+  let attoparsecItem = Item {
+        _itemUid = 23,
+        _itemName = "attoparsec",
+        _itemPros = [Trait 231 "very fast, good for parsing binary formats"],
+        _itemCons = [Trait 232 "can't report positions of parsing errors",
+                     Trait 234 "doesn't provide a monad transformer"],
+        _itemLink = Nothing,
+        _itemKind = hackageLibrary }
+  let parsingCategory = Category {
+        _categoryUid = 2,
+        _categoryTitle = "Parsing",
+        _categoryNotes = "Parsers are parsers.",
+        _categoryItems = [parsecItem, megaparsecItem, attoparsecItem] }
+
+  GlobalState {_categories = [lensesCategory, parsingCategory]}
 
 itemVar :: Path '[Uid]
 itemVar = "item" <//> var
