@@ -14,9 +14,16 @@ body {
   margin-top: 3em; }
 
 .item {
-  background-color: #f0f0f0;
-  margin-top: 20px;
-  padding: 10px 15px; }
+  display: flex;
+  margin-top: 20px; }
+
+.item-info {
+  padding: 10px 15px;
+  background-color: #e0e0e0; }
+
+.item-traits {
+  padding: 10px 15px 20px 15px;
+  background-color: #f0f0f0; }
 
 .traits-groups-container {
   display: flex; }
@@ -57,5 +64,7 @@ a.anchor {
 code {
   background: rgba(10, 10, 10, 0.1);
   font-size: 95%;
-  vertical-align: 0.5px;
-  padding: 2px 4px 1px 4px; }
+  padding: 2px 4px; }
+
+form {
+  margin: 0; }

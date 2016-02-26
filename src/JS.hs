@@ -50,7 +50,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   submitTrait,
   submitItemInfo,
   -- Other things
-  moveTraitUp, moveTraitDown, deleteTrait ]
+  moveTraitUp, moveTraitDown, deleteTrait,
+  moveItemUp, moveItemDown, deleteItem ]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -334,6 +335,32 @@ deleteTrait =
     if (confirm("Confirm deletion: “"+traitText+"”")) {
       $.post("/delete/item/"+itemId+"/trait/"+traitId);
       $(traitNode).remove();
+    }
+  |]
+
+moveItemUp :: JSFunction a => a
+moveItemUp =
+  makeJSFunction "moveItemUp" ["itemId", "itemNode"]
+  [text|
+    $.post("/move/item/"+itemId, {direction: "up"});
+    moveNodeUp(itemNode);
+  |]
+
+moveItemDown :: JSFunction a => a
+moveItemDown =
+  makeJSFunction "moveItemDown" ["itemId", "itemNode"]
+  [text|
+    $.post("/move/item/"+itemId, {direction: "down"});
+    moveNodeDown(itemNode);
+  |]
+
+deleteItem :: JSFunction a => a
+deleteItem =
+  makeJSFunction "deleteItem" ["itemId", "itemNode", "itemText"]
+  [text|
+    if (confirm("Confirm deletion: “"+itemText+"”")) {
+      $.post("/delete/item/"+itemId);
+      $(itemNode).remove();
     }
   |]
 

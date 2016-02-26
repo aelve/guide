@@ -93,12 +93,18 @@ data GlobalState = GlobalState {
 makeLenses ''GlobalState
 
 categoryById :: Uid -> Lens' GlobalState Category
-categoryById uid' = singular $
-  categories.each . filtered ((== uid') . view uid)
+categoryById catId = singular $
+  categories.each . filtered ((== catId) . view uid)
+
+categoryByItem :: Uid -> Lens' GlobalState Category
+categoryByItem itemId = singular $
+  categories.each . filtered hasItem
+  where
+    hasItem category = itemId `elem` (category^..items.each.uid)
 
 itemById :: Uid -> Lens' GlobalState Item
-itemById uid' = singular $
-  categories.each . items.each . filtered ((== uid') . view uid)
+itemById itemId = singular $
+  categories.each . items.each . filtered ((== itemId) . view uid)
 
 emptyState :: GlobalState
 emptyState = GlobalState {
@@ -351,6 +357,12 @@ otherMethods = do
       withGlobal $ do
         itemById itemId . pros %= move ((== traitId) . view uid)
         itemById itemId . cons %= move ((== traitId) . view uid)
+    -- Move item
+    Spock.post itemVar $ \itemId -> do
+      direction :: Text <- param' "direction"
+      let move = if direction == "up" then moveUp else moveDown
+      withGlobal $ do
+        categoryByItem itemId . items %= move ((== itemId) . view uid)
 
   -- Deleting things
   Spock.subcomponent "delete" $ do
@@ -359,6 +371,10 @@ otherMethods = do
       withGlobal $ do
         itemById itemId . pros %= filter ((/= traitId) . view uid)
         itemById itemId . cons %= filter ((/= traitId) . view uid)
+    -- Delete item
+    Spock.post itemVar $ \itemId -> do
+      withGlobal $ do
+        categoryByItem itemId . items %= filter ((/= itemId) . view uid)
 
 main :: IO ()
 main = do
@@ -405,6 +421,7 @@ renderRoot globalState = do
   renderCategoryList (globalState^.categories)
   -- TODO: perhaps use infinite scrolling/loading?
   -- TODO: add links to source and donation buttons
+  -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
   -- TODO: add CSS for blocks of code
 
@@ -512,23 +529,44 @@ renderCategory category =
 
 -- TODO: allow colors for grouping (e.g. van Laarhoven lens libraries go one
 -- way, other libraries go another way) (and provide a legend under the
--- category)
+-- category) (and sort by colors)
+
+-- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
+-- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: Editable -> Item -> HtmlT IO ()
 renderItem editable item =
   div_ [class_ "item"] $ do
-    case editable of
-      Normal -> do
-        renderItemInfo Editable item
-        renderItemTraits Normal item
-      Editable -> do
-        renderItemInfo Editable item
-        renderItemTraits Editable item
+    itemNode <- thisNode
+    -- TODO: the controls and item-info should be aligned (currently the
+    -- controls are smaller)
+    -- TODO: the controls should be “outside” of the main body width
+    -- TODO: styles for all this should be in css.css
+    div_ [class_ "item-controls"] $ do
+      imgButton "/arrow-thick-top.svg" [width_ "12px",
+                                        style_ "margin-bottom:5px"] $
+        -- TODO: the item should blink or somehow else show where it has been
+        -- moved
+        JS.moveItemUp (item^.uid, itemNode)
+      imgButton "/arrow-thick-bottom.svg" [width_ "12px",
+                                           style_ "margin-bottom:5px"] $
+        JS.moveItemDown (item^.uid, itemNode)
+      imgButton "/x.svg" [width_ "12px"] $
+        JS.deleteItem (item^.uid, itemNode, item^.name)
+    -- This div is needed for “display:flex” on the outer div to work (which
+    -- makes item-controls be placed to the left of everything else)
+    div_ [style_ "width:100%"] $ do
+      renderItemInfo Editable item
+      case editable of
+        Normal -> do
+          renderItemTraits Normal item
+        Editable -> do
+          renderItemTraits Editable item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: Editable -> Item -> HtmlT IO ()
 renderItemInfo editable item =
-  div_ $ do
+  div_ [class_ "item-info"] $ do
     this <- thisNode
     case editable of
       Editable -> span_ [style_ "font-size:150%"] $ do
@@ -546,22 +584,25 @@ renderItemInfo editable item =
         emptySpan "1em"
         textButton "edit details" $
           JS.setItemInfoMode (this, item^.uid, InEdit)
-        -- TODO: maybe some space here?
+        -- TODO: link to Stackage too
+        -- TODO: should check for Stackage automatically
       InEdit -> do
         let handler s = JS.submitItemInfo (this, item^.uid, s)
         form_ [onFormSubmit handler] $ do
           label_ $ do
             "Package name: "
+            br_ []
             input_ [type_ "text", name_ "name",
                     value_ (item^.name)]
           br_ []
           label_ $ do
-            "On Hackage: "
+            "Link to Hackage: "
             input_ $ [type_ "checkbox", name_ "on-hackage"] ++
                      [checked_ | item^?kind.onHackage == Just True]
           br_ []
           label_ $ do
             "Site (optional): "
+            br_ []
             input_ [type_ "text", name_ "link",
                     value_ (fromMaybe "" (item^.link))]
           br_ []
@@ -574,7 +615,7 @@ renderItemInfo editable item =
 
 renderItemTraits :: Editable -> Item -> HtmlT IO ()
 renderItemTraits editable item =
-  div_ [class_ "traits"] $ do
+  div_ [class_ "item-traits"] $ do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
