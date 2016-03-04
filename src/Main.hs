@@ -611,10 +611,15 @@ renderRoot globalState = do
   onPageLoad $ JS.showOrHideHelp ("#help" :: JQuerySelector, helpVersion)
   -- TODO: use ordinary form-post search instead of Javascript search (for
   -- people with NoScript)
-  textInput [id_ "search", placeholder_ "search"] $
-    JS.search ("#categories" :: JQuerySelector, inputValue)
-  textInput [placeholder_ "add a category"] $
-    JS.addCategory ("#categories" :: JQuerySelector, inputValue) <> clearInput
+  textInput [
+    id_ "search",
+    placeholder_ "search",
+    -- TODO: add something to construct a selector
+    onEnter $ JS.search ("#categories" :: JQuerySelector, inputValue) ]
+  textInput [
+    placeholder_ "add a category",
+    onEnter $ JS.addCategory ("#categories" :: JQuerySelector, inputValue) <>
+              clearInput ]
   -- TODO: sort categories by popularity, somehow? or provide a list of
   -- “commonly used categories” or even a nested catalog
   renderCategoryList (globalState^.categories)
@@ -679,9 +684,11 @@ renderCategoryTitle editable category =
         textButton "edit" $
           JS.setCategoryTitleMode (titleNode, category^.uid, InEdit)
       InEdit -> do
-        textInput [value_ (category^.title)] $
-          JS.submitCategoryTitle (titleNode, category^.uid, inputValue) <>
-          clearInput
+        textInput [
+          value_ (category^.title),
+          onEnter $
+            JS.submitCategoryTitle (titleNode, category^.uid, inputValue) <>
+            clearInput ]
         emptySpan "1em"
         textButton "cancel" $
           JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
@@ -720,8 +727,10 @@ renderCategory category =
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal category) (category^.items)
       thisNode
-    textInput [placeholder_ "add an item"] $
-      JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
+    textInput [
+      placeholder_ "add an item",
+      onEnter $ JS.addLibrary (itemsNode, category^.uid, inputValue) <>
+                clearInput ]
 
 -- TODO: add arrows for moving items up and down in category, and something
 -- to delete an item – those things could be at the left side, like on Reddit
@@ -871,8 +880,10 @@ renderItemTraits editable cat item = do
             listNode <- ul_ $ do
               mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
               thisNode
-            textInput [placeholder_ "add pro"] $
-              JS.addPro (listNode, item^.uid, inputValue) <> clearInput
+            textInput [
+              placeholder_ "add pro",
+              onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
+                        clearInput ]
       -- TODO: maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
@@ -884,8 +895,10 @@ renderItemTraits editable cat item = do
             listNode <- ul_ $ do
               mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
               thisNode
-            textInput [placeholder_ "add con"] $
-              JS.addCon (listNode, item^.uid, inputValue) <> clearInput
+            textInput [
+              placeholder_ "add con",
+              onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
+                        clearInput ]
     case editable of
       Normal -> textButton "edit pros/cons" $
         JS.setItemTraitsMode (this, item^.uid, Editable)
@@ -909,11 +922,12 @@ renderTrait Editable itemId trait = li_ $ do
     JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
   textButton "edit" $
     JS.setTraitMode (this, itemId, trait^.uid, InEdit)
--- TODO: and textarea here
+-- TODO: the text area should be bigger
 renderTrait InEdit itemId trait = li_ $ do
   this <- thisNode
-  textInput [value_ (trait^.content)] $
-    JS.submitTrait (this, itemId, trait^.uid, inputValue) <> clearInput
+  let submitHandler = JS.submitTrait (this, itemId, trait^.uid, inputValue) <>
+                      clearInput
+  textarea_ [onEnter submitHandler] $ toHtml (trait^.content)
   textButton "cancel" $
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
@@ -925,11 +939,11 @@ onPageLoad js = script_ $ format "$(document).ready(function(){{}});" [js]
 emptySpan :: Text -> HtmlT IO ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
-textInput :: [Attribute] -> JS -> HtmlT IO ()
-textInput attrs handler =
-  input_ (type_ "text" : onkeyup_ handler' : attrs)
-  where
-    handler' = format "if (event.keyCode == 13) {{}}" [handler]
+onEnter :: JS -> Attribute
+onEnter handler = onkeydown_ $ format "if (event.keyCode == 13) {{}}" [handler]
+
+textInput :: [Attribute] -> HtmlT IO ()
+textInput attrs = input_ (type_ "text" : attrs)
 
 inputValue :: JS
 inputValue = JS "this.value"
