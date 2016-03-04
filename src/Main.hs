@@ -555,8 +555,25 @@ otherMethods = do
         itemById itemId . cons %= filter ((/= traitId) . view uid)
     -- Delete item
     Spock.post itemVar $ \itemId -> do
+      let category :: Lens' GlobalState Category
+          category = categoryByItem itemId
+      let item :: Lens' GlobalState Item
+          item = itemById itemId
+      -- If the item was the only item in its group, delete the group (and
+      -- make the hue available for new items)
       withGlobal $ do
-        categoryByItem itemId . items %= filter ((/= itemId) . view uid)
+        oldGroup <- use (item.group_)
+        case oldGroup of
+          Nothing -> return ()
+          Just g  -> do
+            allItems <- use (category.items)
+            let inSameGroup item' = item'^.group_ == Just g
+                isUnique = length (filter inSameGroup allItems) == 1
+            when isUnique $
+              category.groups %= M.delete g
+      -- Delete the item
+      withGlobal $ do
+        category.items %= filter ((/= itemId) . view uid)
 
 main :: IO ()
 main = do
