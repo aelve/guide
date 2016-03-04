@@ -27,7 +27,7 @@ body {
 .item-info {
   padding: 10px 15px; }
 
-.item-traits {
+.item-traits, .item-notes {
   padding: 10px 15px 20px 15px; }
 
 .traits-groups-container {

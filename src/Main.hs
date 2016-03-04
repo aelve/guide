@@ -83,9 +83,6 @@ hackageLibrary = Library True
 deriveSafeCopy 0 'base ''ItemKind
 makeFields ''ItemKind
 
--- TODO: add usage notes! and then change the rules to say “add it to item
--- notes”, not “add it to category notes”
-
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 data Item = Item {
@@ -94,8 +91,11 @@ data Item = Item {
   _itemGroup_ :: Maybe Text,
   _itemPros   :: [Trait],
   _itemCons   :: [Trait],
+  _itemNotes  :: Text,
   _itemLink   :: Maybe Url,
   _itemKind   :: ItemKind }
+
+-- TODO: make a 'Markdown' type alias?
 
 deriveSafeCopy 0 'base ''Item
 makeFields ''Item
@@ -263,6 +263,7 @@ addItem catId itemId name' kind' = do
         _itemGroup_ = Nothing,
         _itemPros   = [],
         _itemCons   = [],
+        _itemNotes  = "",
         _itemLink   = Nothing,
         _itemKind   = kind' }
   categoryById catId . items %= (++ [newItem])
@@ -351,6 +352,11 @@ setItemOnHackage itemId onHackage' = do
   itemById itemId . kind . onHackage .= onHackage'
   use (itemById itemId)
 
+setItemNotes :: Uid -> Text -> Acid.Update GlobalState Item
+setItemNotes itemId notes' = do
+  itemById itemId . notes .= notes'
+  use (itemById itemId)
+
 setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait
 setTraitContent itemId traitId content' = do
   itemById itemId . traitById traitId . content .= content'
@@ -436,6 +442,7 @@ makeAcidic ''GlobalState [
   -- set
   'setCategoryTitle, 'setCategoryNotes,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, 'setItemOnHackage,
+    'setItemNotes,
   'setTraitContent,
   -- delete
   'deleteItem,
@@ -492,6 +499,17 @@ sampleState = do
              to do with lens than with other libraries), your code may start
              not looking like Haskell much
              (see [this post](https://ro-che.info/articles/2014-04-24-lens-unidiomatic)).|] ],
+        _itemNotes = [text|
+           Get a value:
+
+               > (1,2) ^. _1
+               1
+
+           Set a value:
+
+               > (1,2) & _1 .~ 10
+               (10, 2)
+           |],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let microlensItem = Item {
@@ -511,6 +529,7 @@ sampleState = do
            Trait "134" $ T.unwords $ T.lines [text|
              Doesn't let you write code in fully “lensy” style (since it
              omits lots of operators and `*Of` functions from lens).|] ],
+        _itemNotes = "",
         _itemLink = Just "https://github.com/aelve/microlens",
         _itemKind = hackageLibrary }
   let lensesCategory = Category {
@@ -527,6 +546,7 @@ sampleState = do
         _itemPros = [Trait "211" "the most widely used package",
                      Trait "213" "has lots of tutorials, book coverage, etc"],
         _itemCons = [Trait "212" "development has stagnated"],
+        _itemNotes = "",
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let megaparsecItem = Item {
@@ -537,6 +557,7 @@ sampleState = do
                                  \so existing tutorials/code samples \
                                  \could be reused and migration is easy"],
         _itemCons = [],
+        _itemNotes = "",
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let attoparsecItem = Item {
@@ -546,6 +567,7 @@ sampleState = do
         _itemPros = [Trait "231" "very fast, good for parsing binary formats"],
         _itemCons = [Trait "232" "can't report positions of parsing errors",
                      Trait "234" "doesn't provide a monad transformer"],
+        _itemNotes = "",
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let parsingCategory = Category {
@@ -562,6 +584,7 @@ sampleState = do
         _itemGroup_ = Nothing,
         _itemPros = [],
         _itemCons = [],
+        _itemNotes = "",
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let item1 = def {
@@ -640,6 +663,12 @@ renderMethods = Spock.subcomponent "render" $ do
     renderMode <- param' "mode"
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemInfo renderMode category item
+  -- Item notes
+  Spock.get (itemVar <//> "notes") $ \itemId -> do
+    item <- dbQuery (GetItem itemId)
+    renderMode <- param' "mode"
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemNotes renderMode category item
   -- All item traits
   Spock.get (itemVar <//> "traits") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -693,6 +722,12 @@ setMethods = Spock.subcomponent "set" $ do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemInfo Editable category item
+  -- Item notes
+  Spock.post (itemVar <//> "notes") $ \itemId -> do
+    content' <- param' "content"
+    item <- dbUpdate (SetItemNotes itemId content')
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemNotes Editable category item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
@@ -1011,6 +1046,7 @@ renderItem editable cat item =
           renderItemTraits Normal cat item
         Editable -> do
           renderItemTraits Editable cat item
+      renderItemNotes Editable cat item
 
 -- TODO: find some way to give all functions access to category and item (or
 -- category, item and trait) without passing everything explicitly?
@@ -1045,10 +1081,10 @@ renderItemInfo editable cat item = do
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
       InEdit -> do
-        let traitsNode = selectParent infoNode `selectChild`
-                         selectClass "item-traits"
+        let otherNodes = selectChild (selectParent infoNode)
+                                     (selectClass "item-body")
         let formSubmitHandler formNode =
-              JS.submitItemInfo (infoNode, traitsNode, item^.uid, formNode)
+              JS.submitItemInfo (infoNode, otherNodes, item^.uid, formNode)
         form_ [onFormSubmit formSubmitHandler] $ do
           label_ $ do
             "Package name"
@@ -1109,8 +1145,10 @@ renderItemTraits :: Editable -> Category -> Item -> HtmlT IO ()
 renderItemTraits editable cat item = do
   let bg = hueToLightColor $ getItemHue cat item
   -- If the structure of HTML changes here, don't forget to update the
-  -- 'traitsNode' selector in 'renderItemInfo'.
-  div_ [class_ "item-traits", style_ ("background-color:" <> bg)] $ do
+  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
+  -- having a div with a class “item-body”.
+  div_ [class_ "item-traits item-body",
+        style_ ("background-color:" <> bg)] $ do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
@@ -1178,6 +1216,39 @@ renderTrait InEdit itemId trait = li_ $ do
   br_ []
   textButton "cancel" $
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
+
+renderItemNotes :: Editable -> Category -> Item -> HtmlT IO ()
+renderItemNotes editable category item = do
+  let bg = hueToLightColor $ getItemHue category item
+  -- If the structure of HTML changes here, don't forget to update the
+  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
+  -- having a div with a class “item-body”.
+  div_ [class_ "item-notes item-body",
+        style_ ("background-color:" <> bg)] $ do
+    -- TODO: this duplicates code from renderCategoryNotes, try to reduce
+    -- duplication
+    this <- thisNode
+    case editable of
+      Editable -> do
+        -- TODO: use shortcut-links
+        renderMarkdownBlock (item^.notes)
+        -- TODO: “show notes and examples”
+        textButton "edit notes" $
+          JS.setItemNotesMode (this, item^.uid, InEdit)
+      InEdit -> do
+        textareaId <- randomUid
+        textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+          toHtml (item^.notes)
+        button "Save" [] $ do
+          -- «$("#<textareaId>").val()» is a Javascript expression that
+          -- returns text contained in the textarea
+          let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
+          JS.submitItemNotes (this, item^.uid, textareaValue)
+        emptySpan "6px"
+        button "Cancel" [] $
+          JS.setItemNotesMode (this, item^.uid, Editable)
+        emptySpan "6px"
+        "Markdown"
 
 -- Utils
 
