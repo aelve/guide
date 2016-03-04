@@ -901,8 +901,7 @@ renderCategoryNotes editable category =
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
         textareaId <- randomUid
-        textarea_ [uid_ textareaId,
-                   rows_ "10", style_ "width:100%;resize:vertical"] $
+        textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
           toHtml (category^.notes)
         button "Save" [] $ do
           -- «$("#<textareaId>").val()» is a Javascript expression that
@@ -959,7 +958,7 @@ renderItem editable cat item =
         JS.deleteItem (item^.uid, itemNode, item^.name)
     -- This div is needed for “display:flex” on the outer div to work (which
     -- makes item-controls be placed to the left of everything else)
-    div_ [style_ "width:100%"] $ do
+    div_ [class_ "fullwidth"] $ do
       renderItemInfo Editable cat item
       case editable of
         Normal -> do
@@ -1078,6 +1077,7 @@ renderItemTraits editable cat item = do
               mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
               thisNode
             textarea_ [
+              class_ "fullwidth",
               placeholder_ "add pro",
               onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
                         clearInput ]
@@ -1094,6 +1094,7 @@ renderItemTraits editable cat item = do
               mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
               thisNode
             textarea_ [
+              class_ "fullwidth",
               placeholder_ "add con",
               onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
                         clearInput ]

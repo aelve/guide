@@ -76,3 +76,9 @@ pre code {
 
 form {
   margin: 0; }
+
+.fullwidth {
+  width: 100%; }
+
+textarea.fullwidth {
+  resize: vertical; }
