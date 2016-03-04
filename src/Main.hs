@@ -1140,7 +1140,8 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
 -- Use inputValue to get the value (works with input_ and textarea_)
 onEnter :: JS -> Attribute
-onEnter handler = onkeydown_ $ format "if (event.keyCode == 13) {{}}" [handler]
+onEnter handler = onkeydown_ $
+  format "if (event.keyCode == 13) {{} return false;}" [handler]
 
 textInput :: [Attribute] -> HtmlT IO ()
 textInput attrs = input_ (type_ "text" : attrs)
