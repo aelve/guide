@@ -18,12 +18,10 @@ body {
   margin-top: 20px; }
 
 .item-info {
-  padding: 10px 15px;
-  background-color: #e0e0e0; }
+  padding: 10px 15px; }
 
 .item-traits {
-  padding: 10px 15px 20px 15px;
-  background-color: #f0f0f0; }
+  padding: 10px 15px 20px 15px; }
 
 .traits-groups-container {
   display: flex; }

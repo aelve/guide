@@ -9,6 +9,7 @@ ScopedTypeVariables,
 FunctionalDependencies,
 TypeFamilies,
 DataKinds,
+MultiWayIf,
 NoImplicitPrelude
   #-}
 
@@ -22,6 +23,9 @@ import BasePrelude hiding (Category)
 import Control.Monad.State
 -- Lenses
 import Lens.Micro.Platform
+-- Containers
+import qualified Data.Map as M
+import Data.Map (Map)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -30,7 +34,7 @@ import NeatInterpolation
 import System.Random
 -- Web
 import Lucid hiding (for_)
-import Web.Spock hiding (get, text)
+import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 import Web.PathPieces
@@ -43,6 +47,8 @@ import Utils
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
+--
+-- TODO: use Text?
 type Uid = Int
 
 randomUid :: MonadIO m => m Uid
@@ -65,12 +71,13 @@ hackageLibrary = Library True
 makeFields ''ItemKind
 
 data Item = Item {
-  _itemUid  :: Uid,
-  _itemName :: Text,
-  _itemPros :: [Trait],
-  _itemCons :: [Trait],
-  _itemLink :: Maybe Url,
-  _itemKind :: ItemKind }
+  _itemUid    :: Uid,
+  _itemName   :: Text,
+  _itemGroup_ :: Maybe Text,
+  _itemPros   :: [Trait],
+  _itemCons   :: [Trait],
+  _itemLink   :: Maybe Url,
+  _itemKind   :: ItemKind }
 
 makeFields ''Item
 
@@ -79,13 +86,79 @@ traitById uid' = singular $
   (pros.each . filtered ((== uid') . view uid)) `failing`
   (cons.each . filtered ((== uid') . view uid))
 
+data Hue = NoHue | Hue Int
+  deriving (Eq, Ord)
+
+instance Show Hue where
+  show NoHue   = "0"
+  show (Hue n) = show n
+
+{-
+https://www.google.com/design/spec/style/color.html#color-color-palette
+
+                50     100    200
+              ------ ------ ------
+red         : FFEBEE FFCDD2 EF9A9A
+pink        : FCE4EC F8BBD0 F48FB1
+purple      : F3E5F5 E1BEE7 CE93D8
+deep purple : EDE7F6 D1C4E9 B39DDB
+indigo      : E8EAF6 C5CAE9 9FA8DA
+blue        : E3F2FD BBDEFB 90CAF9
+light blue  : E1F5FE B3E5FC 81D4FA
+cyan        : E0F7FA B2EBF2 80DEEA
+teal        : E0F2F1 B2DFDB 80CBC4
+green       : E8F5E9 C8E6C9 A5D6A7
+light green : F1F8E9 DCEDC8 C5E1A5
+lime        : F9FBE7 F0F4C3 E6EE9C
+yellow      : FFFDE7 FFF9C4 FFF59D
+amber       : FFF8E1 FFECB3 FFE082
+orange      : FFF3E0 FFE0B2 FFCC80
+deep orange : FBE9E7 FFCCBC FFAB91
+brown       : EFEBE9 D7CCC8 BCAAA4
+gray        : FAFAFA F5F5F5 EEEEEE
+blue gray   : ECEFF1 CFD8DC B0BEC5
+-}
+
+-- TODO: more colors and don't repeat them!
+-- TODO: what about colorblind people?
+-- TODO: check how all colors look (not just deep purple)
+hueToDarkColor :: Hue -> Text
+hueToDarkColor NoHue = "#D6D6D6"  -- the color for gray isn't from Google's
+                                  -- palette, since their “100” is too light
+hueToDarkColor (Hue i) = table !! ((i-1) `mod` length table)
+  where
+    -- the “100” colors
+    table = ["#D1C4E9",   -- deep purple
+             "#C8E6C9",   -- green
+             "#FFECB3",   -- amber
+             "#FFCDD2"]   -- red
+
+hueToLightColor :: Hue -> Text
+hueToLightColor NoHue = "#F0F0F0"  -- the color for gray isn't from Google's
+                                   -- palette, since their “50” is too light
+hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
+  where
+    -- the “50” colors
+    table = ["#EDE7F6",
+             "#E8F5E9",
+             "#FFF8E1",
+             "#FFEBEE"]
+
 data Category = Category {
   _categoryUid :: Uid,
   _categoryTitle :: Text,
   _categoryNotes :: Text,
+  _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item] }
 
 makeFields ''Category
+
+addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
+addGroupIfDoesNotExist g gs
+  | M.member g gs = gs
+  | otherwise     = M.insert g firstNotTaken gs
+  where
+    firstNotTaken = head $ map Hue [1..] \\ M.elems gs
 
 data GlobalState = GlobalState {
   _categories :: [Category] }
@@ -115,6 +188,7 @@ sampleState = do
   let lensItem = Item {
         _itemUid = 12,
         _itemName = "lens",
+        _itemGroup_ = Nothing,
         _itemPros = [Trait 121 "The most widely used lenses library, by a \
                                \huge margin.",
                      Trait 123 "Contains pretty much everything you could \
@@ -148,6 +222,7 @@ sampleState = do
   let microlensItem = Item {
         _itemUid = 13,
         _itemName = "microlens",
+        _itemGroup_ = Nothing,
         _itemPros = [Trait 131 "Very small (the base package has no \
                                \dependencies at all, and features like \
                                \Template Haskell lens generation or \
@@ -164,11 +239,13 @@ sampleState = do
         _categoryUid = 1,
         _categoryTitle = "Lenses",
         _categoryNotes = "Lenses are first-class composable accessors.",
+        _categoryGroups = mempty,
         _categoryItems = [lensItem, microlensItem] }
 
   let parsecItem = Item {
         _itemUid = 21,
         _itemName = "parsec",
+        _itemGroup_ = Just "parsec-like",
         _itemPros = [Trait 211 "the most widely used package",
                      Trait 213 "has lots of tutorials, book coverage, etc"],
         _itemCons = [Trait 212 "development has stagnated"],
@@ -177,6 +254,7 @@ sampleState = do
   let megaparsecItem = Item {
         _itemUid = 22,
         _itemName = "megaparsec",
+        _itemGroup_ = Nothing,
         _itemPros = [Trait 221 "the API is largely similar to Parsec, \
                                \so existing tutorials/code samples \
                                \could be reused and migration is easy"],
@@ -186,6 +264,7 @@ sampleState = do
   let attoparsecItem = Item {
         _itemUid = 23,
         _itemName = "attoparsec",
+        _itemGroup_ = Nothing,
         _itemPros = [Trait 231 "very fast, good for parsing binary formats"],
         _itemCons = [Trait 232 "can't report positions of parsing errors",
                      Trait 234 "doesn't provide a monad transformer"],
@@ -195,9 +274,55 @@ sampleState = do
         _categoryUid = 2,
         _categoryTitle = "Parsing",
         _categoryNotes = "Parsers are parsers.",
+        _categoryGroups = M.fromList [("parsec-like", Hue 1)],
         _categoryItems = [parsecItem, megaparsecItem, attoparsecItem] }
 
-  GlobalState {_categories = [lensesCategory, parsingCategory]}
+  -- As many different groups as there are different hues
+  let def = Item {
+        _itemUid = undefined,
+        _itemName = undefined,
+        _itemGroup_ = Nothing,
+        _itemPros = [],
+        _itemCons = [],
+        _itemLink = Nothing,
+        _itemKind = hackageLibrary }
+  let item1 = def {
+        _itemUid = 31,
+        _itemName = "api-builder",
+        _itemGroup_ = Just "group 1" }
+  let item2 = def {
+        _itemUid = 32,
+        _itemName = "aeson",
+        _itemGroup_ = Just "group 2" }
+  let item3 = def {
+        _itemUid = 33,
+        _itemName = "unordered-containers",
+        _itemGroup_ = Just "group 1" }
+  let item4 = def {
+        _itemUid = 34,
+        _itemName = "lens",
+        _itemGroup_ = Just "group 3" }
+  let item5 = def {
+        _itemUid = 35,
+        _itemName = "bytestring",
+        _itemGroup_ = Just "group 4" }
+  let item6 = def {
+        _itemUid = 36,
+        _itemName = "microlens",
+        _itemGroup_ = Nothing }
+  let item7 = def {
+        _itemUid = 37,
+        _itemName = "parsec",
+        _itemGroup_ = Nothing }
+  let huesCategory = Category {
+        _categoryUid = 3,
+        _categoryTitle = "Testing hues",
+        _categoryNotes = "Hopefully they all look good.",
+        _categoryGroups =
+           M.fromList [("group " <> tshow i, Hue i) | i <- [1..4]],
+        _categoryItems = [item1, item2, item3, item4, item5, item6, item7] }
+
+  GlobalState {_categories = [lensesCategory, parsingCategory, huesCategory]}
 
 itemVar :: Path '[Uid]
 itemVar = "item" <//> var
@@ -230,16 +355,25 @@ renderMethods = Spock.subcomponent "render" $ do
     category <- withGlobal $ use (categoryById catId)
     renderMode <- param' "mode"
     lucid $ renderCategoryNotes renderMode category
+  -- Item colors
+  Spock.get (itemVar <//> "colors") $ \itemId -> do
+    item <- withGlobal $ use (itemById itemId)
+    category <- withGlobal $ use (categoryByItem itemId)
+    let hue = getItemHue category item
+    json $ M.fromList [("light" :: Text, hueToLightColor hue),
+                       ("dark" :: Text, hueToDarkColor hue)]
   -- Item info
   Spock.get (itemVar <//> "info") $ \itemId -> do
     item <- withGlobal $ use (itemById itemId)
     renderMode <- param' "mode"
-    lucid $ renderItemInfo renderMode item
+    cat <- withGlobal $ use (categoryByItem itemId)
+    lucid $ renderItemInfo renderMode cat item
   -- All item traits
   Spock.get (itemVar <//> "traits") $ \itemId -> do
     item <- withGlobal $ use (itemById itemId)
     renderMode <- param' "mode"
-    lucid $ renderItemTraits renderMode item
+    cat <- withGlobal $ use (categoryByItem itemId)
+    lucid $ renderItemTraits renderMode cat item
   -- A single trait
   Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
     trait <- withGlobal $ use (itemById itemId . traitById traitId)
@@ -264,12 +398,47 @@ setMethods = Spock.subcomponent "set" $ do
     lucid $ renderCategoryNotes Editable changedCategory
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
+    -- TODO: rename to “itemLens” and “categoryLens”?
+    let category :: Lens' GlobalState Category
+        category = categoryByItem itemId
+    let item :: Lens' GlobalState Item
+        item = itemById itemId
+    -- TODO: add a jumpy note saying where the form is handled
+    -- and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
     onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
+    group' <- do
+      groupField <- param' "group"
+      customGroupField <- param' "custom-group"
+      if | groupField == "-"           -> return Nothing
+         | groupField == newGroupValue -> return (Just customGroupField)
+         | otherwise                   -> return (Just groupField)
+    -- If the group is a new one (entered in the “custom group” field), add
+    -- it to the list of groups in the category (which would cause a new hue
+    -- to be generated)
+    case group' of
+      Nothing -> return ()
+      Just x  -> withGlobal $ category.groups %= addGroupIfDoesNotExist x
+    -- Update list of groups if the group removed was the last of its kind.
+    -- Note that this should be done after adding a new group because we also
+    -- want the color to change. If the item was the only item in its group,
+    -- then the sequence of actions would be as follows:
+    -- 
+    --   * new group is added (and hence new color is assigned)
+    --   * old group is deleted (and now the old color is unused)
+    withGlobal $ do
+      oldGroup <- use (item.group_)
+      case oldGroup of
+        Nothing -> return ()
+        Just g  -> when (oldGroup /= group') $ do
+          allItems <- use (category.items)
+          let inSameGroup item' = item'^.group_ == Just g
+              isUnique = length (filter inSameGroup allItems) == 1
+          when isUnique $
+            category.groups %= M.delete g
+    -- Modify the item
     changedItem <- withGlobal $ do
-      let item :: Lens' GlobalState Item
-          item = itemById itemId
       -- TODO: actually validate the form and report errors
       unless (T.null name') $
         item.name .= name'
@@ -278,8 +447,10 @@ setMethods = Spock.subcomponent "set" $ do
         (_, Just l) -> item.link .= Just l
         _otherwise  -> return ()
       item.kind.onHackage .= onHackage'
+      item.group_ .= group'
       use item
-    lucid $ renderItemInfo Editable changedItem
+    cat <- withGlobal $ use category
+    lucid $ renderItemInfo Editable cat changedItem
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
@@ -298,24 +469,27 @@ addMethods = Spock.subcomponent "add" $ do
           _categoryUid = uid',
           _categoryTitle = content',
           _categoryNotes = "(write some notes here, describe the category, etc)",
+          _categoryGroups = mempty,
           _categoryItems = [] }
     withGlobal $ categories %= (newCategory :)
     lucid $ renderCategory newCategory
   -- New library in a category
   Spock.post (categoryVar <//> "library") $ \catId -> do
-    name' <- param' "name"
-    uid' <- randomUid
+    itemName <- param' "name"
+    itemId <- randomUid
     let newItem = Item {
-          _itemUid  = uid',
-          _itemName = name',
-          _itemPros = [],
-          _itemCons = [],
-          _itemLink = Nothing,
-          _itemKind = hackageLibrary }
+          _itemUid    = itemId,
+          _itemName   = itemName,
+          _itemGroup_ = Nothing,
+          _itemPros   = [],
+          _itemCons   = [],
+          _itemLink   = Nothing,
+          _itemKind   = hackageLibrary }
     -- TODO: maybe do something if the category doesn't exist (e.g. has been
     -- already deleted)
     withGlobal $ categoryById catId . items %= (++ [newItem])
-    lucid $ renderItem Editable newItem
+    cat <- withGlobal $ use (categoryByItem itemId)
+    lucid $ renderItem Editable cat newItem
   -- Pro (argument in favor of a library)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
@@ -519,7 +693,7 @@ renderCategory category =
     renderCategoryTitle Editable category
     renderCategoryNotes Editable category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ (renderItem Normal) (category^.items)
+      mapM_ (renderItem Normal category) (category^.items)
       thisNode
     textInput [placeholder_ "add an item"] $
       JS.addLibrary (itemsNode, category^.uid, inputValue) <> clearInput
@@ -527,14 +701,15 @@ renderCategory category =
 -- TODO: add arrows for moving items up and down in category, and something
 -- to delete an item – those things could be at the left side, like on Reddit
 
--- TODO: allow colors for grouping (e.g. van Laarhoven lens libraries go one
--- way, other libraries go another way) (and provide a legend under the
--- category) (and sort by colors)
+getItemHue :: Category -> Item -> Hue
+getItemHue category item = case item^.group_ of
+  Nothing -> NoHue
+  Just s  -> M.findWithDefault NoHue s (category^.groups)
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
-renderItem :: Editable -> Item -> HtmlT IO ()
-renderItem editable item =
+renderItem :: Editable -> Category -> Item -> HtmlT IO ()
+renderItem editable cat item =
   div_ [class_ "item"] $ do
     itemNode <- thisNode
     -- TODO: the controls and item-info should be aligned (currently the
@@ -555,40 +730,50 @@ renderItem editable item =
     -- This div is needed for “display:flex” on the outer div to work (which
     -- makes item-controls be placed to the left of everything else)
     div_ [style_ "width:100%"] $ do
-      renderItemInfo Editable item
+      renderItemInfo Editable cat item
       case editable of
         Normal -> do
-          renderItemTraits Normal item
+          renderItemTraits Normal cat item
         Editable -> do
-          renderItemTraits Editable item
+          renderItemTraits Editable cat item
+
+-- TODO: find some way to give all functions access to category and item (or
+-- category, item and trait) without passing everything explicitly?
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: Editable -> Item -> HtmlT IO ()
-renderItemInfo editable item =
-  div_ [class_ "item-info"] $ do
-    this <- thisNode
+renderItemInfo :: Editable -> Category -> Item -> HtmlT IO ()
+renderItemInfo editable cat item = do
+  let bg = hueToDarkColor $ getItemHue cat item
+  div_ [class_ "item-info", style_ ("background-color:" <> bg)] $ do
+    infoNode <- thisNode
     case editable of
-      Editable -> span_ [style_ "font-size:150%"] $ do
-        -- If the library is on Hackage, the title links to its Hackage page;
-        -- otherwise, it doesn't link anywhere. Even if the link field is
-        -- present, it's going to be rendered as “(site)”, not linked in the
-        -- title.
-        let hackageLink = "https://hackage.haskell.org/package/" <> item^.name
-        case item^?kind.onHackage of
-          Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
-          _otherwise -> toHtml (item^.name)
-        case item^.link of
-          Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-          Nothing -> return ()
-        emptySpan "1em"
+      Editable -> do
+        span_ [style_ "font-size:150%"] $ do
+          -- If the library is on Hackage, the title links to its Hackage
+          -- page; otherwise, it doesn't link anywhere. Even if the link
+          -- field is present, it's going to be rendered as “(site)”, not
+          -- linked in the title.
+          let hackageLink = "https://hackage.haskell.org/package/" <>
+                            item^.name
+          case item^?kind.onHackage of
+            Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
+            _otherwise -> toHtml (item^.name)
+          case item^.link of
+            Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+            Nothing -> return ()
+        emptySpan "2em"
+        toHtml (fromMaybe "other" (item^.group_))
+        emptySpan "2em"
         textButton "edit details" $
-          JS.setItemInfoMode (this, item^.uid, InEdit)
+          JS.setItemInfoMode (infoNode, item^.uid, InEdit)
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
       InEdit -> do
-        let handler s = JS.submitItemInfo (this, item^.uid, s)
-        form_ [onFormSubmit handler] $ do
+        let traitsNode = format ":has(> {}) > .item-traits" [infoNode]
+        let formSubmitHandler formNode =
+              JS.submitItemInfo (infoNode, traitsNode, item^.uid, formNode)
+        form_ [onFormSubmit formSubmitHandler] $ do
           label_ $ do
             "Package name"
             br_ []
@@ -606,16 +791,49 @@ renderItemInfo editable item =
             input_ [type_ "text", name_ "link",
                     value_ (fromMaybe "" (item^.link))]
           br_ []
+          label_ $ do
+            "Group"
+            br_ []
+            customInputId <- tshow <$> randomUid
+            let selectHandler = [text|
+                  if (this.value == "$newGroupValue") {
+                    $("#$customInputId").show();
+                    $("#$customInputId").focus(); }
+                  else $("#$customInputId").hide(); |]
+            select_ [name_ "group", onchange_ selectHandler] $ do
+              let gs = Nothing : map Just (M.keys (cat^.groups))
+              for_ gs $ \group' -> do
+                -- Text that will be shown in the list (“-” stands for “no
+                -- group”)
+                let txt = fromMaybe "-" group'
+                -- If the element corresponds to the current group of the
+                -- item (or the element is “-”, i.e. Nothing, and the group
+                -- is Nothing too), mark it as selected, thus making it the
+                -- element that will be chosen by default when the form is
+                -- rendered
+                if group' == item^.group_
+                  then option_ [selected_ "selected", value_ txt] (toHtml txt)
+                  else option_ [value_ txt] (toHtml txt)
+              option_ [value_ newGroupValue] "New group..."
+            input_ [id_ customInputId, type_ "text", name_ "custom-group",
+                    hidden_ "hidden"]
+          br_ []
           input_ [type_ "submit", value_ "Save"]
           button "Cancel" [] $
-            JS.setItemInfoMode (this, item^.uid, Editable)
+            JS.setItemInfoMode (infoNode, item^.uid, Editable)
 
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
 
-renderItemTraits :: Editable -> Item -> HtmlT IO ()
-renderItemTraits editable item =
-  div_ [class_ "item-traits"] $ do
+-- TODO: categories without items (e.g. “web dev”) that list links to other
+-- categories
+
+renderItemTraits :: Editable -> Category -> Item -> HtmlT IO ()
+renderItemTraits editable cat item = do
+  let bg = hueToLightColor $ getItemHue cat item
+  -- If the structure of HTML changes here, don't forget to update the
+  -- 'traitsNode' selector in 'renderItemInfo'.
+  div_ [class_ "item-traits", style_ ("background-color:" <> bg)] $ do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
@@ -719,6 +937,7 @@ imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton src attrs (JS handler) =
   a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
 
+-- TODO: make this a newtype
 type JQuerySelector = Text
 
 thisNode :: HtmlT IO JQuerySelector
@@ -756,3 +975,6 @@ instance ToJS Visible where
   toJS = JS . tshow . toPathPiece
 
 -- TODO: why not compare Haskellers too?
+
+newGroupValue :: Text
+newGroupValue = "-new-group-"

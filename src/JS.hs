@@ -306,10 +306,25 @@ submitTrait =
 
 submitItemInfo :: JSFunction a => a
 submitItemInfo =
-  makeJSFunction "submitItemInfo" ["node", "itemId", "form"]
+  makeJSFunction "submitItemInfo" ["infoNode", "traitsNode", "itemId", "form"]
   [text|
+    // If the group was changed, we need to recolor the whole item,
+    // but we don't want to rerender the item on the server because
+    // it would lose the item's state (e.g. what if the traits were
+    // being edited? etc). So, instead we query colors from the server
+    // and change the color of the “traits” div manually.
     $.post("/set/item/"+itemId+"/info", $(form).serialize())
-     .done(replaceWithData(node));
+     .done(function (data) {
+        // Note the order – first we change the color, then we replace
+        // the info node. The reason is that otherwise the traitsNode
+        // selector might become invalid (if it depends on the infoNode
+        // selector).
+        $.get("/render/item/"+itemId+"/colors")
+         .done(function (colors) {
+            $(traitsNode).css("background-color", colors.light);
+            replaceWithData(infoNode)(data);
+         });
+     });
   |]
 
 moveTraitUp :: JSFunction a => a

@@ -33,6 +33,7 @@ executable hslibs
                      , base-prelude
                      , blaze-html >= 0.8.1.1
                      , cheapskate
+                     , containers >= 0.5
                      , lucid
                      , microlens-platform >= 0.2.3
                      , mtl
