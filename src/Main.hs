@@ -1057,7 +1057,7 @@ renderItem editable cat item =
           renderItemTraits Normal cat item
         Editable -> do
           renderItemTraits Editable cat item
-      renderItemNotes Editable cat item
+      renderItemNotes Normal cat item
 
 -- TODO: find some way to give all functions access to category and item (or
 -- category, item and trait) without passing everything explicitly?
@@ -1240,11 +1240,22 @@ renderItemNotes editable category item = do
     -- duplication
     this <- thisNode
     case editable of
+      -- TODO: rename this to “Collapsed”
+      -- TODO: rename “data Editable” to “data RenderMode” and change
+      -- everything
+      Normal -> do
+        textButton "show notes/examples" $
+          JS.setItemNotesMode (this, item^.uid, Editable)
       Editable -> do
-        renderMarkdownBlock (item^.notes)
-        -- TODO: “show notes and examples”
         textButton "edit notes" $
           JS.setItemNotesMode (this, item^.uid, InEdit)
+        emptySpan "1em"
+        textButton "hide notes" $
+          JS.setItemNotesMode (this, item^.uid, Normal)
+        if T.null (item^.notes)
+          then p_ "(there are no notes or examples yet,\
+                  \ press “edit notes” to add some)"
+          else renderMarkdownBlock (item^.notes)
       InEdit -> do
         textareaId <- randomUid
         textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
