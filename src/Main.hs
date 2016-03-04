@@ -7,6 +7,7 @@ FlexibleContexts,
 QuasiQuotes,
 ScopedTypeVariables,
 FunctionalDependencies,
+GeneralizedNewtypeDeriving,
 TypeFamilies,
 DataKinds,
 MultiWayIf,
@@ -30,6 +31,7 @@ import Data.Map (Map)
 import Data.Text (Text)
 import qualified Data.Text as T
 import NeatInterpolation
+import qualified Data.Text.Buildable as Format
 -- Randomness
 import System.Random
 -- Web
@@ -47,12 +49,14 @@ import Utils
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
---
--- TODO: use Text?
-type Uid = Int
+newtype Uid = Uid {uidToText :: Text}
+  deriving (Eq, PathPiece, ToJS, Format.Buildable)
+
+instance IsString Uid where
+  fromString = Uid . T.pack
 
 randomUid :: MonadIO m => m Uid
-randomUid = liftIO $ randomRIO (0, 10^(9::Int))
+randomUid = liftIO $ Uid . tshow <$> randomRIO (0::Int, 10^(9::Int))
 
 data Trait = Trait {
   _traitUid :: Uid,
@@ -186,92 +190,96 @@ emptyState = GlobalState {
 sampleState :: GlobalState
 sampleState = do
   let lensItem = Item {
-        _itemUid = 12,
+        _itemUid = "12",
         _itemName = "lens",
         _itemGroup_ = Nothing,
-        _itemPros = [Trait 121 "The most widely used lenses library, by a \
-                               \huge margin.",
-                     Trait 123 "Contains pretty much everything you could \
-                               \want – while other lens libraries mostly \
-                               \only provide lenses for manipulating lists, \
-                               \maps, tuples, and standard types like \
-                               \`Maybe`/`Either`/etc, lens has functions \
-                               \for manipulating filepaths, Template Haskell \
-                               \structures, generics, complex numbers, \
-                               \exceptions, and everything else in the \
-                               \Haskell Platform.",
-                     Trait 125 "Unlike most other libraries, has prisms – \
-                               \a kind of lenses that can act both as \
-                               \constructors and deconstructors at once. \
-                               \They can be pretty useful when you're \
-                               \dealing with exceptions, Template Haskell, \
-                               \or JSON."],
-        _itemCons = [Trait 122 "Takes a lot of time to compile, and has \
-                               \a lot of dependencies as well.",
-                     Trait 124 "Some of its advanced features are very \
-                               \intimidating, and the whole library \
-                               \may seem overengineered \
-                               \(see [this post](http://fvisser.nl/post/2013/okt/11/why-i-dont-like-the-lens-library.html)).",
-                     Trait 126 "Once you start using lenses for *everything* \
-                               \(which is easier to do with lens than with \
-                               \other libraries), your code may start \
-                               \not looking like Haskell much \
-                               \(see [this post](https://ro-che.info/articles/2014-04-24-lens-unidiomatic))."],
+        _itemPros = [
+           Trait "121" [text|
+             The most widely used lenses library, by a huge margin.|],
+           Trait "123" $ T.unwords $ T.lines [text|
+             Contains pretty much everything you could want – while other
+             lens libraries mostly only provide lenses for manipulating
+             lists, maps, tuples, and standard types like
+             `Maybe`/`Either`/etc, lens has functions for manipulating
+             filepaths, Template Haskell structures, generics, complex
+             numbers, exceptions, and everything else in the Haskell
+             Platform.|],
+           Trait "125" $ T.unwords $ T.lines [text|
+             Unlike most other libraries, has prisms – a kind of lenses
+             that can act both as constructors and deconstructors at once.
+             They can be pretty useful when you're dealing with exceptions,
+             Template Haskell, or JSON.|] ],
+        _itemCons = [
+           Trait "122" $ T.unwords $ T.lines [text|
+             Takes a lot of time to compile, and has a lot of dependencies
+             as well.|],
+           Trait "124" $ T.unwords $ T.lines [text|
+             Some of its advanced features are very intimidating, and the
+             whole library may seem overengineered
+             (see [this post](http://fvisser.nl/post/2013/okt/11/why-i-dont-like-the-lens-library.html)).|],
+           Trait "126" $ T.unwords $ T.lines [text|
+             Once you start using lenses for *everything* (which is easier
+             to do with lens than with other libraries), your code may start
+             not looking like Haskell much
+             (see [this post](https://ro-che.info/articles/2014-04-24-lens-unidiomatic)).|] ],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let microlensItem = Item {
-        _itemUid = 13,
+        _itemUid = "13",
         _itemName = "microlens",
         _itemGroup_ = Nothing,
-        _itemPros = [Trait 131 "Very small (the base package has no \
-                               \dependencies at all, and features like \
-                               \Template Haskell lens generation or \
-                               \instances for `Vector`/`Text`/`HashMap` \
-                               \are separated into other packages)."],
-        _itemCons = [Trait 132 "Doesn't provide lens's more advanced \
-                               \features (like prisms or indexed traversals).",
-                     Trait 134 "Doesn't let you write code in fully “lensy” \
-                               \style (since it omits lots of operators \
-                               \and `*Of` functions from lens)."],
+        _itemPros = [
+           Trait "131" $ T.unwords $ T.lines [text|
+             Very small (the base package has no dependencies at all,
+             and features like Template Haskell lens generation or
+             instances for `Vector`/`Text`/`HashMap` are separated into
+             other packages).|] ],
+        _itemCons = [
+           Trait "132" $ T.unwords $ T.lines [text|
+             Doesn't provide lens's more advanced features (like prisms
+             or indexed traversals).|],
+           Trait "134" $ T.unwords $ T.lines [text|
+             Doesn't let you write code in fully “lensy” style (since it
+             omits lots of operators and `*Of` functions from lens).|] ],
         _itemLink = Just "https://github.com/aelve/microlens",
         _itemKind = hackageLibrary }
   let lensesCategory = Category {
-        _categoryUid = 1,
+        _categoryUid = "1",
         _categoryTitle = "Lenses",
         _categoryNotes = "Lenses are first-class composable accessors.",
         _categoryGroups = mempty,
         _categoryItems = [lensItem, microlensItem] }
 
   let parsecItem = Item {
-        _itemUid = 21,
+        _itemUid = "21",
         _itemName = "parsec",
         _itemGroup_ = Just "parsec-like",
-        _itemPros = [Trait 211 "the most widely used package",
-                     Trait 213 "has lots of tutorials, book coverage, etc"],
-        _itemCons = [Trait 212 "development has stagnated"],
+        _itemPros = [Trait "211" "the most widely used package",
+                     Trait "213" "has lots of tutorials, book coverage, etc"],
+        _itemCons = [Trait "212" "development has stagnated"],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let megaparsecItem = Item {
-        _itemUid = 22,
+        _itemUid = "22",
         _itemName = "megaparsec",
         _itemGroup_ = Nothing,
-        _itemPros = [Trait 221 "the API is largely similar to Parsec, \
-                               \so existing tutorials/code samples \
-                               \could be reused and migration is easy"],
+        _itemPros = [Trait "221" "the API is largely similar to Parsec, \
+                                 \so existing tutorials/code samples \
+                                 \could be reused and migration is easy"],
         _itemCons = [],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let attoparsecItem = Item {
-        _itemUid = 23,
+        _itemUid = "23",
         _itemName = "attoparsec",
         _itemGroup_ = Nothing,
-        _itemPros = [Trait 231 "very fast, good for parsing binary formats"],
-        _itemCons = [Trait 232 "can't report positions of parsing errors",
-                     Trait 234 "doesn't provide a monad transformer"],
+        _itemPros = [Trait "231" "very fast, good for parsing binary formats"],
+        _itemCons = [Trait "232" "can't report positions of parsing errors",
+                     Trait "234" "doesn't provide a monad transformer"],
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let parsingCategory = Category {
-        _categoryUid = 2,
+        _categoryUid = "2",
         _categoryTitle = "Parsing",
         _categoryNotes = "Parsers are parsers.",
         _categoryGroups = M.fromList [("parsec-like", Hue 1)],
@@ -287,35 +295,35 @@ sampleState = do
         _itemLink = Nothing,
         _itemKind = hackageLibrary }
   let item1 = def {
-        _itemUid = 31,
+        _itemUid = "31",
         _itemName = "api-builder",
         _itemGroup_ = Just "group 1" }
   let item2 = def {
-        _itemUid = 32,
+        _itemUid = "32",
         _itemName = "aeson",
         _itemGroup_ = Just "group 2" }
   let item3 = def {
-        _itemUid = 33,
+        _itemUid = "33",
         _itemName = "unordered-containers",
         _itemGroup_ = Just "group 1" }
   let item4 = def {
-        _itemUid = 34,
+        _itemUid = "34",
         _itemName = "lens",
         _itemGroup_ = Just "group 3" }
   let item5 = def {
-        _itemUid = 35,
+        _itemUid = "35",
         _itemName = "bytestring",
         _itemGroup_ = Just "group 4" }
   let item6 = def {
-        _itemUid = 36,
+        _itemUid = "36",
         _itemName = "microlens",
         _itemGroup_ = Nothing }
   let item7 = def {
-        _itemUid = 37,
+        _itemUid = "37",
         _itemName = "parsec",
         _itemGroup_ = Nothing }
   let huesCategory = Category {
-        _categoryUid = 3,
+        _categoryUid = "3",
         _categoryTitle = "Testing hues",
         _categoryNotes = "Hopefully they all look good.",
         _categoryGroups =
@@ -645,7 +653,7 @@ renderCategoryList cats =
 renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
 renderCategoryTitle editable category =
   h2_ $ do
-    a_ [class_ "anchor", href_ ("#" <> tshow (category^.uid))] "#"
+    a_ [class_ "anchor", href_ ("#" <> uidToText (category^.uid))] "#"
     titleNode <- thisNode
     case editable of
       Editable -> do
@@ -673,7 +681,7 @@ renderCategoryNotes editable category =
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
       InEdit -> do
         textareaId <- randomUid
-        textarea_ [id_ (tshow textareaId),
+        textarea_ [uid_ textareaId,
                    rows_ "10", style_ "width:100%;resize:vertical"] $
           toHtml (category^.notes)
         button "Save" [] $ do
@@ -689,7 +697,7 @@ renderCategoryNotes editable category =
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
-  div_ [class_ "category", id_ (tshow (category^.uid))] $ do
+  div_ [class_ "category", uid_ (category^.uid)] $ do
     renderCategoryTitle Editable category
     renderCategoryNotes Editable category
     itemsNode <- div_ [class_ "items"] $ do
@@ -794,12 +802,13 @@ renderItemInfo editable cat item = do
           label_ $ do
             "Group"
             br_ []
-            customInputId <- tshow <$> randomUid
+            customInputId <- randomUid
             let selectHandler = [text|
                   if (this.value == "$newGroupValue") {
-                    $("#$customInputId").show();
-                    $("#$customInputId").focus(); }
-                  else $("#$customInputId").hide(); |]
+                    $("#$idText").show();
+                    $("#$idText").focus(); }
+                  else $("#$idText").hide(); |]
+                  where idText = uidToText customInputId
             select_ [name_ "group", onchange_ selectHandler] $ do
               let gs = Nothing : map Just (M.keys (cat^.groups))
               for_ gs $ \group' -> do
@@ -815,8 +824,8 @@ renderItemInfo editable cat item = do
                   then option_ [selected_ "selected", value_ txt] (toHtml txt)
                   else option_ [value_ txt] (toHtml txt)
               option_ [value_ newGroupValue] "New group..."
-            input_ [id_ customInputId, type_ "text", name_ "custom-group",
-                    hidden_ "hidden"]
+            input_ [uid_ customInputId, type_ "text",
+                    name_ "custom-group", hidden_ "hidden"]
           br_ []
           input_ [type_ "submit", value_ "Save"]
           button "Cancel" [] $
@@ -937,6 +946,9 @@ imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton src attrs (JS handler) =
   a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
 
+uid_ :: Uid -> Attribute
+uid_ = id_ . uidToText
+
 -- TODO: make this a newtype
 type JQuerySelector = Text
 
@@ -945,7 +957,7 @@ thisNode = do
   uid' <- randomUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and
   -- 'JS.moveNodeDown'.
-  span_ [id_ (tshow uid'), class_ "dummy"] mempty
+  span_ [uid_ uid', class_ "dummy"] mempty
   return (format ":has(> #{})" [uid'])
 
 data Editable = Normal | Editable | InEdit
