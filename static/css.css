@@ -3,7 +3,8 @@ body {
   padding-bottom: 0;
   margin: auto;
   max-width: 800px;
-  font-family: sans-serif; }
+  font-family: sans-serif;
+  line-height: 120%; }
 
 #footer {
   text-align: center;
