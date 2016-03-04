@@ -773,8 +773,8 @@ otherMethods = do
 
 main :: IO ()
 main = do
-  bracket (openLocalStateFrom "state/" sampleState) closeAcidState $ \db -> do
-    createCheckpoint db
+  bracket (openLocalStateFrom "state/" sampleState)
+          (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
     let config = defaultSpockCfg () PCNoDatabase db
     runSpock 8080 $ spock config $ do
       middleware (staticPolicy (addBase "static"))
