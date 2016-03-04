@@ -13,6 +13,7 @@ module Utils
   -- * Lists
   moveUp,
   moveDown,
+  deleteFirst,
 
   -- * URLs
   Url,
@@ -72,6 +73,10 @@ moveUp _ xs = xs
 moveDown :: (a -> Bool) -> [a] -> [a]
 moveDown p (x:y:xs) = if p x then (y:x:xs) else x : moveDown p (y:xs)
 moveDown _ xs = xs
+
+deleteFirst :: (a -> Bool) -> [a] -> [a]
+deleteFirst _   []   = []
+deleteFirst f (x:xs) = if f x then xs else x : deleteFirst f xs
 
 type Url = Text
 

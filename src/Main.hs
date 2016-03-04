@@ -40,6 +40,9 @@ import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 import Web.PathPieces
+-- acid-state
+import Data.Acid as Acid
+import Data.SafeCopy hiding (kind)
 
 -- Local
 import JS (JS(..), ToJS, allJSFunctions)
@@ -52,6 +55,8 @@ import Utils
 newtype Uid = Uid {uidToText :: Text}
   deriving (Eq, PathPiece, ToJS, Format.Buildable)
 
+deriveSafeCopy 0 'base ''Uid
+
 instance IsString Uid where
   fromString = Uid . T.pack
 
@@ -62,6 +67,7 @@ data Trait = Trait {
   _traitUid :: Uid,
   _traitContent :: Text }
 
+deriveSafeCopy 0 'base ''Trait
 makeFields ''Trait
 
 data ItemKind
@@ -72,8 +78,11 @@ data ItemKind
 hackageLibrary :: ItemKind
 hackageLibrary = Library True
 
+deriveSafeCopy 0 'base ''ItemKind
 makeFields ''ItemKind
 
+-- TODO: add usage notes! and then change the rules to say “add it to item
+-- notes”, not “add it to category notes”
 data Item = Item {
   _itemUid    :: Uid,
   _itemName   :: Text,
@@ -83,6 +92,7 @@ data Item = Item {
   _itemLink   :: Maybe Url,
   _itemKind   :: ItemKind }
 
+deriveSafeCopy 0 'base ''Item
 makeFields ''Item
 
 traitById :: Uid -> Lens' Item Trait
@@ -92,6 +102,8 @@ traitById uid' = singular $
 
 data Hue = NoHue | Hue Int
   deriving (Eq, Ord)
+
+deriveSafeCopy 0 'base ''Hue
 
 instance Show Hue where
   show NoHue   = "0"
@@ -155,6 +167,7 @@ data Category = Category {
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item] }
 
+deriveSafeCopy 0 'base ''Category
 makeFields ''Category
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
@@ -167,6 +180,7 @@ addGroupIfDoesNotExist g gs
 data GlobalState = GlobalState {
   _categories :: [Category] }
 
+deriveSafeCopy 0 'base ''GlobalState
 makeLenses ''GlobalState
 
 categoryById :: Uid -> Lens' GlobalState Category
@@ -183,9 +197,257 @@ itemById :: Uid -> Lens' GlobalState Item
 itemById itemId = singular $
   categories.each . items.each . filtered ((== itemId) . view uid)
 
+------------------------------------------------------------------------------
+-- working with global state via acid-state
+------------------------------------------------------------------------------
+
+type DB = AcidState GlobalState
+
+-- get
+
+getGlobalState :: Acid.Query GlobalState GlobalState
+getGlobalState = view id
+
+getCategories :: Acid.Query GlobalState [Category]
+getCategories = view categories
+
+getCategory :: Uid -> Acid.Query GlobalState Category
+getCategory uid' = view (categoryById uid')
+
+getCategoryByItem :: Uid -> Acid.Query GlobalState Category
+getCategoryByItem uid' = view (categoryByItem uid')
+
+getItem :: Uid -> Acid.Query GlobalState Item
+getItem uid' = view (itemById uid')
+
+-- TODO: this doesn't need the item id, but then we have to be a bit cleverer
+-- and store a (TraitId -> ItemId) map in global state (and update it
+-- accordingly whenever anything happens, so perhaps let's not do it!)
+getTrait
+  :: Uid   -- ^ Item id
+  -> Uid   -- ^ Trait id
+  -> Acid.Query GlobalState Trait
+getTrait itemId traitId = view (itemById itemId . traitById traitId)
+
+-- add
+
+addCategory
+  :: Uid        -- ^ New category's id
+  -> Text       -- ^ Title
+  -> Acid.Update GlobalState Category
+addCategory catId title' = do
+  let newCategory = Category {
+        _categoryUid = catId,
+        _categoryTitle = title',
+        _categoryNotes = "(write some notes here, describe the category, etc)",
+        _categoryGroups = mempty,
+        _categoryItems = [] }
+  categories %= (newCategory :)
+  return newCategory
+
+addItem
+  :: Uid        -- ^ Category id
+  -> Uid        -- ^ New item's id
+  -> Text       -- ^ Title
+  -> ItemKind   -- ^ Kind
+  -> Acid.Update GlobalState Item
+addItem catId itemId name' kind' = do
+  let newItem = Item {
+        _itemUid    = itemId,
+        _itemName   = name',
+        _itemGroup_ = Nothing,
+        _itemPros   = [],
+        _itemCons   = [],
+        _itemLink   = Nothing,
+        _itemKind   = kind' }
+  categoryById catId . items %= (++ [newItem])
+  return newItem
+
+addPro
+  :: Uid       -- ^ Item id
+  -> Uid       -- ^ Trait id
+  -> Text
+  -> Acid.Update GlobalState Trait
+addPro itemId traitId text' = do
+  let newTrait = Trait traitId text'
+  itemById itemId . pros %= (++ [newTrait])
+  return newTrait
+
+addCon
+  :: Uid       -- ^ Item id
+  -> Uid       -- ^ Trait id
+  -> Text
+  -> Acid.Update GlobalState Trait
+addCon itemId traitId text' = do
+  let newTrait = Trait traitId text'
+  itemById itemId . cons %= (++ [newTrait])
+  return newTrait
+
+-- set
+
+setCategoryTitle :: Uid -> Text -> Acid.Update GlobalState Category
+setCategoryTitle catId title' = do
+  categoryById catId . title .= title'
+  use (categoryById catId)
+
+setCategoryNotes :: Uid -> Text -> Acid.Update GlobalState Category
+setCategoryNotes catId notes' = do
+  categoryById catId . notes .= notes'
+  use (categoryById catId)
+
+setItemName :: Uid -> Text -> Acid.Update GlobalState Item
+setItemName itemId name' = do
+  itemById itemId . name .= name'
+  use (itemById itemId)
+
+setItemLink :: Uid -> Maybe Url -> Acid.Update GlobalState Item
+setItemLink itemId link' = do
+  itemById itemId . link .= link'
+  use (itemById itemId)
+
+-- Also updates the list of groups in the category
+setItemGroup :: Uid -> Maybe Text -> Acid.Update GlobalState Item
+setItemGroup itemId newGroup = do
+  let categoryLens :: Lens' GlobalState Category
+      categoryLens = categoryByItem itemId
+  let itemLens :: Lens' GlobalState Item
+      itemLens = itemById itemId
+  -- If the group is new, add it to the list of groups in the category (which
+  -- causes a new hue to be generated, too)
+  case newGroup of
+    Nothing -> return ()
+    Just x  -> categoryLens.groups %= addGroupIfDoesNotExist x
+  -- Update list of groups if the group is going to be empty after the item
+  -- is moved to a different group. Note that this is done after adding a new
+  -- group because we also want the color to change. So, if the item was the
+  -- only item in its group, the sequence of actions is as follows:
+  -- 
+  --   * new group is added (and hence a new color is assigned)
+  --   * old group is deleted (and now the old color is unused)
+  oldGroup <- use (itemLens.group_)
+  case oldGroup of
+    Nothing -> return ()
+    Just g  -> when (oldGroup /= newGroup) $ do
+      allItems <- use (categoryLens.items)
+      let inOurGroup item = item^.group_ == Just g
+      when (length (filter inOurGroup allItems) == 1) $
+        categoryLens.groups %= M.delete g
+  -- Now we can actually change the group
+  itemLens.group_ .= newGroup
+  use itemLens
+
+setItemKind :: Uid -> ItemKind -> Acid.Update GlobalState Item
+setItemKind itemId kind' = do
+  itemById itemId . kind .= kind'
+  use (itemById itemId)
+
+setItemOnHackage :: Uid -> Bool -> Acid.Update GlobalState Item
+setItemOnHackage itemId onHackage' = do
+  itemById itemId . kind . onHackage .= onHackage'
+  use (itemById itemId)
+
+setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait
+setTraitContent itemId traitId content' = do
+  itemById itemId . traitById traitId . content .= content'
+  use (itemById itemId . traitById traitId)
+
+-- delete
+
+deleteItem :: Uid -> Acid.Update GlobalState ()
+deleteItem itemId = do
+  let categoryLens :: Lens' GlobalState Category
+      categoryLens = categoryByItem itemId
+  let itemLens :: Lens' GlobalState Item
+      itemLens = itemById itemId
+  -- If the item was the only item in its group, delete the group (and
+  -- make the hue available for new items)
+  oldGroup <- use (itemLens.group_)
+  case oldGroup of
+    Nothing -> return ()
+    Just g  -> do
+      allItems <- use (categoryLens.items)
+      let inOurGroup item = item^.group_ == Just g
+      when (length (filter inOurGroup allItems) == 1) $
+        categoryLens.groups %= M.delete g
+  -- And now delete the item
+  categoryLens.items %= deleteFirst ((== itemId) . view uid)
+
+deleteTrait :: Uid -> Uid -> Acid.Update GlobalState ()
+deleteTrait itemId traitId = do
+  itemById itemId . pros %= deleteFirst ((== traitId) . view uid)
+  itemById itemId . cons %= deleteFirst ((== traitId) . view uid)
+
+-- other methods
+
+moveItem
+  :: Uid
+  -> Bool    -- ^ 'True' means up, 'False' means down
+  -> Acid.Update GlobalState ()
+moveItem itemId up = do
+  let move = if up then moveUp else moveDown
+  categoryByItem itemId . items %= move ((== itemId) . view uid)
+
+moveTrait
+  :: Uid
+  -> Uid
+  -> Bool    -- ^ 'True' means up, 'False' means down
+  -> Acid.Update GlobalState ()
+moveTrait itemId traitId up = do
+  let move = if up then moveUp else moveDown
+  -- The trait is only going to be present in one of the lists so let's do it
+  -- in each list because we're too lazy to figure out whether it's a pro or
+  -- a con
+  itemById itemId . pros %= move ((== traitId) . view uid)
+  itemById itemId . cons %= move ((== traitId) . view uid)
+
+-- stuff
+
+dbUpdate :: (MonadIO m, HasSpock m, SpockState m ~ DB,
+             EventState event ~ GlobalState, UpdateEvent event)
+         => event -> m (EventResult event)
+dbUpdate x = do
+  db <- Spock.getState
+  liftIO $ Acid.update db x
+
+dbQuery :: (MonadIO m, HasSpock m, SpockState m ~ DB,
+            EventState event ~ GlobalState, QueryEvent event)
+        => event -> m (EventResult event)
+dbQuery x = do
+  db <- Spock.getState
+  liftIO $ Acid.query db x
+
+makeAcidic ''GlobalState [
+  -- queries
+  'getGlobalState,
+  'getCategories,
+  'getCategory,
+  'getCategoryByItem,
+  'getItem,
+  'getTrait,
+  -- add
+  'addCategory,
+  'addItem,
+  'addPro, 'addCon,
+  -- set
+  'setCategoryTitle, 'setCategoryNotes,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, 'setItemOnHackage,
+  'setTraitContent,
+  -- delete
+  'deleteItem,
+  'deleteTrait,
+  -- other
+  'moveItem, 'moveTrait
+  ]
+
+------------------------------------------------------------------------------
+-- the rest of things
+------------------------------------------------------------------------------
+
 emptyState :: GlobalState
 emptyState = GlobalState {
   _categories = [] }
+
+-- TODO: put this into a separate module
 
 sampleState :: GlobalState
 sampleState = do
@@ -341,13 +603,7 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid]
 traitVar = "trait" <//> var
 
-withGlobal :: (MonadIO m, HasSpock m, SpockState m ~ IORef GlobalState)
-           => State GlobalState a -> m a
-withGlobal act = do
-  stateVar <- Spock.getState
-  liftIO $ atomicModifyIORef' stateVar (swap . runState act)
-
-renderMethods :: SpockM () () (IORef GlobalState) ()
+renderMethods :: SpockM () () DB ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Help
   Spock.get "help" $ do
@@ -355,62 +611,55 @@ renderMethods = Spock.subcomponent "render" $ do
     lucid $ renderHelp visible
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
-    category <- withGlobal $ use (categoryById catId)
+    category <- dbQuery (GetCategory catId)
     renderMode <- param' "mode"
     lucid $ renderCategoryTitle renderMode category
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
-    category <- withGlobal $ use (categoryById catId)
+    category <- dbQuery (GetCategory catId)
     renderMode <- param' "mode"
     lucid $ renderCategoryNotes renderMode category
   -- Item colors
   Spock.get (itemVar <//> "colors") $ \itemId -> do
-    item <- withGlobal $ use (itemById itemId)
-    category <- withGlobal $ use (categoryByItem itemId)
+    item <- dbQuery (GetItem itemId)
+    category <- dbQuery (GetCategoryByItem itemId)
     let hue = getItemHue category item
     json $ M.fromList [("light" :: Text, hueToLightColor hue),
                        ("dark" :: Text, hueToDarkColor hue)]
   -- Item info
   Spock.get (itemVar <//> "info") $ \itemId -> do
-    item <- withGlobal $ use (itemById itemId)
+    item <- dbQuery (GetItem itemId)
     renderMode <- param' "mode"
-    cat <- withGlobal $ use (categoryByItem itemId)
-    lucid $ renderItemInfo renderMode cat item
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemInfo renderMode category item
   -- All item traits
   Spock.get (itemVar <//> "traits") $ \itemId -> do
-    item <- withGlobal $ use (itemById itemId)
+    item <- dbQuery (GetItem itemId)
     renderMode <- param' "mode"
-    cat <- withGlobal $ use (categoryByItem itemId)
-    lucid $ renderItemTraits renderMode cat item
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemTraits renderMode category item
   -- A single trait
   Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
-    trait <- withGlobal $ use (itemById itemId . traitById traitId)
+    trait <- dbQuery (GetTrait itemId traitId)
     renderMode <- param' "mode"
     lucid $ renderTrait renderMode itemId trait
 
-setMethods :: SpockM () () (IORef GlobalState) ()
+-- TODO: use window.onerror to catch and show all JS errors
+
+setMethods :: SpockM () () DB ()
 setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
-    changedCategory <- withGlobal $ do
-      categoryById catId . title .= content'
-      use (categoryById catId)
-    lucid $ renderCategoryTitle Editable changedCategory
+    category <- dbUpdate (SetCategoryTitle catId content')
+    lucid $ renderCategoryTitle Editable category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
-    changedCategory <- withGlobal $ do
-      categoryById catId . notes .= content'
-      use (categoryById catId)
-    lucid $ renderCategoryNotes Editable changedCategory
+    category <- dbUpdate (SetCategoryNotes catId content')
+    lucid $ renderCategoryNotes Editable category
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
-    -- TODO: rename to “itemLens” and “categoryLens”?
-    let category :: Lens' GlobalState Category
-        category = categoryByItem itemId
-    let item :: Lens' GlobalState Item
-        item = itemById itemId
     -- TODO: add a jumpy note saying where the form is handled
     -- and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
@@ -422,98 +671,59 @@ setMethods = Spock.subcomponent "set" $ do
       if | groupField == "-"           -> return Nothing
          | groupField == newGroupValue -> return (Just customGroupField)
          | otherwise                   -> return (Just groupField)
-    -- If the group is a new one (entered in the “custom group” field), add
-    -- it to the list of groups in the category (which would cause a new hue
-    -- to be generated)
-    case group' of
-      Nothing -> return ()
-      Just x  -> withGlobal $ category.groups %= addGroupIfDoesNotExist x
-    -- Update list of groups if the group removed was the last of its kind.
-    -- Note that this should be done after adding a new group because we also
-    -- want the color to change. If the item was the only item in its group,
-    -- then the sequence of actions would be as follows:
-    -- 
-    --   * new group is added (and hence new color is assigned)
-    --   * old group is deleted (and now the old color is unused)
-    withGlobal $ do
-      oldGroup <- use (item.group_)
-      case oldGroup of
-        Nothing -> return ()
-        Just g  -> when (oldGroup /= group') $ do
-          allItems <- use (category.items)
-          let inSameGroup item' = item'^.group_ == Just g
-              isUnique = length (filter inSameGroup allItems) == 1
-          when isUnique $
-            category.groups %= M.delete g
     -- Modify the item
-    changedItem <- withGlobal $ do
-      -- TODO: actually validate the form and report errors
-      unless (T.null name') $
-        item.name .= name'
-      case (T.null link', sanitiseUrl link') of
-        (True, _)   -> item.link .= Nothing
-        (_, Just l) -> item.link .= Just l
-        _otherwise  -> return ()
-      item.kind.onHackage .= onHackage'
-      item.group_ .= group'
-      use item
-    cat <- withGlobal $ use category
-    lucid $ renderItemInfo Editable cat changedItem
+    -- TODO: actually validate the form and report errors
+    unless (T.null name') $ void $
+      dbUpdate (SetItemName itemId name')
+    case (T.null link', sanitiseUrl link') of
+      (True, _)   -> void $ dbUpdate (SetItemLink itemId Nothing)
+      (_, Just l) -> void $ dbUpdate (SetItemLink itemId (Just l))
+      _otherwise  -> return ()
+    dbUpdate (SetItemOnHackage itemId onHackage')
+    -- This does all the work of assigning new colors, etc. automatically
+    dbUpdate (SetItemGroup itemId group')
+    item <- dbQuery (GetItem itemId)
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemInfo Editable category item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
-    changedTrait <- withGlobal $ do
-      itemById itemId . traitById traitId . content .= content'
-      use (itemById itemId . traitById traitId)
-    lucid $ renderTrait Editable itemId changedTrait
+    trait <- dbUpdate (SetTraitContent itemId traitId content')
+    lucid $ renderTrait Editable itemId trait
 
-addMethods :: SpockM () () (IORef GlobalState) ()
+-- TODO: add stuff like “add/category” here in comments to make it easier to
+-- search with C-s (or maybe just don't use subcomponent?)
+addMethods :: SpockM () () DB ()
 addMethods = Spock.subcomponent "add" $ do
   -- New category
   Spock.post "category" $ do
-    content' <- param' "content"
-    uid' <- randomUid
-    let newCategory = Category {
-          _categoryUid = uid',
-          _categoryTitle = content',
-          _categoryNotes = "(write some notes here, describe the category, etc)",
-          _categoryGroups = mempty,
-          _categoryItems = [] }
-    withGlobal $ categories %= (newCategory :)
+    title' <- param' "content"
+    catId <- randomUid
+    newCategory <- dbUpdate (AddCategory catId title')
     lucid $ renderCategory newCategory
   -- New library in a category
   Spock.post (categoryVar <//> "library") $ \catId -> do
-    itemName <- param' "name"
-    itemId <- randomUid
-    let newItem = Item {
-          _itemUid    = itemId,
-          _itemName   = itemName,
-          _itemGroup_ = Nothing,
-          _itemPros   = [],
-          _itemCons   = [],
-          _itemLink   = Nothing,
-          _itemKind   = hackageLibrary }
-    -- TODO: maybe do something if the category doesn't exist (e.g. has been
+    name' <- param' "name"
+    -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
-    withGlobal $ categoryById catId . items %= (++ [newItem])
-    cat <- withGlobal $ use (categoryByItem itemId)
-    lucid $ renderItem Editable cat newItem
+    itemId <- randomUid
+    newItem <- dbUpdate (AddItem catId itemId name' hackageLibrary)
+    category <- dbQuery (GetCategory catId)
+    lucid $ renderItem Editable category newItem
   -- Pro (argument in favor of a library)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
-    uid' <- randomUid
-    let newTrait = Trait uid' content'
-    withGlobal $ itemById itemId . pros %= (++ [newTrait])
+    traitId <- randomUid
+    newTrait <- dbUpdate (AddPro itemId traitId content')
     lucid $ renderTrait Editable itemId newTrait
   -- Con (argument against a library)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
-    uid' <- randomUid
-    let newTrait = Trait uid' content'
-    withGlobal $ itemById itemId . cons %= (++ [newTrait])
+    traitId <- randomUid
+    newTrait <- dbUpdate (AddCon itemId traitId content')
     lucid $ renderTrait Editable itemId newTrait
 
-otherMethods :: SpockM () () (IORef GlobalState) ()
+otherMethods :: SpockM () () DB ()
 otherMethods = do
   -- Javascript
   Spock.get "js.js" $
@@ -521,73 +731,50 @@ otherMethods = do
 
   -- Search
   Spock.post "search" $ do
-    query <- param' "query"
-    let queryWords = T.words query
+    query' <- param' "query"
+    let queryWords = T.words query'
     let rank :: Category -> Int
         rank cat = sum [
           length (queryWords `intersect` (cat^..items.each.name)),
           length (queryWords `intersect` T.words (cat^.title)) ]
-    cats <- withGlobal (use categories)
-    let rankedCats
-          | null queryWords = cats
+    categories' <- dbQuery GetCategories
+    let rankedCategories
+          | null queryWords = categories'
           | otherwise       = filter ((/= 0) . rank) .
-                              reverse . sortOn rank $ cats
-    lucid $ renderCategoryList rankedCats
+                              reverse . sortOn rank
+                                $ categories'
+    lucid $ renderCategoryList rankedCategories
 
   -- Moving things
   Spock.subcomponent "move" $ do
-    -- Move trait
-    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
-      direction :: Text <- param' "direction"
-      let move = if direction == "up" then moveUp else moveDown
-      withGlobal $ do
-        itemById itemId . pros %= move ((== traitId) . view uid)
-        itemById itemId . cons %= move ((== traitId) . view uid)
     -- Move item
     Spock.post itemVar $ \itemId -> do
       direction :: Text <- param' "direction"
-      let move = if direction == "up" then moveUp else moveDown
-      withGlobal $ do
-        categoryByItem itemId . items %= move ((== itemId) . view uid)
+      dbUpdate (MoveItem itemId (direction == "up"))
+    -- Move trait
+    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      direction :: Text <- param' "direction"
+      dbUpdate (MoveTrait itemId traitId (direction == "up"))
 
   -- Deleting things
   Spock.subcomponent "delete" $ do
-    -- Delete trait
-    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
-      withGlobal $ do
-        itemById itemId . pros %= filter ((/= traitId) . view uid)
-        itemById itemId . cons %= filter ((/= traitId) . view uid)
     -- Delete item
     Spock.post itemVar $ \itemId -> do
-      let category :: Lens' GlobalState Category
-          category = categoryByItem itemId
-      let item :: Lens' GlobalState Item
-          item = itemById itemId
-      -- If the item was the only item in its group, delete the group (and
-      -- make the hue available for new items)
-      withGlobal $ do
-        oldGroup <- use (item.group_)
-        case oldGroup of
-          Nothing -> return ()
-          Just g  -> do
-            allItems <- use (category.items)
-            let inSameGroup item' = item'^.group_ == Just g
-                isUnique = length (filter inSameGroup allItems) == 1
-            when isUnique $
-              category.groups %= M.delete g
-      -- Delete the item
-      withGlobal $ do
-        category.items %= filter ((/= itemId) . view uid)
+      dbUpdate (DeleteItem itemId)
+    -- Delete trait
+    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      dbUpdate (DeleteTrait itemId traitId)
 
 main :: IO ()
 main = do
-  stateVar <- newIORef sampleState
-  let config = defaultSpockCfg () PCNoDatabase stateVar
+  db <- openLocalStateFrom "state/" sampleState
+  createCheckpoint db
+  let config = defaultSpockCfg () PCNoDatabase db
   runSpock 8080 $ spock config $ do
     middleware (staticPolicy (addBase "static"))
     -- Main page
     Spock.get root $ do
-      s <- liftIO $ readIORef stateVar
+      s <- dbQuery GetGlobalState
       lucid $ renderRoot s
     -- The add/set methods return rendered parts of the structure (added
     -- categories, changed items, etc) so that the Javascript part could take
@@ -671,6 +858,12 @@ renderHelp Shown =
         * if you have useful information of any kind that doesn't fit,
           add it to the category notes
       |]
+
+-- TODO: when conflicts happen, maybe create an alert like “The thing you're
+-- editing has been edited in the meantime. Here is a link with a diff of
+-- your variant and the other person's variant. Please merge the changes
+-- manually and submit them again, or press this button and we'll merge the
+-- changes for you (don't worry, it's not a big deal for us). Thanks!”
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =

@@ -29,6 +29,7 @@ executable hslibs
     JS
   -- other-extensions:    
   build-depends:       Spock
+                     , acid-state == 0.14.*
                      , base >=4.8 && <4.9
                      , base-prelude
                      , blaze-html >= 0.8.1.1
@@ -40,6 +41,7 @@ executable hslibs
                      , neat-interpolation == 0.3.*
                      , path-pieces
                      , random >= 1.1
+                     , safecopy
                      , text
                      , text-format
                      , transformers
