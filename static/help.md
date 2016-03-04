@@ -14,3 +14,7 @@ Some additional guidelines/observations/etc that probably make sense:
   * if you're unsure about something, still write it (just warn others that you're unsure)
 
   * if you have useful information of any kind that doesn't fit, add it to the category notes
+
+Finally, all content here is licensed under [CC BY-SA 3.0][], which is the same license as on Wikipedia and Stackoverflow.
+
+[CC BY-SA 3.0]: https://creativecommons.org/licenses/by-sa/3.0/

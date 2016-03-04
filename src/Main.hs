@@ -880,8 +880,6 @@ renderDonate = do
            \&button-text=04\
            \&successURL=" ] ""
 
--- TODO: all content under CC0 or some other license (which?)
-
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
 
