@@ -83,6 +83,9 @@ makeFields ''ItemKind
 
 -- TODO: add usage notes! and then change the rules to say “add it to item
 -- notes”, not “add it to category notes”
+
+-- TODO: add a field like “people to ask on IRC about this library if you
+-- need help”
 data Item = Item {
   _itemUid    :: Uid,
   _itemName   :: Text,
@@ -448,6 +451,9 @@ emptyState = GlobalState {
   _categories = [] }
 
 -- TODO: put this into a separate module
+
+-- TODO: add a command like “download state from the official source” (so
+-- that people would be able to play with it)
 
 sampleState :: GlobalState
 sampleState = do
@@ -819,8 +825,6 @@ renderRoot globalState = do
   -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
 
--- Don't forget to change helpVersion when the text changes substantially
--- and you think the users should reread it.
 helpVersion :: Int
 helpVersion = 1
 
@@ -833,6 +837,8 @@ renderHelp Shown =
   div_ [id_ "help"] $ do
     textButton "hide help" $
       JS.hideHelp (selectId "help", helpVersion)
+    -- Don't forget to change 'helpVersion' when the text changes
+    -- substantially and you think the users should reread it
     renderMarkdownBlock [text|
       You can edit everything, without registration. (But if you delete
       everything, I'll roll it back and then make a voodoo doll of you
