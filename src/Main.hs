@@ -800,17 +800,16 @@ renderRoot globalState = do
   -- see help; on another hand, those people don't need help anyway because
   -- they won't be able to edit anything either.
   renderHelp Hidden
-  onPageLoad $ JS.showOrHideHelp ("#help" :: JQuerySelector, helpVersion)
+  onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
   -- TODO: use ordinary form-post search instead of Javascript search (for
   -- people with NoScript)
   textInput [
     id_ "search",
     placeholder_ "search",
-    -- TODO: add something to construct a selector
-    onEnter $ JS.search ("#categories" :: JQuerySelector, inputValue) ]
+    onEnter $ JS.search (selectId "categories", inputValue) ]
   textInput [
     placeholder_ "add a category",
-    onEnter $ JS.addCategory ("#categories" :: JQuerySelector, inputValue) <>
+    onEnter $ JS.addCategory (selectId "categories", inputValue) <>
               clearInput ]
   -- TODO: sort categories by popularity, somehow? or provide a list of
   -- “commonly used categories” or even a nested catalog
@@ -830,11 +829,11 @@ renderHelp :: Visible -> HtmlT IO ()
 renderHelp Hidden =
   div_ [id_ "help"] $
     textButton "show help" $
-      JS.showHelp ("#help" :: JQuerySelector, helpVersion)
+      JS.showHelp (selectId "help", helpVersion)
 renderHelp Shown =
   div_ [id_ "help"] $ do
     textButton "hide help" $
-      JS.hideHelp ("#help" :: JQuerySelector, helpVersion)
+      JS.hideHelp (selectId "help", helpVersion)
     renderMarkdownBlock [text|
       You can edit everything, without registration. (But if you delete
       everything, I'll roll it back and then make a voodoo doll of you
@@ -1002,7 +1001,8 @@ renderItemInfo editable cat item = do
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
       InEdit -> do
-        let traitsNode = format ":has(> {}) > .item-traits" [infoNode]
+        let traitsNode = selectParent infoNode `selectChild`
+                         selectClass "item-traits"
         let formSubmitHandler formNode =
               JS.submitItemInfo (infoNode, traitsNode, item^.uid, formNode)
         form_ [onFormSubmit formSubmitHandler] $ do
@@ -1180,8 +1180,23 @@ imgButton src attrs (JS handler) =
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
 
--- TODO: make this a newtype
-type JQuerySelector = Text
+newtype JQuerySelector = JQuerySelector Text
+  deriving (ToJS, Format.Buildable)
+
+selectId :: Text -> JQuerySelector
+selectId x = JQuerySelector $ format "#{}" [x]
+
+selectUid :: Uid -> JQuerySelector
+selectUid x = JQuerySelector $ format "#{}" [x]
+
+selectClass :: Text -> JQuerySelector
+selectClass x = JQuerySelector $ format ".{}" [x]
+
+selectParent :: JQuerySelector -> JQuerySelector
+selectParent x = JQuerySelector $ format ":has(> {})" [x]
+
+selectChild :: JQuerySelector -> JQuerySelector -> JQuerySelector
+selectChild a b = JQuerySelector $ format "{} > {}" (a, b)
 
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
@@ -1189,7 +1204,7 @@ thisNode = do
   -- If the class name ever changes, fix 'JS.moveNodeUp' and
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
-  return (format ":has(> #{})" [uid'])
+  return (selectParent (selectUid uid'))
 
 data Editable = Normal | Editable | InEdit
 
