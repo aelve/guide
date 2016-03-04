@@ -911,6 +911,7 @@ renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
 renderTrait Editable itemId trait = li_ $ do
   this <- thisNode
   renderMarkdownLine (trait^.content)
+  br_ []
   imgButton "/arrow-thick-top.svg" [width_ "12px"] $
     JS.moveTraitUp (itemId, trait^.uid, this)
   imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
@@ -928,6 +929,7 @@ renderTrait InEdit itemId trait = li_ $ do
   let submitHandler = JS.submitTrait (this, itemId, trait^.uid, inputValue) <>
                       clearInput
   textarea_ [onEnter submitHandler] $ toHtml (trait^.content)
+  br_ []
   textButton "cancel" $
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
@@ -939,6 +941,7 @@ onPageLoad js = script_ $ format "$(document).ready(function(){{}});" [js]
 emptySpan :: Text -> HtmlT IO ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
+-- Use inputValue to get the value (works with input_ and textarea_)
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $ format "if (event.keyCode == 13) {{}}" [handler]
 
@@ -963,7 +966,6 @@ button value attrs handler =
 -- A text button looks like “[cancel]”
 -- 
 -- TODO: consider dotted links instead?
--- TODO: text button links shouldn't be marked as visited
 textButton
   :: Text         -- ^ Button text
   -> JS           -- ^ Onclick handler
