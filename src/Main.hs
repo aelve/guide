@@ -1077,10 +1077,11 @@ renderItemTraits editable cat item = do
             listNode <- ul_ $ do
               mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
               thisNode
-            textInput [
+            textarea_ [
               placeholder_ "add pro",
               onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
                         clearInput ]
+              ""
       -- TODO: maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
@@ -1092,10 +1093,11 @@ renderItemTraits editable cat item = do
             listNode <- ul_ $ do
               mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
               thisNode
-            textInput [
+            textarea_ [
               placeholder_ "add con",
               onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
                         clearInput ]
+              ""
     case editable of
       Normal -> textButton "edit pros/cons" $
         JS.setItemTraitsMode (this, item^.uid, Editable)
