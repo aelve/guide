@@ -825,6 +825,9 @@ renderRoot globalState = do
   -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
 
+-- TODO: allow archiving items if they are in every way worse than the rest,
+-- or something (but searching should still be possible)
+
 helpVersion :: Int
 helpVersion = 1
 
