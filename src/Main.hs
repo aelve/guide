@@ -767,23 +767,23 @@ otherMethods = do
 
 main :: IO ()
 main = do
-  db <- openLocalStateFrom "state/" sampleState
-  createCheckpoint db
-  let config = defaultSpockCfg () PCNoDatabase db
-  runSpock 8080 $ spock config $ do
-    middleware (staticPolicy (addBase "static"))
-    -- Main page
-    Spock.get root $ do
-      s <- dbQuery GetGlobalState
-      lucid $ renderRoot s
-    -- The add/set methods return rendered parts of the structure (added
-    -- categories, changed items, etc) so that the Javascript part could take
-    -- them and inject into the page. We don't want to duplicate rendering on
-    -- server side and on client side.
-    renderMethods
-    setMethods
-    addMethods
-    otherMethods
+  bracket (openLocalStateFrom "state/" sampleState) closeAcidState $ \db -> do
+    createCheckpoint db
+    let config = defaultSpockCfg () PCNoDatabase db
+    runSpock 8080 $ spock config $ do
+      middleware (staticPolicy (addBase "static"))
+      -- Main page
+      Spock.get root $ do
+        s <- dbQuery GetGlobalState
+        lucid $ renderRoot s
+      -- The add/set methods return rendered parts of the structure (added
+      -- categories, changed items, etc) so that the Javascript part could take
+      -- them and inject into the page. We don't want to duplicate rendering on
+      -- server side and on client side.
+      renderMethods
+      setMethods
+      addMethods
+      otherMethods
 
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
