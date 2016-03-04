@@ -847,6 +847,18 @@ renderRoot globalState = do
   -- they won't be able to edit anything either.
   renderHelp Hidden
   onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
+  noscript_ $ renderMarkdownBlock [text|
+    You have Javascript disabled! This site works fine without Javascript,
+    but since all editing needs Javascript to work, you won't be able to edit
+    anything. Also, show/hide buttons need Javascript too, so you won't be
+    able to see the notes for libraries (which I should really fix by making
+    them shown by default and *then* hiding them with Javascript). Also also,
+    search doesn't work without Javascript either (another thing I should
+    really fix – sorry!).
+    |]
+  -- TODO: show notes when Javascript is disabled – perhaps by hiding them
+  -- by default but putting a “show everything” CSS into a <style> block
+  -- inside a <noscript> block
   -- TODO: use ordinary form-post search instead of Javascript search (for
   -- people with NoScript)
   textInput [
@@ -976,7 +988,6 @@ renderCategoryNotes editable category =
     this <- thisNode
     case editable of
       Editable -> do
-        -- TODO: use shortcut-links
         renderMarkdownBlock (category^.notes)
         textButton "edit description" $
           JS.setCategoryNotesMode (this, category^.uid, InEdit)
@@ -1230,7 +1241,6 @@ renderItemNotes editable category item = do
     this <- thisNode
     case editable of
       Editable -> do
-        -- TODO: use shortcut-links
         renderMarkdownBlock (item^.notes)
         -- TODO: “show notes and examples”
         textButton "edit notes" $

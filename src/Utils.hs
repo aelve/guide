@@ -93,6 +93,7 @@ includeJS url = with (script_ "") [src_ url]
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
+-- TODO: rename to renderMarkdownInline
 renderMarkdownLine :: Monad m => Text -> HtmlT m ()
 renderMarkdownLine s = do
   let Doc opts blocks = markdown def{allowRawHtml=False} s
@@ -107,6 +108,9 @@ renderMarkdownLine s = do
     extractInlines (HtmlBlock x) = pure (Code x)
     extractInlines HRule = mempty
 
+-- TODO: rename to renderMarkdownBlocks
+-- TODO: use shortcut-links
+-- TODO: would be nice to have syntax highlighting
 renderMarkdownBlock :: Monad m => Text -> HtmlT m ()
 renderMarkdownBlock =
   blazeToLucid . renderDoc . markdown def{allowRawHtml=False}
