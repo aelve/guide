@@ -15,7 +15,8 @@ tested-with:         GHC == 7.10.3
 build-type:          Simple
 extra-source-files:
   CHANGELOG.md
-  static/*.js
+  static/css.css
+  static/help.md
 cabal-version:       >=1.10
 
 source-repository head

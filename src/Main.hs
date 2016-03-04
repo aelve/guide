@@ -30,6 +30,7 @@ import Data.Map (Map)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import NeatInterpolation
 import qualified Data.Text.Buildable as Format
 -- Randomness
@@ -842,29 +843,8 @@ renderHelp Shown =
       JS.hideHelp (selectId "help", helpVersion)
     -- Don't forget to change 'helpVersion' when the text changes
     -- substantially and you think the users should reread it
-    renderMarkdownBlock [text|
-      You can edit everything, without registration. (But if you delete
-      everything, I'll roll it back and then make a voodoo doll of you
-      and stick some needles into it).
-  
-      The most important rule is: **it's collaborative notes, not Wikipedia**.
-      In other words, incomplete entries like this are welcome here:
-  
-      > **pros:** pretty nice API\
-      > **cons:** buggy (see an example on my Github, here's the link)
-  
-      Some additional guidelines/observations/etc that probably make sense:
-  
-        * sort pros/cons by importance
-  
-        * if you don't like something for any reason, edit it
-  
-        * if you're unsure about something, still write it
-          (just warn others that you're unsure)
-  
-        * if you have useful information of any kind that doesn't fit,
-          add it to the category notes
-      |]
+    help <- liftIO $ T.readFile "static/help.md"
+    renderMarkdownBlock help
 
 -- TODO: when conflicts happen, maybe create an alert like “The thing you're
 -- editing has been edited in the meantime. Here is a link with a diff of
