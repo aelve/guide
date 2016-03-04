@@ -37,6 +37,7 @@ import qualified Data.Text.Buildable as Format
 import System.Random
 -- Web
 import Lucid hiding (for_)
+import Lucid.Base (makeAttribute)
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
@@ -783,6 +784,9 @@ main = do
       Spock.get root $ do
         s <- dbQuery GetGlobalState
         lucid $ renderRoot s
+      -- Donation page
+      Spock.get "donate" $ do
+        lucid $ renderDonate
       -- The add/set methods return rendered parts of the structure (added
       -- categories, changed items, etc) so that the Javascript part could take
       -- them and inject into the page. We don't want to duplicate rendering on
@@ -822,12 +826,67 @@ renderRoot globalState = do
   -- “commonly used categories” or even a nested catalog
   renderCategoryList (globalState^.categories)
   -- TODO: perhaps use infinite scrolling/loading?
-  -- TODO: add links to source and donation buttons
   -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
+  div_ [id_ "footer"] $ do
+    -- <div style="text-align:center;font-size:0.9em;padding:0.5em 8px">
+    "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
+    emptySpan "2em"
+    a_ [href_ "https://github.com/aelve/guide"] "source"
+    emptySpan "2em"
+    a_ [href_ "https://github.com/aelve/guide/issues"] "report an issue"
+    emptySpan "2em"
+    a_ [href_ "/donate"] "donate"
+    sup_ [style_ "font-size:50%"] "I don't have a job"
+
+-- TODO: include jQuery locally so that it'd be possible to test the site
+-- without internet
+
+renderDonate :: HtmlT IO ()
+renderDonate = do
+  includeCSS "/css.css"
+  renderMarkdownBlock [text|
+    Okay, the rules: if you donate *anything*, I'll spend some time working
+    on the site this day (adding content, implementing new features, etc).
+
+    (Of course, I'm planning to be working on the site anyway, donations
+    or not! However, I jump from project to project way too often (and rarely
+    manage to finish anything), so donating money is a good way to make sure
+    that I'd feel obligated to keep working on this one. If I find out that
+    it doesn't work as a motivation, I'll stop accepting donations.)
+
+    Just in case, 1000 rub. is 14$ (or 12.5€), and you can choose any amount
+    below 15000 rub. (I'd put a Paypal button, but Paypal doesn't allow
+    receiving money in Belarus.)
+    |]
+  style_ "#iframe-hold {background:url(loading.svg) center center no-repeat;}"
+  div_ [id_ "iframe-hold"] $
+    iframe_ [
+      makeAttribute "frameborder" "0",
+      makeAttribute "allowtransparency" "true",
+      makeAttribute "scrolling" "no",
+      width_ "450",
+      height_ "197",
+      style_ "display:block;margin:auto;",
+      src_ "https://money.yandex.ru/embed/shop.xml\
+           \?account=410011616040682\
+           \&quickpay=shop\
+           \&payment-type-choice=on\
+           \&mobile-payment-type-choice=on\
+           \&writer=seller\
+           \&targets=Haskell+guide\
+           \&targets-hint=\
+           \&default-sum=1000\
+           \&button-text=04\
+           \&successURL=" ] ""
+
+-- TODO: all content under CC0 or some other license (which?)
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
+
+-- TODO: add a list for “interesting libraries, but too lazy to describe, so
+-- somebody describe them for me”
 
 helpVersion :: Int
 helpVersion = 1
