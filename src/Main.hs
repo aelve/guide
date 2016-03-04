@@ -515,6 +515,10 @@ addMethods = Spock.subcomponent "add" $ do
 
 otherMethods :: SpockM () () (IORef GlobalState) ()
 otherMethods = do
+  -- Javascript
+  Spock.get "js.js" $
+    Spock.text (fromJS allJSFunctions)
+
   -- Search
   Spock.post "search" $ do
     query <- param' "query"
@@ -599,8 +603,9 @@ renderRoot globalState = do
   includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
   includeCSS "/css.css"
   -- Include definitions of all Javascript functions that we have defined in
-  -- this file.
-  script_ (fromJS allJSFunctions)
+  -- this file. (This isn't an actual file, so don't look for it in the
+  -- static folder – it's generated and served in 'otherMethods'.)
+  includeJS "/js.js"
   h1_ "Collaborative notes on Haskell libraries and tools"
   -- By default help is rendered hidden, and then showOrHideHelp reads a
   -- value from local storage and decides whether to show help or not. On one
