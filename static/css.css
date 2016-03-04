@@ -64,5 +64,15 @@ code {
   font-size: 95%;
   padding: 2px 4px; }
 
+pre {
+  background: rgba(10, 10, 10, 0.1);
+  line-height: 150%;
+  padding: 0.5em 1em;
+  overflow-x: auto; }
+
+pre code {
+  background: rgba(0, 0, 0, 0);
+  padding: 0; }
+
 form {
   margin: 0; }

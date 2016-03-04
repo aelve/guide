@@ -818,7 +818,6 @@ renderRoot globalState = do
   -- TODO: add links to source and donation buttons
   -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
-  -- TODO: add CSS for blocks of code
 
 -- Don't forget to change helpVersion when the text changes substantially
 -- and you think the users should reread it.
