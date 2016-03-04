@@ -9,6 +9,8 @@ Some additional guidelines/observations/etc that probably make sense:
 
   * sort pros/cons by importance
 
+  * a library can be in several categories – list only pros/cons and examples that are relevant to the category
+
   * if you don't like something for any reason, edit it
 
   * if you're unsure about something, still write it (just warn others that you're unsure)
