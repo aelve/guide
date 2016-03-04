@@ -1,10 +1,10 @@
-name:                hslibs
+name:                guide
 version:             0.1.0.0
 synopsis:            A site for comparing Haskell libraries
 description:
   A site for comparing Haskell libraries
-homepage:            http://github.com/aelve/hslibs
-bug-reports:         http://github.com/aelve/hslibs/issues
+homepage:            http://github.com/aelve/guide
+bug-reports:         http://github.com/aelve/guide/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Artyom
@@ -20,9 +20,9 @@ cabal-version:       >=1.10
 
 source-repository head
   type:                git
-  location:            git://github.com/aelve/hslibs.git
+  location:            git://github.com/aelve/guide.git
 
-executable hslibs
+executable guide
   main-is:             Main.hs
   other-modules:       
     Utils
