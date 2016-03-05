@@ -15,8 +15,10 @@ tested-with:         GHC == 7.10.3
 build-type:          Simple
 extra-source-files:
   CHANGELOG.md
+data-files:
   static/css.css
   static/help.md
+  static/*.svg
 cabal-version:       >=1.10
 
 source-repository head
