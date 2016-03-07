@@ -34,6 +34,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
   replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
+  switchSection,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
   -- Search
@@ -160,13 +161,24 @@ moveNodeDown =
       el.next().after(el);
   |]
 
+-- TODO: document the way hiding/showing works
+
+-- | Given something that contains section divs (or spans), show one and
+-- hide the rest. The div/span with the given @class@ will be chosen.
+switchSection :: JSFunction a => a
+switchSection =
+  makeJSFunction "switchSection" ["node", "section"]
+  [text|
+    $(node).children(".section").removeClass("shown");
+    $(node).children(".section."+section).addClass("shown");
+  |]
+
 showHelp :: JSFunction a => a
 showHelp =
   makeJSFunction "showHelp" ["node", "version"]
   [text|
     localStorage.removeItem("help-hidden-"+version);
-    $.get("/render/help", {mode: "shown"})
-     .done(replaceWithData(node));
+    switchSection(node, "expanded");
   |]
 
 hideHelp :: JSFunction a => a
@@ -174,20 +186,19 @@ hideHelp =
   makeJSFunction "hideHelp" ["node", "version"]
   [text|
     localStorage.setItem("help-hidden-"+version, "");
-    $.get("/render/help", {mode: "hidden"})
-     .done(replaceWithData(node));
+    switchSection(node, "collapsed");
   |]
 
+-- TODO: find a better name for this (to distinguish it from 'showHelp' and
+-- 'hideHelp')
 showOrHideHelp :: JSFunction a => a
 showOrHideHelp =
   makeJSFunction "showOrHideHelp" ["node", "version"]
   [text|
     if (localStorage.getItem("help-hidden-"+version) === null)
-      $.get("/render/help", {mode: "shown"})
-       .done(replaceWithData(node))
+      showHelp(node, version)
     else
-      $.get("/render/help", {mode: "hidden"})
-       .done(replaceWithData(node));
+      hideHelp(node, version);
   |]
 
 search :: JSFunction a => a

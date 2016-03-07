@@ -636,10 +636,6 @@ traitVar = "trait" <//> var
 
 renderMethods :: SpockM () () DB ()
 renderMethods = Spock.subcomponent "render" $ do
-  -- Help
-  Spock.get "help" $ do
-    visible <- param' "mode"
-    lucid $ renderHelp visible
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
     category <- dbQuery (GetCategory catId)
@@ -839,23 +835,31 @@ renderRoot globalState = do
   -- this file. (This isn't an actual file, so don't look for it in the
   -- static folder – it's generated and served in 'otherMethods'.)
   includeJS "/js.js"
-  h1_ "Collaborative notes on Haskell libraries and tools"
-  -- By default help is rendered hidden, and then showOrHideHelp reads a
-  -- value from local storage and decides whether to show help or not. On one
-  -- hand, it means that people with Javascript turned off won't be able to
-  -- see help; on another hand, those people don't need help anyway because
-  -- they won't be able to edit anything either.
-  renderHelp Hidden
-  onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
-  noscript_ $ renderMarkdownBlock [text|
-    You have Javascript disabled! This site works fine without Javascript,
-    but since all editing needs Javascript to work, you won't be able to edit
-    anything. Also, show/hide buttons need Javascript too, so you won't be
-    able to see the notes for libraries (which I should really fix by making
-    them shown by default and *then* hiding them with Javascript). Also also,
-    search doesn't work without Javascript either (another thing I should
-    really fix – sorry!).
+  -- CSS that makes 'shown' and 'noScriptShown' work
+  noscript_ $ style_ [text|
+    .section:not(.noscript-shown) {display:none;}
     |]
+  script_ [text|
+    var sheet = document.createElement('style');
+    sheet.innerHTML = '.section:not(.shown) {display:none;}';
+    // “head” instead of “body” because body isn't loaded yet
+    document.head.appendChild(sheet);
+    |]
+  -- Okay, here goes the actual page
+  -- TODO: this header looks bad when the page is narrow
+  h1_ "Collaborative notes on Haskell libraries and tools"
+  noscript_ $ div_ [id_ "noscript-message"] $
+    renderMarkdownBlock [text|
+      You have Javascript disabled! This site works fine without Javascript,
+      but since all editing needs Javascript to work, you won't be able to edit
+      anything. Also, show/hide buttons need Javascript too, so you won't be
+      able to see the notes for libraries (which I should really fix by making
+      them shown by default and *then* hiding them with Javascript). Also also,
+      search doesn't work without Javascript either (another thing I should
+      really fix – sorry!).
+      |]
+  renderHelp
+  onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
   -- TODO: show notes when Javascript is disabled – perhaps by hiding them
   -- by default but putting a “show everything” CSS into a <style> block
   -- inside a <noscript> block
@@ -933,22 +937,26 @@ renderDonate = do
 -- TODO: add a list for “interesting libraries, but too lazy to describe, so
 -- somebody describe them for me”
 
+renderHelp :: HtmlT IO ()
+renderHelp = do
+  div_ [id_ "help"] $ do
+
+    -- If you're going to change section names, look at 'JS.showHelp' and
+    -- 'JS.hideHelp'
+    section "collapsed" [shown] $ do
+      textButton "show help" $
+        JS.showHelp (selectId "help", helpVersion)
+
+    section "expanded" [noScriptShown] $ do
+      textButton "hide help" $
+        JS.hideHelp (selectId "help", helpVersion)
+      -- Don't forget to change 'helpVersion' when the text changes
+      -- substantially and you think the users should reread it
+      help <- liftIO $ T.readFile "static/help.md"
+      renderMarkdownBlock help
+
 helpVersion :: Int
 helpVersion = 1
-
-renderHelp :: Visible -> HtmlT IO ()
-renderHelp Hidden =
-  div_ [id_ "help"] $
-    textButton "show help" $
-      JS.showHelp (selectId "help", helpVersion)
-renderHelp Shown =
-  div_ [id_ "help"] $ do
-    textButton "hide help" $
-      JS.hideHelp (selectId "help", helpVersion)
-    -- Don't forget to change 'helpVersion' when the text changes
-    -- substantially and you think the users should reread it
-    help <- liftIO $ T.readFile "static/help.md"
-    renderMarkdownBlock help
 
 -- TODO: when conflicts happen, maybe create an alert like “The thing you're
 -- editing has been edited in the meantime. Here is a link with a diff of
@@ -1313,6 +1321,9 @@ textButton caption (JS handler) =
   span_ [class_ "text-button"] $
     a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
 
+-- TODO: use # instead of javascript:void(0), the latter is slow in Firefox
+-- for me
+
 -- So far all icons used here have been from <https://useiconic.com/open/>
 imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton src attrs (JS handler) =
@@ -1372,6 +1383,18 @@ instance PathPiece Visible where
 
 instance ToJS Visible where
   toJS = JS . tshow . toPathPiece
+
+-- Wheh changing these, also look at 'JS.switchSection'.
+
+shown, noScriptShown :: Attribute
+shown          = class_ " shown "
+noScriptShown  = class_ " noscript-shown "
+
+section :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+section t attrs = div_ (class_ (t <> " section ") : attrs)
+
+sectionSpan :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
 -- TODO: why not compare Haskellers too?
 

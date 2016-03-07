@@ -6,6 +6,10 @@ body {
   font-family: sans-serif;
   line-height: 120%; }
 
+#noscript-message {
+  padding: 1px 1em;
+  background-color: #FFEBEE; }
+
 #footer {
   text-align: center;
   padding: 1.5em 0;
