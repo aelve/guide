@@ -639,8 +639,7 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    renderMode <- param' "mode"
-    lucid $ renderCategoryTitle renderMode category
+    lucid $ renderCategoryTitle category
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
@@ -684,7 +683,7 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
     category <- dbUpdate (SetCategoryTitle catId content')
-    lucid $ renderCategoryTitle Editable category
+    lucid $ renderCategoryTitle category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
@@ -968,26 +967,27 @@ renderCategoryList cats =
   div_ [id_ "categories"] $
     mapM_ renderCategory cats
 
-renderCategoryTitle :: Editable -> Category -> HtmlT IO ()
-renderCategoryTitle editable category =
-  h2_ $ do
+renderCategoryTitle :: Category -> HtmlT IO ()
+renderCategoryTitle category = do
+  let thisId = "category-title-" <> uidToText (category^.uid)
+      this   = selectId thisId
+  h2_ [id_ thisId] $ do
     a_ [class_ "anchor", href_ ("#" <> uidToText (category^.uid))] "#"
-    titleNode <- thisNode
-    case editable of
-      Editable -> do
-        toHtml (category^.title)
-        emptySpan "1em"
-        textButton "edit" $
-          JS.setCategoryTitleMode (titleNode, category^.uid, InEdit)
-      InEdit -> do
-        textInput [
-          value_ (category^.title),
-          onEnter $
-            JS.submitCategoryTitle (titleNode, category^.uid, inputValue) <>
-            clearInput ]
-        emptySpan "1em"
-        textButton "cancel" $
-          JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
+
+    sectionSpan "normal" [shown, noScriptShown] $ do
+      toHtml (category^.title)
+      emptySpan "1em"
+      textButton "edit" $
+        JS.switchSection (this, "editing" :: Text)
+
+    sectionSpan "editing" [] $ do
+      textInput [
+        value_ (category^.title),
+        onEnter $
+          JS.submitCategoryTitle (this, category^.uid, inputValue)]
+      emptySpan "1em"
+      textButton "cancel" $
+        JS.switchSection (this, "normal" :: Text)
 
 renderCategoryNotes :: Category -> HtmlT IO ()
 renderCategoryNotes category = do
@@ -1020,7 +1020,7 @@ renderCategoryNotes category = do
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [class_ "category", uid_ (category^.uid)] $ do
-    renderCategoryTitle Editable category
+    renderCategoryTitle category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal category) (category^.items)
