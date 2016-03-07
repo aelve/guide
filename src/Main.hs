@@ -654,9 +654,8 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Item info
   Spock.get (itemVar <//> "info") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    renderMode <- param' "mode"
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemInfo renderMode category item
+    lucid $ renderItemInfo category item
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -715,7 +714,7 @@ setMethods = Spock.subcomponent "set" $ do
     dbUpdate (SetItemGroup itemId group')
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemInfo Editable category item
+    lucid $ renderItemInfo category item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
@@ -962,6 +961,14 @@ helpVersion = 1
 -- manually and submit them again, or press this button and we'll merge the
 -- changes for you (don't worry, it's not a big deal for us). Thanks!”
 
+-- TODO: automatic merge should be possible too (e.g. if the changes are in
+-- different paragraphs)
+
+-- TODO: when adding a new item, don't make it a Hackage library if it has
+-- spaces/punctuation in its name
+
+-- TODO: rename selectChild to selectChildren
+
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
   div_ [id_ "categories"] $
@@ -1062,7 +1069,7 @@ renderItem editable cat item =
     -- This div is needed for “display:flex” on the outer div to work (which
     -- makes item-controls be placed to the left of everything else)
     div_ [class_ "fullwidth"] $ do
-      renderItemInfo Editable cat item
+      renderItemInfo cat item
       case editable of
         Normal -> do
           renderItemTraits Normal cat item
@@ -1075,87 +1082,91 @@ renderItem editable cat item =
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: Editable -> Category -> Item -> HtmlT IO ()
-renderItemInfo editable cat item = do
+renderItemInfo :: Category -> Item -> HtmlT IO ()
+renderItemInfo cat item = do
   let bg = hueToDarkColor $ getItemHue cat item
-  div_ [class_ "item-info", style_ ("background-color:" <> bg)] $ do
-    infoNode <- thisNode
-    case editable of
-      Editable -> do
-        span_ [style_ "font-size:150%"] $ do
-          -- If the library is on Hackage, the title links to its Hackage
-          -- page; otherwise, it doesn't link anywhere. Even if the link
-          -- field is present, it's going to be rendered as “(site)”, not
-          -- linked in the title.
-          let hackageLink = "https://hackage.haskell.org/package/" <>
-                            item^.name
-          case item^?kind.onHackage of
-            Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
-            _otherwise -> toHtml (item^.name)
-          case item^.link of
-            Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-            Nothing -> return ()
-        emptySpan "2em"
-        toHtml (fromMaybe "other" (item^.group_))
-        emptySpan "2em"
-        textButton "edit details" $
-          JS.setItemInfoMode (infoNode, item^.uid, InEdit)
-        -- TODO: link to Stackage too
-        -- TODO: should check for Stackage automatically
-      InEdit -> do
-        let otherNodes = selectChild (selectParent infoNode)
-                                     (selectClass "item-body")
-        let formSubmitHandler formNode =
-              JS.submitItemInfo (infoNode, otherNodes, item^.uid, formNode)
-        form_ [onFormSubmit formSubmitHandler] $ do
-          label_ $ do
-            "Package name"
-            br_ []
-            input_ [type_ "text", name_ "name",
-                    value_ (item^.name)]
-          br_ []
-          label_ $ do
-            "Link to Hackage: "
-            input_ $ [type_ "checkbox", name_ "on-hackage"] ++
-                     [checked_ | item^?kind.onHackage == Just True]
-          br_ []
-          label_ $ do
-            "Site (optional)"
-            br_ []
-            input_ [type_ "text", name_ "link",
-                    value_ (fromMaybe "" (item^.link))]
-          br_ []
-          label_ $ do
-            "Group"
-            br_ []
-            customInputId <- randomUid
-            let selectHandler = [text|
+  let thisId = "item-info-" <> uidToText (item^.uid)
+      this   = selectId thisId
+  div_ [id_ thisId, class_ "item-info", style_ ("background-color:" <> bg)] $ do
+
+    sectionSpan "normal" [shown, noScriptShown] $ do
+      -- TODO: move this style_ into css.css
+      span_ [style_ "font-size:150%"] $ do
+        -- If the library is on Hackage, the title links to its Hackage
+        -- page; otherwise, it doesn't link anywhere. Even if the link
+        -- field is present, it's going to be rendered as “(site)”, not
+        -- linked in the title.
+        let hackageLink = "https://hackage.haskell.org/package/" <>
+                          item^.name
+        case item^?kind.onHackage of
+          Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
+          _otherwise -> toHtml (item^.name)
+        case item^.link of
+          Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+          Nothing -> return ()
+      emptySpan "2em"
+      toHtml (fromMaybe "other" (item^.group_))
+      emptySpan "2em"
+      textButton "edit details" $
+        JS.switchSection (this, "editing" :: Text)
+      -- TODO: link to Stackage too
+      -- TODO: should check for Stackage automatically
+
+    section "editing" [] $ do
+      -- otherNodes are all nodes that have to be recolored when this node is
+      -- recolored
+      let otherNodes = selectChild (selectParent this)
+                                   (selectClass "item-body")
+      let formSubmitHandler formNode =
+            JS.submitItemInfo (this, otherNodes, item^.uid, formNode)
+      form_ [onFormSubmit formSubmitHandler] $ do
+        label_ $ do
+          "Package name" >> br_ []
+          input_ [type_ "text", name_ "name",
+                  value_ (item^.name)]
+        br_ []
+        label_ $ do
+          "Link to Hackage: "
+          input_ $ [type_ "checkbox", name_ "on-hackage"] ++
+                   [checked_ | item^?kind.onHackage == Just True]
+        br_ []
+        label_ $ do
+          "Site (optional)" >> br_ []
+          input_ [type_ "text", name_ "link",
+                  value_ (fromMaybe "" (item^.link))]
+        br_ []
+        label_ $ do
+          "Group" >> br_ []
+          newGroupInputId <- randomUid
+          -- When “new group” is selected in the list, we show a field for
+          -- entering new group's name
+          let selectHandler = [text|
                   if (this.value == "$newGroupValue") {
                     $("#$idText").show();
                     $("#$idText").focus(); }
                   else $("#$idText").hide(); |]
-                  where idText = uidToText customInputId
-            select_ [name_ "group", onchange_ selectHandler] $ do
-              let gs = Nothing : map Just (M.keys (cat^.groups))
-              for_ gs $ \group' -> do
-                -- Text that will be shown in the list (“-” stands for “no
-                -- group”)
-                let txt = fromMaybe "-" group'
-                -- If the element corresponds to the current group of the
-                -- item (or the element is “-”, i.e. Nothing, and the group
-                -- is Nothing too), mark it as selected, thus making it the
-                -- element that will be chosen by default when the form is
-                -- rendered
-                if group' == item^.group_
-                  then option_ [selected_ "selected", value_ txt] (toHtml txt)
-                  else option_ [value_ txt] (toHtml txt)
-              option_ [value_ newGroupValue] "New group..."
-            input_ [uid_ customInputId, type_ "text",
-                    name_ "custom-group", hidden_ "hidden"]
-          br_ []
-          input_ [type_ "submit", value_ "Save"]
-          button "Cancel" [] $
-            JS.setItemInfoMode (infoNode, item^.uid, Editable)
+                where idText = uidToText newGroupInputId
+          select_ [name_ "group", onchange_ selectHandler] $ do
+            let gs = Nothing : map Just (M.keys (cat^.groups))
+            for_ gs $ \group' -> do
+              -- Text that will be shown in the list (“-” stands for “no
+              -- group”)
+              let txt = fromMaybe "-" group'
+              -- If the element corresponds to the current group of the
+              -- item (or the element is “-”, i.e. Nothing, and the group
+              -- is Nothing too), mark it as selected, thus making it the
+              -- element that will be chosen by default when the form is
+              -- rendered
+              if group' == item^.group_
+                then option_ [selected_ "selected", value_ txt] (toHtml txt)
+                else option_ [value_ txt] (toHtml txt)
+            option_ [value_ newGroupValue] "New group..."
+          input_ [uid_ newGroupInputId, type_ "text",
+                  name_ "custom-group", hidden_ "hidden"]
+        br_ []
+        input_ [type_ "submit", value_ "Save"]
+        button "Cancel" [] $
+          JS.switchSection (this, "normal" :: Text)
 
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
@@ -1373,18 +1384,6 @@ instance PathPiece Editable where
   toPathPiece InEdit   = "in-edit"
 
 instance ToJS Editable where
-  toJS = JS . tshow . toPathPiece
-
-data Visible = Hidden | Shown
-
-instance PathPiece Visible where
-  fromPathPiece "hidden" = Just Hidden
-  fromPathPiece "shown"  = Just Shown
-  fromPathPiece _        = Nothing
-  toPathPiece Hidden = "hidden"
-  toPathPiece Shown  = "shown"
-
-instance ToJS Visible where
   toJS = JS . tshow . toPathPiece
 
 -- Wheh changing these, also look at 'JS.switchSection'.

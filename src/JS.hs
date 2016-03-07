@@ -43,7 +43,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addLibrary, addCategory,
   addPro, addCon,
   -- “Render this in a different way” methods
-  setItemInfoMode, setItemTraitsMode, setItemNotesMode,
+  setItemTraitsMode, setItemNotesMode,
   setTraitMode,
   -- Set methods
   submitCategoryTitle, submitCategoryNotes,
@@ -281,14 +281,6 @@ addCon =
   [text|
     $.post("/add/item/"+itemId+"/con", {content: s})
      .done(appendData(node));
-  |]
-
-setItemInfoMode :: JSFunction a => a
-setItemInfoMode =
-  makeJSFunction "setItemInfoMode" ["node", "itemId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/info", {mode: mode})
-     .done(replaceWithData(node));
   |]
 
 setItemTraitsMode :: JSFunction a => a
