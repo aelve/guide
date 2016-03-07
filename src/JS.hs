@@ -43,7 +43,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addLibrary, addCategory,
   addPro, addCon,
   -- “Render this in a different way” methods
-  setCategoryTitleMode, setCategoryNotesMode,
+  setCategoryTitleMode,
   setItemInfoMode, setItemTraitsMode, setItemNotesMode,
   setTraitMode,
   -- Set methods
@@ -247,14 +247,6 @@ submitCategoryTitle =
   makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
   [text|
     $.post("/set/category/"+catId+"/title", {content: s})
-     .done(replaceWithData(node));
-  |]
-
-setCategoryNotesMode :: JSFunction a => a
-setCategoryNotesMode =
-  makeJSFunction "setCategoryNotesMode" ["node", "catId", "mode"]
-  [text|
-    $.get("/render/category/"+catId+"/notes", {mode: mode})
      .done(replaceWithData(node));
   |]
 

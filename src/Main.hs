@@ -644,8 +644,7 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    renderMode <- param' "mode"
-    lucid $ renderCategoryNotes renderMode category
+    lucid $ renderCategoryNotes category
   -- Item colors
   Spock.get (itemVar <//> "colors") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -690,7 +689,7 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
     category <- dbUpdate (SetCategoryNotes catId content')
-    lucid $ renderCategoryNotes Editable category
+    lucid $ renderCategoryNotes category
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
     -- TODO: add a jumpy note saying where the form is handled
@@ -990,35 +989,39 @@ renderCategoryTitle editable category =
         textButton "cancel" $
           JS.setCategoryTitleMode (titleNode, category^.uid, Editable)
 
-renderCategoryNotes :: Editable -> Category -> HtmlT IO ()
-renderCategoryNotes editable category =
-  div_ $ do
-    this <- thisNode
-    case editable of
-      Editable -> do
-        renderMarkdownBlock (category^.notes)
-        textButton "edit description" $
-          JS.setCategoryNotesMode (this, category^.uid, InEdit)
-      InEdit -> do
-        textareaId <- randomUid
-        textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
-          toHtml (category^.notes)
-        button "Save" [] $ do
-          -- «$("#<textareaId>").val()» is a Javascript expression that
-          -- returns text contained in the textarea
-          let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
-          JS.submitCategoryNotes (this, category^.uid, textareaValue)
-        emptySpan "6px"
-        button "Cancel" [] $
-          JS.setCategoryNotesMode (this, category^.uid, Editable)
-        emptySpan "6px"
-        "Markdown"
+renderCategoryNotes :: Category -> HtmlT IO ()
+renderCategoryNotes category = do
+  let thisId = "category-notes-" <> uidToText (category^.uid)
+      this   = selectId thisId
+  div_ [id_ thisId] $ do
+
+    section "normal" [shown, noScriptShown] $ do
+      renderMarkdownBlock (category^.notes)
+      textButton "edit description" $
+        JS.switchSection (this, "editing" :: Text)
+
+    section "editing" [] $ do
+      textareaId <- randomUid
+      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+        toHtml (category^.notes)
+      button "Save" [] $
+        -- «$("#<textareaId>").val()» is a Javascript expression that
+        -- returns text contained in the textarea
+        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
+        in  JS.submitCategoryNotes (this, category^.uid, textareaValue)
+      emptySpan "6px"
+      -- TODO: it'd probably be good (or not?) if “Cancel” also restored
+      -- the original text in the textarea (in case it was edited)
+      button "Cancel" [] $
+        JS.switchSection (this, "normal" :: Text)
+      emptySpan "6px"
+      "Markdown"
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
   div_ [class_ "category", uid_ (category^.uid)] $ do
     renderCategoryTitle Editable category
-    renderCategoryNotes Editable category
+    renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem Normal category) (category^.items)
       thisNode
