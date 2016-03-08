@@ -661,17 +661,6 @@ renderMethods = Spock.subcomponent "render" $ do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemNotes category item
-  -- All item traits
-  Spock.get (itemVar <//> "traits") $ \itemId -> do
-    item <- dbQuery (GetItem itemId)
-    renderMode <- param' "mode"
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemTraits renderMode category item
-  -- A single trait
-  Spock.get (itemVar <//> traitVar) $ \itemId traitId -> do
-    trait <- dbQuery (GetTrait itemId traitId)
-    renderMode <- param' "mode"
-    lucid $ renderTrait renderMode itemId trait
 
 -- TODO: use window.onerror to catch and show all JS errors
 
@@ -724,7 +713,7 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
     trait <- dbUpdate (SetTraitContent itemId traitId content')
-    lucid $ renderTrait Editable itemId trait
+    lucid $ renderTrait itemId trait
 
 -- TODO: add stuff like “add/category” here in comments to make it easier to
 -- search with C-s (or maybe just don't use subcomponent?)
@@ -744,19 +733,19 @@ addMethods = Spock.subcomponent "add" $ do
     itemId <- randomUid
     newItem <- dbUpdate (AddItem catId itemId name' hackageLibrary)
     category <- dbQuery (GetCategory catId)
-    lucid $ renderItem Editable category newItem
+    lucid $ renderItem category newItem
   -- Pro (argument in favor of a library)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomUid
     newTrait <- dbUpdate (AddPro itemId traitId content')
-    lucid $ renderTrait Editable itemId newTrait
+    lucid $ renderTrait itemId newTrait
   -- Con (argument against a library)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomUid
     newTrait <- dbUpdate (AddCon itemId traitId content')
-    lucid $ renderTrait Editable itemId newTrait
+    lucid $ renderTrait itemId newTrait
 
 otherMethods :: SpockM () () DB ()
 otherMethods = do
@@ -1026,7 +1015,7 @@ renderCategory category =
     renderCategoryTitle category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
-      mapM_ (renderItem Normal category) (category^.items)
+      mapM_ (renderItem category) (category^.items)
       thisNode
     textInput [
       placeholder_ "add an item",
@@ -1043,8 +1032,8 @@ getItemHue category item = case item^.group_ of
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
-renderItem :: Editable -> Category -> Item -> HtmlT IO ()
-renderItem editable cat item =
+renderItem :: Category -> Item -> HtmlT IO ()
+renderItem cat item =
   div_ [class_ "item"] $ do
     itemNode <- thisNode
     -- TODO: the controls and item-info should be aligned (currently the
@@ -1066,11 +1055,8 @@ renderItem editable cat item =
     -- makes item-controls be placed to the left of everything else)
     div_ [class_ "fullwidth"] $ do
       renderItemInfo cat item
-      case editable of
-        Normal -> do
-          renderItemTraits Normal cat item
-        Editable -> do
-          renderItemTraits Editable cat item
+      renderItemTraits cat item
+      -- TODO: add a separator here
       renderItemNotes cat item
 
 -- TODO: find some way to give all functions access to category and item (or
@@ -1171,8 +1157,8 @@ renderItemInfo cat item = do
 -- TODO: categories without items (e.g. “web dev”) that list links to other
 -- categories
 
-renderItemTraits :: Editable -> Category -> Item -> HtmlT IO ()
-renderItemTraits editable cat item = do
+renderItemTraits :: Category -> Item -> HtmlT IO ()
+renderItemTraits cat item = do
   let bg = hueToLightColor $ getItemHue cat item
   -- If the structure of HTML changes here, don't forget to update the
   -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
@@ -1183,69 +1169,70 @@ renderItemTraits editable cat item = do
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
         p_ "Pros:"
-        case editable of
-          Normal ->
-            ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.pros)
-          Editable -> do
-            listNode <- ul_ $ do
-              mapM_ (renderTrait Editable (item^.uid)) (item^.pros)
-              thisNode
-            textarea_ [
-              class_ "fullwidth",
-              placeholder_ "add pro",
-              onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
-                        clearInput ]
-              ""
+        listNode <- ul_ $ do
+          mapM_ (renderTrait (item^.uid)) (item^.pros)
+          thisNode
+        section "editable" [] $
+          textarea_ [
+            class_ "fullwidth",
+            placeholder_ "add pro",
+            onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
+                      clearInput ]
+            ""
       -- TODO: maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
         -- TODO: maybe add a line here?
-        case editable of
-          Normal ->
-            ul_ $ mapM_ (renderTrait Normal (item^.uid)) (item^.cons)
-          Editable -> do
-            listNode <- ul_ $ do
-              mapM_ (renderTrait Editable (item^.uid)) (item^.cons)
-              thisNode
-            textarea_ [
-              class_ "fullwidth",
-              placeholder_ "add con",
-              onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
-                        clearInput ]
-              ""
-    case editable of
-      Normal -> textButton "edit pros/cons" $
-        JS.setItemTraitsMode (this, item^.uid, Editable)
-      Editable -> textButton "edit off" $
-        JS.setItemTraitsMode (this, item^.uid, Normal)
+        listNode <- ul_ $ do
+          mapM_ (renderTrait (item^.uid)) (item^.cons)
+          thisNode
+        section "editable" [] $
+          textarea_ [
+            class_ "fullwidth",
+            placeholder_ "add con",
+            onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
+                      clearInput ]
+            ""
+    section "normal" [shown, noScriptShown] $ do
+      textButton "edit pros/cons" $
+        JS.switchSectionsEverywhere(this, "editable" :: Text)
+    section "editable" [] $ do
+      textButton "edit off" $
+        JS.switchSectionsEverywhere(this, "normal" :: Text)
 
-renderTrait :: Editable -> Uid -> Trait -> HtmlT IO ()
+renderTrait :: Uid -> Trait -> HtmlT IO ()
 -- TODO: probably use renderMarkdownBlock here as well
-renderTrait Normal _itemId trait = li_ (renderMarkdownLine (trait^.content))
-renderTrait Editable itemId trait = li_ $ do
-  this <- thisNode
-  renderMarkdownLine (trait^.content)
-  br_ []
-  imgButton "/arrow-thick-top.svg" [width_ "12px"] $
-    JS.moveTraitUp (itemId, trait^.uid, this)
-  imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
-    JS.moveTraitDown (itemId, trait^.uid, this)
-  -- TODO: these 3 icons in a row don't look nice
-  -- TODO: there should be some way to undelete things (e.g. a list of
-  -- deleted traits under each item)
-  imgButton "/x.svg" [width_ "12px"] $
-    JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
-  textButton "edit" $
-    JS.setTraitMode (this, itemId, trait^.uid, InEdit)
--- TODO: the text area should be bigger
-renderTrait InEdit itemId trait = li_ $ do
-  this <- thisNode
-  let submitHandler = JS.submitTrait (this, itemId, trait^.uid, inputValue) <>
-                      clearInput
-  textarea_ [onEnter submitHandler] $ toHtml (trait^.content)
-  br_ []
-  textButton "cancel" $
-    JS.setTraitMode (this, itemId, trait^.uid, Editable)
+renderTrait itemId trait = do
+  let thisId = "trait-" <> uidToText (trait^.uid)
+      this   = selectId thisId
+  li_ [id_ thisId] $ do
+
+    sectionSpan "normal" [shown, noScriptShown] $ do
+      renderMarkdownLine (trait^.content)
+
+    section "editable" [] $ do
+      renderMarkdownLine (trait^.content)
+      br_ []
+      imgButton "/arrow-thick-top.svg" [width_ "12px"] $
+        JS.moveTraitUp (itemId, trait^.uid, this)
+      imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
+        JS.moveTraitDown (itemId, trait^.uid, this)
+      -- TODO: these 3 icons in a row don't look nice
+      -- TODO: there should be some way to undelete things (e.g. a list of
+      -- deleted traits under each item)
+      imgButton "/x.svg" [width_ "12px"] $
+        JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
+      textButton "edit" $
+        JS.switchSection (this, "editing" :: Text)
+
+    section "editing" [] $ do
+      -- TODO: the text area should be bigger
+      let submitHandler =
+            JS.submitTrait (this, itemId, trait^.uid, inputValue)
+      textarea_ [onEnter submitHandler] $ toHtml (trait^.content)
+      br_ []
+      textButton "cancel" $
+        JS.switchSection (this, "editable" :: Text)
 
 renderItemNotes :: Category -> Item -> HtmlT IO ()
 renderItemNotes category item = do
@@ -1368,20 +1355,6 @@ thisNode = do
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
   return (selectParent (selectUid uid'))
-
-data Editable = Normal | Editable | InEdit
-
-instance PathPiece Editable where
-  fromPathPiece "normal"   = Just Normal
-  fromPathPiece "editable" = Just Editable
-  fromPathPiece "in-edit"  = Just InEdit
-  fromPathPiece _          = Nothing
-  toPathPiece Normal   = "normal"
-  toPathPiece Editable = "editable"
-  toPathPiece InEdit   = "in-edit"
-
-instance ToJS Editable where
-  toJS = JS . tshow . toPathPiece
 
 -- Wheh changing these, also look at 'JS.switchSection'.
 

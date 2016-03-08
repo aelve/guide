@@ -34,7 +34,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Utilities
   replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
-  switchSection,
+  switchSection, switchSectionsEverywhere,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
   -- Search
@@ -42,9 +42,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Add methods
   addLibrary, addCategory,
   addPro, addCon,
-  -- “Render this in a different way” methods
-  setItemTraitsMode,
-  setTraitMode,
   -- Set methods
   submitCategoryTitle, submitCategoryNotes,
   -- TODO: rename this to submitItemHeader or something?
@@ -172,6 +169,14 @@ switchSection =
     $(node).children(".section."+section).addClass("shown");
   |]
 
+switchSectionsEverywhere :: JSFunction a => a
+switchSectionsEverywhere =
+  makeJSFunction "switchSectionsEverywhere" ["node", "section"]
+  [text|
+    $(node).find(".section").removeClass("shown");
+    $(node).find(".section."+section).addClass("shown");
+  |]
+
 showHelp :: JSFunction a => a
 showHelp =
   makeJSFunction "showHelp" ["node", "version"]
@@ -269,7 +274,11 @@ addPro =
   makeJSFunction "addPro" ["node", "itemId", "s"]
   [text|
     $.post("/add/item/"+itemId+"/pro", {content: s})
-     .done(appendData(node));
+     .done(function (data) {
+        var jData = $(data);
+        jData.appendTo(node);
+        switchSection(jData, "editable");
+      });
   |]
 
 -- | Add a con to some item.
@@ -278,23 +287,11 @@ addCon =
   makeJSFunction "addCon" ["node", "itemId", "s"]
   [text|
     $.post("/add/item/"+itemId+"/con", {content: s})
-     .done(appendData(node));
-  |]
-
-setItemTraitsMode :: JSFunction a => a
-setItemTraitsMode =
-  makeJSFunction "setItemTraitsMode" ["node", "itemId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/traits", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
-setTraitMode :: JSFunction a => a
-setTraitMode =
-  makeJSFunction "setTraitMode" ["node", "itemId", "traitId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/trait/"+traitId, {mode: mode})
-     .done(replaceWithData(node));
+     .done(function (data) {
+        var jData = $(data);
+        jData.appendTo(node);
+        switchSection(jData, "editable");
+      });
   |]
 
 submitTrait :: JSFunction a => a
@@ -302,7 +299,13 @@ submitTrait =
   makeJSFunction "submitTrait" ["node", "itemId", "traitId", "s"]
   [text|
     $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
-     .done(replaceWithData(node));
+     .done(function (data) {
+        $(node).replaceWith(data);
+        switchSection(node, "editable");
+      });
+    // Switching has to be done here and not in 'Main.renderTrait'
+    // because $.post is asynchronous and will be done *after*
+    // switchSection has worked.
   |]
 
 submitItemInfo :: JSFunction a => a
@@ -324,7 +327,7 @@ submitItemInfo =
         $.get("/render/item/"+itemId+"/colors")
          .done(function (colors) {
             $(otherNodes).css("background-color", colors.light);
-            replaceWithData(infoNode)(data);
+            $(infoNode).replaceWith(data);
          });
      });
   |]
