@@ -16,9 +16,10 @@ build-type:          Simple
 extra-source-files:
   CHANGELOG.md
 data-files:
-  static/css.css
-  static/help.md
   static/*.svg
+  static/*.css
+  static/*.md
+  static/*.html
 cabal-version:       >=1.10
 
 source-repository head

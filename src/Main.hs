@@ -388,6 +388,8 @@ deleteTrait itemId traitId = do
   itemById itemId . pros %= deleteFirst ((== traitId) . view uid)
   itemById itemId . cons %= deleteFirst ((== traitId) . view uid)
 
+-- TODO: add a way to delete a category
+
 -- other methods
 
 moveItem
@@ -816,6 +818,7 @@ renderRoot globalState = do
   -- this file. (This isn't an actual file, so don't look for it in the
   -- static folder – it's generated and served in 'otherMethods'.)
   includeJS "/js.js"
+  renderTracking
   -- CSS that makes 'shown' and 'noScriptShown' work
   noscript_ $ style_ [text|
     .section:not(.noscript-shown) {display:none;}
@@ -855,7 +858,6 @@ renderRoot globalState = do
   -- “commonly used categories” or even a nested catalog
   renderCategoryList (globalState^.categories)
   -- TODO: perhaps use infinite scrolling/loading?
-  -- TODO: add Piwik/Google Analytics
   -- TODO: maybe add a button like “give me random category that is unfinished”
   div_ [id_ "footer"] $ do
     -- <div style="text-align:center;font-size:0.9em;padding:0.5em 8px">
@@ -868,12 +870,18 @@ renderRoot globalState = do
     a_ [href_ "/donate"] "donate"
     sup_ [style_ "font-size:50%"] "I don't have a job"
 
+renderTracking :: HtmlT IO ()
+renderTracking = do
+  tracking <- liftIO $ T.readFile "static/tracking.html"
+  toHtmlRaw tracking
+
 -- TODO: include jQuery locally so that it'd be possible to test the site
 -- without internet
 
 renderDonate :: HtmlT IO ()
 renderDonate = do
   includeCSS "/css.css"
+  renderTracking
   renderMarkdownBlock [text|
     Okay, the rules: if you donate *anything*, I'll spend some time working
     on the site this day (adding content, implementing new features, etc).
@@ -1119,6 +1127,9 @@ renderItemInfo cat item = do
           newGroupInputId <- randomUid
           -- When “new group” is selected in the list, we show a field for
           -- entering new group's name
+          --
+          -- TODO: when a new group is created, add it to all other lists in
+          -- forms in the category
           let selectHandler = [text|
                   if (this.value == "$newGroupValue") {
                     $("#$idText").show();
@@ -1230,6 +1241,28 @@ renderTrait itemId trait = do
       textButton "cancel" $
         JS.switchSection (this, "editable" :: Text)
 
+-- TODO: automatically provide links to modules in Markdown (and have a
+-- database of modules or something)
+
+-- TODO: write about the all-is-text extension
+-- TODO: add a button to make default editor font monospace
+-- TODO: write that arrows are for arranging stuff, not upvoting
+
+-- TODO: record IPs in the acid-state transaction log
+
+-- TODO: add Hayoo search, Hoogle search, and Hackage search shortcut boxes
+-- TODO: when searching, show links to package, main modules, etc before all
+-- categories
+
+-- TODO: attach TODOs (“fix grammar”, etc) to items and categories (or should
+-- people instead just write “TODO fix grammar” in description and then such
+-- things could be displayed in gray font and also there'd be an
+-- automatically updated list of TODOs somewhere?)
+
+-- TODO: make it possible to link to notes (and automatically expand when
+-- linked)
+
+-- TODO: add a template for item notes (“Imports”, etc)
 renderItemNotes :: Category -> Item -> HtmlT IO ()
 renderItemNotes category item = do
   let bg = hueToLightColor $ getItemHue category item
