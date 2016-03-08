@@ -1317,15 +1317,16 @@ textButton
   -> HtmlT IO ()
 textButton caption (JS handler) =
   span_ [class_ "text-button"] $
-    a_ [href_ "javascript:void(0)", onclick_ handler] (toHtml caption)
-
--- TODO: use # instead of javascript:void(0), the latter is slow in Firefox
--- for me
+    -- “#” is used instead of javascript:void(0) because the latter is slow
+    -- in Firefox (at least for me – tested with Firefox 43 on Arch Linux)
+    a_ [href_ "#", onclick_ (handler <> "return false;")]
+       (toHtml caption)
 
 -- So far all icons used here have been from <https://useiconic.com/open/>
 imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton src attrs (JS handler) =
-  a_ [href_ "javascript:void(0)", onclick_ handler] (img_ (src_ src : attrs))
+  a_ [href_ "#", onclick_ (handler <> "return false;")]
+     (img_ (src_ src : attrs))
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText

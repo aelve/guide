@@ -66,6 +66,7 @@ a:link    {color: #008ACE; text-decoration: none;}
 a:visited {color: #B40EB4; text-decoration: none;}
 a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
+.text-button > a:visited {color: #008ACE;}
 
 a.anchor {
   margin-right: 0.5em;
