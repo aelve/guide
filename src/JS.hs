@@ -43,7 +43,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addLibrary, addCategory,
   addPro, addCon,
   -- “Render this in a different way” methods
-  setItemTraitsMode, setItemNotesMode,
+  setItemTraitsMode,
   setTraitMode,
   -- Set methods
   submitCategoryTitle, submitCategoryNotes,
@@ -249,20 +249,18 @@ submitCategoryNotes =
      .done(replaceWithData(node));
   |]
 
-setItemNotesMode :: JSFunction a => a
-setItemNotesMode =
-  makeJSFunction "setItemNotesMode" ["node", "itemId", "mode"]
-  [text|
-    $.get("/render/item/"+itemId+"/notes", {mode: mode})
-     .done(replaceWithData(node));
-  |]
-
 submitItemNotes :: JSFunction a => a
 submitItemNotes =
   makeJSFunction "submitItemNotes" ["node", "itemId", "s"]
   [text|
     $.post("/set/item/"+itemId+"/notes", {content: s})
-     .done(replaceWithData(node));
+     .done(function (data) {
+        $(node).replaceWith(data);
+        switchSection(node, "expanded");
+      });
+    // Switching has to be done here and not in 'Main.renderItemNotes'
+    // because $.post is asynchronous and will be done *after*
+    // switchSection has worked.
   |]
 
 -- | Add a pro to some item.

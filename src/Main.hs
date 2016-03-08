@@ -659,9 +659,8 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    renderMode <- param' "mode"
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemNotes renderMode category item
+    lucid $ renderItemNotes category item
   -- All item traits
   Spock.get (itemVar <//> "traits") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -720,7 +719,7 @@ setMethods = Spock.subcomponent "set" $ do
     content' <- param' "content"
     item <- dbUpdate (SetItemNotes itemId content')
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemNotes Editable category item
+    lucid $ renderItemNotes category item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
@@ -849,11 +848,8 @@ renderRoot globalState = do
     renderMarkdownBlock [text|
       You have Javascript disabled! This site works fine without Javascript,
       but since all editing needs Javascript to work, you won't be able to edit
-      anything. Also, show/hide buttons need Javascript too, so you won't be
-      able to see the notes for libraries (which I should really fix by making
-      them shown by default and *then* hiding them with Javascript). Also also,
-      search doesn't work without Javascript either (another thing I should
-      really fix – sorry!).
+      anything. Also, search doesn't work without Javascript, but I'll fix
+      that soon.
       |]
   renderHelp
   onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
@@ -1075,7 +1071,7 @@ renderItem editable cat item =
           renderItemTraits Normal cat item
         Editable -> do
           renderItemTraits Editable cat item
-      renderItemNotes Normal cat item
+      renderItemNotes cat item
 
 -- TODO: find some way to give all functions access to category and item (or
 -- category, item and trait) without passing everything explicitly?
@@ -1087,7 +1083,8 @@ renderItemInfo cat item = do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
       this   = selectId thisId
-  div_ [id_ thisId, class_ "item-info", style_ ("background-color:" <> bg)] $ do
+  div_ [id_ thisId, class_ "item-info",
+        style_ ("background-color:" <> bg)] $ do
 
     sectionSpan "normal" [shown, noScriptShown] $ do
       -- TODO: move this style_ into css.css
@@ -1179,7 +1176,7 @@ renderItemTraits editable cat item = do
   let bg = hueToLightColor $ getItemHue cat item
   -- If the structure of HTML changes here, don't forget to update the
   -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body”.
+  -- having a div with a class “item-body” here.
   div_ [class_ "item-traits item-body",
         style_ ("background-color:" <> bg)] $ do
     this <- thisNode
@@ -1250,48 +1247,48 @@ renderTrait InEdit itemId trait = li_ $ do
   textButton "cancel" $
     JS.setTraitMode (this, itemId, trait^.uid, Editable)
 
-renderItemNotes :: Editable -> Category -> Item -> HtmlT IO ()
-renderItemNotes editable category item = do
+renderItemNotes :: Category -> Item -> HtmlT IO ()
+renderItemNotes category item = do
   let bg = hueToLightColor $ getItemHue category item
   -- If the structure of HTML changes here, don't forget to update the
   -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body”.
-  div_ [class_ "item-notes item-body",
+  -- having a div with a class “item-body” here.
+  let thisId = "item-notes-" <> uidToText (item^.uid)
+      this   = selectId thisId
+  div_ [id_ thisId, class_ "item-notes item-body",
         style_ ("background-color:" <> bg)] $ do
     -- TODO: this duplicates code from renderCategoryNotes, try to reduce
     -- duplication
-    this <- thisNode
-    case editable of
-      -- TODO: rename this to “Collapsed”
-      -- TODO: rename “data Editable” to “data RenderMode” and change
-      -- everything
-      Normal -> do
-        textButton "show notes/examples" $
-          JS.setItemNotesMode (this, item^.uid, Editable)
-      Editable -> do
-        textButton "edit notes" $
-          JS.setItemNotesMode (this, item^.uid, InEdit)
-        emptySpan "1em"
-        textButton "hide notes" $
-          JS.setItemNotesMode (this, item^.uid, Normal)
-        if T.null (item^.notes)
-          then p_ "(there are no notes or examples yet,\
+
+    section "collapsed" [shown] $ do
+      textButton "show notes/examples" $
+        JS.switchSection (this, "expanded" :: Text)
+
+    section "expanded" [noScriptShown] $ do
+      textButton "edit notes" $
+        JS.switchSection (this, "editing" :: Text)
+      emptySpan "1em"
+      textButton "hide notes" $
+        JS.switchSection (this, "collapsed" :: Text)
+      if T.null (item^.notes)
+        then p_ "(there are no notes or examples yet,\
                   \ press “edit notes” to add some)"
-          else renderMarkdownBlock (item^.notes)
-      InEdit -> do
-        textareaId <- randomUid
-        textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
-          toHtml (item^.notes)
-        button "Save" [] $ do
-          -- «$("#<textareaId>").val()» is a Javascript expression that
-          -- returns text contained in the textarea
-          let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
-          JS.submitItemNotes (this, item^.uid, textareaValue)
-        emptySpan "6px"
-        button "Cancel" [] $
-          JS.setItemNotesMode (this, item^.uid, Editable)
-        emptySpan "6px"
-        "Markdown"
+        else renderMarkdownBlock (item^.notes)
+
+    section "editing" [] $ do
+      textareaId <- randomUid
+      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+        toHtml (item^.notes)
+      button "Save" [] $
+        -- «$("#<textareaId>").val()» is a Javascript expression that
+        -- returns text contained in the textarea
+        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
+        in  JS.submitItemNotes (this, item^.uid, textareaValue)
+      emptySpan "6px"
+      button "Cancel" [] $
+        JS.switchSection (this, "expanded" :: Text)
+      emptySpan "6px"
+      "Markdown"
 
 -- Utils
 
