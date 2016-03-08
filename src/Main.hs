@@ -455,10 +455,6 @@ makeAcidic ''GlobalState [
 -- the rest of things
 ------------------------------------------------------------------------------
 
-emptyState :: GlobalState
-emptyState = GlobalState {
-  _categories = [] }
-
 -- TODO: put this into a separate module
 
 -- TODO: add a command like “download state from the official source” (so
