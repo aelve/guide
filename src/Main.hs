@@ -1236,7 +1236,8 @@ renderTrait itemId trait = do
       -- TODO: the text area should be bigger
       let submitHandler =
             JS.submitTrait (this, itemId, trait^.uid, inputValue)
-      textarea_ [onEnter submitHandler] $ toHtml (trait^.content)
+      textarea_ [class_ "fullwidth", onEnter submitHandler] $
+        toHtml (trait^.content)
       br_ []
       textButton "cancel" $
         JS.switchSection (this, "editable" :: Text)
