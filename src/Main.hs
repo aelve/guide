@@ -1307,6 +1307,11 @@ renderItemNotes category item = do
       emptySpan "6px"
       "Markdown"
 
+-- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
+-- selected becomes editable)
+
+-- TODO: add “edit notes” and “hide notes” below as well
+
 -- Utils
 
 onPageLoad :: JS -> HtmlT IO ()
