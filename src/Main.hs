@@ -1105,33 +1105,14 @@ getItemHue category item = case item^.group_ of
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: Category -> Item -> HtmlT IO ()
 renderItem cat item =
-  div_ [class_ "item"] $ do
-    itemNode <- thisNode
-    -- TODO: the controls and item-info should be aligned (currently the
-    -- controls are smaller)
-    -- TODO: the controls should be “outside” of the main body width
-    -- TODO: styles for all this should be in css.css
-    div_ [class_ "item-controls"] $ do
-      imgButton "/arrow-thick-top.svg" [width_ "12px",
-                                        style_ "margin-bottom:5px"] $
-        -- TODO: the item should blink or somehow else show where it has been
-        -- moved
-        JS.moveItemUp (item^.uid, itemNode)
-      imgButton "/arrow-thick-bottom.svg" [width_ "12px",
-                                           style_ "margin-bottom:5px"] $
-        JS.moveItemDown (item^.uid, itemNode)
-      imgButton "/x.svg" [width_ "12px"] $
-        JS.deleteItem (item^.uid, itemNode, item^.name)
-    -- This div is needed for “display:flex” on the outer div to work (which
-    -- makes item-controls be placed to the left of everything else)
-    div_ [class_ "fullwidth"] $ do
-      renderItemInfo cat item
-      -- TODO: replace “edit description” with a big half-transparent pencil
-      -- to the left of it (and same with “edit details”)
-      renderItemDescription cat item
-      renderItemTraits cat item
-      -- TODO: add a separator here?
-      renderItemNotes cat item
+  div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
+    renderItemInfo cat item
+    -- TODO: replace “edit description” with a big half-transparent pencil
+    -- to the left of it
+    renderItemDescription cat item
+    renderItemTraits cat item
+    -- TODO: add a separator here?
+    renderItemNotes cat item
 
 -- TODO: find some way to give all functions access to category and item (or
 -- category, item and trait) without passing everything explicitly?
@@ -1146,7 +1127,7 @@ renderItemInfo cat item = do
   div_ [id_ thisId, class_ "item-info",
         style_ ("background-color:" <> bg)] $ do
 
-    sectionSpan "normal" [shown, noScriptShown] $ do
+    section "normal" [shown, noScriptShown] $ do
       -- TODO: move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
         -- If the library is on Hackage, the title links to its Hackage
@@ -1163,11 +1144,22 @@ renderItemInfo cat item = do
           Nothing -> return ()
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
-      emptySpan "2em"
-      textButton "edit details" $
-        JS.switchSection (this, "editing" :: Text)
-      -- TODO: link to Stackage too
-      -- TODO: should check for Stackage automatically
+      span_ [class_ "controls"] $ do
+        let itemNode = selectId ("item-" <> uidToText (item^.uid))
+        imgButton "/arrow-thick-top.svg" [] $
+          -- TODO: the item should blink or somehow else show where it has been
+          -- moved
+          JS.moveItemUp (item^.uid, itemNode)
+        imgButton "/arrow-thick-bottom.svg" [] $
+          JS.moveItemDown (item^.uid, itemNode)
+        emptySpan "1.5em"
+        imgButton "/pencil.svg" [] $
+          JS.switchSection (this, "editing" :: Text)
+        emptySpan "0.5em"
+        imgButton "/x.svg" [] $
+          JS.deleteItem (item^.uid, itemNode, item^.name)
+        -- TODO: link to Stackage too
+        -- TODO: should check for Stackage automatically
 
     section "editing" [] $ do
       -- otherNodes are all nodes that have to be recolored when this node is

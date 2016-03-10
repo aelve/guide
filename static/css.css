@@ -26,11 +26,17 @@ body {
   margin-top: 3em; }
 
 .item {
-  display: flex;
   margin-top: 20px; }
 
 .item-info {
   padding: 10px 15px; }
+
+.item-info .controls {
+  float: right; }
+
+.item-info .controls img {
+  opacity: 0.4;
+  height: 23px; }
 
 .item-traits, .item-notes, .item-description {
   padding: 10px 15px 20px 15px; }
