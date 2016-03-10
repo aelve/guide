@@ -11,6 +11,7 @@ GeneralizedNewtypeDeriving,
 TypeFamilies,
 DataKinds,
 MultiWayIf,
+RecordWildCards,
 NoImplicitPrelude
   #-}
 
@@ -86,19 +87,46 @@ makeFields ''ItemKind
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 data Item = Item {
-  _itemUid    :: Uid,
-  _itemName   :: Text,
-  _itemGroup_ :: Maybe Text,
-  _itemPros   :: [Trait],
-  _itemCons   :: [Trait],
-  _itemNotes  :: Text,
-  _itemLink   :: Maybe Url,
-  _itemKind   :: ItemKind }
+  _itemUid         :: Uid,
+  _itemName        :: Text,
+  _itemGroup_      :: Maybe Text,
+  _itemDescription :: Text,
+  _itemPros        :: [Trait],
+  _itemCons        :: [Trait],
+  _itemNotes       :: Text,
+  _itemLink        :: Maybe Url,
+  _itemKind        :: ItemKind }
 
 -- TODO: make a 'Markdown' type alias?
 
-deriveSafeCopy 0 'base ''Item
+deriveSafeCopy 1 'extension ''Item
 makeFields ''Item
+
+-- Old version, needed for safe migration, can be deleted
+data Item_v0 = Item_v0 {
+  _itemUid_v0    :: Uid,
+  _itemName_v0   :: Text,
+  _itemGroup__v0 :: Maybe Text,
+  _itemPros_v0   :: [Trait],
+  _itemCons_v0   :: [Trait],
+  _itemNotes_v0  :: Text,
+  _itemLink_v0   :: Maybe Url,
+  _itemKind_v0   :: ItemKind }
+
+deriveSafeCopy 0 'base ''Item_v0
+
+instance Migrate Item where
+  type MigrateFrom Item = Item_v0
+  migrate Item_v0{..} = Item {
+    _itemUid = _itemUid_v0,
+    _itemName = _itemName_v0,
+    _itemGroup_ = _itemGroup__v0,
+    _itemDescription = "",
+    _itemPros = _itemPros_v0,
+    _itemCons = _itemCons_v0,
+    _itemNotes = _itemNotes_v0,
+    _itemLink = _itemLink_v0,
+    _itemKind = _itemKind_v0 }
 
 traitById :: Uid -> Lens' Item Trait
 traitById uid' = singular $
@@ -244,7 +272,7 @@ addCategory catId title' = do
   let newCategory = Category {
         _categoryUid = catId,
         _categoryTitle = title',
-        _categoryNotes = "(write some notes here, describe the category, etc)",
+        _categoryNotes = "",
         _categoryGroups = mempty,
         _categoryItems = [] }
   categories %= (newCategory :)
@@ -258,14 +286,15 @@ addItem
   -> Acid.Update GlobalState Item
 addItem catId itemId name' kind' = do
   let newItem = Item {
-        _itemUid    = itemId,
-        _itemName   = name',
-        _itemGroup_ = Nothing,
-        _itemPros   = [],
-        _itemCons   = [],
-        _itemNotes  = "",
-        _itemLink   = Nothing,
-        _itemKind   = kind' }
+        _itemUid         = itemId,
+        _itemName        = name',
+        _itemGroup_      = Nothing,
+        _itemDescription = "",
+        _itemPros        = [],
+        _itemCons        = [],
+        _itemNotes       = "",
+        _itemLink        = Nothing,
+        _itemKind        = kind' }
   categoryById catId . items %= (++ [newItem])
   return newItem
 
@@ -350,6 +379,11 @@ setItemKind itemId kind' = do
 setItemOnHackage :: Uid -> Bool -> Acid.Update GlobalState Item
 setItemOnHackage itemId onHackage' = do
   itemById itemId . kind . onHackage .= onHackage'
+  use (itemById itemId)
+
+setItemDescription :: Uid -> Text -> Acid.Update GlobalState Item
+setItemDescription itemId description' = do
+  itemById itemId . description .= description'
   use (itemById itemId)
 
 setItemNotes :: Uid -> Text -> Acid.Update GlobalState Item
@@ -444,7 +478,7 @@ makeAcidic ''GlobalState [
   -- set
   'setCategoryTitle, 'setCategoryNotes,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, 'setItemOnHackage,
-    'setItemNotes,
+    'setItemDescription, 'setItemNotes,
   'setTraitContent,
   -- delete
   'deleteItem,
@@ -468,6 +502,7 @@ sampleState = do
         _itemUid = "12",
         _itemName = "lens",
         _itemGroup_ = Nothing,
+        _itemDescription = "The Swiss army knife of lens libraries",
         _itemPros = [
            Trait "121" [text|
              The most widely used lenses library, by a huge margin.|],
@@ -514,6 +549,7 @@ sampleState = do
         _itemUid = "13",
         _itemName = "microlens",
         _itemGroup_ = Nothing,
+        _itemDescription = "A very small lens library",
         _itemPros = [
            Trait "131" $ T.unwords $ T.lines [text|
              Very small (the base package has no dependencies at all,
@@ -541,6 +577,7 @@ sampleState = do
         _itemUid = "21",
         _itemName = "parsec",
         _itemGroup_ = Just "parsec-like",
+        _itemDescription = "this is Parsec",
         _itemPros = [Trait "211" "the most widely used package",
                      Trait "213" "has lots of tutorials, book coverage, etc"],
         _itemCons = [Trait "212" "development has stagnated"],
@@ -551,6 +588,7 @@ sampleState = do
         _itemUid = "22",
         _itemName = "megaparsec",
         _itemGroup_ = Nothing,
+        _itemDescription = "this is better than Parsec",
         _itemPros = [Trait "221" "the API is largely similar to Parsec, \
                                  \so existing tutorials/code samples \
                                  \could be reused and migration is easy"],
@@ -562,6 +600,7 @@ sampleState = do
         _itemUid = "23",
         _itemName = "attoparsec",
         _itemGroup_ = Nothing,
+        _itemDescription = "this is faster than Parsec",
         _itemPros = [Trait "231" "very fast, good for parsing binary formats"],
         _itemCons = [Trait "232" "can't report positions of parsing errors",
                      Trait "234" "doesn't provide a monad transformer"],
@@ -580,6 +619,7 @@ sampleState = do
         _itemUid = undefined,
         _itemName = undefined,
         _itemGroup_ = Nothing,
+        _itemDescription = "",
         _itemPros = [],
         _itemCons = [],
         _itemNotes = "",
@@ -654,6 +694,11 @@ renderMethods = Spock.subcomponent "render" $ do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemInfo category item
+  -- Item description
+  Spock.get (itemVar <//> "description") $ \itemId -> do
+    item <- dbQuery (GetItem itemId)
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemDescription category item
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -701,6 +746,12 @@ setMethods = Spock.subcomponent "set" $ do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemInfo category item
+  -- Item description
+  Spock.post (itemVar <//> "description") $ \itemId -> do
+    content' <- param' "content"
+    item <- dbUpdate (SetItemDescription itemId content')
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemDescription category item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
@@ -881,8 +932,6 @@ renderRoot globalState = do
 
 -- TODO: and maybe steal the box style from SO
 
--- TODO: add item descriptions
-
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
@@ -1008,7 +1057,9 @@ renderCategoryNotes category = do
   div_ [id_ thisId] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      renderMarkdownBlock (category^.notes)
+      if T.null (category^.notes)
+        then p_ "write something here!"
+        else renderMarkdownBlock (category^.notes)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
@@ -1075,8 +1126,11 @@ renderItem cat item =
     -- makes item-controls be placed to the left of everything else)
     div_ [class_ "fullwidth"] $ do
       renderItemInfo cat item
+      -- TODO: replace “edit description” with a big half-transparent pencil
+      -- to the left of it (and same with “edit details”)
+      renderItemDescription cat item
       renderItemTraits cat item
-      -- TODO: add a separator here
+      -- TODO: add a separator here?
       renderItemNotes cat item
 
 -- TODO: find some way to give all functions access to category and item (or
@@ -1179,6 +1233,41 @@ renderItemInfo cat item = do
 
 -- TODO: categories without items (e.g. “web dev”) that list links to other
 -- categories
+
+renderItemDescription :: Category -> Item -> HtmlT IO ()
+renderItemDescription category item = do
+  let bg = hueToLightColor $ getItemHue category item
+  -- If the structure of HTML changes here, don't forget to update the
+  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
+  -- having a div with a class “item-body” here.
+  let thisId = "item-description-" <> uidToText (item^.uid)
+      this   = selectId thisId
+  div_ [id_ thisId, class_ "item-description item-body",
+        style_ ("background-color:" <> bg)] $ do
+
+    section "normal" [shown, noScriptShown] $ do
+      if T.null (item^.description)
+        then p_ "write something here!"
+        else renderMarkdownBlock (item^.description)
+      textButton "edit description" $
+        JS.switchSection (this, "editing" :: Text)
+
+    section "editing" [] $ do
+      textareaId <- randomUid
+      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+        toHtml (item^.description)
+      button "Save" [] $
+        -- «$("#<textareaId>").val()» is a Javascript expression that
+        -- returns text contained in the textarea
+        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
+        in  JS.submitItemDescription (this, item^.uid, textareaValue)
+      emptySpan "6px"
+      -- TODO: it'd probably be good (or not?) if “Cancel” also restored
+      -- the original text in the textarea (in case it was edited)
+      button "Cancel" [] $
+        JS.switchSection (this, "normal" :: Text)
+      emptySpan "6px"
+      "Markdown"
 
 renderItemTraits :: Category -> Item -> HtmlT IO ()
 renderItemTraits cat item = do
@@ -1306,8 +1395,7 @@ renderItemNotes category item = do
               JS.switchSection (this, "collapsed" :: Text)
       buttons
       if T.null (item^.notes)
-        then p_ "(there are no notes or examples yet,\
-                \ press “edit notes” to add some)"
+        then p_ "add something!"
         else renderMarkdownBlock (item^.notes)
       buttons
 

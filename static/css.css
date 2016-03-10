@@ -32,7 +32,7 @@ body {
 .item-info {
   padding: 10px 15px; }
 
-.item-traits, .item-notes {
+.item-traits, .item-notes, .item-description {
   padding: 10px 15px 20px 15px; }
 
 .traits-groups-container {

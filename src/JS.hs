@@ -43,7 +43,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addLibrary, addCategory,
   addPro, addCon,
   -- Set methods
-  submitCategoryTitle, submitCategoryNotes,
+  submitCategoryTitle, submitItemDescription, submitCategoryNotes,
   -- TODO: rename this to submitItemHeader or something?
   submitItemInfo, submitItemNotes,
   submitTrait,
@@ -251,6 +251,14 @@ submitCategoryNotes =
   makeJSFunction "submitCategoryNotes" ["node", "catId", "s"]
   [text|
     $.post("/set/category/"+catId+"/notes", {content: s})
+     .done(replaceWithData(node));
+  |]
+
+submitItemDescription :: JSFunction a => a
+submitItemDescription =
+  makeJSFunction "submitItemDescription" ["node", "itemId", "s"]
+  [text|
+    $.post("/set/item/"+itemId+"/description", {content: s})
      .done(replaceWithData(node));
   |]
 
