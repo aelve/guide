@@ -831,7 +831,7 @@ renderRoot globalState = do
     |]
   -- Okay, here goes the actual page
   -- TODO: this header looks bad when the page is narrow
-  h1_ "Collaborative notes on Haskell libraries and tools"
+  h1_ "A guide to Haskell libraries and tools"
   noscript_ $ div_ [id_ "noscript-message"] $
     renderMarkdownBlock [text|
       You have Javascript disabled! This site works fine without Javascript,
@@ -1425,6 +1425,10 @@ sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
 -- TODO: why not compare Haskellers too? e.g. for April Fools' we could ask
 -- people to list their pros and cons
+
+-- TODO: add something to edit a particular paragraph of the notes
+
+-- TODO: serve js.js with MIME “text/javascript” or something
 
 newGroupValue :: Text
 newGroupValue = "-new-group-"
