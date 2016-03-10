@@ -870,6 +870,22 @@ renderRoot globalState = do
     a_ [href_ "/donate"] "donate"
     sup_ [style_ "font-size:50%"] "I don't have a job"
 
+-- TODO: code highlighting
+
+-- TODO: the lower “edit notes” should scroll to the note edit box if it's
+-- not on screen (or should it really if I fix the edit box to be fully
+-- expanded when it opens?)
+
+-- TODO: the edit box should have some space to the left and right (inside,
+-- not outside)
+
+-- TODO: and maybe steal the box style from SO
+
+-- TODO: add item descriptions
+
+-- TODO: when submitting a text field, gray it out (but leave it selectable)
+-- until it's been submitted
+
 renderTracking :: HtmlT IO ()
 renderTracking = do
   tracking <- liftIO $ T.readFile "static/tracking.html"
@@ -1313,6 +1329,8 @@ renderItemNotes category item = do
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
 
+-- TODO: a function to find all links to Hackage that have version in them
+
 -- Utils
 
 onPageLoad :: JS -> HtmlT IO ()
@@ -1405,7 +1423,8 @@ section t attrs = div_ (class_ (t <> " section ") : attrs)
 sectionSpan :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
--- TODO: why not compare Haskellers too?
+-- TODO: why not compare Haskellers too? e.g. for April Fools' we could ask
+-- people to list their pros and cons
 
 newGroupValue :: Text
 newGroupValue = "-new-group-"
