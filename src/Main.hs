@@ -1282,15 +1282,18 @@ renderItemNotes category item = do
         JS.switchSection (this, "expanded" :: Text)
 
     section "expanded" [noScriptShown] $ do
-      textButton "edit notes" $
-        JS.switchSection (this, "editing" :: Text)
-      emptySpan "1em"
-      textButton "hide notes" $
-        JS.switchSection (this, "collapsed" :: Text)
+      let buttons = do
+            textButton "edit notes" $
+              JS.switchSection (this, "editing" :: Text)
+            emptySpan "1em"
+            textButton "hide notes" $
+              JS.switchSection (this, "collapsed" :: Text)
+      buttons
       if T.null (item^.notes)
         then p_ "(there are no notes or examples yet,\
-                  \ press “edit notes” to add some)"
+                \ press “edit notes” to add some)"
         else renderMarkdownBlock (item^.notes)
+      buttons
 
     section "editing" [] $ do
       textareaId <- randomUid
@@ -1309,8 +1312,6 @@ renderItemNotes category item = do
 
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
-
--- TODO: add “edit notes” and “hide notes” below as well
 
 -- Utils
 
