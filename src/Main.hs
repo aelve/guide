@@ -767,14 +767,14 @@ renderTrait itemId trait = do
     section "editable" [] $ do
       renderMarkdownLine (trait^.content)
       br_ []
-      imgButton "/arrow-thick-top.svg" [width_ "12px"] $
+      imgButton "/arrow-thick-top.svg" [width_ "12"] $
         JS.moveTraitUp (itemId, trait^.uid, this)
-      imgButton "/arrow-thick-bottom.svg" [width_ "12px"] $
+      imgButton "/arrow-thick-bottom.svg" [width_ "12"] $
         JS.moveTraitDown (itemId, trait^.uid, this)
       -- TODO: these 3 icons in a row don't look nice
       -- TODO: there should be some way to undelete things (e.g. a list of
       -- deleted traits under each item)
-      imgButton "/x.svg" [width_ "12px"] $
+      imgButton "/x.svg" [width_ "12"] $
         JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
