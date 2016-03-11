@@ -94,10 +94,12 @@ GIT_COMMITTER_NAME='auto' GIT_COMMITTER_EMAIL='' git commit --author="auto <>" -
 git push
 ~~~
 
+    $ chmod +x upload.sh
+
 Finally, make a cron job that would try to upload new data every 10m (tho the actual checkpoints are only created once per hour):
 
     $ crontab -e
 
 ~~~
-*/10 * * * * /root/guide/upload.sh
+*/10 * * * * /bin/bash /root/guide/upload.sh
 ~~~
