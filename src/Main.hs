@@ -298,64 +298,67 @@ instead of simple
 -}
 
 renderRoot :: GlobalState -> HtmlT IO ()
-renderRoot globalState = do
-  let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
-  includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
-  -- See Note [autosize]
-  includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
-  onPageLoad (JS "autosize($('textarea'));")
-  includeCSS "/css.css"
-  -- Include definitions of all Javascript functions that we have defined in
-  -- this file. (This isn't an actual file, so don't look for it in the
-  -- static folder – it's generated and served in 'otherMethods'.)
-  includeJS "/js.js"
-  renderTracking
-  -- CSS that makes 'shown' and 'noScriptShown' work
-  noscript_ $ style_ [text|
-    .section:not(.noscript-shown) {display:none;}
-    |]
-  script_ [text|
-    var sheet = document.createElement('style');
-    sheet.innerHTML = '.section:not(.shown) {display:none;}';
-    // “head” instead of “body” because body isn't loaded yet
-    document.head.appendChild(sheet);
-    |]
-  -- Okay, here goes the actual page
-  -- TODO: this header looks bad when the page is narrow
-  h1_ "A guide to Haskell libraries and tools"
-  noscript_ $ div_ [id_ "noscript-message"] $
-    renderMarkdownBlock [text|
-      You have Javascript disabled! This site works fine without Javascript,
-      but since all editing needs Javascript to work, you won't be able to edit
-      anything. Also, search doesn't work without Javascript, but I'll fix
-      that soon.
+renderRoot globalState = html_ $ do
+  head_ $ do
+    let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
+    includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
+    -- See Note [autosize]
+    includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
+    onPageLoad (JS "autosize($('textarea'));")
+    includeCSS "/css.css"
+    -- Include definitions of all Javascript functions that we have defined
+    -- in this file. (This isn't an actual file, so don't look for it in the
+    -- static folder – it's generated and served in 'otherMethods'.)
+    includeJS "/js.js"
+    renderTracking
+    -- CSS that makes 'shown' and 'noScriptShown' work
+    noscript_ $ style_ [text|
+      .section:not(.noscript-shown) {display:none;}
       |]
-  renderHelp
-  onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
-  -- TODO: use ordinary form-post search instead of Javascript search (for
-  -- people with NoScript)
-  textInput [
-    id_ "search",
-    placeholder_ "search",
-    onEnter $ JS.search (selectId "categories", inputValue) ]
-  textInput [
-    placeholder_ "add a category",
-    onEnter $ JS.addCategory (selectId "categories", inputValue) <>
-              clearInput ]
-  -- TODO: sort categories by popularity, somehow? or provide a list of
-  -- “commonly used categories” or even a nested catalog
-  renderCategoryList (globalState^.categories)
-  -- TODO: perhaps use infinite scrolling/loading?
-  -- TODO: maybe add a button like “give me random category that is unfinished”
-  div_ [id_ "footer"] $ do
-    "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
-    emptySpan "2em"
-    a_ [href_ "https://github.com/aelve/guide"] "source"
-    emptySpan "2em"
-    a_ [href_ "https://github.com/aelve/guide/issues"] "report an issue"
-    emptySpan "2em"
-    a_ [href_ "/donate"] "donate"
-    sup_ [style_ "font-size:50%"] "I don't have a job"
+    script_ [text|
+      var sheet = document.createElement('style');
+      sheet.innerHTML = '.section:not(.shown) {display:none;}';
+      // “head” instead of “body” because body isn't loaded yet
+      document.head.appendChild(sheet);
+      |]
+
+  body_ $ do
+    -- TODO: this header looks bad when the page is narrow
+    h1_ "A guide to Haskell libraries and tools"
+    noscript_ $ div_ [id_ "noscript-message"] $
+      renderMarkdownBlock [text|
+        You have Javascript disabled! This site works fine without
+        Javascript, but since all editing needs Javascript to work,
+        you won't be able to edit anything. Also, search doesn't work
+        without Javascript, but I'll fix that soon.
+        |]
+    renderHelp
+    onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
+    -- TODO: use ordinary form-post search instead of Javascript search (for
+    -- people with NoScript)
+    textInput [
+      id_ "search",
+      placeholder_ "search",
+      onEnter $ JS.search (selectId "categories", inputValue) ]
+    textInput [
+      placeholder_ "add a category",
+      onEnter $ JS.addCategory (selectId "categories", inputValue) <>
+                clearInput ]
+    -- TODO: sort categories by popularity, somehow? or provide a list of
+    -- “commonly used categories” or even a nested catalog
+    renderCategoryList (globalState^.categories)
+    -- TODO: perhaps use infinite scrolling/loading?
+    -- TODO: maybe add a button like “give me random category that is
+    -- unfinished”
+    div_ [id_ "footer"] $ do
+      "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
+      emptySpan "2em"
+      a_ [href_ "https://github.com/aelve/guide"] "source"
+      emptySpan "2em"
+      a_ [href_ "https://github.com/aelve/guide/issues"] "report an issue"
+      emptySpan "2em"
+      a_ [href_ "/donate"] "donate"
+      sup_ [style_ "font-size:50%"] "I don't have a job"
 
 -- TODO: code highlighting
 
@@ -367,6 +370,7 @@ renderRoot globalState = do
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
+-- TODO: disable tracking on localhost! (and edit INSTALL.md)
 renderTracking :: HtmlT IO ()
 renderTracking = do
   tracking <- liftIO $ T.readFile "static/tracking.html"
@@ -376,43 +380,51 @@ renderTracking = do
 -- without internet
 
 renderDonate :: HtmlT IO ()
-renderDonate = do
-  includeCSS "/css.css"
-  renderTracking
-  renderMarkdownBlock [text|
-    Okay, the rules: if you donate *anything*, I'll spend some time working
-    on the site this day (adding content, implementing new features, etc).
+renderDonate = html_ $ do
+  head_ $ do
+    includeCSS "/css.css"
+    renderTracking
 
-    (Of course, I'm planning to be working on the site anyway, donations
-    or not! However, I jump from project to project way too often (and rarely
-    manage to finish anything), so donating money is a good way to make sure
-    that I'd feel obligated to keep working on this one. If I find out that
-    it doesn't work as a motivation, I'll stop accepting donations.)
+  -- TODO: move this into its own file in static/?
+  body_ $ do
+    renderMarkdownBlock [text|
+      Okay, the rules: if you donate *anything*, I'll spend some time working
+      on the site this day (adding content, implementing new features, etc).
 
-    Just in case, 1000 rub. is 14$ (or 12.5€), and you can choose any amount
-    below 15000 rub. (I'd put a Paypal button, but Paypal doesn't allow
-    receiving money in Belarus.)
-    |]
-  style_ "#iframe-hold {background:url(loading.svg) center center no-repeat;}"
-  div_ [id_ "iframe-hold"] $
-    iframe_ [
-      makeAttribute "frameborder" "0",
-      makeAttribute "allowtransparency" "true",
-      makeAttribute "scrolling" "no",
-      width_ "450",
-      height_ "197",
-      style_ "display:block;margin:auto;",
-      src_ "https://money.yandex.ru/embed/shop.xml\
-           \?account=410011616040682\
-           \&quickpay=shop\
-           \&payment-type-choice=on\
-           \&mobile-payment-type-choice=on\
-           \&writer=seller\
-           \&targets=Haskell+guide\
-           \&targets-hint=\
-           \&default-sum=1000\
-           \&button-text=04\
-           \&successURL=" ] ""
+      (Of course, I'm planning to be working on the site anyway, donations
+      or not! However, I jump from project to project way too often (and
+      rarely manage to finish anything), so donating money is a good way to
+      make sure that I'd feel obligated to keep working on this one. If I
+      find out that it doesn't work as a motivation, I'll stop accepting
+      donations.)
+
+      Just in case, 1000 rub. is 14$ (or 12.5€), and you can choose any
+      amount below 15000 rub. (I'd put a Paypal button, but Paypal doesn't
+      allow receiving money in Belarus.)
+      |]
+    style_ [text|
+      #iframe-hold {
+        background: url(loading.svg) center center no-repeat; }
+      |]
+    div_ [id_ "iframe-hold"] $
+      iframe_ [
+        makeAttribute "frameborder" "0",
+        makeAttribute "allowtransparency" "true",
+        makeAttribute "scrolling" "no",
+        width_ "450",
+        height_ "197",
+        style_ "display:block;margin:auto;",
+        src_ "https://money.yandex.ru/embed/shop.xml\
+             \?account=410011616040682\
+             \&quickpay=shop\
+             \&payment-type-choice=on\
+             \&mobile-payment-type-choice=on\
+             \&writer=seller\
+             \&targets=Haskell+guide\
+             \&targets-hint=\
+             \&default-sum=1000\
+             \&button-text=04\
+             \&successURL=" ] ""
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
