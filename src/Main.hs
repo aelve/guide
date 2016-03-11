@@ -633,9 +633,9 @@ renderItemInfo cat item = do
           input_ [type_ "text", name_ "link",
                   value_ (fromMaybe "" (item^.link))]
         br_ []
+        newGroupInputId <- randomUid
         label_ $ do
           "Group" >> br_ []
-          newGroupInputId <- randomUid
           -- When “new group” is selected in the list, we show a field for
           -- entering new group's name
           --
@@ -662,8 +662,8 @@ renderItemInfo cat item = do
                 then option_ [selected_ "selected", value_ txt] (toHtml txt)
                 else option_ [value_ txt] (toHtml txt)
             option_ [value_ newGroupValue] "New group..."
-          input_ [uid_ newGroupInputId, type_ "text",
-                  name_ "custom-group", hidden_ "hidden"]
+        input_ [uid_ newGroupInputId, type_ "text",
+                name_ "custom-group", hidden_ "hidden"]
         br_ []
         input_ [type_ "submit", value_ "Save"]
         button "Cancel" [] $
