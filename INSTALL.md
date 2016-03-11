@@ -64,3 +64,40 @@ exec dist/build/guide/guide
 And start the daemon:
 
     $ service guide start
+
+## Database
+
+If the `state/` directory doesn't exist, it will be created. However, you can get the current state of [guide.aelve.com](http://guide.aelve.com):
+
+    $ git clone https://github.com/aelve/guide-database
+    $ mv guide-database state
+
+You can set automatic backups to your own repository, too.
+
+Create `.gitignore` in the `state/` folder:
+
+~~~
+events*
+*.lock
+~~~
+
+Create a repository locally and remotely. If you're using Github, you can avoid having to enter passwords by generate an access token and using it as username when adding a remote:
+
+    $ git remote add origin https://<token>@github.com/aelve/guide-database.git
+
+Next, create `upload.sh`:
+
+~~~
+cd /root/guide/state
+git add .
+GIT_COMMITTER_NAME='auto' GIT_COMMITTER_EMAIL='' git commit --author="auto <>" -m "`date`"
+git push
+~~~
+
+Finally, make a cron job that would try to upload new data every 10m (tho the actual checkpoints are only created once per hour):
+
+    $ crontab -e
+
+~~~
+*/10 * * * * /root/guide/upload.sh
+~~~

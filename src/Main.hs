@@ -255,6 +255,10 @@ main :: IO ()
 main = do
   bracket (openLocalStateFrom "state/" sampleState)
           (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
+    -- Create a checkpoint every hour
+    forkOS $ do
+      createCheckpoint db
+      threadDelay (1000000 * 3600)
     let config = defaultSpockCfg () PCNoDatabase db
     runSpock 8080 $ spock config $ do
       middleware (staticPolicy (addBase "static"))
@@ -664,6 +668,8 @@ renderItemInfo cat item = do
         input_ [type_ "submit", value_ "Save"]
         button "Cancel" [] $
           JS.switchSection (this, "normal" :: Text)
+
+-- TODO: use triangle icons instead of arrows [very-easy]
 
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
