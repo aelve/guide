@@ -365,11 +365,6 @@ renderRoot globalState = doctypehtml_ $ do
 
 -- TODO: code highlighting
 
--- TODO: the edit box should have some space to the left and right (inside,
--- not outside)
-
--- TODO: and maybe steal the box style from SO
-
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
@@ -513,7 +508,7 @@ renderCategoryNotes category = do
 
     section "editing" [] $ do
       textareaId <- randomUid
-      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
         toHtml (category^.notes)
       button "Save" [] $
         -- «$("#<textareaId>").val()» is a Javascript expression that
@@ -694,7 +689,7 @@ renderItemDescription category item = do
 
     section "editing" [] $ do
       textareaId <- randomUid
-      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
         toHtml (item^.description)
       button "Save" [] $
         -- «$("#<textareaId>").val()» is a Javascript expression that
@@ -842,7 +837,7 @@ renderItemNotes category item = do
 
     section "editing" [] $ do
       textareaId <- randomUid
-      textarea_ [uid_ textareaId, rows_ "10", class_ "fullwidth"] $
+      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
         toHtml (item^.notes)
       button "Save" [] $
         -- «$("#<textareaId>").val()» is a Javascript expression that

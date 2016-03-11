@@ -96,6 +96,18 @@ pre code {
 form {
   margin: 0; }
 
+textarea {
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  padding: 5px 7px; }
+
+textarea:focus {
+  outline: 0px none;
+  border: 1px solid #07C; }
+
+textarea.big {
+  padding: 10px; }
+
 .fullwidth {
   width: 100%; }
 
