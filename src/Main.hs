@@ -298,7 +298,7 @@ instead of simple
 -}
 
 renderRoot :: GlobalState -> HtmlT IO ()
-renderRoot globalState = html_ $ do
+renderRoot globalState = doctypehtml_ $ do
   head_ $ do
     let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
     includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
@@ -360,6 +360,8 @@ renderRoot globalState = html_ $ do
       a_ [href_ "/donate"] "donate"
       sup_ [style_ "font-size:50%"] "I don't have a job"
 
+-- TODO: mention that (@hackage) is supported somewhere
+
 -- TODO: code highlighting
 
 -- TODO: the edit box should have some space to the left and right (inside,
@@ -380,7 +382,7 @@ renderTracking = do
 -- without internet
 
 renderDonate :: HtmlT IO ()
-renderDonate = html_ $ do
+renderDonate = doctypehtml_ $ do
   head_ $ do
     includeCSS "/css.css"
     renderTracking
