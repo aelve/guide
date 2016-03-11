@@ -41,7 +41,7 @@ import Data.Acid as Acid
 
 -- Local
 import Types
-import JS (JS(..), ToJS, allJSFunctions)
+import JS (JS(..), ToJS(..), allJSFunctions)
 import qualified JS
 import Utils
 import Markdown
@@ -277,6 +277,9 @@ main = do
       setMethods
       addMethods
       otherMethods
+
+-- TODO: when a category with the same name exists, show an error message and
+-- redirect to that other category
 
 {- Note [autosize]
 ~~~~~~~~~~~~~~~~~~
@@ -515,22 +518,11 @@ renderCategoryNotes category = do
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
-    section "editing" [] $ do
-      textareaId <- randomUid
-      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
-        toHtml (category^.notes)
-      button "Save" [] $
-        -- «$("#<textareaId>").val()» is a Javascript expression that
-        -- returns text contained in the textarea
-        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
-        in  JS.submitCategoryNotes (this, category^.uid, textareaValue)
-      emptySpan "6px"
-      -- TODO: it'd probably be good (or not?) if “Cancel” also restored
-      -- the original text in the textarea (in case it was edited)
-      button "Cancel" [] $
-        JS.switchSection (this, "normal" :: Text)
-      emptySpan "6px"
-      "Markdown"
+    section "editing" [] $
+      markdownEditor
+        (category^.notes)
+        (\val -> JS.submitCategoryNotes (this, category^.uid, val))
+        (JS.switchSection (this, "normal" :: Text))
 
 renderCategory :: Category -> HtmlT IO ()
 renderCategory category =
@@ -698,22 +690,11 @@ renderItemDescription category item = do
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
-    section "editing" [] $ do
-      textareaId <- randomUid
-      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
-        toHtml (item^.description)
-      button "Save" [] $
-        -- «$("#<textareaId>").val()» is a Javascript expression that
-        -- returns text contained in the textarea
-        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
-        in  JS.submitItemDescription (this, item^.uid, textareaValue)
-      emptySpan "6px"
-      -- TODO: it'd probably be good (or not?) if “Cancel” also restored
-      -- the original text in the textarea (in case it was edited)
-      button "Cancel" [] $
-        JS.switchSection (this, "normal" :: Text)
-      emptySpan "6px"
-      "Markdown"
+    section "editing" [] $
+      markdownEditor
+        (item^.description)
+        (\val -> JS.submitItemDescription (this, item^.uid, val))
+        (JS.switchSection (this, "normal" :: Text))
 
 renderItemTraits :: Category -> Item -> HtmlT IO ()
 renderItemTraits cat item = do
@@ -853,22 +834,13 @@ renderItemNotes category item = do
       -- the notes have been hidden)
 
     section "editing" [] $ do
-      textareaId <- randomUid
       contents <- if T.null (item^.notes)
                     then liftIO $ T.readFile "static/item-notes-template.md"
                     else return (item^.notes)
-      textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
-        toHtml contents
-      button "Save" [] $
-        -- «$("#<textareaId>").val()» is a Javascript expression that
-        -- returns text contained in the textarea
-        let textareaValue = JS $ format "$(\"#{}\").val()" [textareaId]
-        in  JS.submitItemNotes (this, item^.uid, textareaValue)
-      emptySpan "6px"
-      button "Cancel" [] $
-        JS.switchSection (this, "expanded" :: Text)
-      emptySpan "6px"
-      "Markdown"
+      markdownEditor
+        contents
+        (\val -> JS.submitItemNotes (this, item^.uid, val))
+        (JS.switchSection (this, "expanded" :: Text))
 
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
@@ -925,6 +897,33 @@ imgButton :: Text -> Url -> [Attribute] -> JS -> HtmlT IO ()
 imgButton alt src attrs (JS handler) =
   a_ [href_ "#", onclick_ (handler <> "return false;")]
      (img_ (src_ src : alt_ alt : attrs))
+
+markdownEditor
+  :: Text         -- ^ Default text
+  -> (JS -> JS)   -- ^ “Submit” handler, receiving the contents of the editor
+  -> JS           -- ^ “Cancel” handler
+  -> HtmlT IO ()
+markdownEditor s submitHandler cancelHandler = do
+  textareaId <- randomUid
+  textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
+    toHtml s
+  let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
+  -- If you use Firefox and you have It's All Text! installed, Firefox is
+  -- going to save the text if you refresh the page and try to edit
+  -- again. This is rather surprising and could lead to bad edits (when one
+  -- paragraph of long notes was edited by somebody else but your copy in
+  -- editbox doesn't reflect that thanks to It's All Text!), so we use JS to
+  -- set the value. It leads to duplication, sure, but since pages are
+  -- gzipped anyway it shouldn't matter.
+  script_ (format "{} = {};" (val, toJS s))
+  button "Save" [] $
+    submitHandler val
+  emptySpan "6px"
+  button "Cancel" [] $
+    JS (format "{} = {};" (val, toJS s)) <>
+    cancelHandler
+  emptySpan "6px"
+  "Markdown"
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
