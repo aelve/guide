@@ -6,3 +6,8 @@
 Installation instructions are here: [INSTALL.md](INSTALL.md).
 
 The beta version is running at [guide.aelve.com](http://guide.aelve.com).
+
+## Contributing
+
+If you want to contribute but don't know where to start, grep the source for
+`[very-easy]` and `[easy]`.

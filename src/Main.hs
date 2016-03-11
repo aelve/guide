@@ -116,7 +116,8 @@ renderMethods = Spock.subcomponent "render" $ do
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemNotes category item
 
--- TODO: use window.onerror to catch and show all JS errors
+-- TODO: [easy] use window.onerror to catch and show all JS errors (showing
+-- could be done by displaying an alert)
 
 setMethods :: SpockM () () DB ()
 setMethods = Spock.subcomponent "set" $ do
@@ -132,8 +133,8 @@ setMethods = Spock.subcomponent "set" $ do
     lucid $ renderCategoryNotes category
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
-    -- TODO: add a jumpy note saying where the form is handled
-    -- and other notes saying where stuff is rendered, etc
+    -- TODO: [easy] add a cross-link saying where the form is handled in the
+    -- code and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
     onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
@@ -175,8 +176,8 @@ setMethods = Spock.subcomponent "set" $ do
     trait <- dbUpdate (SetTraitContent itemId traitId content')
     lucid $ renderTrait itemId trait
 
--- TODO: add stuff like “add/category” here in comments to make it easier to
--- search with C-s (or maybe just don't use subcomponent?)
+-- TODO: [easy] add stuff like “add/category” here in comments to make it
+-- easier to search with C-s (or maybe just don't use subcomponent?)
 addMethods :: SpockM () () DB ()
 addMethods = Spock.subcomponent "add" $ do
   -- New category
@@ -324,7 +325,8 @@ renderRoot globalState = doctypehtml_ $ do
       |]
 
   body_ $ do
-    -- TODO: this header looks bad when the page is narrow
+    -- TODO: [very-easy] this header looks bad when the page is narrow, it
+    -- should be fixed in css.css by adding line-height to it
     h1_ "A guide to Haskell libraries and tools"
     noscript_ $ div_ [id_ "noscript-message"] $
       renderMarkdownBlock [text|
@@ -461,10 +463,10 @@ helpVersion = 1
 -- TODO: automatic merge should be possible too (e.g. if the changes are in
 -- different paragraphs)
 
--- TODO: when adding a new item, don't make it a Hackage library if it has
--- spaces/punctuation in its name
+-- TODO: [easy] when adding a new item, don't make it a Hackage library if it
+-- has spaces/punctuation in its name
 
--- TODO: rename selectChild to selectChildren
+-- TODO: [very-easy] rename selectChild to selectChildren
 
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
@@ -551,7 +553,7 @@ renderItem cat item =
     -- to the left of it
     renderItemDescription cat item
     renderItemTraits cat item
-    -- TODO: add a separator here?
+    -- TODO: [very-easy] add a separator here?
     renderItemNotes cat item
 
 -- TODO: some spinning thingy that spins in the corner of the page while a
@@ -571,7 +573,7 @@ renderItemInfo cat item = do
         style_ ("background-color:" <> bg)] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      -- TODO: move this style_ into css.css
+      -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
         -- If the library is on Hackage, the title links to its Hackage
         -- page; otherwise, it doesn't link anywhere. Even if the link
@@ -590,8 +592,8 @@ renderItemInfo cat item = do
       span_ [class_ "controls"] $ do
         let itemNode = selectId ("item-" <> uidToText (item^.uid))
         imgButton "/arrow-thick-top.svg" [] $
-          -- TODO: the item should blink or somehow else show where it has been
-          -- moved
+          -- TODO: [easy] the item should blink or somehow else show where it
+          -- has been moved
           JS.moveItemUp (item^.uid, itemNode)
         imgButton "/arrow-thick-bottom.svg" [] $
           JS.moveItemDown (item^.uid, itemNode)
@@ -727,10 +729,10 @@ renderItemTraits cat item = do
             onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
                       clearInput ]
             ""
-      -- TODO: maybe add a separator explicitly? instead of CSS
+      -- TODO: [easy] maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
-        -- TODO: maybe add a line here?
+        -- TODO: [easy] maybe add a line here?
         listNode <- ul_ $ do
           mapM_ (renderTrait (item^.uid)) (item^.cons)
           thisNode
@@ -786,13 +788,15 @@ renderTrait itemId trait = do
 -- TODO: automatically provide links to modules in Markdown (and have a
 -- database of modules or something)
 
--- TODO: write about the all-is-text extension
--- TODO: add a button to make default editor font monospace
--- TODO: write that arrows are for arranging stuff, not upvoting
+-- TODO: [very-easy] write about the all-is-text extension
+-- TODO: [easy] add a button to make default editor font monospace
+-- TODO: [easy] write that arrows are for arranging stuff, not upvoting
 
 -- TODO: record IPs in the acid-state transaction log
 
--- TODO: add Hayoo search, Hoogle search, and Hackage search shortcut boxes
+-- TODO: [easy] add Hayoo search, Hoogle search, and Hackage search shortcut
+-- boxes
+
 -- TODO: when searching, show links to package, main modules, etc before all
 -- categories
 
@@ -804,7 +808,7 @@ renderTrait itemId trait = do
 -- TODO: make it possible to link to notes (and automatically expand when
 -- linked)
 
--- TODO: add a template for item notes (“Imports”, etc)
+-- TODO: [easy] add a template for item notes (“Imports”, etc)
 renderItemNotes :: Category -> Item -> HtmlT IO ()
 renderItemNotes category item = do
   let bg = hueToLightColor $ getItemHue category item
