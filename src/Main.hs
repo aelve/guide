@@ -300,6 +300,7 @@ instead of simple
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = doctypehtml_ $ do
   head_ $ do
+    title_ "Aelve Guide"
     let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
     includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
     -- See Note [autosize]
@@ -384,6 +385,7 @@ renderTracking = do
 renderDonate :: HtmlT IO ()
 renderDonate = doctypehtml_ $ do
   head_ $ do
+    title_ "Donate to Artyom"
     includeCSS "/css.css"
     renderTracking
 
