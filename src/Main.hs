@@ -375,6 +375,9 @@ renderRoot globalState = doctypehtml_ $ do
 -- until it's been submitted
 
 -- TODO: disable tracking on localhost! (and edit INSTALL.md)
+--
+-- TODO: separate the tracking image and the tracking script – the former
+-- should be in <body>, the latter in <head> [easy]
 renderTracking :: HtmlT IO ()
 renderTracking = do
   tracking <- liftIO $ T.readFile "static/tracking.html"
@@ -814,8 +817,6 @@ renderTrait itemId trait = do
 -- TODO: make it possible to link to notes (and automatically expand when
 -- linked)
 
--- TODO: [easy] add a template for item notes (“Imports”, etc)
-
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
 renderItemNotes :: Category -> Item -> HtmlT IO ()
@@ -847,11 +848,17 @@ renderItemNotes category item = do
         then p_ "add something!"
         else renderMarkdownBlock (item^.notes)
       buttons
+      -- TODO: [easy] the lower “hide notes” should scroll back to item when
+      -- the notes are closed (but don't scroll if it's already visible after
+      -- the notes have been hidden)
 
     section "editing" [] $ do
       textareaId <- randomUid
+      contents <- if T.null (item^.notes)
+                    then liftIO $ T.readFile "static/item-notes-template.md"
+                    else return (item^.notes)
       textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
-        toHtml (item^.notes)
+        toHtml contents
       button "Save" [] $
         -- «$("#<textareaId>").val()» is a Javascript expression that
         -- returns text contained in the textarea
@@ -967,3 +974,6 @@ sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
 newGroupValue :: Text
 newGroupValue = "-new-group-"
+
+-- TODO: is it indexable by Google? <given that we're hiding text and
+-- Googlebot can execute Javascript>
