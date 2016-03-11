@@ -31,6 +31,7 @@ import Data.Map (Map)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
 import NeatInterpolation
 import qualified Data.Text.Buildable as Format
@@ -800,8 +801,9 @@ addMethods = Spock.subcomponent "add" $ do
 otherMethods :: SpockM () () DB ()
 otherMethods = do
   -- Javascript
-  Spock.get "js.js" $
-    Spock.text (fromJS allJSFunctions)
+  Spock.get "js.js" $ do
+    setHeader "Content-Type" "application/javascript; charset=utf-8"
+    Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions)
 
   -- Search
   Spock.post "search" $ do
@@ -1529,8 +1531,6 @@ sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 -- people to list their pros and cons
 
 -- TODO: add something to edit a particular paragraph of the notes
-
--- TODO: serve js.js with MIME “text/javascript” or something
 
 newGroupValue :: Text
 newGroupValue = "-new-group-"
