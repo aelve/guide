@@ -30,6 +30,7 @@ executable guide
   main-is:             Main.hs
   other-modules:       
     Utils
+    Markdown
     JS
   -- other-extensions:    
   build-depends:       Spock
@@ -40,12 +41,14 @@ executable guide
                      , cheapskate
                      , containers >= 0.5
                      , lucid
+                     , megaparsec
                      , microlens-platform >= 0.2.3
                      , mtl
                      , neat-interpolation == 0.3.*
                      , path-pieces
                      , random >= 1.1
                      , safecopy
+                     , shortcut-links >= 0.4.1
                      , text
                      , text-format
                      , transformers

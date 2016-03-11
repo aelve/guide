@@ -51,6 +51,7 @@ import Data.SafeCopy hiding (kind)
 import JS (JS(..), ToJS, allJSFunctions)
 import qualified JS
 import Utils
+import Markdown
 
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
@@ -920,9 +921,6 @@ renderRoot globalState = do
       |]
   renderHelp
   onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
-  -- TODO: show notes when Javascript is disabled – perhaps by hiding them
-  -- by default but putting a “show everything” CSS into a <style> block
-  -- inside a <noscript> block
   -- TODO: use ordinary form-post search instead of Javascript search (for
   -- people with NoScript)
   textInput [
@@ -939,7 +937,6 @@ renderRoot globalState = do
   -- TODO: perhaps use infinite scrolling/loading?
   -- TODO: maybe add a button like “give me random category that is unfinished”
   div_ [id_ "footer"] $ do
-    -- <div style="text-align:center;font-size:0.9em;padding:0.5em 8px">
     "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
     emptySpan "2em"
     a_ [href_ "https://github.com/aelve/guide"] "source"
@@ -950,10 +947,6 @@ renderRoot globalState = do
     sup_ [style_ "font-size:50%"] "I don't have a job"
 
 -- TODO: code highlighting
-
--- TODO: the lower “edit notes” should scroll to the note edit box if it's
--- not on screen (or should it really if I fix the edit box to be fully
--- expanded when it opens?)
 
 -- TODO: the edit box should have some space to the left and right (inside,
 -- not outside)
@@ -1120,9 +1113,6 @@ renderCategory category =
       placeholder_ "add an item",
       onEnter $ JS.addLibrary (itemsNode, category^.uid, inputValue) <>
                 clearInput ]
-
--- TODO: add arrows for moving items up and down in category, and something
--- to delete an item – those things could be at the left side, like on Reddit
 
 getItemHue :: Category -> Item -> Hue
 getItemHue category item = case item^.group_ of

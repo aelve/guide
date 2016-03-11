@@ -22,8 +22,6 @@ module Utils
   -- * Lucid
   includeJS,
   includeCSS,
-  renderMarkdownLine,
-  renderMarkdownBlock,
 
   -- * Spock
   lucid,
@@ -47,12 +45,6 @@ import qualified Data.Text.Format.Params as Format
 import Lucid
 import Web.Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
--- blaze-html (cheapskate uses it, so we need to be able to convert)
-import qualified Text.Blaze.Html.Renderer.Text as Blaze
-import qualified Text.Blaze.Html as Blaze
--- Markdown
-import Cheapskate
-import Cheapskate.Html
 
 
 -- | Format a string (a bit like 'Text.Printf.printf' but with different
@@ -92,31 +84,6 @@ includeJS url = with (script_ "") [src_ url]
 
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
-
--- TODO: rename to renderMarkdownInline
-renderMarkdownLine :: Monad m => Text -> HtmlT m ()
-renderMarkdownLine s = do
-  let Doc opts blocks = markdown def{allowRawHtml=False} s
-      inlines = extractInlines =<< blocks
-  blazeToLucid (renderInlines opts inlines)
-  where
-    extractInlines (Para xs) = xs
-    extractInlines (Header _ xs) = xs
-    extractInlines (Blockquote bs) = extractInlines =<< bs
-    extractInlines (List _ _ bss) = extractInlines =<< mconcat bss
-    extractInlines (CodeBlock _ x) = pure (Code x)
-    extractInlines (HtmlBlock x) = pure (Code x)
-    extractInlines HRule = mempty
-
--- TODO: rename to renderMarkdownBlocks
--- TODO: use shortcut-links
--- TODO: would be nice to have syntax highlighting
-renderMarkdownBlock :: Monad m => Text -> HtmlT m ()
-renderMarkdownBlock =
-  blazeToLucid . renderDoc . markdown def{allowRawHtml=False}
-
-blazeToLucid :: Monad m => Blaze.Html -> HtmlT m ()
-blazeToLucid = toHtmlRaw . Blaze.renderHtml
 
 lucid :: MonadIO m => HtmlT IO a -> ActionCtxT ctx m a
 lucid h = do
