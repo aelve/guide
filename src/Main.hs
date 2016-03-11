@@ -595,17 +595,17 @@ renderItemInfo cat item = do
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
         let itemNode = selectId ("item-" <> uidToText (item^.uid))
-        imgButton "/arrow-thick-top.svg" [] $
+        imgButton "move item up" "/arrow-thick-top.svg" [] $
           -- TODO: [easy] the item should blink or somehow else show where it
           -- has been moved
           JS.moveItemUp (item^.uid, itemNode)
-        imgButton "/arrow-thick-bottom.svg" [] $
+        imgButton "move item down" "/arrow-thick-bottom.svg" [] $
           JS.moveItemDown (item^.uid, itemNode)
         emptySpan "1.5em"
-        imgButton "/pencil.svg" [] $
+        imgButton "edit item info" "/pencil.svg" [] $
           JS.switchSection (this, "editing" :: Text)
         emptySpan "0.5em"
-        imgButton "/x.svg" [] $
+        imgButton "delete item" "/x.svg" [] $
           JS.deleteItem (item^.uid, itemNode, item^.name)
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
@@ -770,14 +770,14 @@ renderTrait itemId trait = do
     section "editable" [] $ do
       renderMarkdownLine (trait^.content)
       br_ []
-      imgButton "/arrow-thick-top.svg" [width_ "12"] $
+      imgButton "move trait up" "/arrow-thick-top.svg" [width_ "12"] $
         JS.moveTraitUp (itemId, trait^.uid, this)
-      imgButton "/arrow-thick-bottom.svg" [width_ "12"] $
+      imgButton "move trait down" "/arrow-thick-bottom.svg" [width_ "12"] $
         JS.moveTraitDown (itemId, trait^.uid, this)
       -- TODO: these 3 icons in a row don't look nice
       -- TODO: there should be some way to undelete things (e.g. a list of
       -- deleted traits under each item)
-      imgButton "/x.svg" [width_ "12"] $
+      imgButton "delete trait" "/x.svg" [width_ "12"] $
         JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
@@ -914,10 +914,10 @@ textButton caption (JS handler) =
        (toHtml caption)
 
 -- So far all icons used here have been from <https://useiconic.com/open/>
-imgButton :: Url -> [Attribute] -> JS -> HtmlT IO ()
-imgButton src attrs (JS handler) =
+imgButton :: Text -> Url -> [Attribute] -> JS -> HtmlT IO ()
+imgButton alt src attrs (JS handler) =
   a_ [href_ "#", onclick_ (handler <> "return false;")]
-     (img_ (src_ src : attrs))
+     (img_ (src_ src : alt_ alt : attrs))
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
