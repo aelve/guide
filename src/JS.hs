@@ -167,6 +167,9 @@ switchSection =
   [text|
     $(node).children(".section").removeClass("shown");
     $(node).children(".section."+section).addClass("shown");
+    // See Note [autosize]
+    autosize($('textarea'));
+    autosize.update($('textarea'));
   |]
 
 switchSectionsEverywhere :: JSFunction a => a
@@ -175,6 +178,9 @@ switchSectionsEverywhere =
   [text|
     $(node).find(".section").removeClass("shown");
     $(node).find(".section."+section).addClass("shown");
+    // See Note [autosize]
+    autosize($('textarea'));
+    autosize.update($('textarea'));
   |]
 
 showHelp :: JSFunction a => a

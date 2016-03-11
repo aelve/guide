@@ -861,9 +861,37 @@ main = do
       addMethods
       otherMethods
 
+{- Note [autosize]
+~~~~~~~~~~~~~~~~~~
+
+All textareas on the site are autosized – i.e. they grow when the user is typing. This is done by the autosize.js plugin, which is called on page load:
+
+    autosize($('textarea'));
+
+A slight problem is that it doesn't compute the height of hidden elements correctly – thus, when something is shown and it happens to be a textarea or contain a textarea, we have to call autosize again. This is done in 'JS.switchSection'. So far there are no textboxes that are shown *without* switchSection being involved, and so there's no need to watch for elements being added to the DOM.
+
+It would be nicer if we could watch for elements becoming visible without having to modify switchSection, but there doesn't seem to be an easy way to do this – MutationObserver doesn't let us find out when something becomes visible (i.e. when its clientHeight stops being 0).
+
+In switchSection we use
+
+    autosize($('textarea'));
+    autosize.update($('textarea'));
+
+instead of simple
+
+    autosize.update($('textarea'));
+
+– this is done because the textarea could have appeared after the original `autosize($('textarea'));` was called on page load (which could happen if an item was added, for instance).
+
+-}
+
 renderRoot :: GlobalState -> HtmlT IO ()
 renderRoot globalState = do
-  includeJS "https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"
+  let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
+  includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
+  -- See Note [autosize]
+  includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
+  onPageLoad (JS "autosize($('textarea'));")
   includeCSS "/css.css"
   -- Include definitions of all Javascript functions that we have defined in
   -- this file. (This isn't an actual file, so don't look for it in the
@@ -1114,6 +1142,9 @@ renderItem cat item =
     -- TODO: add a separator here?
     renderItemNotes cat item
 
+-- TODO: some spinning thingy that spins in the corner of the page while a
+-- request is happening
+
 -- TODO: find some way to give all functions access to category and item (or
 -- category, item and trait) without passing everything explicitly?
 
@@ -1279,6 +1310,7 @@ renderItemTraits cat item = do
         section "editable" [] $
           textarea_ [
             class_ "fullwidth",
+            rows_ "3",
             placeholder_ "add pro",
             onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
                       clearInput ]
@@ -1293,6 +1325,7 @@ renderItemTraits cat item = do
         section "editable" [] $
           textarea_ [
             class_ "fullwidth",
+            rows_ "3",
             placeholder_ "add con",
             onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
                       clearInput ]
@@ -1330,10 +1363,9 @@ renderTrait itemId trait = do
         JS.switchSection (this, "editing" :: Text)
 
     section "editing" [] $ do
-      -- TODO: the text area should be bigger
       let submitHandler =
             JS.submitTrait (this, itemId, trait^.uid, inputValue)
-      textarea_ [class_ "fullwidth", onEnter submitHandler] $
+      textarea_ [class_ "fullwidth", rows_ "5", onEnter submitHandler] $
         toHtml (trait^.content)
       br_ []
       textButton "cancel" $
