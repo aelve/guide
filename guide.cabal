@@ -28,10 +28,12 @@ source-repository head
 
 executable guide
   main-is:             Main.hs
-  other-modules:       
+  other-modules:
+    Types
     Utils
     Markdown
     JS
+    SampleState
   -- other-extensions:    
   build-depends:       Spock
                      , acid-state == 0.14.*
