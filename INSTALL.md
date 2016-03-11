@@ -89,7 +89,7 @@ Next, create `upload.sh`:
 
 ~~~
 cd /root/guide/state
-git add .
+git add -A
 GIT_COMMITTER_NAME='auto' GIT_COMMITTER_EMAIL='' git commit --author="auto <>" -m "`date`"
 git push
 ~~~

@@ -815,6 +815,9 @@ renderTrait itemId trait = do
 -- linked)
 
 -- TODO: [easy] add a template for item notes (“Imports”, etc)
+
+-- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
+-- .focus() on it)
 renderItemNotes :: Category -> Item -> HtmlT IO ()
 renderItemNotes category item = do
   let bg = hueToLightColor $ getItemHue category item
