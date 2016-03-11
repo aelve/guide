@@ -256,7 +256,7 @@ main = do
   bracket (openLocalStateFrom "state/" sampleState)
           (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
     -- Create a checkpoint every hour
-    forkOS $ do
+    forkOS $ forever $ do
       createCheckpoint db
       threadDelay (1000000 * 3600)
     let config = defaultSpockCfg () PCNoDatabase db
