@@ -113,6 +113,11 @@ instance JSParams a => JSFunction (a -> JS) where
     JS $ format "{}({});"
                 (fName, T.intercalate "," (map fromJS (jsParams args)))
 
+-- This isn't a standalone function and so it doesn't have to be listed in
+-- 'allJSFunctions'.
+assign :: ToJS x => JS -> x -> JS
+assign v x = JS $ format "{} = {};" (v, toJS x)
+
 replaceWithData :: JSFunction a => a
 replaceWithData =
   makeJSFunction "replaceWithData" ["node"]

@@ -714,13 +714,12 @@ renderItemTraits cat item = do
           mapM_ (renderTrait (item^.uid)) (item^.pros)
           thisNode
         section "editable" [] $
-          textarea_ [
-            class_ "fullwidth",
-            rows_ "3",
-            placeholder_ "add pro",
-            onEnter $ JS.addPro (listNode, item^.uid, inputValue) <>
-                      clearInput ]
+          smallMarkdownEditor
+            [rows_ "3", placeholder_ "add pro"]
             ""
+            (\val -> JS.addPro (listNode, item^.uid, val) <>
+                     JS.assign val ("" :: Text))
+            Nothing
       -- TODO: [easy] maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
@@ -729,13 +728,12 @@ renderItemTraits cat item = do
           mapM_ (renderTrait (item^.uid)) (item^.cons)
           thisNode
         section "editable" [] $
-          textarea_ [
-            class_ "fullwidth",
-            rows_ "3",
-            placeholder_ "add con",
-            onEnter $ JS.addCon (listNode, item^.uid, inputValue) <>
-                      clearInput ]
+          smallMarkdownEditor
+            [rows_ "3", placeholder_ "add con"]
             ""
+            (\val -> JS.addCon (listNode, item^.uid, val) <>
+                     JS.assign val ("" :: Text))
+            Nothing
     section "normal" [shown, noScriptShown] $ do
       textButton "edit pros/cons" $
         JS.switchSectionsEverywhere(this, "editable" :: Text)
@@ -769,13 +767,11 @@ renderTrait itemId trait = do
         JS.switchSection (this, "editing" :: Text)
 
     section "editing" [] $ do
-      let submitHandler =
-            JS.submitTrait (this, itemId, trait^.uid, inputValue)
-      textarea_ [class_ "fullwidth", rows_ "5", onEnter submitHandler] $
-        toHtml (trait^.content)
-      br_ []
-      textButton "cancel" $
-        JS.switchSection (this, "editable" :: Text)
+      smallMarkdownEditor
+        [rows_ "5"]
+        (trait^.content)
+        (\val -> JS.submitTrait (this, itemId, trait^.uid, val))
+        (Just (JS.switchSection (this, "editable" :: Text)))
 
 -- TODO: automatically provide links to modules in Markdown (and have a
 -- database of modules or something)
@@ -905,7 +901,7 @@ markdownEditor
   -> (JS -> JS)   -- ^ “Submit” handler, receiving the contents of the editor
   -> JS           -- ^ “Cancel” handler
   -> HtmlT IO ()
-markdownEditor s submitHandler cancelHandler = do
+markdownEditor s submit cancel = do
   textareaId <- randomUid
   textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
     toHtml s
@@ -917,15 +913,36 @@ markdownEditor s submitHandler cancelHandler = do
   -- editbox doesn't reflect that thanks to It's All Text!), so we use JS to
   -- set the value. It leads to duplication, sure, but since pages are
   -- gzipped anyway it shouldn't matter.
-  script_ (format "{} = {};" (val, toJS s))
+  script_ (fromJS (JS.assign val s))
   button "Save" [] $
-    submitHandler val
+    submit val
   emptySpan "6px"
   button "Cancel" [] $
-    JS (format "{} = {};" (val, toJS s)) <>
-    cancelHandler
+    JS.assign val s <>
+    cancel
   emptySpan "6px"
   "Markdown"
+
+smallMarkdownEditor
+  :: [Attribute]
+  -> Text         -- ^ Default text
+  -> (JS -> JS)   -- ^ “Submit” handler, receiving the contents of the editor
+  -> Maybe JS     -- ^ “Cancel” handler (if “Cancel” is needed)
+  -> HtmlT IO ()
+smallMarkdownEditor attributes s submit mbCancel = do
+  textareaId <- randomUid
+  let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
+  textarea_ ([class_ "fullwidth", uid_ textareaId,
+              onEnter (submit val)] ++ attributes) $
+    toHtml s
+  script_ (fromJS (JS.assign val s))
+  case mbCancel of
+    Nothing -> return ()
+    Just cancel -> do
+      br_ []
+      textButton "cancel" $
+        JS.assign val s <>
+        cancel
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
