@@ -40,8 +40,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   switchSection, switchSectionsEverywhere,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
-  -- Search
-  search,
   -- Add methods
   addLibrary, addCategory,
   addPro, addCon,
@@ -217,16 +215,6 @@ showOrHideHelp =
       showHelp(node, version)
     else
       hideHelp(node, version);
-  |]
-
-search :: JSFunction a => a
-search =
-  makeJSFunction "search" ["node", "s"]
-  -- TODO: set address bar to “/?query=...” so that the user would be able to
-  -- see/share the search URL
-  [text|
-    $.post("/search", {query: s})
-     .done(replaceWithData(node));
   |]
 
 -- | Create a new category.

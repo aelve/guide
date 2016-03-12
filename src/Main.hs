@@ -212,22 +212,6 @@ otherMethods = do
     setHeader "Content-Type" "application/javascript; charset=utf-8"
     Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions)
 
-  -- Search
-  Spock.post "search" $ do
-    query' <- param' "query"
-    let queryWords = T.words query'
-    let rank :: Category -> Int
-        rank cat = sum [
-          length (queryWords `intersect` (cat^..items.each.name)),
-          length (queryWords `intersect` T.words (cat^.title)) ]
-    categories' <- dbQuery GetCategories
-    let rankedCategories
-          | null queryWords = categories'
-          | otherwise       = filter ((/= 0) . rank) .
-                              reverse . sortOn rank
-                                $ categories'
-    lucid $ renderCategoryList rankedCategories
-
   -- Moving things
   Spock.subcomponent "move" $ do
     -- Move item
@@ -265,7 +249,8 @@ main = do
       -- Main page
       Spock.get root $ do
         s <- dbQuery GetGlobalState
-        lucid $ renderRoot s
+        q <- param "q"
+        lucid $ renderRoot s q
       -- Donation page
       Spock.get "donate" $ do
         lucid $ renderDonate
@@ -307,8 +292,8 @@ instead of simple
 
 -}
 
-renderRoot :: GlobalState -> HtmlT IO ()
-renderRoot globalState = doctypehtml_ $ do
+renderRoot :: GlobalState -> Maybe Text -> HtmlT IO ()
+renderRoot globalState mbSearchQuery = doctypehtml_ $ do
   head_ $ do
     title_ "Aelve Guide"
     let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
@@ -341,24 +326,33 @@ renderRoot globalState = doctypehtml_ $ do
       renderMarkdownBlock [text|
         You have Javascript disabled! This site works fine without
         Javascript, but since all editing needs Javascript to work,
-        you won't be able to edit anything. Also, search doesn't work
-        without Javascript, but I'll fix that soon.
+        you won't be able to edit anything.
         |]
     renderHelp
     onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
-    -- TODO: use ordinary form-post search instead of Javascript search (for
-    -- people with NoScript)
-    textInput [
-      id_ "search",
-      placeholder_ "search",
-      onEnter $ JS.search (selectId "categories", inputValue) ]
+    form_ $ do
+      input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
+              value_ (fromMaybe "" mbSearchQuery)]
     textInput [
       placeholder_ "add a category",
       onEnter $ JS.addCategory (selectId "categories", inputValue) <>
                 clearInput ]
     -- TODO: sort categories by popularity, somehow? or provide a list of
     -- “commonly used categories” or even a nested catalog
-    renderCategoryList (globalState^.categories)
+    case mbSearchQuery of
+      Nothing -> renderCategoryList (globalState^.categories)
+      Just query' -> do
+        let queryWords = T.words query'
+        let rank :: Category -> Int
+            rank cat = sum [
+              length (queryWords `intersect` (cat^..items.each.name)),
+              length (queryWords `intersect` T.words (cat^.title)) ]
+        let rankedCategories
+              | null queryWords = globalState^.categories
+              | otherwise       = filter ((/= 0) . rank) .
+                                  reverse . sortOn rank
+                                    $ globalState^.categories
+        renderCategoryList rankedCategories
     -- TODO: perhaps use infinite scrolling/loading?
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
@@ -489,8 +483,11 @@ renderCategoryTitle :: Category -> HtmlT IO ()
 renderCategoryTitle category = do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = selectId thisId
+  -- TODO: once pagination or something is implemented, we'll have to see
+  -- whether an anchor has been used in the query string and load the
+  -- necessary category if so
   h2_ [id_ thisId] $ do
-    a_ [class_ "anchor", href_ ("#" <> uidToText (category^.uid))] "#"
+    a_ [class_ "anchor", href_ ("/#" <> uidToText (category^.uid))] "#"
 
     sectionSpan "normal" [shown, noScriptShown] $ do
       toHtml (category^.title)
