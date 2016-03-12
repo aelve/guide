@@ -257,6 +257,9 @@ main = do
           (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
     -- Create a checkpoint every hour
     forkOS $ forever $ do
+      -- TODO: can we somehow only create a checkpoint if there were any
+      -- changes? otherwise there's going to be a new checkpoint *every* hour
+      -- even if there were no changes whatsoever
       createCheckpoint db
       threadDelay (1000000 * 3600)
     let config = defaultSpockCfg () PCNoDatabase db
@@ -277,6 +280,8 @@ main = do
       setMethods
       addMethods
       otherMethods
+
+-- TODO: RSS feeds for categories
 
 -- TODO: when a category with the same name exists, show an error message and
 -- redirect to that other category

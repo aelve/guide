@@ -3,6 +3,7 @@ FlexibleInstances,
 GeneralizedNewtypeDeriving,
 OverloadedStrings,
 QuasiQuotes,
+BangPatterns,
 NoImplicitPrelude
   #-}
 
@@ -16,6 +17,8 @@ import BasePrelude
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as B
 -- Formatting and interpolation
 import qualified Data.Text.Buildable as Format
 import NeatInterpolation
@@ -60,7 +63,7 @@ instance ToJS Bool where
 instance ToJS JS where
   toJS = id
 instance ToJS Text where
-  toJS = JS . tshow
+  toJS = JS . escapeJSString
 instance ToJS Integer where
   toJS = JS . tshow
 instance ToJS Int where
@@ -399,3 +402,32 @@ deleteItem =
   |]
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
+
+escapeJSString :: Text -> Text
+escapeJSString s =
+    TL.toStrict . B.toLazyText $
+    B.singleton '"' <> quote s <> B.singleton '"'
+  where
+    quote q = case T.uncons t of
+      Nothing       -> B.fromText h
+      Just (!c, t') -> B.fromText h <> escape c <> quote t'
+      where
+        (h, t) = T.break isEscape q
+    -- 'isEscape' doesn't mention \n, \r and \t because they are handled by
+    -- the “< '\x20'” case; yes, later 'escape' escapes them differently,
+    -- but it's irrelevant
+    isEscape c = c == '\"' || c == '\\' ||
+                 c == '\x2028' || c == '\x2029' ||
+                 c < '\x20'
+    escape '\"' = "\\\""
+    escape '\\' = "\\\\"
+    escape '\n' = "\\n"
+    escape '\r' = "\\r"
+    escape '\t' = "\\t"
+    escape c
+      | c < '\x20' || c == '\x2028' || c == '\x2029' =
+          B.fromString $ "\\u" ++ replicate (4 - length h) '0' ++ h
+      | otherwise =
+          B.singleton c
+      where
+        h = showHex (fromEnum c) ""
