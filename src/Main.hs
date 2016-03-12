@@ -71,9 +71,6 @@ dbQuery x = do
   db <- Spock.getState
   liftIO $ Acid.query db x
 
--- TODO: add a command like “download state from the official source” (so
--- that people would be able to play with it)
-
 itemVar :: Path '[Uid]
 itemVar = "item" <//> var
 
@@ -606,7 +603,7 @@ renderItemInfo cat item = do
           JS.switchSection (this, "editing" :: Text)
         emptySpan "0.5em"
         imgButton "delete item" "/x.svg" [] $
-          JS.deleteItem (item^.uid, itemNode, item^.name)
+          JS.deleteItem (item^.uid, itemNode)
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
 
@@ -767,7 +764,7 @@ renderTrait itemId trait = do
       -- TODO: there should be some way to undelete things (e.g. a list of
       -- deleted traits under each item)
       imgButton "delete trait" "/x.svg" [width_ "12"] $
-        JS.deleteTrait (itemId, trait^.uid, this, trait^.content)
+        JS.deleteTrait (itemId, trait^.uid, this)
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
 

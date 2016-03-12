@@ -367,9 +367,9 @@ moveTraitDown =
 
 deleteTrait :: JSFunction a => a
 deleteTrait =
-  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode", "traitText"]
+  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
   [text|
-    if (confirm("Confirm deletion: “"+traitText+"”")) {
+    if (confirm("Confirm deletion?")) {
       $.post("/delete/item/"+itemId+"/trait/"+traitId);
       $(traitNode).remove();
     }
@@ -393,9 +393,9 @@ moveItemDown =
 
 deleteItem :: JSFunction a => a
 deleteItem =
-  makeJSFunction "deleteItem" ["itemId", "itemNode", "itemText"]
+  makeJSFunction "deleteItem" ["itemId", "itemNode"]
   [text|
-    if (confirm("Confirm deletion: “"+itemText+"”")) {
+    if (confirm("Confirm deletion?")) {
       $.post("/delete/item/"+itemId);
       $(itemNode).remove();
     }
