@@ -578,18 +578,25 @@ renderItemInfo cat item = do
     section "normal" [shown, noScriptShown] $ do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
-        -- If the library is on Hackage, the title links to its Hackage
-        -- page; otherwise, it doesn't link anywhere. Even if the link
-        -- field is present, it's going to be rendered as “(site)”, not
-        -- linked in the title.
+        -- If the library is on Hackage, the title links to its Hackage page;
+        -- otherwise, it doesn't link anywhere. Even if the link field is
+        -- present, it's going to be rendered as “(site)”, not linked in the
+        -- title. For non-libraries, links are rendred normally.
         let hackageLink = "https://hackage.haskell.org/package/" <>
                           item^.name
-        case item^?kind.onHackage of
-          Just True  -> a_ [href_ hackageLink] (toHtml (item^.name))
-          _otherwise -> toHtml (item^.name)
-        case item^.link of
-          Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-          Nothing -> return ()
+        case (item^.kind, item^.link) of
+          (Library True, Just l) -> do
+              a_ [href_ hackageLink] (toHtml (item^.name))
+              " (" >> a_ [href_ l] "site" >> ")"
+          (Library False, Just l) -> do
+              toHtml (item^.name)
+              " (" >> a_ [href_ l] "site" >> ")"
+          (Library True, Nothing) -> do
+              a_ [href_ hackageLink] (toHtml (item^.name))
+          (_, Just l) -> do
+              a_ [href_ l] (toHtml (item^.name))
+          (_, Nothing) -> do
+              toHtml (item^.name)
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
