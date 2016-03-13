@@ -189,7 +189,15 @@ addMethods = Spock.subcomponent "add" $ do
     -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
     itemId <- randomUid
-    newItem <- dbUpdate (AddItem catId itemId name' hackageLibrary)
+    -- If the item name looks like a Hackage library, assume it's a Hackage
+    -- library.
+    --
+    -- TODO: a lot of things in the database are going to be marked as
+    -- “non-Hackage library” when in reality they aren't that – it would have
+    -- to be fixed
+    newItem <- if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
+                 then dbUpdate (AddItem catId itemId name' hackageLibrary)
+                 else dbUpdate (AddItem catId itemId name' Other)
     category <- dbQuery (GetCategory catId)
     lucid $ renderItem category newItem
   -- Pro (argument in favor of a library)
@@ -468,9 +476,6 @@ helpVersion = 1
 
 -- TODO: automatic merge should be possible too (e.g. if the changes are in
 -- different paragraphs)
-
--- TODO: [easy] when adding a new item, don't make it a Hackage library if it
--- has spaces/punctuation in its name
 
 -- TODO: [very-easy] rename selectChild to selectChildren
 
@@ -969,6 +974,9 @@ thisNode = do
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
   return (selectParent (selectUid uid'))
+
+-- TODO: add an “ecosystem” field with related packages/etc (just a simple
+-- Markdown-edited field under pros/cons)
 
 -- Wheh changing these, also look at 'JS.switchSection'.
 
