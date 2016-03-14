@@ -19,7 +19,6 @@ import Control.Monad.Writer
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
-import qualified Data.Text.Lazy as TL
 -- Parsing
 import Text.Megaparsec
 -- HTML
@@ -31,9 +30,8 @@ import Data.Sequence
 -- Markdown
 import Cheapskate
 import Cheapskate.Html
+import Cheapskate.Highlight
 import ShortcutLinks
--- Highlighting
-import qualified Text.Highlighting.Kate as Kate
 
 
 blazeToLucid :: Monad m => Blaze.Html -> HtmlT m ()
@@ -77,15 +75,6 @@ shortcutLinks i@(Link is url title) | '@' <- T.head url =
           Str ("[error when processing shortcut link: " <> T.pack err <> "]")
 shortcutLinks other = other
 
-highlight :: Block -> Block
-highlight (CodeBlock attr code) =
-  HtmlBlock (TL.toStrict (Blaze.renderHtml formatted))
-  where
-    lang = T.unpack (codeLang attr)
-    highlighted = Kate.highlightAs lang (T.unpack code)
-    formatted = Kate.formatHtmlBlock Kate.defaultFormatOpts highlighted
-highlight other = other
-
 -- TODO: this should be in the shortcut-links package itself
 
 -- | Parse a shortcut link. Allowed formats:
@@ -127,5 +116,5 @@ renderMarkdownLine s = do
 renderMarkdownBlock :: Monad m => Text -> HtmlT m ()
 renderMarkdownBlock =
   blazeToLucid . renderDoc .
-  walk highlight . walk shortcutLinks .
+  highlightDoc . walk shortcutLinks .
   markdown def

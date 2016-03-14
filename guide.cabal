@@ -41,6 +41,7 @@ executable guide
                      , base-prelude
                      , blaze-html >= 0.8.1.1
                      , cheapskate
+                     , cheapskate-highlight == 0.1.*
                      , containers >= 0.5
                      , ekg
                      , ekg-core
