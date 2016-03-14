@@ -44,6 +44,7 @@ executable guide
                      , containers >= 0.5
                      , ekg
                      , ekg-core
+                     , highlighting-kate >= 0.6
                      , lucid
                      , megaparsec
                      , microlens-platform >= 0.2.3

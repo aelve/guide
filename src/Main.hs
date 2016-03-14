@@ -36,6 +36,8 @@ import Lucid.Base (makeAttribute)
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
+-- Highlighting
+import qualified Text.Highlighting.Kate as Kate
 -- Monitoring
 import qualified System.Remote.Monitoring as EKG
 import qualified Network.Wai.Metrics as EKG
@@ -227,6 +229,10 @@ otherMethods = do
   Spock.get "js.js" $ do
     setHeader "Content-Type" "application/javascript; charset=utf-8"
     Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions)
+  -- CSS
+  Spock.get "highlight.css" $ do
+    setHeader "Content-Type" "text/css; charset=utf-8"
+    Spock.bytes $ T.encodeUtf8 (T.pack (Kate.styleToCss Kate.pygments))
 
   -- Moving things
   Spock.subcomponent "move" $ do
@@ -259,6 +265,8 @@ main = do
       createCheckpoint db
       threadDelay (1000000 * 3600)
     -- EKG metrics
+    -- TODO: stop the server upon exit, somehow (or just don't start it
+    -- unless there's been some option passed?)
     ekg <- EKG.forkServer "localhost" 5050
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
@@ -335,6 +343,7 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
     includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
     onPageLoad (JS "autosize($('textarea'));")
     includeCSS "/css.css"
+    includeCSS "/highlight.css"
     -- Include definitions of all Javascript functions that we have defined
     -- in this file. (This isn't an actual file, so don't look for it in the
     -- static folder – it's generated and served in 'otherMethods'.)
@@ -401,8 +410,6 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
       sup_ [style_ "font-size:50%"] "I don't have a job"
 
 -- TODO: mention that (@hackage) is supported somewhere
-
--- TODO: code highlighting
 
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
