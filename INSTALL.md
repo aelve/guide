@@ -4,7 +4,7 @@
     $ cabal build
     $ dist/build/guide/guide
 
-And go to <http://localhost:8080>.
+And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>.
 
 The `state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
 
@@ -50,6 +50,22 @@ Make a new subdomain in Apache. For me, it means writing this to `/etc/apache2/s
   ProxyPassReverse / http://0.0.0.0:8080/
 </VirtualHost>
 ~~~
+
+If you want the status page to be available as well, write:
+
+~~~
+<VirtualHost *:80>
+  ServerName guide.aelve.com
+
+  ProxyPreserveHost On
+  ProxyPass /status/ http://0.0.0.0:5050/
+  ProxyPassReverse /status/ http://0.0.0.0:5050/
+  ProxyPass / http://0.0.0.0:8080/
+  ProxyPassReverse / http://0.0.0.0:8080/
+</VirtualHost>
+~~~
+
+(Note that it will only be available at `/status/`, not `/status`.)
 
 Enable the site:
 

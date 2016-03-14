@@ -268,6 +268,7 @@ main = do
       globalState <- Acid.query db GetGlobalState
       let allCategories = globalState^.categories
       let allItems = allCategories^.each.items
+      -- Count length of all Text values in global state
       let textLength = sum (map T.length (childrenBi globalState))
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
