@@ -8,6 +8,7 @@ TypeFamilies,
 OverloadedStrings,
 GeneralizedNewtypeDeriving,
 RankNTypes,
+DeriveDataTypeable,
 NoImplicitPrelude
   #-}
 
@@ -106,7 +107,7 @@ import JS (ToJS)
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
 newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, PathPiece, ToJS, Format.Buildable)
+  deriving (Eq, PathPiece, ToJS, Format.Buildable, Data)
 
 deriveSafeCopy 0 'base ''Uid
 
@@ -118,6 +119,7 @@ instance IsString Uid where
 data Trait = Trait {
   _traitUid :: Uid,
   _traitContent :: Text }
+  deriving (Eq, Data)
 
 deriveSafeCopy 0 'base ''Trait
 makeFields ''Trait
@@ -128,7 +130,7 @@ data ItemKind
   = Library {_itemKindHackageName :: Maybe Text}
   | Tool {_itemKindHackageName :: Maybe Text}
   | Other
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 deriveSafeCopy 2 'base ''ItemKind
 makeFields ''ItemKind
@@ -154,6 +156,7 @@ data Item = Item {
   _itemNotes       :: Text,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
+  deriving (Eq, Data)
 
 -- TODO: make a 'Markdown' type alias?
 
@@ -193,7 +196,7 @@ instance Migrate Item where
 --
 
 data Hue = NoHue | Hue Int
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Data)
 
 deriveSafeCopy 0 'base ''Hue
 
@@ -260,6 +263,7 @@ data Category = Category {
   _categoryNotes :: Text,
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item] }
+  deriving (Eq, Data)
 
 deriveSafeCopy 0 'base ''Category
 makeFields ''Category
@@ -268,6 +272,7 @@ makeFields ''Category
 
 data GlobalState = GlobalState {
   _categories :: [Category] }
+  deriving (Data)
 
 deriveSafeCopy 0 'base ''GlobalState
 makeLenses ''GlobalState

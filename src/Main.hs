@@ -36,6 +36,11 @@ import Lucid.Base (makeAttribute)
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
+-- Monitoring
+import qualified System.Remote.Monitoring as EKG
+import qualified Network.Wai.Metrics as EKG
+import qualified System.Metrics.Gauge as EKG.Gauge
+import Data.Generics.Uniplate.Data
 -- acid-state
 import Data.Acid as Acid
 
@@ -253,8 +258,25 @@ main = do
     forkOS $ forever $ do
       createCheckpoint db
       threadDelay (1000000 * 3600)
+    -- EKG metrics
+    ekg <- EKG.forkServer "localhost" 5050
+    waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
+    categoryGauge <- EKG.getGauge "db.categories" ekg
+    itemGauge <- EKG.getGauge "db.items" ekg
+    textGauge <- EKG.getGauge "db.text_length" ekg
+    forkOS $ forever $ do
+      globalState <- Acid.query db GetGlobalState
+      let allCategories = globalState^.categories
+      let allItems = allCategories^.each.items
+      let textLength = sum (map T.length (childrenBi globalState))
+      EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
+      EKG.Gauge.set itemGauge (fromIntegral (length allItems))
+      EKG.Gauge.set textGauge (fromIntegral textLength)
+      threadDelay 1000000
+    -- Run the server
     let config = defaultSpockCfg () PCNoDatabase db
     runSpock 8080 $ spock config $ do
+      middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Main page
       Spock.get root $ do
