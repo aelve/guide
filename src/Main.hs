@@ -183,8 +183,8 @@ addMethods = Spock.subcomponent "add" $ do
     catId <- randomUid
     newCategory <- dbUpdate (AddCategory catId title')
     lucid $ renderCategory newCategory
-  -- New library in a category
-  Spock.post (categoryVar <//> "library") $ \catId -> do
+  -- New item in a category
+  Spock.post (categoryVar <//> "item") $ \catId -> do
     name' <- param' "name"
     -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
@@ -200,13 +200,13 @@ addMethods = Spock.subcomponent "add" $ do
                  else dbUpdate (AddItem catId itemId name' Other)
     category <- dbQuery (GetCategory catId)
     lucid $ renderItem category newItem
-  -- Pro (argument in favor of a library)
+  -- Pro (argument in favor of an item)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomUid
     newTrait <- dbUpdate (AddPro itemId traitId content')
     lucid $ renderTrait itemId newTrait
-  -- Con (argument against a library)
+  -- Con (argument against an item)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomUid
@@ -244,11 +244,10 @@ main :: IO ()
 main = do
   bracket (openLocalStateFrom "state/" sampleState)
           (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
-    -- Create a checkpoint every hour
+    -- Create a checkpoint every hour. Note: if nothing was changed,
+    -- acid-state overwrites the previous checkpoint, which saves us some
+    -- space.
     forkOS $ forever $ do
-      -- TODO: can we somehow only create a checkpoint if there were any
-      -- changes? otherwise there's going to be a new checkpoint *every* hour
-      -- even if there were no changes whatsoever
       createCheckpoint db
       threadDelay (1000000 * 3600)
     let config = defaultSpockCfg () PCNoDatabase db
@@ -538,7 +537,7 @@ renderCategory category =
       thisNode
     textInput [
       placeholder_ "add an item",
-      onEnter $ JS.addLibrary (itemsNode, category^.uid, inputValue) <>
+      onEnter $ JS.addItem (itemsNode, category^.uid, inputValue) <>
                 clearInput ]
 
 getItemHue :: Category -> Item -> Hue
@@ -578,25 +577,35 @@ renderItemInfo cat item = do
     section "normal" [shown, noScriptShown] $ do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
-        -- If the library is on Hackage, the title links to its Hackage page;
-        -- otherwise, it doesn't link anywhere. Even if the link field is
-        -- present, it's going to be rendered as “(site)”, not linked in the
-        -- title. For non-libraries, links are rendred normally.
         let hackageLink = "https://hackage.haskell.org/package/" <>
                           item^.name
-        case (item^.kind, item^.link) of
-          (Library True, Just l) -> do
-              a_ [href_ hackageLink] (toHtml (item^.name))
-              " (" >> a_ [href_ l] "site" >> ")"
-          (Library False, Just l) -> do
-              toHtml (item^.name)
-              " (" >> a_ [href_ l] "site" >> ")"
-          (Library True, Nothing) -> do
-              a_ [href_ hackageLink] (toHtml (item^.name))
-          (_, Just l) -> do
-              a_ [href_ l] (toHtml (item^.name))
-          (_, Nothing) -> do
-              toHtml (item^.name)
+        case item^.kind of
+          -- If the library is on Hackage, the title links to its Hackage
+          -- page; otherwise, it doesn't link anywhere. Even if the link
+          -- field is present, it's going to be rendered as “(site)”, not
+          -- linked in the title.
+          Library onHackage' -> do
+            if onHackage'
+              then a_ [href_ hackageLink] (toHtml (item^.name))
+              else toHtml (item^.name)
+            case item^.link of
+              Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+              Nothing -> return ()
+          -- For tools, it's the opposite – the title links to the item site
+          -- (if present), and there's a separate “(Hackage)” link if the
+          -- tool is on Hackage.
+          Tool onHackage' -> do
+            case item^.link of
+              Just l  -> a_ [href_ l] (toHtml (item^.name))
+              Nothing -> toHtml (item^.name)
+            if onHackage'
+              then " (" >> a_ [href_ hackageLink] "Hackage" >> ")"
+              else return ()
+          -- And now everything else
+          Other -> do
+            case item^.link of
+              Just l  -> a_ [href_ l] (toHtml (item^.name))
+              Nothing -> toHtml (item^.name)
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do

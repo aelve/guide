@@ -128,14 +128,26 @@ makeFields ''Trait
 
 data ItemKind
   = Library {_itemKindOnHackage :: Bool}
+  | Tool {_itemKindOnHackage :: Bool}
   | Other
   deriving (Eq, Show)
 
 hackageLibrary :: ItemKind
 hackageLibrary = Library True
 
-deriveSafeCopy 0 'base ''ItemKind
+deriveSafeCopy 1 'extension ''ItemKind
 makeFields ''ItemKind
+
+data ItemKind_v0
+  = Library_v0 {_itemKindOnHackage_v0 :: Bool}
+  | Other_v0
+
+deriveSafeCopy 0 'base ''ItemKind_v0
+
+instance Migrate ItemKind where
+  type MigrateFrom ItemKind = ItemKind_v0
+  migrate (Library_v0 x) = Library x
+  migrate Other_v0       = Other
 
 --
 

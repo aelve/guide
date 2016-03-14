@@ -41,7 +41,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Help
   showOrHideHelp, showHelp, hideHelp,
   -- Add methods
-  addLibrary, addCategory,
+  addCategory, addItem,
   addPro, addCon,
   -- Set methods
   submitCategoryTitle, submitItemDescription, submitCategoryNotes,
@@ -226,12 +226,12 @@ addCategory =
      .done(prependData(node));
   |]
 
--- | Add a new library to some category.
-addLibrary :: JSFunction a => a
-addLibrary =
-  makeJSFunction "addLibrary" ["node", "catId", "s"]
+-- | Add a new item to some category.
+addItem :: JSFunction a => a
+addItem =
+  makeJSFunction "addItem" ["node", "catId", "s"]
   [text|
-    $.post("/add/category/"+catId+"/library", {name: s})
+    $.post("/add/category/"+catId+"/item", {name: s})
      .done(appendData(node));
   |]
 
