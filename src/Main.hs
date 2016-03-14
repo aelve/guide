@@ -37,7 +37,7 @@ import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Network.Wai.Middleware.Static
 -- Highlighting
-import qualified Text.Highlighting.Kate as Kate
+import Cheapskate.Highlight
 -- Monitoring
 import qualified System.Remote.Monitoring as EKG
 import qualified Network.Wai.Metrics as EKG
@@ -232,7 +232,7 @@ otherMethods = do
   -- CSS
   Spock.get "highlight.css" $ do
     setHeader "Content-Type" "text/css; charset=utf-8"
-    Spock.bytes $ T.encodeUtf8 (T.pack (Kate.styleToCss Kate.pygments))
+    Spock.bytes $ T.encodeUtf8 (T.pack (styleToCss pygments))
 
   -- Moving things
   Spock.subcomponent "move" $ do
