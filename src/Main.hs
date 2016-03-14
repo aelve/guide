@@ -348,6 +348,7 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
               value_ (fromMaybe "" mbSearchQuery)]
     textInput [
       placeholder_ "add a category",
+      autocomplete_ "off",
       onEnter $ JS.addCategory (selectId "categories", inputValue) <>
                 clearInput ]
     -- TODO: sort categories by popularity, somehow? or provide a list of
@@ -508,6 +509,7 @@ renderCategoryTitle category = do
     sectionSpan "editing" [] $ do
       textInput [
         value_ (category^.title),
+        autocomplete_ "off",
         onEnter $
           JS.submitCategoryTitle (this, category^.uid, inputValue)]
       emptySpan "1em"
@@ -543,6 +545,7 @@ renderCategory category =
       thisNode
     textInput [
       placeholder_ "add an item",
+      autocomplete_ "off",
       onEnter $ JS.addItem (itemsNode, category^.uid, inputValue) <>
                 clearInput ]
 
@@ -640,9 +643,12 @@ renderItemInfo cat item = do
       let formSubmitHandler formNode =
             JS.submitItemInfo (this, otherNodes, item^.uid, formNode)
       form_ [onFormSubmit formSubmitHandler] $ do
+        -- All inputs have "autocomplete = off" thanks to
+        -- <http://stackoverflow.com/q/8311455>
         label_ $ do
-          "Package name" >> br_ []
+          "Name" >> br_ []
           input_ [type_ "text", name_ "name",
+                  autocomplete_ "off",
                   value_ (item^.name)]
         br_ []
         label_ $ do
@@ -657,12 +663,13 @@ renderItemInfo cat item = do
         br_ []
         label_ $ do
           "Link to Hackage: "
-          input_ $ [type_ "checkbox", name_ "on-hackage"] ++
+          input_ $ [type_ "checkbox", name_ "on-hackage",
+                    autocomplete_ "off"] ++
                    [checked_ | item^?kind.onHackage == Just True]
         br_ []
         label_ $ do
           "Site (optional)" >> br_ []
-          input_ [type_ "text", name_ "link",
+          input_ [type_ "text", name_ "link", autocomplete_ "off",
                   value_ (fromMaybe "" (item^.link))]
         br_ []
         newGroupInputId <- randomUid
@@ -679,7 +686,8 @@ renderItemInfo cat item = do
                     $("#$idText").focus(); }
                   else $("#$idText").hide(); |]
                 where idText = uidToText newGroupInputId
-          select_ [name_ "group", onchange_ selectHandler] $ do
+          select_ [name_ "group", autocomplete_ "off",
+                   onchange_ selectHandler] $ do
             let gs = Nothing : map Just (M.keys (cat^.groups))
             for_ gs $ \group' -> do
               -- Text that will be shown in the list (“-” stands for “no
@@ -693,7 +701,7 @@ renderItemInfo cat item = do
               option_ [value_ txt] (toHtml txt)
                 & selectedIf (group' == item^.group_)
             option_ [value_ newGroupValue] "New group..."
-        input_ [uid_ newGroupInputId, type_ "text",
+        input_ [uid_ newGroupInputId, type_ "text", autocomplete_ "off",
                 name_ "custom-group", hidden_ "hidden"]
         br_ []
         input_ [type_ "submit", value_ "Save"]
@@ -938,17 +946,12 @@ markdownEditor
   -> HtmlT IO ()
 markdownEditor s submit cancel = do
   textareaId <- randomUid
-  textarea_ [uid_ textareaId, rows_ "10", class_ "big fullwidth"] $
+  -- Autocomplete has to be turned off thanks to
+  -- <http://stackoverflow.com/q/8311455>.
+  textarea_ [uid_ textareaId, autocomplete_ "off",
+             rows_ "10", class_ "big fullwidth"] $
     toHtml s
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
-  -- If you use Firefox and you have It's All Text! installed, Firefox is
-  -- going to save the text if you refresh the page and try to edit
-  -- again. This is rather surprising and could lead to bad edits (when one
-  -- paragraph of long notes was edited by somebody else but your copy in
-  -- editbox doesn't reflect that thanks to It's All Text!), so we use JS to
-  -- set the value. It leads to duplication, sure, but since pages are
-  -- gzipped anyway it shouldn't matter.
-  script_ (fromJS (JS.assign val s))
   button "Save" [] $
     submit val
   emptySpan "6px"
@@ -967,10 +970,9 @@ smallMarkdownEditor
 smallMarkdownEditor attributes s submit mbCancel = do
   textareaId <- randomUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
-  textarea_ ([class_ "fullwidth", uid_ textareaId,
+  textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
               onEnter (submit val)] ++ attributes) $
     toHtml s
-  script_ (fromJS (JS.assign val s))
   case mbCancel of
     Nothing -> return ()
     Just cancel -> do
