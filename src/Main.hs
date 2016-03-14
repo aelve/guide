@@ -136,10 +136,11 @@ setMethods = Spock.subcomponent "set" $ do
     link' <- T.strip <$> param' "link"
     kind' <- do
       kindName :: Text <- param' "kind"
-      onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
+      hackageName' <- (\x -> if T.null x then Nothing else Just x) <$>
+                      param' "hackage-name"
       return $ case kindName of
-        "library" -> Library onHackage'
-        "tool"    -> Tool onHackage'
+        "library" -> Library hackageName'
+        "tool"    -> Tool hackageName'
         _         -> Other
     group' <- do
       groupField <- param' "group"
@@ -197,13 +198,9 @@ addMethods = Spock.subcomponent "add" $ do
     itemId <- randomUid
     -- If the item name looks like a Hackage library, assume it's a Hackage
     -- library.
-    --
-    -- TODO: a lot of things in the database are going to be marked as
-    -- “non-Hackage library” when in reality they aren't that – it would have
-    -- to be fixed
     newItem <- if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
-                 then dbUpdate (AddItem catId itemId name' hackageLibrary)
-                 else dbUpdate (AddItem catId itemId name' Other)
+      then dbUpdate (AddItem catId itemId name' (Library (Just name')))
+      else dbUpdate (AddItem catId itemId name' Other)
     category <- dbQuery (GetCategory catId)
     lucid $ renderItem category newItem
   -- Pro (argument in favor of an item)
@@ -586,30 +583,29 @@ renderItemInfo cat item = do
     section "normal" [shown, noScriptShown] $ do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
-        let hackageLink = "https://hackage.haskell.org/package/" <>
-                          item^.name
+        let hackageLink x = "https://hackage.haskell.org/package/" <> x
         case item^.kind of
           -- If the library is on Hackage, the title links to its Hackage
           -- page; otherwise, it doesn't link anywhere. Even if the link
           -- field is present, it's going to be rendered as “(site)”, not
           -- linked in the title.
-          Library onHackage' -> do
-            if onHackage'
-              then a_ [href_ hackageLink] (toHtml (item^.name))
-              else toHtml (item^.name)
+          Library hackageName' -> do
+            case hackageName' of
+              Just x  -> a_ [href_ (hackageLink x)] (toHtml (item^.name))
+              Nothing -> toHtml (item^.name)
             case item^.link of
               Just l  -> " (" >> a_ [href_ l] "site" >> ")"
               Nothing -> return ()
           -- For tools, it's the opposite – the title links to the item site
           -- (if present), and there's a separate “(Hackage)” link if the
           -- tool is on Hackage.
-          Tool onHackage' -> do
+          Tool hackageName' -> do
             case item^.link of
               Just l  -> a_ [href_ l] (toHtml (item^.name))
               Nothing -> toHtml (item^.name)
-            if onHackage'
-              then " (" >> a_ [href_ hackageLink] "Hackage" >> ")"
-              else return ()
+            case hackageName' of
+              Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
+              Nothing -> return ()
           -- And now everything else
           Other -> do
             case item^.link of
@@ -662,10 +658,9 @@ renderItemInfo cat item = do
               & selectedIf (case item^.kind of Other{} -> True; _ -> False)
         br_ []
         label_ $ do
-          "Link to Hackage: "
-          input_ $ [type_ "checkbox", name_ "on-hackage",
-                    autocomplete_ "off"] ++
-                   [checked_ | item^?kind.onHackage == Just True]
+          "Name on Hackage" >> br_ []
+          input_ [type_ "text", name_ "hackage-name", autocomplete_ "off",
+                  value_ (fromMaybe "" (item^?kind.hackageName._Just))]
         br_ []
         label_ $ do
           "Site (optional)" >> br_ []

@@ -17,8 +17,7 @@ module Types
   Uid(..),
   Trait(..),
   ItemKind(..),
-    onHackage,
-  hackageLibrary,
+    hackageName,
   Item(..),
     group_,
     pros,
@@ -66,7 +65,6 @@ module Types
   SetItemLink(..),
   SetItemGroup(..),
   SetItemKind(..),
-  SetItemOnHackage(..),
   SetItemDescription(..),
   SetItemNotes(..),
   -- *** 'Trait'
@@ -127,27 +125,20 @@ makeFields ''Trait
 --
 
 data ItemKind
-  = Library {_itemKindOnHackage :: Bool}
-  | Tool {_itemKindOnHackage :: Bool}
+  = Library {_itemKindHackageName :: Maybe Text}
+  | Tool {_itemKindHackageName :: Maybe Text}
   | Other
   deriving (Eq, Show)
 
-hackageLibrary :: ItemKind
-hackageLibrary = Library True
-
-deriveSafeCopy 1 'extension ''ItemKind
+deriveSafeCopy 2 'base ''ItemKind
 makeFields ''ItemKind
 
-data ItemKind_v0
-  = Library_v0 {_itemKindOnHackage_v0 :: Bool}
-  | Other_v0
+data ItemKind_v1
+  = Library_v1 {_itemKindOnHackage_v1 :: Bool}
+  | Tool_v1 {_itemKindOnHackage_v1 :: Bool}
+  | Other_v1
 
-deriveSafeCopy 0 'base ''ItemKind_v0
-
-instance Migrate ItemKind where
-  type MigrateFrom ItemKind = ItemKind_v0
-  migrate (Library_v0 x) = Library x
-  migrate Other_v0       = Other
+deriveSafeCopy 1 'base ''ItemKind_v1
 
 --
 
@@ -166,34 +157,38 @@ data Item = Item {
 
 -- TODO: make a 'Markdown' type alias?
 
-deriveSafeCopy 1 'extension ''Item
+deriveSafeCopy 2 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration, can be deleted
-data Item_v0 = Item_v0 {
-  _itemUid_v0    :: Uid,
-  _itemName_v0   :: Text,
-  _itemGroup__v0 :: Maybe Text,
-  _itemPros_v0   :: [Trait],
-  _itemCons_v0   :: [Trait],
-  _itemNotes_v0  :: Text,
-  _itemLink_v0   :: Maybe Url,
-  _itemKind_v0   :: ItemKind }
+data Item_v1 = Item_v1 {
+  _itemUid_v1         :: Uid,
+  _itemName_v1        :: Text,
+  _itemGroup__v1      :: Maybe Text,
+  _itemDescription_v1 :: Text,
+  _itemPros_v1        :: [Trait],
+  _itemCons_v1        :: [Trait],
+  _itemNotes_v1       :: Text,
+  _itemLink_v1        :: Maybe Url,
+  _itemKind_v1        :: ItemKind_v1 }
 
-deriveSafeCopy 0 'base ''Item_v0
+deriveSafeCopy 1 'base ''Item_v1
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v0
-  migrate Item_v0{..} = Item {
-    _itemUid = _itemUid_v0,
-    _itemName = _itemName_v0,
-    _itemGroup_ = _itemGroup__v0,
-    _itemDescription = "",
-    _itemPros = _itemPros_v0,
-    _itemCons = _itemCons_v0,
-    _itemNotes = _itemNotes_v0,
-    _itemLink = _itemLink_v0,
-    _itemKind = _itemKind_v0 }
+  type MigrateFrom Item = Item_v1
+  migrate Item_v1{..} = Item {
+    _itemUid = _itemUid_v1,
+    _itemName = _itemName_v1,
+    _itemGroup_ = _itemGroup__v1,
+    _itemDescription = _itemDescription_v1,
+    _itemPros = _itemPros_v1,
+    _itemCons = _itemCons_v1,
+    _itemNotes = _itemNotes_v1,
+    _itemLink = _itemLink_v1,
+    _itemKind = case _itemKind_v1 of
+        Library_v1 x -> Library (guard x $> _itemName_v1)
+        Tool_v1    x -> Tool    (guard x $> _itemName_v1)
+        Other_v1     -> Other }
 
 --
 
@@ -443,11 +438,6 @@ setItemKind itemId kind' = do
   itemById itemId . kind .= kind'
   use (itemById itemId)
 
-setItemOnHackage :: Uid -> Bool -> Acid.Update GlobalState Item
-setItemOnHackage itemId onHackage' = do
-  itemById itemId . kind . onHackage .= onHackage'
-  use (itemById itemId)
-
 setItemDescription :: Uid -> Text -> Acid.Update GlobalState Item
 setItemDescription itemId description' = do
   itemById itemId . description .= description'
@@ -528,7 +518,7 @@ makeAcidic ''GlobalState [
   'addPro, 'addCon,
   -- set
   'setCategoryTitle, 'setCategoryNotes,
-  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, 'setItemOnHackage,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes,
   'setTraitContent,
   -- delete
