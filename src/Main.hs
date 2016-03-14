@@ -273,7 +273,7 @@ main = do
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       EKG.Gauge.set textGauge (fromIntegral textLength)
-      threadDelay 1000000
+      threadDelay (1000000 * 60)
     -- Run the server
     let config = defaultSpockCfg () PCNoDatabase db
     runSpock 8080 $ spock config $ do
