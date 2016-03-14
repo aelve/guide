@@ -18,7 +18,7 @@ import BasePrelude hiding (Category)
 -- Monads and monad transformers
 import Control.Monad.State
 -- Lenses
-import Lens.Micro.Platform
+import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 -- Text
@@ -134,7 +134,13 @@ setMethods = Spock.subcomponent "set" $ do
     -- code and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
-    onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
+    kind' <- do
+      kindName :: Text <- param' "kind"
+      onHackage' <- (== Just ("on" :: Text)) <$> param "on-hackage"
+      return $ case kindName of
+        "library" -> Library onHackage'
+        "tool"    -> Tool onHackage'
+        _         -> Other
     group' <- do
       groupField <- param' "group"
       customGroupField <- param' "custom-group"
@@ -149,7 +155,7 @@ setMethods = Spock.subcomponent "set" $ do
       (True, _)   -> void $ dbUpdate (SetItemLink itemId Nothing)
       (_, Just l) -> void $ dbUpdate (SetItemLink itemId (Just l))
       _otherwise  -> return ()
-    dbUpdate (SetItemOnHackage itemId onHackage')
+    dbUpdate (SetItemKind itemId kind')
     -- This does all the work of assigning new colors, etc. automatically
     dbUpdate (SetItemGroup itemId group')
     item <- dbQuery (GetItem itemId)
@@ -626,6 +632,7 @@ renderItemInfo cat item = do
         -- TODO: should check for Stackage automatically
 
     section "editing" [] $ do
+      let selectedIf p x = if p then with x [selected_ "selected"] else x
       -- otherNodes are all nodes that have to be recolored when this node is
       -- recolored
       let otherNodes = selectChild (selectParent this)
@@ -637,6 +644,16 @@ renderItemInfo cat item = do
           "Package name" >> br_ []
           input_ [type_ "text", name_ "name",
                   value_ (item^.name)]
+        br_ []
+        label_ $ do
+          "Kind" >> br_ []
+          select_ [name_ "kind"] $ do
+            option_ [value_ "library"] "Library"
+              & selectedIf (case item^.kind of Library{} -> True; _ -> False)
+            option_ [value_ "tool"] "Tool"
+              & selectedIf (case item^.kind of Tool{} -> True; _ -> False)
+            option_ [value_ "other"] "Other"
+              & selectedIf (case item^.kind of Other{} -> True; _ -> False)
         br_ []
         label_ $ do
           "Link to Hackage: "
@@ -673,9 +690,8 @@ renderItemInfo cat item = do
               -- is Nothing too), mark it as selected, thus making it the
               -- element that will be chosen by default when the form is
               -- rendered
-              if group' == item^.group_
-                then option_ [selected_ "selected", value_ txt] (toHtml txt)
-                else option_ [value_ txt] (toHtml txt)
+              option_ [value_ txt] (toHtml txt)
+                & selectedIf (group' == item^.group_)
             option_ [value_ newGroupValue] "New group..."
         input_ [uid_ newGroupInputId, type_ "text",
                 name_ "custom-group", hidden_ "hidden"]
@@ -830,6 +846,7 @@ renderItemNotes category item = do
     -- duplication
 
     section "collapsed" [shown] $ do
+      -- TODO: when notes are hidden, show a list of headers in the notes
       textButton "show notes/examples" $
         JS.switchSection (this, "expanded" :: Text)
 
