@@ -34,6 +34,7 @@ executable guide
     Markdown
     JS
     SampleState
+    View
   -- other-extensions:    
   build-depends:       Spock
                      , acid-state == 0.14.*

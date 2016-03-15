@@ -16,6 +16,7 @@ NoImplicitPrelude
 module Types
 (
   Uid(..),
+    randomUid,
   Trait(..),
   ItemKind(..),
     hackageName,
@@ -91,10 +92,6 @@ import qualified Data.Map as M
 import Data.Map (Map)
 -- Text
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Buildable as Format
--- Web
-import Web.PathPieces
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
@@ -102,18 +99,6 @@ import Data.Acid as Acid
 -- Local
 import Utils
 
-
--- | Unique id, used for many things – categories, items, and anchor ids.
--- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
-newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, PathPiece, Format.Buildable, Data)
-
-deriveSafeCopy 0 'base ''Uid
-
-instance IsString Uid where
-  fromString = Uid . T.pack
-
---
 
 data Trait = Trait {
   _traitUid :: Uid,

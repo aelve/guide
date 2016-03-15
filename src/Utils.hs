@@ -1,5 +1,8 @@
 {-# LANGUAGE
 OverloadedStrings,
+TemplateHaskell,
+GeneralizedNewtypeDeriving,
+DeriveDataTypeable,
 NoImplicitPrelude
   #-}
 
@@ -19,6 +22,11 @@ module Utils
   Url,
   sanitiseUrl,
 
+  -- * UID
+  Uid(..),
+  randomUid,
+  uid_,
+
   -- * Lucid
   includeJS,
   includeCSS,
@@ -33,18 +41,24 @@ where
 import BasePrelude
 -- Monads and monad transformers
 import Control.Monad.IO.Class
+-- Random
+import System.Random
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
 import qualified Data.Text.Lazy as TL
 -- Formatting
-import Data.Text.Format hiding (format)
-import qualified Data.Text.Format as Format
+import           Data.Text.Format hiding (format)
+import qualified Data.Text.Format        as Format
 import qualified Data.Text.Format.Params as Format
+import qualified Data.Text.Buildable     as Format
 -- Web
 import Lucid
 import Web.Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
+import Web.PathPieces
+-- acid-state
+import Data.SafeCopy
 
 
 -- | Format a string (a bit like 'Text.Printf.printf' but with different
@@ -78,6 +92,22 @@ sanitiseUrl u
   | "http:" `T.isPrefixOf` u  = Just u
   | "https:" `T.isPrefixOf` u = Just u
   | otherwise                 = Just ("http://" <> u)
+
+-- | Unique id, used for many things – categories, items, and anchor ids.
+-- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
+newtype Uid = Uid {uidToText :: Text}
+  deriving (Eq, PathPiece, Format.Buildable, Data)
+
+deriveSafeCopy 0 'base ''Uid
+
+instance IsString Uid where
+  fromString = Uid . T.pack
+
+randomUid :: MonadIO m => m Uid
+randomUid = liftIO $ Uid . tshow <$> randomRIO (0::Int, 10^(9::Int))
+
+uid_ :: Uid -> Attribute
+uid_ = id_ . uidToText
 
 includeJS :: Monad m => Url -> HtmlT m ()
 includeJS url = with (script_ "") [src_ url]
