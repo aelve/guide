@@ -5,6 +5,15 @@ The most important rule is: **it's collaborative notes, not Wikipedia**. In othe
 > **pros:** pretty nice API\
 > **cons:** buggy (see an example on my Github, here's the link)
 
+Markdown is supported in most places. 2 noteworthy features: tou can write `[pkg](@hackage)` to get a link to package `pkg` on Hackage, and you can mark snippets of code with `repl` to show that they come from GHCi:
+
+~~~~
+~~~ haskell repl
+> 2+2
+4
+~~~
+~~~
+
 Some additional guidelines/observations/etc that probably make sense:
 
   * sort pros/cons by importance

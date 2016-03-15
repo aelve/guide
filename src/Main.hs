@@ -411,8 +411,6 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
       a_ [href_ "/donate"] "donate"
       sup_ [style_ "font-size:50%"] "I don't have a job"
 
--- TODO: mention that (@hackage) is supported somewhere
-
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
@@ -501,7 +499,7 @@ renderHelp = do
       renderMarkdownBlock help
 
 helpVersion :: Int
-helpVersion = 1
+helpVersion = 2
 
 -- TODO: when conflicts happen, maybe create an alert like “The thing you're
 -- editing has been edited in the meantime. Here is a link with a diff of
