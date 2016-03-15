@@ -15,8 +15,6 @@ NoImplicitPrelude
 
 module Types
 (
-  Uid(..),
-    randomUid,
   Trait(..),
   ItemKind(..),
     hackageName,

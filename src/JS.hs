@@ -24,7 +24,6 @@ import qualified Data.Text.Buildable as Format
 import NeatInterpolation
 
 -- Local
-import Types
 import Utils
 
 
