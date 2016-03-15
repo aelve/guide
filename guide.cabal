@@ -63,6 +63,6 @@ executable guide
                      , wai-middleware-static
                      , xss-sanitize
   ghc-options:         -Wall -fno-warn-unused-do-bind
-                       -threaded -with-rtsopts=-T
+                       -threaded "-with-rtsopts=-T -N"
   hs-source-dirs:      src
   default-language:    Haskell2010
