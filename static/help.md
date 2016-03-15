@@ -12,7 +12,7 @@ Markdown is supported in most places. 2 noteworthy features: tou can write `[pkg
 > 2+2
 4
 ~~~
-~~~
+~~~~
 
 Some additional guidelines/observations/etc that probably make sense:
 
