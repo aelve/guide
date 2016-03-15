@@ -2,6 +2,7 @@
 QuasiQuotes,
 OverloadedStrings,
 FlexibleContexts,
+ViewPatterns,
 NoImplicitPrelude
   #-}
 
@@ -121,7 +122,7 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
     -- should be fixed in css.css by adding line-height to it
     h1_ "A guide to Haskell libraries and tools"
     noscript_ $ div_ [id_ "noscript-message"] $
-      renderMarkdownBlock [text|
+      toHtml $ renderMarkdownBlock [text|
         You have Javascript disabled! This site works fine without
         Javascript, but since all editing needs Javascript to work,
         you won't be able to edit anything.
@@ -189,7 +190,7 @@ renderDonate = doctypehtml_ $ do
 
   -- TODO: move this into its own file in static/?
   body_ $ do
-    renderMarkdownBlock [text|
+    toHtml $ renderMarkdownBlock [text|
       Okay, the rules: if you donate *anything*, I'll spend some time working
       on the site this day (adding content, implementing new features, etc).
 
@@ -250,7 +251,7 @@ renderHelp = do
       -- Don't forget to change 'helpVersion' when the text changes
       -- substantially and you think the users should reread it
       help <- liftIO $ T.readFile "static/help.md"
-      renderMarkdownBlock help
+      toHtml $ renderMarkdownBlock help
 
 helpVersion :: Int
 helpVersion = 2
@@ -302,9 +303,9 @@ renderCategoryNotes category = do
   div_ [id_ thisId] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      if T.null (category^.notes)
+      if category^.notes == ""
         then p_ "write something here!"
-        else renderMarkdownBlock (category^.notes)
+        else toHtml (category^.notes)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
@@ -505,9 +506,9 @@ renderItemDescription category item = do
         style_ ("background-color:" <> bg)] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      if T.null (item^.description)
+      if item^.description == ""
         then p_ "write something here!"
-        else renderMarkdownBlock (item^.description)
+        else toHtml (item^.description)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
@@ -568,10 +569,10 @@ renderTrait itemId trait = do
   li_ [id_ thisId] $ do
 
     sectionSpan "normal" [shown, noScriptShown] $ do
-      renderMarkdownLine (trait^.content)
+      toHtml (trait^.content)
 
     section "editable" [] $ do
-      renderMarkdownLine (trait^.content)
+      toHtml (trait^.content)
       br_ []
       imgButton "move trait up" "/arrow-thick-top.svg" [width_ "12"] $
         JS.moveTraitUp (itemId, trait^.uid, this)
@@ -643,18 +644,19 @@ renderItemNotes category item = do
             textButton "edit notes" $
               JS.switchSection (this, "editing" :: Text)
       buttons
-      if T.null (item^.notes)
+      if item^.notes == ""
         then p_ "add something!"
-        else renderMarkdownBlock (item^.notes)
+        else toHtml (item^.notes)
       buttons
       -- TODO: [easy] the lower “hide notes” should scroll back to item when
       -- the notes are closed (but don't scroll if it's already visible after
       -- the notes have been hidden)
 
     section "editing" [] $ do
-      contents <- if T.null (item^.notes)
-                    then liftIO $ T.readFile "static/item-notes-template.md"
-                    else return (item^.notes)
+      contents <- if item^.notes == ""
+        then liftIO $ renderMarkdownBlock <$>
+               T.readFile "static/item-notes-template.md"
+        else return (item^.notes)
       markdownEditor
         contents
         (\val -> JS.submitItemNotes (this, item^.uid, val))
@@ -718,11 +720,11 @@ imgButton alt src attrs (JS handler) =
      (img_ (src_ src : alt_ alt : attrs))
 
 markdownEditor
-  :: Text         -- ^ Default text
-  -> (JS -> JS)   -- ^ “Submit” handler, receiving the contents of the editor
-  -> JS           -- ^ “Cancel” handler
+  :: MarkdownBlock  -- ^ Default text
+  -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
+  -> JS             -- ^ “Cancel” handler
   -> HtmlT IO ()
-markdownEditor s submit cancel = do
+markdownEditor (markdownBlockText -> s) submit cancel = do
   textareaId <- randomUid
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
@@ -741,11 +743,11 @@ markdownEditor s submit cancel = do
 
 smallMarkdownEditor
   :: [Attribute]
-  -> Text         -- ^ Default text
-  -> (JS -> JS)   -- ^ “Submit” handler, receiving the contents of the editor
-  -> Maybe JS     -- ^ “Cancel” handler (if “Cancel” is needed)
+  -> MarkdownInline -- ^ Default text
+  -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
+  -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> HtmlT IO ()
-smallMarkdownEditor attributes s submit mbCancel = do
+smallMarkdownEditor attributes (markdownInlineText -> s) submit mbCancel = do
   textareaId <- randomUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",

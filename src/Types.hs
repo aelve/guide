@@ -96,15 +96,31 @@ import Data.Acid as Acid
 
 -- Local
 import Utils
+import Markdown
 
 
 data Trait = Trait {
   _traitUid :: Uid,
-  _traitContent :: Text }
+  _traitContent :: MarkdownInline }
   deriving (Eq, Data)
 
-deriveSafeCopy 0 'base ''Trait
+deriveSafeCopy 1 'extension ''Trait
 makeFields ''Trait
+
+-- Old version, needed for safe migration. It can most likely be already
+-- deleted (if a checkpoint has been created), but it's been left here as a
+-- template for future migrations.
+data Trait_v0 = Trait_v0 {
+  _traitUid_v0 :: Uid,
+  _traitContent_v0 :: Text }
+
+deriveSafeCopy 0 'base ''Trait_v0
+
+instance Migrate Trait where
+  type MigrateFrom Trait = Trait_v0
+  migrate Trait_v0{..} = Trait {
+    _traitUid = _traitUid_v0,
+    _traitContent = renderMarkdownInline _traitContent_v0 }
 
 --
 
@@ -117,6 +133,9 @@ data ItemKind
 deriveSafeCopy 2 'base ''ItemKind
 makeFields ''ItemKind
 
+-- Old version, needed for safe migration. It can most likely be already
+-- deleted (if a checkpoint has been created), but it's been left here as a
+-- template for future migrations.
 data ItemKind_v1
   = Library_v1 {_itemKindOnHackage_v1 :: Bool}
   | Tool_v1 {_itemKindOnHackage_v1 :: Bool}
@@ -132,48 +151,45 @@ data Item = Item {
   _itemUid         :: Uid,
   _itemName        :: Text,
   _itemGroup_      :: Maybe Text,
-  _itemDescription :: Text,
+  _itemDescription :: MarkdownBlock,
   _itemPros        :: [Trait],
   _itemCons        :: [Trait],
-  _itemNotes       :: Text,
+  _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
   deriving (Eq, Data)
 
--- TODO: make a 'Markdown' type alias?
-
-deriveSafeCopy 2 'extension ''Item
+deriveSafeCopy 3 'extension ''Item
 makeFields ''Item
 
--- Old version, needed for safe migration, can be deleted
-data Item_v1 = Item_v1 {
-  _itemUid_v1         :: Uid,
-  _itemName_v1        :: Text,
-  _itemGroup__v1      :: Maybe Text,
-  _itemDescription_v1 :: Text,
-  _itemPros_v1        :: [Trait],
-  _itemCons_v1        :: [Trait],
-  _itemNotes_v1       :: Text,
-  _itemLink_v1        :: Maybe Url,
-  _itemKind_v1        :: ItemKind_v1 }
+-- Old version, needed for safe migration. It can most likely be already
+-- deleted (if a checkpoint has been created), but it's been left here as a
+-- template for future migrations.
+data Item_v2 = Item_v2 {
+  _itemUid_v2         :: Uid,
+  _itemName_v2        :: Text,
+  _itemGroup__v2      :: Maybe Text,
+  _itemDescription_v2 :: Text,
+  _itemPros_v2        :: [Trait],
+  _itemCons_v2        :: [Trait],
+  _itemNotes_v2       :: Text,
+  _itemLink_v2        :: Maybe Url,
+  _itemKind_v2        :: ItemKind }
 
-deriveSafeCopy 1 'base ''Item_v1
+deriveSafeCopy 2 'base ''Item_v2
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v1
-  migrate Item_v1{..} = Item {
-    _itemUid = _itemUid_v1,
-    _itemName = _itemName_v1,
-    _itemGroup_ = _itemGroup__v1,
-    _itemDescription = _itemDescription_v1,
-    _itemPros = _itemPros_v1,
-    _itemCons = _itemCons_v1,
-    _itemNotes = _itemNotes_v1,
-    _itemLink = _itemLink_v1,
-    _itemKind = case _itemKind_v1 of
-        Library_v1 x -> Library (guard x $> _itemName_v1)
-        Tool_v1    x -> Tool    (guard x $> _itemName_v1)
-        Other_v1     -> Other }
+  type MigrateFrom Item = Item_v2
+  migrate Item_v2{..} = Item {
+    _itemUid = _itemUid_v2,
+    _itemName = _itemName_v2,
+    _itemGroup_ = _itemGroup__v2,
+    _itemDescription = renderMarkdownBlock _itemDescription_v2,
+    _itemPros = _itemPros_v2,
+    _itemCons = _itemCons_v2,
+    _itemNotes = renderMarkdownBlock _itemNotes_v2,
+    _itemLink = _itemLink_v2,
+    _itemKind = _itemKind_v2 }
 
 --
 
@@ -242,13 +258,34 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 data Category = Category {
   _categoryUid :: Uid,
   _categoryTitle :: Text,
-  _categoryNotes :: Text,
+  _categoryNotes :: MarkdownBlock,
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item] }
   deriving (Eq, Data)
 
-deriveSafeCopy 0 'base ''Category
+deriveSafeCopy 1 'extension ''Category
 makeFields ''Category
+
+-- Old version, needed for safe migration. It can most likely be already
+-- deleted (if a checkpoint has been created), but it's been left here as a
+-- template for future migrations.
+data Category_v0 = Category_v0 {
+  _categoryUid_v0 :: Uid,
+  _categoryTitle_v0 :: Text,
+  _categoryNotes_v0 :: Text,
+  _categoryGroups_v0 :: Map Text Hue,
+  _categoryItems_v0 :: [Item] }
+
+deriveSafeCopy 0 'base ''Category_v0
+
+instance Migrate Category where
+  type MigrateFrom Category = Category_v0
+  migrate Category_v0{..} = Category {
+    _categoryUid = _categoryUid_v0,
+    _categoryTitle = _categoryTitle_v0,
+    _categoryNotes = renderMarkdownBlock _categoryNotes_v0,
+    _categoryGroups = _categoryGroups_v0,
+    _categoryItems = _categoryItems_v0 }
 
 --
 
@@ -353,7 +390,7 @@ addPro
   -> Text
   -> Acid.Update GlobalState Trait
 addPro itemId traitId text' = do
-  let newTrait = Trait traitId text'
+  let newTrait = Trait traitId (renderMarkdownInline text')
   itemById itemId . pros %= (++ [newTrait])
   return newTrait
 
@@ -363,7 +400,7 @@ addCon
   -> Text
   -> Acid.Update GlobalState Trait
 addCon itemId traitId text' = do
-  let newTrait = Trait traitId text'
+  let newTrait = Trait traitId (renderMarkdownInline text')
   itemById itemId . cons %= (++ [newTrait])
   return newTrait
 
@@ -376,7 +413,8 @@ setCategoryTitle catId title' = do
 
 setCategoryNotes :: Uid -> Text -> Acid.Update GlobalState Category
 setCategoryNotes catId notes' = do
-  categoryById catId . notes .= notes'
+  categoryById catId . notes .=
+    renderMarkdownBlock notes'
   use (categoryById catId)
 
 setItemName :: Uid -> Text -> Acid.Update GlobalState Item
@@ -427,17 +465,20 @@ setItemKind itemId kind' = do
 
 setItemDescription :: Uid -> Text -> Acid.Update GlobalState Item
 setItemDescription itemId description' = do
-  itemById itemId . description .= description'
+  itemById itemId . description .=
+    renderMarkdownBlock description'
   use (itemById itemId)
 
 setItemNotes :: Uid -> Text -> Acid.Update GlobalState Item
 setItemNotes itemId notes' = do
-  itemById itemId . notes .= notes'
+  itemById itemId . notes .=
+    renderMarkdownBlock notes'
   use (itemById itemId)
 
 setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait
 setTraitContent itemId traitId content' = do
-  itemById itemId . traitById traitId . content .= content'
+  itemById itemId . traitById traitId . content .=
+    renderMarkdownInline content'
   use (itemById itemId . traitById traitId)
 
 -- delete

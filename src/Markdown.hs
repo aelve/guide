@@ -6,8 +6,10 @@ NoImplicitPrelude
 
 module Markdown
 (
-  renderMarkdownLine,
+  renderMarkdownInline,
   renderMarkdownBlock,
+  MarkdownInline(..),
+  MarkdownBlock(..),
 )
 where
 
@@ -16,6 +18,7 @@ where
 import BasePrelude hiding (Space)
 -- Monad transformers and monads
 import Control.Monad.Writer
+import Data.Functor.Identity
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
@@ -23,6 +26,8 @@ import Data.Text (Text)
 import Text.Megaparsec
 -- HTML
 import Lucid
+import Lucid.Base
+import Blaze.ByteString.Builder (Builder)
 -- Sequence (used by Cheapskate)
 import Data.Sequence
 -- Markdown
@@ -30,6 +35,8 @@ import Cheapskate
 import Cheapskate.Lucid
 import Cheapskate.Highlight
 import ShortcutLinks
+-- acid-state
+import Data.SafeCopy
 
 
 -- | Convert a Markdown structure to a string with formatting removed.
@@ -92,13 +99,13 @@ parseLink = either (Left . show) Right . parse p ""
            <*> optional (T.pack <$> opt)
            <*> optional (T.pack <$> text)
 
--- TODO: rename to renderMarkdownInline
-renderMarkdownLine :: Monad m => Text -> HtmlT m ()
-renderMarkdownLine s = do
-  let Doc opts blocks = markdown def{allowRawHtml=False} s
-      inlines = extractInlines =<< blocks
-  renderInlines opts (walk shortcutLinks inlines)
+renderMarkdownInline :: Text -> MarkdownInline
+renderMarkdownInline s = MarkdownInline s (htmlToBuilder md)
   where
+    Doc opts blocks = markdown def{allowRawHtml=False} s
+    inlines = extractInlines =<< blocks
+    md = renderInlines opts (walk shortcutLinks inlines)
+    --
     extractInlines (Para xs) = xs
     extractInlines (Header _ xs) = xs
     extractInlines (Blockquote bs) = extractInlines =<< bs
@@ -107,7 +114,71 @@ renderMarkdownLine s = do
     extractInlines (HtmlBlock x) = pure (Code x)
     extractInlines HRule = mempty
 
--- TODO: rename to renderMarkdownBlocks
-renderMarkdownBlock :: Monad m => Text -> HtmlT m ()
-renderMarkdownBlock =
-  renderDoc . highlightDoc . walk shortcutLinks . markdown def
+renderMarkdownBlock :: Text -> MarkdownBlock
+renderMarkdownBlock s = MarkdownBlock s (htmlToBuilder md)
+  where
+    md = renderDoc . highlightDoc . walk shortcutLinks . markdown def $ s
+
+data MarkdownInline = MarkdownInline {
+  markdownInlineText :: Text,
+  markdownInlineHtml :: !Builder }
+
+data MarkdownBlock = MarkdownBlock {
+  markdownBlockText :: Text,
+  markdownBlockHtml :: !Builder }
+
+instance Eq MarkdownInline where
+  (==) = (==) `on` markdownInlineText
+instance Eq MarkdownBlock where
+  (==) = (==) `on` markdownBlockText
+
+markdownInlineDatatype :: DataType
+markdownInlineDatatype =
+  mkDataType "MarkdownInline" [markdownInlineConstr]
+markdownInlineConstr :: Constr
+markdownInlineConstr =
+  mkConstr markdownInlineDatatype "MarkdownInline" [] Prefix
+markdownBlockDatatype :: DataType
+markdownBlockDatatype =
+  mkDataType "MarkdownBlock" [markdownBlockConstr]
+markdownBlockConstr :: Constr
+markdownBlockConstr =
+  mkConstr markdownBlockDatatype "MarkdownBlock" [] Prefix
+
+instance Data MarkdownInline where
+  gunfold k z _ = k (z (flip MarkdownInline (error "MarkdownInline: gunfold")))
+  toConstr _ = markdownInlineConstr
+  dataTypeOf _ = markdownInlineDatatype
+instance Data MarkdownBlock where
+  gunfold k z _ = k (z (flip MarkdownBlock (error "MarkdownBlock: gunfold")))
+  toConstr _ = markdownBlockConstr
+  dataTypeOf _ = markdownBlockDatatype
+
+instance ToHtml MarkdownInline where
+  toHtml    = builderToHtml . markdownInlineHtml
+  toHtmlRaw = builderToHtml . markdownInlineHtml
+instance ToHtml MarkdownBlock where
+  toHtml    = builderToHtml . markdownBlockHtml
+  toHtmlRaw = builderToHtml . markdownBlockHtml
+
+builderToHtml :: Monad m => Builder -> HtmlT m ()
+builderToHtml b = HtmlT (return (\_ -> b, ()))
+
+htmlToBuilder :: Html () -> Builder
+htmlToBuilder = runIdentity . execHtmlT
+
+instance IsString MarkdownInline where
+  fromString = renderMarkdownInline . fromString
+instance IsString MarkdownBlock where
+  fromString = renderMarkdownBlock . fromString
+
+instance SafeCopy MarkdownInline where
+  version = 0
+  kind = base
+  putCopy = contain . safePut . markdownInlineText
+  getCopy = contain $ renderMarkdownInline <$> safeGet
+instance SafeCopy MarkdownBlock where
+  version = 0
+  kind = base
+  putCopy = contain . safePut . markdownBlockText
+  getCopy = contain $ renderMarkdownBlock <$> safeGet
