@@ -637,11 +637,11 @@ renderItemNotes category item = do
 
     section "expanded" [noScriptShown] $ do
       let buttons = do
-            textButton "edit notes" $
-              JS.switchSection (this, "editing" :: Text)
-            emptySpan "1em"
             textButton "hide notes" $
               JS.switchSection (this, "collapsed" :: Text)
+            emptySpan "1em"
+            textButton "edit notes" $
+              JS.switchSection (this, "editing" :: Text)
       buttons
       if T.null (item^.notes)
         then p_ "add something!"
