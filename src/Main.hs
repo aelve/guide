@@ -256,8 +256,17 @@ otherMethods = do
 
 main :: IO ()
 main = do
-  bracket (openLocalStateFrom "state/" sampleState)
-          (\db -> createCheckpoint db >> closeAcidState db) $ \db -> do
+  -- When we run in GHCi and we exit the main thread, the EKG thread (that
+  -- runs the localhost:5050 server which provides statistics) may keep
+  -- running. This makes running this in GHCi annoying, because you have to
+  -- restart GHCi before every run. So, we kill the thread in the finaliser.
+  ekgId <- newIORef Nothing
+  let prepare = openLocalStateFrom "state/" sampleState
+      finalise db = do
+        createCheckpoint db
+        closeAcidState db
+        mapM_ killThread =<< readIORef ekgId
+  bracket prepare finalise $ \db -> do
     -- Create a checkpoint every hour. Note: if nothing was changed,
     -- acid-state overwrites the previous checkpoint, which saves us some
     -- space.
@@ -265,9 +274,8 @@ main = do
       createCheckpoint db
       threadDelay (1000000 * 3600)
     -- EKG metrics
-    -- TODO: stop the server upon exit, somehow (or just don't start it
-    -- unless there's been some option passed?)
     ekg <- EKG.forkServer "localhost" 5050
+    writeIORef ekgId (Just (EKG.serverThreadId ekg))
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
     itemGauge <- EKG.getGauge "db.items" ekg
