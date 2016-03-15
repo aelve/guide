@@ -101,13 +101,12 @@ import Data.Acid as Acid
 
 -- Local
 import Utils
-import JS (ToJS)
 
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 -- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
 newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, PathPiece, ToJS, Format.Buildable, Data)
+  deriving (Eq, PathPiece, Format.Buildable, Data)
 
 deriveSafeCopy 0 'base ''Uid
 

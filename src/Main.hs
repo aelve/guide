@@ -27,7 +27,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
 import NeatInterpolation
-import qualified Data.Text.Buildable as Format
 -- Randomness
 import System.Random
 -- Web
@@ -48,7 +47,7 @@ import Data.Acid as Acid
 
 -- Local
 import Types
-import JS (JS(..), ToJS(..), allJSFunctions)
+import JS (JS(..), allJSFunctions, JQuerySelector)
 import qualified JS
 import Utils
 import Markdown
@@ -304,9 +303,9 @@ main = do
       Spock.get "donate" $ do
         lucid $ renderDonate
       -- The add/set methods return rendered parts of the structure (added
-      -- categories, changed items, etc) so that the Javascript part could take
-      -- them and inject into the page. We don't want to duplicate rendering on
-      -- server side and on client side.
+      -- categories, changed items, etc) so that the Javascript part could
+      -- take them and inject into the page. We don't want to duplicate
+      -- rendering on server side and on client side.
       renderMethods
       setMethods
       addMethods
@@ -381,14 +380,14 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
         you won't be able to edit anything.
         |]
     renderHelp
-    onPageLoad $ JS.showOrHideHelp (selectId "help", helpVersion)
+    onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
     form_ $ do
       input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
               value_ (fromMaybe "" mbSearchQuery)]
     textInput [
       placeholder_ "add a category",
       autocomplete_ "off",
-      onEnter $ JS.addCategory (selectId "categories", inputValue) <>
+      onEnter $ JS.addCategory (JS.selectId "categories", inputValue) <>
                 clearInput ]
     -- TODO: sort categories by popularity, somehow? or provide a list of
     -- “commonly used categories” or even a nested catalog
@@ -496,11 +495,11 @@ renderHelp = do
     -- 'JS.hideHelp'
     section "collapsed" [shown] $ do
       textButton "show help" $
-        JS.showHelp (selectId "help", helpVersion)
+        JS.showHelp (JS.selectId "help", helpVersion)
 
     section "expanded" [noScriptShown] $ do
       textButton "hide help" $
-        JS.hideHelp (selectId "help", helpVersion)
+        JS.hideHelp (JS.selectId "help", helpVersion)
       -- Don't forget to change 'helpVersion' when the text changes
       -- substantially and you think the users should reread it
       help <- liftIO $ T.readFile "static/help.md"
@@ -518,8 +517,6 @@ helpVersion = 2
 -- TODO: automatic merge should be possible too (e.g. if the changes are in
 -- different paragraphs)
 
--- TODO: [very-easy] rename selectChild to selectChildren
-
 renderCategoryList :: [Category] -> HtmlT IO ()
 renderCategoryList cats =
   div_ [id_ "categories"] $
@@ -528,7 +525,7 @@ renderCategoryList cats =
 renderCategoryTitle :: Category -> HtmlT IO ()
 renderCategoryTitle category = do
   let thisId = "category-title-" <> uidToText (category^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   -- TODO: once pagination or something is implemented, we'll have to see
   -- whether an anchor has been used in the query string and load the
   -- necessary category if so
@@ -554,7 +551,7 @@ renderCategoryTitle category = do
 renderCategoryNotes :: Category -> HtmlT IO ()
 renderCategoryNotes category = do
   let thisId = "category-notes-" <> uidToText (category^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   div_ [id_ thisId] $ do
 
     section "normal" [shown, noScriptShown] $ do
@@ -614,7 +611,7 @@ renderItemInfo :: Category -> Item -> HtmlT IO ()
 renderItemInfo cat item = do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-info",
         style_ ("background-color:" <> bg)] $ do
 
@@ -652,7 +649,7 @@ renderItemInfo cat item = do
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
-        let itemNode = selectId ("item-" <> uidToText (item^.uid))
+        let itemNode = JS.selectId ("item-" <> uidToText (item^.uid))
         imgButton "move item up" "/arrow-thick-top.svg" [] $
           -- TODO: [easy] the item should blink or somehow else show where it
           -- has been moved
@@ -672,8 +669,8 @@ renderItemInfo cat item = do
       let selectedIf p x = if p then with x [selected_ "selected"] else x
       -- otherNodes are all nodes that have to be recolored when this node is
       -- recolored
-      let otherNodes = selectChild (selectParent this)
-                                   (selectClass "item-body")
+      let otherNodes = JS.selectChildren (JS.selectParent this)
+                                         (JS.selectClass "item-body")
       let formSubmitHandler formNode =
             JS.submitItemInfo (this, otherNodes, item^.uid, formNode)
       form_ [onFormSubmit formSubmitHandler] $ do
@@ -756,7 +753,7 @@ renderItemDescription category item = do
   -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
   -- having a div with a class “item-body” here.
   let thisId = "item-description-" <> uidToText (item^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-description item-body",
         style_ ("background-color:" <> bg)] $ do
 
@@ -820,7 +817,7 @@ renderTrait :: Uid -> Trait -> HtmlT IO ()
 -- TODO: probably use renderMarkdownBlock here as well
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   li_ [id_ thisId] $ do
 
     sectionSpan "normal" [shown, noScriptShown] $ do
@@ -880,7 +877,7 @@ renderItemNotes category item = do
   -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
   -- having a div with a class “item-body” here.
   let thisId = "item-notes-" <> uidToText (item^.uid)
-      this   = selectId thisId
+      this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-notes item-body",
         style_ ("background-color:" <> bg)] $ do
     -- TODO: this duplicates code from renderCategoryNotes, try to reduce
@@ -1017,31 +1014,13 @@ smallMarkdownEditor attributes s submit mbCancel = do
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
 
-newtype JQuerySelector = JQuerySelector Text
-  deriving (ToJS, Format.Buildable)
-
-selectId :: Text -> JQuerySelector
-selectId x = JQuerySelector $ format "#{}" [x]
-
-selectUid :: Uid -> JQuerySelector
-selectUid x = JQuerySelector $ format "#{}" [x]
-
-selectClass :: Text -> JQuerySelector
-selectClass x = JQuerySelector $ format ".{}" [x]
-
-selectParent :: JQuerySelector -> JQuerySelector
-selectParent x = JQuerySelector $ format ":has(> {})" [x]
-
-selectChild :: JQuerySelector -> JQuerySelector -> JQuerySelector
-selectChild a b = JQuerySelector $ format "{} > {}" (a, b)
-
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
   uid' <- randomUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
-  return (selectParent (selectUid uid'))
+  return (JS.selectParent (JS.selectUid uid'))
 
 -- TODO: add an “ecosystem” field with related packages/etc (just a simple
 -- Markdown-edited field under pros/cons)

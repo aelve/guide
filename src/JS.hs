@@ -24,6 +24,7 @@ import qualified Data.Text.Buildable as Format
 import NeatInterpolation
 
 -- Local
+import Types
 import Utils
 
 
@@ -66,6 +67,8 @@ instance ToJS Integer where
   toJS = JS . tshow
 instance ToJS Int where
   toJS = JS . tshow
+instance ToJS Uid where
+  toJS = toJS . uidToText
 
 -- | A helper class for calling Javascript functions.
 class JSParams a where
@@ -424,3 +427,21 @@ escapeJSString s =
           B.singleton c
       where
         h = showHex (fromEnum c) ""
+
+newtype JQuerySelector = JQuerySelector Text
+  deriving (ToJS, Format.Buildable)
+
+selectId :: Text -> JQuerySelector
+selectId x = JQuerySelector $ format "#{}" [x]
+
+selectUid :: Uid -> JQuerySelector
+selectUid x = JQuerySelector $ format "#{}" [x]
+
+selectClass :: Text -> JQuerySelector
+selectClass x = JQuerySelector $ format ".{}" [x]
+
+selectParent :: JQuerySelector -> JQuerySelector
+selectParent x = JQuerySelector $ format ":has(> {})" [x]
+
+selectChildren :: JQuerySelector -> JQuerySelector -> JQuerySelector
+selectChildren a b = JQuerySelector $ format "{} > {}" (a, b)
