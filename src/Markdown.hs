@@ -23,19 +23,14 @@ import Data.Text (Text)
 import Text.Megaparsec
 -- HTML
 import Lucid
-import qualified Text.Blaze.Html.Renderer.Text as Blaze
-import qualified Text.Blaze.Html as Blaze
--- Seq (used by Cheapskate)
+-- Sequence (used by Cheapskate)
 import Data.Sequence
 -- Markdown
 import Cheapskate
-import Cheapskate.Html
+import Cheapskate.Lucid
 import Cheapskate.Highlight
 import ShortcutLinks
 
-
-blazeToLucid :: Monad m => Blaze.Html -> HtmlT m ()
-blazeToLucid = toHtmlRaw . Blaze.renderHtml
 
 -- | Convert a Markdown structure to a string with formatting removed.
 stringify :: Inline -> Text
@@ -102,7 +97,7 @@ renderMarkdownLine :: Monad m => Text -> HtmlT m ()
 renderMarkdownLine s = do
   let Doc opts blocks = markdown def{allowRawHtml=False} s
       inlines = extractInlines =<< blocks
-  blazeToLucid (renderInlines opts (walk shortcutLinks inlines))
+  renderInlines opts (walk shortcutLinks inlines)
   where
     extractInlines (Para xs) = xs
     extractInlines (Header _ xs) = xs
@@ -115,6 +110,4 @@ renderMarkdownLine s = do
 -- TODO: rename to renderMarkdownBlocks
 renderMarkdownBlock :: Monad m => Text -> HtmlT m ()
 renderMarkdownBlock =
-  blazeToLucid . renderDoc .
-  highlightDoc . walk shortcutLinks .
-  markdown def
+  renderDoc . highlightDoc . walk shortcutLinks . markdown def

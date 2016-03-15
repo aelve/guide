@@ -39,9 +39,9 @@ executable guide
                      , acid-state == 0.14.*
                      , base >=4.8 && <4.9
                      , base-prelude
-                     , blaze-html >= 0.8.1.1
                      , cheapskate
                      , cheapskate-highlight == 0.1.*
+                     , cheapskate-lucid == 0.1.*
                      , containers >= 0.5
                      , ekg
                      , ekg-core
