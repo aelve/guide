@@ -688,6 +688,9 @@ clearInput = JS "this.value = '';"
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
 
+-- TODO: make links to categories look like id/category-name (where
+-- category-name doesn't matter)
+
 button :: Text -> [Attribute] -> JS -> HtmlT IO ()
 button value attrs handler =
   input_ (type_ "button" : value_ value : onclick_ handler' : attrs)

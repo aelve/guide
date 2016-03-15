@@ -8,7 +8,7 @@ The most important rule is: **it's collaborative notes, not Wikipedia**. In othe
 Markdown is supported in most places. 2 noteworthy features: tou can write `[pkg](@hackage)` to get a link to package `pkg` on Hackage, and you can mark snippets of code with `repl` to show that they come from GHCi:
 
 ~~~~
-~~~ haskell repl
+~~~ hs repl
 > 2+2
 4
 ~~~
