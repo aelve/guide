@@ -41,6 +41,7 @@ import Data.Acid as Acid
 import View
 import Types
 import JS (JS(..), allJSFunctions)
+import Markdown
 import Utils
 
 
@@ -271,8 +272,13 @@ main = do
       globalState <- Acid.query db GetGlobalState
       let allCategories = globalState^.categories
       let allItems = allCategories^.each.items
-      -- Count length of all Text values in global state
-      let textLength = sum (map T.length (childrenBi globalState))
+      -- Count length of all Text values in global state. This actually
+      -- doesn't work because for some reason Uniplate doesn't see Text
+      -- inside MarkdownInline and MarkdownBlock, so instead we gather all
+      -- Markdown values and look into them manually.
+      let textLength =
+            sum (map (T.length . markdownInlineText) (childrenBi globalState))
+           +sum (map (T.length . markdownBlockText)  (childrenBi globalState))
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       EKG.Gauge.set textGauge (fromIntegral textLength)
