@@ -83,11 +83,17 @@ code {
   font-size: 95%;
   padding: 2px 4px; }
 
+div.sourceCode {
+  overflow-x: unset; }
+
 pre {
   background: rgba(10, 10, 10, 0.1);
   line-height: 150%;
   padding: 0.5em 1em;
   overflow-x: auto; }
+
+pre.repl {
+  border-left: 5px solid gray; }
 
 pre code {
   background: rgba(0, 0, 0, 0);

@@ -342,8 +342,10 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
     -- See Note [autosize]
     includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
     onPageLoad (JS "autosize($('textarea'));")
-    includeCSS "/css.css"
+    -- It's important that css.css comes second – it overwrites some rules
+    -- from highlight.css (see the rule for div.sourceCode)
     includeCSS "/highlight.css"
+    includeCSS "/css.css"
     -- Include definitions of all Javascript functions that we have defined
     -- in this file. (This isn't an actual file, so don't look for it in the
     -- static folder – it's generated and served in 'otherMethods'.)
