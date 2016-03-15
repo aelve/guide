@@ -33,7 +33,6 @@ executable guide
     Utils
     Markdown
     JS
-    SampleState
     View
   -- other-extensions:    
   build-depends:       Spock

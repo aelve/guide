@@ -42,7 +42,6 @@ import View
 import Types
 import JS (JS(..), allJSFunctions)
 import Utils
-import SampleState
 
 
 ------------------------------------------------------------------------------
@@ -243,12 +242,13 @@ otherMethods = do
 
 main :: IO ()
 main = do
+  let emptyState = GlobalState mempty
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
   -- restart GHCi before every run. So, we kill the thread in the finaliser.
   ekgId <- newIORef Nothing
-  let prepare = openLocalStateFrom "state/" sampleState
+  let prepare = openLocalStateFrom "state/" emptyState
       finalise db = do
         createCheckpoint db
         closeAcidState db
