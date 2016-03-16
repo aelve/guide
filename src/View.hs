@@ -170,9 +170,6 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
 -- until it's been submitted
 
 -- TODO: disable tracking on localhost! (and edit INSTALL.md)
---
--- TODO: separate the tracking image and the tracking script – the former
--- should be in <body>, the latter in <head> [easy]
 renderTracking :: HtmlT IO ()
 renderTracking = do
   tracking <- liftIO $ T.readFile "static/tracking.html"
