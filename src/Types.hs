@@ -6,7 +6,6 @@ FlexibleInstances,
 RecordWildCards,
 TypeFamilies,
 OverloadedStrings,
-GeneralizedNewtypeDeriving,
 RankNTypes,
 DeriveDataTypeable,
 NoImplicitPrelude
@@ -22,6 +21,7 @@ module Types
     group_,
     pros,
     cons,
+    ecosystem,
     link,
     kind,
   Hue(..),
@@ -67,6 +67,7 @@ module Types
   SetItemKind(..),
   SetItemDescription(..),
   SetItemNotes(..),
+  SetItemEcosystem(..),
   -- *** 'Trait'
   SetTraitContent(..),
 
@@ -154,42 +155,44 @@ data Item = Item {
   _itemDescription :: MarkdownBlock,
   _itemPros        :: [Trait],
   _itemCons        :: [Trait],
+  _itemEcosystem   :: MarkdownInline,
   _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
   deriving (Eq, Data)
 
-deriveSafeCopy 3 'extension ''Item
+deriveSafeCopy 4 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v2 = Item_v2 {
-  _itemUid_v2         :: Uid,
-  _itemName_v2        :: Text,
-  _itemGroup__v2      :: Maybe Text,
-  _itemDescription_v2 :: Text,
-  _itemPros_v2        :: [Trait],
-  _itemCons_v2        :: [Trait],
-  _itemNotes_v2       :: Text,
-  _itemLink_v2        :: Maybe Url,
-  _itemKind_v2        :: ItemKind }
+data Item_v3 = Item_v3 {
+  _itemUid_v3         :: Uid,
+  _itemName_v3        :: Text,
+  _itemGroup__v3      :: Maybe Text,
+  _itemDescription_v3 :: MarkdownBlock,
+  _itemPros_v3        :: [Trait],
+  _itemCons_v3        :: [Trait],
+  _itemNotes_v3       :: MarkdownBlock,
+  _itemLink_v3        :: Maybe Url,
+  _itemKind_v3        :: ItemKind }
 
-deriveSafeCopy 2 'base ''Item_v2
+deriveSafeCopy 3 'base ''Item_v3
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v2
-  migrate Item_v2{..} = Item {
-    _itemUid = _itemUid_v2,
-    _itemName = _itemName_v2,
-    _itemGroup_ = _itemGroup__v2,
-    _itemDescription = renderMarkdownBlock _itemDescription_v2,
-    _itemPros = _itemPros_v2,
-    _itemCons = _itemCons_v2,
-    _itemNotes = renderMarkdownBlock _itemNotes_v2,
-    _itemLink = _itemLink_v2,
-    _itemKind = _itemKind_v2 }
+  type MigrateFrom Item = Item_v3
+  migrate Item_v3{..} = Item {
+    _itemUid = _itemUid_v3,
+    _itemName = _itemName_v3,
+    _itemGroup_ = _itemGroup__v3,
+    _itemDescription = _itemDescription_v3,
+    _itemPros = _itemPros_v3,
+    _itemCons = _itemCons_v3,
+    _itemEcosystem = "",
+    _itemNotes = _itemNotes_v3,
+    _itemLink = _itemLink_v3,
+    _itemKind = _itemKind_v3 }
 
 --
 
@@ -378,6 +381,7 @@ addItem catId itemId name' kind' = do
         _itemDescription = "",
         _itemPros        = [],
         _itemCons        = [],
+        _itemEcosystem   = "",
         _itemNotes       = "",
         _itemLink        = Nothing,
         _itemKind        = kind' }
@@ -475,6 +479,12 @@ setItemNotes itemId notes' = do
     renderMarkdownBlock notes'
   use (itemById itemId)
 
+setItemEcosystem :: Uid -> Text -> Acid.Update GlobalState Item
+setItemEcosystem itemId ecosystem' = do
+  itemById itemId . ecosystem .=
+    renderMarkdownInline ecosystem'
+  use (itemById itemId)
+
 setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait
 setTraitContent itemId traitId content' = do
   itemById itemId . traitById traitId . content .=
@@ -547,7 +557,7 @@ makeAcidic ''GlobalState [
   -- set
   'setCategoryTitle, 'setCategoryNotes,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
-    'setItemDescription, 'setItemNotes,
+    'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete
   'deleteItem,

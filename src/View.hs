@@ -27,6 +27,7 @@ module View
   renderItem,
   renderItemInfo,
   renderItemDescription,
+  renderItemEcosystem,
   renderItemTraits,
   renderItemNotes,
   -- ** Traits
@@ -302,8 +303,9 @@ renderItem cat item =
     -- TODO: replace “edit description” with a big half-transparent pencil
     -- to the left of it
     renderItemDescription cat item
+    renderItemEcosystem cat item
     renderItemTraits cat item
-    -- TODO: [very-easy] add a separator here?
+    -- TODO: add a separator here? [very-easy]
     renderItemNotes cat item
 
 -- TODO: some spinning thingy that spins in the corner of the page while a
@@ -476,6 +478,34 @@ renderItemDescription category item = do
         (item^.description)
         (\val -> JS.submitItemDescription (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
+
+renderItemEcosystem :: Category -> Item -> HtmlT IO ()
+renderItemEcosystem category item = do
+  let bg = hueToLightColor $ getItemHue category item
+  -- If the structure of HTML changes here, don't forget to update the
+  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
+  -- having a div with a class “item-body” here.
+  let thisId = "item-ecosystem-" <> uidToText (item^.uid)
+      this   = JS.selectId thisId
+  div_ [id_ thisId, class_ "item-ecosystem item-body",
+        style_ ("background-color:" <> bg)] $ do
+    strong_ "Ecosystem"
+    emptySpan "0.5em"
+    imgButton "edit ecosystem" "/pencil.svg"
+      [style_ "width:12px;opacity:0.5"] $
+      JS.switchSection (this, "editing" :: Text)
+
+    section "normal" [shown, noScriptShown] $ do
+      p_ $ if item^.ecosystem == ""
+             then "write something here!"
+             else toHtml (item^.ecosystem)
+
+    section "editing" [] $
+      smallMarkdownEditor
+        [rows_ "3"]
+        (item^.ecosystem)
+        (\val -> JS.submitItemEcosystem (this, item^.uid, val))
+        (Just (JS.switchSection (this, "normal" :: Text)))
 
 renderItemTraits :: Category -> Item -> HtmlT IO ()
 renderItemTraits cat item = do
@@ -729,9 +759,6 @@ thisNode = do
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
   return (JS.selectParent (JS.selectUid uid'))
-
--- TODO: add an “ecosystem” field with related packages/etc (just a simple
--- Markdown-edited field under pros/cons)
 
 -- Wheh changing these, also look at 'JS.switchSection'.
 

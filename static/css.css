@@ -38,7 +38,7 @@ body {
   opacity: 0.4;
   height: 23px; }
 
-.item-traits, .item-notes, .item-description {
+.item-traits, .item-notes, .item-description, .item-ecosystem {
   padding: 10px 15px 20px 15px; }
 
 .traits-groups-container {

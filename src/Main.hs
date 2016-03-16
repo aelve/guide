@@ -101,6 +101,11 @@ renderMethods = Spock.subcomponent "render" $ do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemDescription category item
+  -- Item ecosystem
+  Spock.get (itemVar <//> "ecosystem") $ \itemId -> do
+    item <- dbQuery (GetItem itemId)
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemEcosystem category item
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -162,6 +167,12 @@ setMethods = Spock.subcomponent "set" $ do
     item <- dbUpdate (SetItemDescription itemId content')
     category <- dbQuery (GetCategoryByItem itemId)
     lucid $ renderItemDescription category item
+  -- Item ecosystem
+  Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
+    content' <- param' "content"
+    item <- dbUpdate (SetItemEcosystem itemId content')
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucid $ renderItemEcosystem category item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"

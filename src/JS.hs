@@ -46,7 +46,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Set methods
   submitCategoryTitle, submitItemDescription, submitCategoryNotes,
   -- TODO: rename this to submitItemHeader or something?
-  submitItemInfo, submitItemNotes,
+  submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
   -- Other things
   moveTraitUp, moveTraitDown, deleteTrait,
@@ -263,6 +263,14 @@ submitItemDescription =
   makeJSFunction "submitItemDescription" ["node", "itemId", "s"]
   [text|
     $.post("/set/item/"+itemId+"/description", {content: s})
+     .done(replaceWithData(node));
+  |]
+
+submitItemEcosystem :: JSFunction a => a
+submitItemEcosystem =
+  makeJSFunction "submitItemEcosystem" ["node", "itemId", "s"]
+  [text|
+    $.post("/set/item/"+itemId+"/ecosystem", {content: s})
      .done(replaceWithData(node));
   |]
 
