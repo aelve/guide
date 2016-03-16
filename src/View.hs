@@ -530,28 +530,30 @@ renderItemTraits cat item = do
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
         p_ "Pros:"
-        listNode <- ul_ $ do
+        -- We can't use 'thisNode' inside <ul> because it creates a <span>
+        -- and only <li> elements can be children of <ul>
+        listUid <- randomUid
+        ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.pros)
-          thisNode
         section "editable" [] $
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add pro"]
             ""
-            (\val -> JS.addPro (listNode, item^.uid, val) <>
+            (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
       -- TODO: [easy] maybe add a separator explicitly? instead of CSS
       div_ [class_ "traits-group"] $ do
         p_ "Cons:"
         -- TODO: [easy] maybe add a line here?
-        listNode <- ul_ $ do
+        listUid <- randomUid
+        ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.cons)
-          thisNode
         section "editable" [] $
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add con"]
             ""
-            (\val -> JS.addCon (listNode, item^.uid, val) <>
+            (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
     section "normal" [shown, noScriptShown] $ do
