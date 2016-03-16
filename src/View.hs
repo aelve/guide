@@ -169,11 +169,12 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
--- TODO: disable tracking on localhost! (and edit INSTALL.md)
 renderTracking :: HtmlT IO ()
 renderTracking = do
-  tracking <- liftIO $ T.readFile "static/tracking.html"
-  toHtmlRaw tracking
+  trackingEnabled <- (== Just "1") <$> liftIO (lookupEnv "GUIDE_TRACKING")
+  when trackingEnabled $ do
+    tracking <- liftIO $ T.readFile "static/tracking.html"
+    toHtmlRaw tracking
 
 -- TODO: include jQuery locally so that it'd be possible to test the site
 -- without internet

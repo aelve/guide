@@ -1,3 +1,12 @@
+# Points to keep in mind
+
+The `state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
+
+    $ git clone https://github.com/aelve/guide-database
+    $ mv guide-database state
+
+If you want to enable tracking, replace the contents of `static/tracking.md` and set the environment variable `GUIDE_TRACKING=1` when running the server.
+
 # How to install locally
 
     $ cabal install --only-dependencies
@@ -5,11 +14,6 @@
     $ dist/build/guide/guide
 
 And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>.
-
-The `state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
-
-    $ git clone https://github.com/aelve/guide-database
-    $ mv guide-database state
 
 # How to install on a server
 
@@ -34,10 +38,6 @@ Clone and build `guide`:
     $ cabal update
     $ cabal install --dependencies-only
     $ cabal build
-
-Delete the contents of `static/tracking.html` (because otherwise information about visits will be sent to me):
-
-    $ truncate -s 0 static/tracking.html
 
 Make a new subdomain in Apache. For me, it means writing this to `/etc/apache2/sites-available/guide.conf`:
 
@@ -82,18 +82,15 @@ env LC_ALL=en_US.UTF-8
 exec dist/build/guide/guide
 ~~~
 
+(Also possibly `env GUIDE_TRACKING=1`.)
+
 And start the daemon:
 
     $ service guide start
 
 ## Database
 
-If the `state/` directory doesn't exist, it will be created. However, you can get the current state of [guide.aelve.com](http://guide.aelve.com):
-
-    $ git clone https://github.com/aelve/guide-database
-    $ mv guide-database state
-
-You can set automatic backups to your own repository, too.
+You can set automatic backups of the database to your own repository.
 
 Create `.gitignore` in the `state/` folder:
 
