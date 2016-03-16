@@ -54,7 +54,6 @@ import Data.Text (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
-import Lucid.Base (makeAttribute)
 
 -- Local
 import Types
@@ -186,46 +185,8 @@ renderDonate = doctypehtml_ $ do
     includeCSS "/css.css"
     renderTracking
 
-  -- TODO: move this into its own file in static/?
-  body_ $ do
-    toHtml $ renderMarkdownBlock [text|
-      Okay, the rules: if you donate *anything*, I'll spend some time working
-      on the site this day (adding content, implementing new features, etc).
-
-      (Of course, I'm planning to be working on the site anyway, donations
-      or not! However, I jump from project to project way too often (and
-      rarely manage to finish anything), so donating money is a good way to
-      make sure that I'd feel obligated to keep working on this one. If I
-      find out that it doesn't work as a motivation, I'll stop accepting
-      donations.)
-
-      Just in case, 1000 rub. is 14$ (or 12.5€), and you can choose any
-      amount below 15000 rub. (I'd put a Paypal button, but Paypal doesn't
-      allow receiving money in Belarus.)
-      |]
-    style_ [text|
-      #iframe-hold {
-        background: url(loading.svg) center center no-repeat; }
-      |]
-    div_ [id_ "iframe-hold"] $
-      iframe_ [
-        makeAttribute "frameborder" "0",
-        makeAttribute "allowtransparency" "true",
-        makeAttribute "scrolling" "no",
-        width_ "450",
-        height_ "197",
-        style_ "display:block;margin:auto;",
-        src_ "https://money.yandex.ru/embed/shop.xml\
-             \?account=410011616040682\
-             \&quickpay=shop\
-             \&payment-type-choice=on\
-             \&mobile-payment-type-choice=on\
-             \&writer=seller\
-             \&targets=Haskell+guide\
-             \&targets-hint=\
-             \&default-sum=1000\
-             \&button-text=04\
-             \&successURL=" ] ""
+  body_ $
+    toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
