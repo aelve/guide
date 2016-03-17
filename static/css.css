@@ -45,7 +45,6 @@ body {
   display: flex; }
 
 .traits-group {
-  margin: 0px 5px;
   flex: 1; }
 
 .traits-group > ul {

@@ -518,7 +518,7 @@ renderItemTraits cat item = do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
-        p_ "Pros:"
+        strong_ "Pros"
         -- We can't use 'thisNode' inside <ul> because it creates a <span>
         -- and only <li> elements can be children of <ul>
         listUid <- randomUid
@@ -531,9 +531,9 @@ renderItemTraits cat item = do
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-      -- TODO: [easy] maybe add a separator explicitly? instead of CSS
+      div_ (emptySpan "1em")
       div_ [class_ "traits-group"] $ do
-        p_ "Cons:"
+        strong_ "Cons"
         -- TODO: [easy] maybe add a line here?
         listUid <- randomUid
         ul_ [uid_ listUid] $
