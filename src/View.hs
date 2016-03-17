@@ -489,9 +489,8 @@ renderItemEcosystem item = do
       JS.switchSection (this, "editing" :: Text)
 
     section "normal" [shown, noScriptShown] $ do
-      p_ $ if item^.ecosystem == ""
-             then "write something here!"
-             else toHtml (item^.ecosystem)
+      unless (item^.ecosystem == "") $
+        p_ (toHtml (item^.ecosystem))
 
     section "editing" [] $
       smallMarkdownEditor
