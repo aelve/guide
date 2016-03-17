@@ -155,44 +155,46 @@ data Item = Item {
   _itemDescription :: MarkdownBlock,
   _itemPros        :: [Trait],
   _itemCons        :: [Trait],
-  _itemEcosystem   :: MarkdownInline,
+  _itemEcosystem   :: MarkdownBlock,
   _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
   deriving (Eq, Data)
 
-deriveSafeCopy 4 'extension ''Item
+deriveSafeCopy 5 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v3 = Item_v3 {
-  _itemUid_v3         :: Uid,
-  _itemName_v3        :: Text,
-  _itemGroup__v3      :: Maybe Text,
-  _itemDescription_v3 :: MarkdownBlock,
-  _itemPros_v3        :: [Trait],
-  _itemCons_v3        :: [Trait],
-  _itemNotes_v3       :: MarkdownBlock,
-  _itemLink_v3        :: Maybe Url,
-  _itemKind_v3        :: ItemKind }
+data Item_v4 = Item_v4 {
+  _itemUid_v4         :: Uid,
+  _itemName_v4        :: Text,
+  _itemGroup__v4      :: Maybe Text,
+  _itemDescription_v4 :: MarkdownBlock,
+  _itemPros_v4        :: [Trait],
+  _itemCons_v4        :: [Trait],
+  _itemEcosystem_v4   :: MarkdownInline,
+  _itemNotes_v4       :: MarkdownBlock,
+  _itemLink_v4        :: Maybe Url,
+  _itemKind_v4        :: ItemKind }
 
-deriveSafeCopy 3 'base ''Item_v3
+deriveSafeCopy 4 'base ''Item_v4
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v3
-  migrate Item_v3{..} = Item {
-    _itemUid = _itemUid_v3,
-    _itemName = _itemName_v3,
-    _itemGroup_ = _itemGroup__v3,
-    _itemDescription = _itemDescription_v3,
-    _itemPros = _itemPros_v3,
-    _itemCons = _itemCons_v3,
-    _itemEcosystem = "",
-    _itemNotes = _itemNotes_v3,
-    _itemLink = _itemLink_v3,
-    _itemKind = _itemKind_v3 }
+  type MigrateFrom Item = Item_v4
+  migrate Item_v4{..} = Item {
+    _itemUid = _itemUid_v4,
+    _itemName = _itemName_v4,
+    _itemGroup_ = _itemGroup__v4,
+    _itemDescription = _itemDescription_v4,
+    _itemPros = _itemPros_v4,
+    _itemCons = _itemCons_v4,
+    _itemEcosystem = renderMarkdownBlock $
+                       markdownInlineText _itemEcosystem_v4,
+    _itemNotes = _itemNotes_v4,
+    _itemLink = _itemLink_v4,
+    _itemKind = _itemKind_v4 }
 
 --
 
@@ -482,7 +484,7 @@ setItemNotes itemId notes' = do
 setItemEcosystem :: Uid -> Text -> Acid.Update GlobalState Item
 setItemEcosystem itemId ecosystem' = do
   itemById itemId . ecosystem .=
-    renderMarkdownInline ecosystem'
+    renderMarkdownBlock ecosystem'
   use (itemById itemId)
 
 setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait

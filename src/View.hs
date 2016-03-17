@@ -271,6 +271,7 @@ renderCategoryNotes category = do
 
     section "editing" [] $
       markdownEditor
+        [rows_ "10"]
         (category^.notes)
         (\val -> JS.submitCategoryNotes (this, category^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
@@ -473,6 +474,7 @@ renderItemDescription item = do
 
     section "editing" [] $
       markdownEditor
+        [rows_ "10"]
         (item^.description)
         (\val -> JS.submitItemDescription (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
@@ -490,14 +492,14 @@ renderItemEcosystem item = do
 
     section "normal" [shown, noScriptShown] $ do
       unless (item^.ecosystem == "") $
-        p_ (toHtml (item^.ecosystem))
+        toHtml (item^.ecosystem)
 
     section "editing" [] $
-      smallMarkdownEditor
+      markdownEditor
         [rows_ "3"]
         (item^.ecosystem)
         (\val -> JS.submitItemEcosystem (this, item^.uid, val))
-        (Just (JS.switchSection (this, "normal" :: Text)))
+        (JS.switchSection (this, "normal" :: Text))
 
 renderItemTraits :: Item -> HtmlT IO ()
 renderItemTraits item = do
@@ -631,6 +633,7 @@ renderItemNotes item = do
                T.readFile "static/item-notes-template.md"
         else return (item^.notes)
       markdownEditor
+        [rows_ "10"]
         contents
         (\val -> JS.submitItemNotes (this, item^.uid, val))
         (JS.switchSection (this, "expanded" :: Text))
@@ -693,16 +696,17 @@ imgButton alt src attrs (JS handler) =
      (img_ (src_ src : alt_ alt : attrs))
 
 markdownEditor
-  :: MarkdownBlock  -- ^ Default text
+  :: [Attribute]
+  -> MarkdownBlock  -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> JS             -- ^ “Cancel” handler
   -> HtmlT IO ()
-markdownEditor (markdownBlockText -> s) submit cancel = do
+markdownEditor attr (markdownBlockText -> s) submit cancel = do
   textareaId <- randomUid
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
-  textarea_ [uid_ textareaId, autocomplete_ "off",
-             rows_ "10", class_ "big fullwidth"] $
+  textarea_ ([uid_ textareaId, autocomplete_ "off", class_ "big fullwidth"]
+             ++ attr) $
     toHtml s
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
   button "Save" [] $
@@ -720,11 +724,11 @@ smallMarkdownEditor
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> HtmlT IO ()
-smallMarkdownEditor attributes (markdownInlineText -> s) submit mbCancel = do
+smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
   textareaId <- randomUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
-              onEnter (submit val)] ++ attributes) $
+              onEnter (submit val)] ++ attr) $
     toHtml s
   case mbCancel of
     Nothing -> return ()
