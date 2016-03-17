@@ -120,7 +120,7 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
   body_ $ do
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
-    h1_ "A guide to Haskell libraries and tools"
+    h1_ "The Haskeller's guide"
     noscript_ $ div_ [id_ "noscript-message"] $
       toHtml $ renderMarkdownBlock [text|
         You have Javascript disabled! This site works fine without
