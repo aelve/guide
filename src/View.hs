@@ -305,8 +305,8 @@ renderItem category item =
     let bg = hueToLightColor $ getItemHue category item
     div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
       renderItemDescription item
-      renderItemEcosystem item
       renderItemTraits item
+      renderItemEcosystem item
       -- TODO: add a separator here? [very-easy]
       renderItemNotes item
 
