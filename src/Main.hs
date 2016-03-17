@@ -99,18 +99,15 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Item description
   Spock.get (itemVar <//> "description") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemDescription category item
+    lucid $ renderItemDescription item
   -- Item ecosystem
   Spock.get (itemVar <//> "ecosystem") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemEcosystem category item
+    lucid $ renderItemEcosystem item
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemNotes category item
+    lucid $ renderItemNotes item
 
 -- TODO: [easy] use window.onerror to catch and show all JS errors (showing
 -- could be done by displaying an alert)
@@ -165,20 +162,17 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (itemVar <//> "description") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemDescription itemId content')
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemDescription category item
+    lucid $ renderItemDescription item
   -- Item ecosystem
   Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemEcosystem itemId content')
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemEcosystem category item
+    lucid $ renderItemEcosystem item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemNotes itemId content')
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemNotes category item
+    lucid $ renderItemNotes item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"

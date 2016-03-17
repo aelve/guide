@@ -297,16 +297,18 @@ getItemHue category item = case item^.group_ of
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: Category -> Item -> HtmlT IO ()
-renderItem cat item =
+renderItem category item =
   div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
-    renderItemInfo cat item
+    renderItemInfo category item
     -- TODO: replace “edit description” with a big half-transparent pencil
     -- to the left of it
-    renderItemDescription cat item
-    renderItemEcosystem cat item
-    renderItemTraits cat item
-    -- TODO: add a separator here? [very-easy]
-    renderItemNotes cat item
+    let bg = hueToLightColor $ getItemHue category item
+    div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
+      renderItemDescription item
+      renderItemEcosystem item
+      renderItemTraits item
+      -- TODO: add a separator here? [very-easy]
+      renderItemNotes item
 
 -- TODO: some spinning thingy that spins in the corner of the page while a
 -- request is happening
@@ -315,6 +317,7 @@ renderItem cat item =
 -- category, item and trait) without passing everything explicitly?
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
+
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: Category -> Item -> HtmlT IO ()
 renderItemInfo cat item = do
@@ -376,12 +379,12 @@ renderItemInfo cat item = do
 
     section "editing" [] $ do
       let selectedIf p x = if p then with x [selected_ "selected"] else x
-      -- otherNodes are all nodes that have to be recolored when this node is
-      -- recolored
-      let otherNodes = JS.selectChildren (JS.selectParent this)
-                                         (JS.selectClass "item-body")
+      -- When the info/header node changes its group (and is hence
+      -- recolored), item's body has to be recolored too
+      let bodyNode = JS.selectChildren (JS.selectParent this)
+                                       (JS.selectClass "item-body")
       let formSubmitHandler formNode =
-            JS.submitItemInfo (this, otherNodes, item^.uid, formNode)
+            JS.submitItemInfo (this, bodyNode, item^.uid, formNode)
       form_ [onFormSubmit formSubmitHandler] $ do
         -- All inputs have "autocomplete = off" thanks to
         -- <http://stackoverflow.com/q/8311455>
@@ -455,16 +458,11 @@ renderItemInfo cat item = do
 -- TODO: categories without items (e.g. “web dev”) that list links to other
 -- categories
 
-renderItemDescription :: Category -> Item -> HtmlT IO ()
-renderItemDescription category item = do
-  let bg = hueToLightColor $ getItemHue category item
-  -- If the structure of HTML changes here, don't forget to update the
-  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body” here.
+renderItemDescription :: Item -> HtmlT IO ()
+renderItemDescription item = do
   let thisId = "item-description-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-description item-body",
-        style_ ("background-color:" <> bg)] $ do
+  div_ [id_ thisId, class_ "item-description"] $ do
 
     section "normal" [shown, noScriptShown] $ do
       if item^.description == ""
@@ -479,16 +477,11 @@ renderItemDescription category item = do
         (\val -> JS.submitItemDescription (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderItemEcosystem :: Category -> Item -> HtmlT IO ()
-renderItemEcosystem category item = do
-  let bg = hueToLightColor $ getItemHue category item
-  -- If the structure of HTML changes here, don't forget to update the
-  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body” here.
+renderItemEcosystem :: Item -> HtmlT IO ()
+renderItemEcosystem item = do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-ecosystem item-body",
-        style_ ("background-color:" <> bg)] $ do
+  div_ [id_ thisId, class_ "item-ecosystem"] $ do
     strong_ "Ecosystem"
     emptySpan "0.5em"
     imgButton "edit ecosystem" "/pencil.svg"
@@ -507,14 +500,9 @@ renderItemEcosystem category item = do
         (\val -> JS.submitItemEcosystem (this, item^.uid, val))
         (Just (JS.switchSection (this, "normal" :: Text)))
 
-renderItemTraits :: Category -> Item -> HtmlT IO ()
-renderItemTraits cat item = do
-  let bg = hueToLightColor $ getItemHue cat item
-  -- If the structure of HTML changes here, don't forget to update the
-  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body” here.
-  div_ [class_ "item-traits item-body",
-        style_ ("background-color:" <> bg)] $ do
+renderItemTraits :: Item -> HtmlT IO ()
+renderItemTraits item = do
+  div_ [class_ "item-traits"] $ do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
@@ -609,16 +597,11 @@ renderTrait itemId trait = do
 
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
-renderItemNotes :: Category -> Item -> HtmlT IO ()
-renderItemNotes category item = do
-  let bg = hueToLightColor $ getItemHue category item
-  -- If the structure of HTML changes here, don't forget to update the
-  -- 'otherNodes' selector in 'renderItemInfo'. Specifically, we depend on
-  -- having a div with a class “item-body” here.
+renderItemNotes :: Item -> HtmlT IO ()
+renderItemNotes item = do
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-notes item-body",
-        style_ ("background-color:" <> bg)] $ do
+  div_ [id_ thisId, class_ "item-notes"] $ do
     -- TODO: this duplicates code from renderCategoryNotes, try to reduce
     -- duplication
 
