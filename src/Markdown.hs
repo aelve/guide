@@ -35,6 +35,7 @@ import Cheapskate
 import Cheapskate.Lucid
 import Cheapskate.Highlight
 import ShortcutLinks
+import ShortcutLinks.All (hackage)
 -- acid-state
 import Data.SafeCopy
 
@@ -66,7 +67,8 @@ shortcutLinks i@(Link is url title) | '@' <- T.head url =
     Left _err -> i
     Right (shortcut, opt, text) -> do
       let text' = fromMaybe (stringify i) text
-      case useShortcut shortcut opt text' of
+      let shortcuts = (["hk"], hackage) : allShortcuts
+      case useShortcutFrom shortcuts shortcut opt text' of
         Success link ->
           Link is link title
         Warning warnings link ->

@@ -5,7 +5,7 @@ The most important rule is: **it's collaborative notes, not Wikipedia**. In othe
 > **pros:** pretty nice API\
 > **cons:** buggy (see an example on my Github, here's the link)
 
-Markdown is supported in most places. 2 noteworthy features: you can write `[pkg](@hackage)` to get a link to package `pkg` on Hackage, and you can mark snippets of code with `repl` to show that they come from GHCi:
+Markdown is supported in most places. 2 noteworthy features: you can write `[pkg](@hk)` to get a link to package `pkg` on Hackage (the full list of shortcuts is [here](https://hackage.haskell.org/package/shortcut-links/docs/ShortcutLinks-All.html), and you can mark snippets of code with `repl` to show that they come from GHCi:
 
 ~~~~
 ~~~ hs repl

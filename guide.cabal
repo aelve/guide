@@ -54,7 +54,7 @@ executable guide
                      , path-pieces
                      , random >= 1.1
                      , safecopy
-                     , shortcut-links >= 0.4.1
+                     , shortcut-links >= 0.4.2
                      , text
                      , text-format
                      , transformers
