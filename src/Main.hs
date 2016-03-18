@@ -4,6 +4,7 @@ ScopedTypeVariables,
 TypeFamilies,
 DataKinds,
 MultiWayIf,
+ViewPatterns,
 NoImplicitPrelude
   #-}
 
@@ -305,6 +306,23 @@ main = do
       -- Donation page
       Spock.get "donate" $ do
         lucid $ renderDonate
+      -- Category pages
+      Spock.get var $ \path -> do
+        -- The links look like /generating-feeds-gao238b1 (because it's nice
+        -- when you can find out where a link leads just by looking at it)
+        let (T.init -> urlSlug, catId) = T.breakOnEnd "-" path
+        when (T.null catId) $
+          Spock.jumpNext
+        mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
+        case mbCategory of
+          Nothing -> Spock.jumpNext
+          Just category -> do
+            let slug = makeSlug (category^.title)
+            -- If the slug in the url is old or something (i.e. if it doesn't
+            -- match the one we would've generated now), let's do a redirect
+            when (urlSlug /= slug) $
+              Spock.redirect (format "/{}-{}" (slug, category^.uid))
+            lucid $ renderCategoryPage category
       -- The add/set methods return rendered parts of the structure (added
       -- categories, changed items, etc) so that the Javascript part could
       -- take them and inject into the page. We don't want to duplicate

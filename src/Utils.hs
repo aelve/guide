@@ -21,6 +21,7 @@ module Utils
   -- * URLs
   Url,
   sanitiseUrl,
+  makeSlug,
 
   -- * UID
   Uid(..),
@@ -93,6 +94,15 @@ sanitiseUrl u
   | "http:" `T.isPrefixOf` u  = Just u
   | "https:" `T.isPrefixOf` u = Just u
   | otherwise                 = Just ("http://" <> u)
+
+-- | Make text suitable for inclusion into an URL (by turning spaces into
+-- hyphens and so on)
+makeSlug :: Text -> Text
+makeSlug =
+  T.intercalate "-" . T.words .
+  T.map toLower .
+  T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
+  T.map (\x -> if x == '_' then '-' else x)
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid = Uid {uidToText :: Text}

@@ -46,7 +46,7 @@ module Types
   -- ** query
   GetGlobalState(..),
   GetCategories(..),
-  GetCategory(..),
+  GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
   GetItem(..),
   GetTrait(..),
@@ -345,6 +345,9 @@ getCategories = view categories
 getCategory :: Uid -> Acid.Query GlobalState Category
 getCategory uid' = view (categoryById uid')
 
+getCategoryMaybe :: Uid -> Acid.Query GlobalState (Maybe Category)
+getCategoryMaybe uid' = preview (categoryById uid')
+
 getCategoryByItem :: Uid -> Acid.Query GlobalState Category
 getCategoryByItem uid' = view (categoryByItem uid')
 
@@ -559,7 +562,7 @@ makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
   'getCategories,
-  'getCategory,
+  'getCategory, 'getCategoryMaybe,
   'getCategoryByItem,
   'getItem,
   'getTrait,

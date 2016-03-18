@@ -12,6 +12,7 @@ module View
   -- * Pages
   renderRoot,
   renderDonate,
+  renderCategoryPage,
 
   -- * Tracking
   renderTracking,
@@ -89,9 +90,65 @@ instead of simple
 -}
 
 renderRoot :: GlobalState -> Maybe Text -> HtmlT IO ()
-renderRoot globalState mbSearchQuery = doctypehtml_ $ do
+renderRoot globalState mbSearchQuery =
+  wrapPage "Aelve Guide" $ do
+    renderHelp
+    onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
+    form_ $ do
+      input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
+              value_ (fromMaybe "" mbSearchQuery)]
+    textInput [
+      placeholder_ "add a category",
+      autocomplete_ "off",
+      onEnter $ JS.addCategory (JS.selectId "categories", inputValue) <>
+                clearInput ]
+    -- TODO: sort categories by popularity, somehow? or provide a list of
+    -- “commonly used categories” or even a nested catalog
+    case mbSearchQuery of
+      Nothing -> renderCategoryList (globalState^.categories)
+      Just query' -> do
+        let queryWords = T.words query'
+        let rank :: Category -> Int
+            rank cat = sum [
+              length (queryWords `intersect` (cat^..items.each.name)),
+              length (queryWords `intersect` T.words (cat^.title)) ]
+        let rankedCategories
+              | null queryWords = globalState^.categories
+              | otherwise       = filter ((/= 0) . rank) .
+                                  reverse . sortOn rank
+                                    $ globalState^.categories
+        renderCategoryList rankedCategories
+    -- TODO: maybe add a button like “give me random category that is
+    -- unfinished”
+
+-- TODO: when submitting a text field, gray it out (but leave it selectable)
+-- until it's been submitted
+
+renderTracking :: HtmlT IO ()
+renderTracking = do
+  trackingEnabled <- (== Just "1") <$> liftIO (lookupEnv "GUIDE_TRACKING")
+  when trackingEnabled $ do
+    tracking <- liftIO $ T.readFile "static/tracking.html"
+    toHtmlRaw tracking
+
+-- TODO: include jQuery locally so that it'd be possible to test the site
+-- without internet
+
+renderDonate :: HtmlT IO ()
+renderDonate = doctypehtml_ $ do
   head_ $ do
-    title_ "Aelve Guide"
+    title_ "Donate to Artyom"
+    includeCSS "/css.css"
+    renderTracking
+
+  body_ $
+    toHtmlRaw =<< liftIO (readFile "static/donate.html")
+
+-- Include all the necessary things
+wrapPage :: Text -> HtmlT IO () -> HtmlT IO ()
+wrapPage pageTitle page = doctypehtml_ $ do
+  head_ $ do
+    title_ (toHtml pageTitle)
     let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
     includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
     -- See Note [autosize]
@@ -127,35 +184,9 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
         Javascript, but since all editing needs Javascript to work,
         you won't be able to edit anything.
         |]
-    renderHelp
-    onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
-    form_ $ do
-      input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
-              value_ (fromMaybe "" mbSearchQuery)]
-    textInput [
-      placeholder_ "add a category",
-      autocomplete_ "off",
-      onEnter $ JS.addCategory (JS.selectId "categories", inputValue) <>
-                clearInput ]
-    -- TODO: sort categories by popularity, somehow? or provide a list of
-    -- “commonly used categories” or even a nested catalog
-    case mbSearchQuery of
-      Nothing -> renderCategoryList (globalState^.categories)
-      Just query' -> do
-        let queryWords = T.words query'
-        let rank :: Category -> Int
-            rank cat = sum [
-              length (queryWords `intersect` (cat^..items.each.name)),
-              length (queryWords `intersect` T.words (cat^.title)) ]
-        let rankedCategories
-              | null queryWords = globalState^.categories
-              | otherwise       = filter ((/= 0) . rank) .
-                                  reverse . sortOn rank
-                                    $ globalState^.categories
-        renderCategoryList rankedCategories
-    -- TODO: perhaps use infinite scrolling/loading?
-    -- TODO: maybe add a button like “give me random category that is
-    -- unfinished”
+
+    page
+
     div_ [id_ "footer"] $ do
       "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
       emptySpan "2em"
@@ -166,28 +197,10 @@ renderRoot globalState mbSearchQuery = doctypehtml_ $ do
       a_ [href_ "/donate"] "donate"
       sup_ [style_ "font-size:50%"] "I don't have a job"
 
--- TODO: when submitting a text field, gray it out (but leave it selectable)
--- until it's been submitted
-
-renderTracking :: HtmlT IO ()
-renderTracking = do
-  trackingEnabled <- (== Just "1") <$> liftIO (lookupEnv "GUIDE_TRACKING")
-  when trackingEnabled $ do
-    tracking <- liftIO $ T.readFile "static/tracking.html"
-    toHtmlRaw tracking
-
--- TODO: include jQuery locally so that it'd be possible to test the site
--- without internet
-
-renderDonate :: HtmlT IO ()
-renderDonate = doctypehtml_ $ do
-  head_ $ do
-    title_ "Donate to Artyom"
-    includeCSS "/css.css"
-    renderTracking
-
-  body_ $
-    toHtmlRaw =<< liftIO (readFile "static/donate.html")
+renderCategoryPage :: Category -> HtmlT IO ()
+renderCategoryPage category =
+  wrapPage ("Aelve Guide – " <> category^.title) $ do
+    renderCategory category
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
@@ -234,14 +247,11 @@ renderCategoryTitle :: Category -> HtmlT IO ()
 renderCategoryTitle category = do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  -- TODO: once pagination or something is implemented, we'll have to see
-  -- whether an anchor has been used in the query string and load the
-  -- necessary category if so
   h2_ [id_ thisId] $ do
-    a_ [class_ "anchor", href_ ("/#" <> uidToText (category^.uid))] "#"
-
     sectionSpan "normal" [shown, noScriptShown] $ do
-      toHtml (category^.title)
+      let slug = makeSlug (category^.title)
+      a_ [href_ (format "/{}-{}" (slug, category^.uid))] $
+        toHtml (category^.title)
       emptySpan "1em"
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
@@ -665,9 +675,6 @@ clearInput = JS "this.value = '';"
 
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
-
--- TODO: make links to categories look like id/category-name (where
--- category-name doesn't matter)
 
 button :: Text -> [Attribute] -> JS -> HtmlT IO ()
 button value attrs handler =
