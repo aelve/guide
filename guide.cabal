@@ -57,6 +57,7 @@ executable guide
                      , shortcut-links >= 0.4.2
                      , text
                      , text-format
+                     , time >= 1.5
                      , transformers
                      , uniplate
                      , wai-middleware-metrics

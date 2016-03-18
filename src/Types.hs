@@ -40,6 +40,7 @@ module Types
   name,
   description,
   notes,
+  created,
 
   -- * acid-state methods
   -- ** query
@@ -91,6 +92,8 @@ import qualified Data.Map as M
 import Data.Map (Map)
 -- Text
 import Data.Text (Text)
+-- Time
+import Data.Time
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
@@ -151,6 +154,7 @@ deriveSafeCopy 1 'base ''ItemKind_v1
 data Item = Item {
   _itemUid         :: Uid,
   _itemName        :: Text,
+  _itemCreated     :: UTCTime,
   _itemGroup_      :: Maybe Text,
   _itemDescription :: MarkdownBlock,
   _itemPros        :: [Trait],
@@ -161,40 +165,40 @@ data Item = Item {
   _itemKind        :: ItemKind }
   deriving (Eq, Data)
 
-deriveSafeCopy 5 'extension ''Item
+deriveSafeCopy 6 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v4 = Item_v4 {
-  _itemUid_v4         :: Uid,
-  _itemName_v4        :: Text,
-  _itemGroup__v4      :: Maybe Text,
-  _itemDescription_v4 :: MarkdownBlock,
-  _itemPros_v4        :: [Trait],
-  _itemCons_v4        :: [Trait],
-  _itemEcosystem_v4   :: MarkdownInline,
-  _itemNotes_v4       :: MarkdownBlock,
-  _itemLink_v4        :: Maybe Url,
-  _itemKind_v4        :: ItemKind }
+data Item_v5 = Item_v5 {
+  _itemUid_v5         :: Uid,
+  _itemName_v5        :: Text,
+  _itemGroup__v5      :: Maybe Text,
+  _itemDescription_v5 :: MarkdownBlock,
+  _itemPros_v5        :: [Trait],
+  _itemCons_v5        :: [Trait],
+  _itemEcosystem_v5   :: MarkdownBlock,
+  _itemNotes_v5       :: MarkdownBlock,
+  _itemLink_v5        :: Maybe Url,
+  _itemKind_v5        :: ItemKind }
 
-deriveSafeCopy 4 'base ''Item_v4
+deriveSafeCopy 5 'base ''Item_v5
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v4
-  migrate Item_v4{..} = Item {
-    _itemUid = _itemUid_v4,
-    _itemName = _itemName_v4,
-    _itemGroup_ = _itemGroup__v4,
-    _itemDescription = _itemDescription_v4,
-    _itemPros = _itemPros_v4,
-    _itemCons = _itemCons_v4,
-    _itemEcosystem = renderMarkdownBlock $
-                       markdownInlineText _itemEcosystem_v4,
-    _itemNotes = _itemNotes_v4,
-    _itemLink = _itemLink_v4,
-    _itemKind = _itemKind_v4 }
+  type MigrateFrom Item = Item_v5
+  migrate Item_v5{..} = Item {
+    _itemUid = _itemUid_v5,
+    _itemName = _itemName_v5,
+    _itemCreated = UTCTime (fromGregorian 2016 3 10) (secondsToDiffTime 40000),
+    _itemGroup_ = _itemGroup__v5,
+    _itemDescription = _itemDescription_v5,
+    _itemPros = _itemPros_v5,
+    _itemCons = _itemCons_v5,
+    _itemEcosystem = _itemEcosystem_v5,
+    _itemNotes = _itemNotes_v5,
+    _itemLink = _itemLink_v5,
+    _itemKind = _itemKind_v5 }
 
 --
 
@@ -263,34 +267,37 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 data Category = Category {
   _categoryUid :: Uid,
   _categoryTitle :: Text,
+  _categoryCreated :: UTCTime,
   _categoryNotes :: MarkdownBlock,
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item] }
   deriving (Eq, Data)
 
-deriveSafeCopy 1 'extension ''Category
+deriveSafeCopy 2 'extension ''Category
 makeFields ''Category
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v0 = Category_v0 {
-  _categoryUid_v0 :: Uid,
-  _categoryTitle_v0 :: Text,
-  _categoryNotes_v0 :: Text,
-  _categoryGroups_v0 :: Map Text Hue,
-  _categoryItems_v0 :: [Item] }
+data Category_v1 = Category_v1 {
+  _categoryUid_v1 :: Uid,
+  _categoryTitle_v1 :: Text,
+  _categoryNotes_v1 :: MarkdownBlock,
+  _categoryGroups_v1 :: Map Text Hue,
+  _categoryItems_v1 :: [Item] }
 
-deriveSafeCopy 0 'base ''Category_v0
+deriveSafeCopy 1 'base ''Category_v1
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v0
-  migrate Category_v0{..} = Category {
-    _categoryUid = _categoryUid_v0,
-    _categoryTitle = _categoryTitle_v0,
-    _categoryNotes = renderMarkdownBlock _categoryNotes_v0,
-    _categoryGroups = _categoryGroups_v0,
-    _categoryItems = _categoryItems_v0 }
+  type MigrateFrom Category = Category_v1
+  migrate Category_v1{..} = Category {
+    _categoryUid = _categoryUid_v1,
+    _categoryTitle = _categoryTitle_v1,
+    _categoryCreated = UTCTime (fromGregorian 2016 3 10)
+                               (secondsToDiffTime 40000),
+    _categoryNotes = _categoryNotes_v1,
+    _categoryGroups = _categoryGroups_v1,
+    _categoryItems = _categoryItems_v1 }
 
 --
 
@@ -358,11 +365,13 @@ getTrait itemId traitId = view (itemById itemId . traitById traitId)
 addCategory
   :: Uid        -- ^ New category's id
   -> Text       -- ^ Title
+  -> UTCTime    -- ^ Creation time
   -> Acid.Update GlobalState Category
-addCategory catId title' = do
+addCategory catId title' created' = do
   let newCategory = Category {
         _categoryUid = catId,
         _categoryTitle = title',
+        _categoryCreated = created',
         _categoryNotes = "",
         _categoryGroups = mempty,
         _categoryItems = [] }
@@ -373,12 +382,14 @@ addItem
   :: Uid        -- ^ Category id
   -> Uid        -- ^ New item's id
   -> Text       -- ^ Title
+  -> UTCTime    -- ^ Creation time
   -> ItemKind   -- ^ Kind
   -> Acid.Update GlobalState Item
-addItem catId itemId name' kind' = do
+addItem catId itemId name' created' kind' = do
   let newItem = Item {
         _itemUid         = itemId,
         _itemName        = name',
+        _itemCreated     = created',
         _itemGroup_      = Nothing,
         _itemDescription = "",
         _itemPros        = [],

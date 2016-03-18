@@ -36,6 +36,8 @@ import qualified System.Metrics.Gauge as EKG.Gauge
 import Data.Generics.Uniplate.Data
 -- acid-state
 import Data.Acid as Acid
+-- Time
+import Data.Time
 
 -- Local
 import View
@@ -187,7 +189,8 @@ addMethods = Spock.subcomponent "add" $ do
   Spock.post "category" $ do
     title' <- param' "content"
     catId <- randomUid
-    newCategory <- dbUpdate (AddCategory catId title')
+    time <- liftIO getCurrentTime
+    newCategory <- dbUpdate (AddCategory catId title' time)
     lucid $ renderCategory newCategory
   -- New item in a category
   Spock.post (categoryVar <//> "item") $ \catId -> do
@@ -197,9 +200,10 @@ addMethods = Spock.subcomponent "add" $ do
     itemId <- randomUid
     -- If the item name looks like a Hackage library, assume it's a Hackage
     -- library.
+    time <- liftIO getCurrentTime
     newItem <- if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
-      then dbUpdate (AddItem catId itemId name' (Library (Just name')))
-      else dbUpdate (AddItem catId itemId name' Other)
+      then dbUpdate (AddItem catId itemId name' time (Library (Just name')))
+      else dbUpdate (AddItem catId itemId name' time Other)
     category <- dbQuery (GetCategory catId)
     lucid $ renderItem category newItem
   -- Pro (argument in favor of an item)
