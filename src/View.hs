@@ -415,7 +415,7 @@ renderItemInfo cat item = do
           input_ [type_ "text", name_ "link", autocomplete_ "off",
                   value_ (fromMaybe "" (item^.link))]
         br_ []
-        newGroupInputId <- randomUid
+        newGroupInputId <- randomLongUid
         label_ $ do
           "Group" >> br_ []
           -- When “new group” is selected in the list, we show a field for
@@ -510,7 +510,7 @@ renderItemTraits item = do
         strong_ "Pros"
         -- We can't use 'thisNode' inside <ul> because it creates a <span>
         -- and only <li> elements can be children of <ul>
-        listUid <- randomUid
+        listUid <- randomLongUid
         ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.pros)
         section "editable" [] $
@@ -524,7 +524,7 @@ renderItemTraits item = do
       div_ [class_ "traits-group"] $ do
         strong_ "Cons"
         -- TODO: [easy] maybe add a line here?
-        listUid <- randomUid
+        listUid <- randomLongUid
         ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.cons)
         section "editable" [] $
@@ -702,7 +702,7 @@ markdownEditor
   -> JS             -- ^ “Cancel” handler
   -> HtmlT IO ()
 markdownEditor attr (markdownBlockText -> s) submit cancel = do
-  textareaId <- randomUid
+  textareaId <- randomLongUid
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
   textarea_ ([uid_ textareaId, autocomplete_ "off", class_ "big fullwidth"]
@@ -725,7 +725,7 @@ smallMarkdownEditor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> HtmlT IO ()
 smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
-  textareaId <- randomUid
+  textareaId <- randomLongUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
               onEnter (submit val)] ++ attr) $
@@ -740,7 +740,7 @@ smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
 
 thisNode :: HtmlT IO JQuerySelector
 thisNode = do
-  uid' <- randomUid
+  uid' <- randomLongUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty

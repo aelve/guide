@@ -188,7 +188,7 @@ addMethods = Spock.subcomponent "add" $ do
   -- New category
   Spock.post "category" $ do
     title' <- param' "content"
-    catId <- randomUid
+    catId <- randomShortUid
     time <- liftIO getCurrentTime
     newCategory <- dbUpdate (AddCategory catId title' time)
     lucid $ renderCategory newCategory
@@ -197,7 +197,7 @@ addMethods = Spock.subcomponent "add" $ do
     name' <- param' "name"
     -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
-    itemId <- randomUid
+    itemId <- randomShortUid
     -- If the item name looks like a Hackage library, assume it's a Hackage
     -- library.
     time <- liftIO getCurrentTime
@@ -209,13 +209,13 @@ addMethods = Spock.subcomponent "add" $ do
   -- Pro (argument in favor of an item)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
-    traitId <- randomUid
+    traitId <- randomLongUid
     newTrait <- dbUpdate (AddPro itemId traitId content')
     lucid $ renderTrait itemId newTrait
   -- Con (argument against an item)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
-    traitId <- randomUid
+    traitId <- randomLongUid
     newTrait <- dbUpdate (AddCon itemId traitId content')
     lucid $ renderTrait itemId newTrait
 

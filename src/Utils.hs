@@ -3,7 +3,6 @@ OverloadedStrings,
 TemplateHaskell,
 GeneralizedNewtypeDeriving,
 DeriveDataTypeable,
-NumDecimals,
 NoImplicitPrelude
   #-}
 
@@ -25,7 +24,8 @@ module Utils
 
   -- * UID
   Uid(..),
-  randomUid,
+  randomShortUid,
+  randomLongUid,
   uid_,
 
   -- * Lucid
@@ -95,17 +95,34 @@ sanitiseUrl u
   | otherwise                 = Just ("http://" <> u)
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
--- Note that in HTML 5 using numeric ids for divs, spans, etc is okay.
 newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, PathPiece, Format.Buildable, Data)
+  deriving (Eq, Show, PathPiece, Format.Buildable, Data)
 
 deriveSafeCopy 0 'base ''Uid
 
 instance IsString Uid where
   fromString = Uid . T.pack
 
-randomUid :: MonadIO m => m Uid
-randomUid = liftIO $ Uid . tshow <$> randomRIO (10e8 :: Int, 10e9-1)
+randomText :: Int -> IO Text
+randomText n = do
+  -- We don't want the 1st char to be a digit. Just in case (I don't really
+  -- have a good reason). Maybe to prevent Javascript from doing automatic
+  -- conversions or something (tho it should never happen).
+  x <- randomRIO ('a', 'z')
+  let randomChar = do
+        i <- randomRIO (0, 35)
+        return $ if i < 10 then toEnum (fromEnum '0' + i)
+                           else toEnum (fromEnum 'a' + i - 10)
+  xs <- replicateM (n-1) randomChar
+  return (T.pack (x:xs))
+
+randomLongUid :: MonadIO m => m Uid
+randomLongUid = liftIO $ Uid <$> randomText 12
+
+-- These are only used for items and categories (because their uids can occur
+-- in links and so they should look a bit nicer).
+randomShortUid :: MonadIO m => m Uid
+randomShortUid = liftIO $ Uid <$> randomText 8
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
