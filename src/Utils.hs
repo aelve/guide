@@ -3,6 +3,7 @@ OverloadedStrings,
 TemplateHaskell,
 GeneralizedNewtypeDeriving,
 DeriveDataTypeable,
+NumDecimals,
 NoImplicitPrelude
   #-}
 
@@ -104,7 +105,7 @@ instance IsString Uid where
   fromString = Uid . T.pack
 
 randomUid :: MonadIO m => m Uid
-randomUid = liftIO $ Uid . tshow <$> randomRIO (0::Int, 10^(9::Int))
+randomUid = liftIO $ Uid . tshow <$> randomRIO (10e8 :: Int, 10e9-1)
 
 uid_ :: Uid -> Attribute
 uid_ = id_ . uidToText
