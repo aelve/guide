@@ -58,6 +58,7 @@ module Types
   AddCon(..),
 
   -- ** set
+  SetGlobalState(..),
   -- *** 'Category'
   SetCategoryTitle(..),
   SetCategoryNotes(..),
@@ -426,6 +427,11 @@ addCon itemId traitId text' = do
 
 -- set
 
+-- | Can be useful sometimes (e.g. if you want to regenerate all uids), but
+-- generally shouldn't be used.
+setGlobalState :: GlobalState -> Acid.Update GlobalState ()
+setGlobalState = (id .=)
+
 setCategoryTitle :: Uid -> Text -> Acid.Update GlobalState Category
 setCategoryTitle catId title' = do
   categoryById catId . title .= title'
@@ -571,6 +577,7 @@ makeAcidic ''GlobalState [
   'addItem,
   'addPro, 'addCon,
   -- set
+  'setGlobalState,
   'setCategoryTitle, 'setCategoryNotes,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
