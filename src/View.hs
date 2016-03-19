@@ -254,7 +254,8 @@ renderCategoryTitle category = do
       this   = JS.selectId thisId
   h2_ [id_ thisId] $ do
     sectionSpan "normal" [shown, noScriptShown] $ do
-      a_ [href_ ("/" <> categorySlug category)] $
+      -- TODO: this link shouldn't be absolute [absolute-links]
+      a_ [href_ ("/haskell/" <> categorySlug category)] $
         toHtml (category^.title)
       emptySpan "1em"
       textButton "edit" $

@@ -30,7 +30,7 @@ import System.FilePath ((</>))
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
-import qualified Lucid
+import Lucid
 import Network.Wai.Middleware.Static
 -- Feeds
 import qualified Text.Feed.Types as Feed
@@ -230,15 +230,6 @@ addMethods = Spock.subcomponent "add" $ do
 
 otherMethods :: SpockM () () DB ()
 otherMethods = do
-  -- Javascript
-  Spock.get "js.js" $ do
-    setHeader "Content-Type" "application/javascript; charset=utf-8"
-    Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions)
-  -- CSS
-  Spock.get "highlight.css" $ do
-    setHeader "Content-Type" "text/css; charset=utf-8"
-    Spock.bytes $ T.encodeUtf8 (T.pack (styleToCss pygments))
-
   -- Moving things
   Spock.subcomponent "move" $ do
     -- Move item
@@ -260,7 +251,8 @@ otherMethods = do
       dbUpdate (DeleteTrait itemId traitId)
 
   -- Feeds
-  baseUrl <- fromMaybe "" <$> liftIO (lookupEnv "GUIDE_URL")
+  -- TODO: this link shouldn't be absolute [absolute-links]
+  baseUrl <- (</> "haskell") . fromMaybe "/" <$> liftIO (lookupEnv "GUIDE_URL")
   Spock.subcomponent "feed" $ do
     -- Feed for items in a category
     Spock.get categoryVar $ \catId -> do
@@ -344,38 +336,61 @@ main = do
     runSpock 8080 $ spock config $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
+      -- Javascript
+      Spock.get "/js.js" $ do
+        setHeader "Content-Type" "application/javascript; charset=utf-8"
+        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions)
+      -- CSS
+      Spock.get "/highlight.css" $ do
+        setHeader "Content-Type" "text/css; charset=utf-8"
+        Spock.bytes $ T.encodeUtf8 (T.pack (styleToCss pygments))
+      -- (css.css is a static file and so isn't handled here)
+
       -- Main page
-      Spock.get root $ do
-        s <- dbQuery GetGlobalState
-        q <- param "q"
-        lucidIO $ renderRoot s q
+      Spock.get root $ lucidIO $ do
+        head_ $ do
+          title_ "Aelve Guide"
+          includeCSS "/css.css"
+          renderTracking
+        body_ $ do
+          h1_ "Aelve Guide"
+          h2_ (a_ [href_ "/haskell"] "Haskell")
+
       -- Donation page
       Spock.get "donate" $ do
         lucidIO $ renderDonate
-      -- Category pages
-      Spock.get var $ \path -> do
-        -- The links look like /generating-feeds-gao238b1 (because it's nice
-        -- when you can find out where a link leads just by looking at it)
-        let (_, catId) = T.breakOnEnd "-" path
-        when (T.null catId) $
-          Spock.jumpNext
-        mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
-        case mbCategory of
-          Nothing -> Spock.jumpNext
-          Just category -> do
-            -- If the slug in the url is old or something (i.e. if it doesn't
-            -- match the one we would've generated now), let's do a redirect
-            when (categorySlug category /= path) $
-              Spock.redirect ("/" <> categorySlug category)
-            lucidIO $ renderCategoryPage category
-      -- The add/set methods return rendered parts of the structure (added
-      -- categories, changed items, etc) so that the Javascript part could
-      -- take them and inject into the page. We don't want to duplicate
-      -- rendering on server side and on client side.
-      renderMethods
-      setMethods
-      addMethods
-      otherMethods
+
+      -- Haskell
+      Spock.subcomponent "haskell" $ do
+        Spock.get root $ do
+          s <- dbQuery GetGlobalState
+          q <- param "q"
+          lucidIO $ renderRoot s q
+        -- Category pages
+        Spock.get var $ \path -> do
+          -- The links look like /parsers-gao238b1 (because it's nice when
+          -- you can find out where a link leads just by looking at it)
+          let (_, catId) = T.breakOnEnd "-" path
+          when (T.null catId) $
+            Spock.jumpNext
+          mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
+          case mbCategory of
+            Nothing -> Spock.jumpNext
+            Just category -> do
+              -- If the slug in the url is old (i.e. if it doesn't match the
+              -- one we would've generated now), let's do a redirect
+              when (categorySlug category /= path) $
+                -- TODO: this link shouldn't be absolute [absolute-links]
+                Spock.redirect ("/haskell/" <> categorySlug category)
+              lucidIO $ renderCategoryPage category
+        -- The add/set methods return rendered parts of the structure (added
+        -- categories, changed items, etc) so that the Javascript part could
+        -- take them and inject into the page. We don't want to duplicate
+        -- rendering on server side and on client side.
+        renderMethods
+        setMethods
+        addMethods
+        otherMethods
 
 -- TODO: when a category with the same name exists, show an error message and
 -- redirect to that other category

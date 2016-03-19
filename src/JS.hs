@@ -118,6 +118,8 @@ instance JSParams a => JSFunction (a -> JS) where
 assign :: ToJS x => JS -> x -> JS
 assign v x = JS $ format "{} = {};" (v, toJS x)
 
+-- TODO: all links here shouldn't be absolute [absolute-links]
+
 replaceWithData :: JSFunction a => a
 replaceWithData =
   makeJSFunction "replaceWithData" ["node"]
@@ -224,7 +226,7 @@ addCategory :: JSFunction a => a
 addCategory =
   makeJSFunction "addCategory" ["node", "s"]
   [text|
-    $.post("/add/category", {content: s})
+    $.post("/haskell/add/category", {content: s})
      .done(prependData(node));
   |]
 
@@ -233,7 +235,7 @@ addItem :: JSFunction a => a
 addItem =
   makeJSFunction "addItem" ["node", "catId", "s"]
   [text|
-    $.post("/add/category/"+catId+"/item", {name: s})
+    $.post("/haskell/add/category/"+catId+"/item", {name: s})
      .done(appendData(node));
   |]
 
@@ -246,7 +248,7 @@ submitCategoryTitle :: JSFunction a => a
 submitCategoryTitle =
   makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
   [text|
-    $.post("/set/category/"+catId+"/title", {content: s})
+    $.post("/haskell/set/category/"+catId+"/title", {content: s})
      .done(replaceWithData(node));
   |]
 
@@ -254,7 +256,7 @@ submitCategoryNotes :: JSFunction a => a
 submitCategoryNotes =
   makeJSFunction "submitCategoryNotes" ["node", "catId", "s"]
   [text|
-    $.post("/set/category/"+catId+"/notes", {content: s})
+    $.post("/haskell/set/category/"+catId+"/notes", {content: s})
      .done(replaceWithData(node));
   |]
 
@@ -262,7 +264,7 @@ submitItemDescription :: JSFunction a => a
 submitItemDescription =
   makeJSFunction "submitItemDescription" ["node", "itemId", "s"]
   [text|
-    $.post("/set/item/"+itemId+"/description", {content: s})
+    $.post("/haskell/set/item/"+itemId+"/description", {content: s})
      .done(replaceWithData(node));
   |]
 
@@ -270,7 +272,7 @@ submitItemEcosystem :: JSFunction a => a
 submitItemEcosystem =
   makeJSFunction "submitItemEcosystem" ["node", "itemId", "s"]
   [text|
-    $.post("/set/item/"+itemId+"/ecosystem", {content: s})
+    $.post("/haskell/set/item/"+itemId+"/ecosystem", {content: s})
      .done(replaceWithData(node));
   |]
 
@@ -278,7 +280,7 @@ submitItemNotes :: JSFunction a => a
 submitItemNotes =
   makeJSFunction "submitItemNotes" ["node", "itemId", "s"]
   [text|
-    $.post("/set/item/"+itemId+"/notes", {content: s})
+    $.post("/haskell/set/item/"+itemId+"/notes", {content: s})
      .done(function (data) {
         $(node).replaceWith(data);
         switchSection(node, "expanded");
@@ -293,7 +295,7 @@ addPro :: JSFunction a => a
 addPro =
   makeJSFunction "addPro" ["node", "itemId", "s"]
   [text|
-    $.post("/add/item/"+itemId+"/pro", {content: s})
+    $.post("/haskell/add/item/"+itemId+"/pro", {content: s})
      .done(function (data) {
         var jData = $(data);
         jData.appendTo(node);
@@ -306,7 +308,7 @@ addCon :: JSFunction a => a
 addCon =
   makeJSFunction "addCon" ["node", "itemId", "s"]
   [text|
-    $.post("/add/item/"+itemId+"/con", {content: s})
+    $.post("/haskell/add/item/"+itemId+"/con", {content: s})
      .done(function (data) {
         var jData = $(data);
         jData.appendTo(node);
@@ -318,7 +320,7 @@ submitTrait :: JSFunction a => a
 submitTrait =
   makeJSFunction "submitTrait" ["node", "itemId", "traitId", "s"]
   [text|
-    $.post("/set/item/"+itemId+"/trait/"+traitId, {content: s})
+    $.post("/haskell/set/item/"+itemId+"/trait/"+traitId, {content: s})
      .done(function (data) {
         $(node).replaceWith(data);
         switchSection(node, "editable");
@@ -337,13 +339,13 @@ submitItemInfo =
     // it would lose the item's state (e.g. what if the traits were
     // being edited? etc). So, instead we query colors from the server
     // and change the color of the item's body manually.
-    $.post("/set/item/"+itemId+"/info", $(form).serialize())
+    $.post("/haskell/set/item/"+itemId+"/info", $(form).serialize())
      .done(function (data) {
         // Note the order – first we change the color, then we replace
         // the info node. The reason is that otherwise the bodyNode
         // selector might become invalid (if it depends on the infoNode
         // selector).
-        $.get("/render/item/"+itemId+"/colors")
+        $.get("/haskell/render/item/"+itemId+"/colors")
          .done(function (colors) {
             $(bodyNode).css("background-color", colors.light);
             $(infoNode).replaceWith(data);
@@ -355,7 +357,7 @@ moveTraitUp :: JSFunction a => a
 moveTraitUp =
   makeJSFunction "moveTraitUp" ["itemId", "traitId", "traitNode"]
   [text|
-    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
+    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
     moveNodeUp(traitNode);
   |]
 
@@ -363,7 +365,7 @@ moveTraitDown :: JSFunction a => a
 moveTraitDown =
   makeJSFunction "moveTraitDown" ["itemId", "traitId", "traitNode"]
   [text|
-    $.post("/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
+    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
     moveNodeDown(traitNode);
   |]
 
@@ -372,7 +374,7 @@ deleteTrait =
   makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
   [text|
     if (confirm("Confirm deletion?")) {
-      $.post("/delete/item/"+itemId+"/trait/"+traitId);
+      $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId);
       $(traitNode).remove();
     }
   |]
@@ -381,7 +383,7 @@ moveItemUp :: JSFunction a => a
 moveItemUp =
   makeJSFunction "moveItemUp" ["itemId", "itemNode"]
   [text|
-    $.post("/move/item/"+itemId, {direction: "up"});
+    $.post("/haskell/move/item/"+itemId, {direction: "up"});
     moveNodeUp(itemNode);
   |]
 
@@ -389,7 +391,7 @@ moveItemDown :: JSFunction a => a
 moveItemDown =
   makeJSFunction "moveItemDown" ["itemId", "itemNode"]
   [text|
-    $.post("/move/item/"+itemId, {direction: "down"});
+    $.post("/haskell/move/item/"+itemId, {direction: "down"});
     moveNodeDown(itemNode);
   |]
 
@@ -398,7 +400,7 @@ deleteItem =
   makeJSFunction "deleteItem" ["itemId", "itemNode"]
   [text|
     if (confirm("Confirm deletion?")) {
-      $.post("/delete/item/"+itemId);
+      $.post("/haskell/delete/item/"+itemId);
       $(itemNode).remove();
     }
   |]
