@@ -34,6 +34,7 @@ module Utils
   includeCSS,
 
   -- * Spock
+  atomFeed,
 )
 where
 
@@ -45,8 +46,9 @@ import Control.Monad.IO.Class
 -- Random
 import System.Random
 -- Text
-import qualified Data.Text as T
 import Data.Text (Text)
+import qualified Data.Text          as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 -- Formatting
 import           Data.Text.Format hiding (format)
@@ -58,6 +60,10 @@ import Lucid
 import Web.Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
 import Web.PathPieces
+-- Feeds
+import qualified Text.Atom.Feed        as Atom
+import qualified Text.Atom.Feed.Export as Atom
+import qualified Text.XML.Light.Output as XML
 -- acid-state
 import Data.SafeCopy
 
@@ -105,7 +111,7 @@ makeSlug =
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, Show, PathPiece, Format.Buildable, Data)
+  deriving (Eq, Ord, Show, PathPiece, Format.Buildable, Data)
 
 deriveSafeCopy 0 'base ''Uid
 
@@ -142,3 +148,7 @@ includeJS url = with (script_ "") [src_ url]
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
+atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
+atomFeed feed = do
+  setHeader "Content-Type" "application/atom+xml; charset=utf-8"
+  bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))

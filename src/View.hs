@@ -34,6 +34,9 @@ module View
   -- ** Traits
   renderTrait,
 
+  -- * Rendering for feeds
+  renderItemForFeed,
+
   -- * Miscellaneous
   getItemHue,
   newGroupValue,
@@ -251,8 +254,7 @@ renderCategoryTitle category = do
       this   = JS.selectId thisId
   h2_ [id_ thisId] $ do
     sectionSpan "normal" [shown, noScriptShown] $ do
-      let slug = makeSlug (category^.title)
-      a_ [href_ (format "/{}-{}" (slug, category^.uid))] $
+      a_ [href_ ("/" <> categorySlug category)] $
         toHtml (category^.title)
       emptySpan "1em"
       textButton "edit" $
@@ -311,6 +313,7 @@ getItemHue category item = case item^.group_ of
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: Category -> Item -> HtmlT IO ()
 renderItem category item =
+  -- The id is used for links in feeds
   div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
     renderItemInfo category item
     -- TODO: replace “edit description” with a big half-transparent pencil
@@ -331,6 +334,37 @@ renderItem category item =
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
+renderItemHeader :: Monad m => Item -> HtmlT m ()
+renderItemHeader item = do
+  let hackageLink x = "https://hackage.haskell.org/package/" <> x
+  case item^.kind of
+    -- If the library is on Hackage, the title links to its Hackage
+    -- page; otherwise, it doesn't link anywhere. Even if the link
+    -- field is present, it's going to be rendered as “(site)”, not
+    -- linked in the title.
+    Library hackageName' -> do
+      case hackageName' of
+        Just x  -> a_ [href_ (hackageLink x)] (toHtml (item^.name))
+        Nothing -> toHtml (item^.name)
+      case item^.link of
+        Just l  -> " (" >> a_ [href_ l] "site" >> ")"
+        Nothing -> return ()
+    -- For tools, it's the opposite – the title links to the item site
+    -- (if present), and there's a separate “(Hackage)” link if the
+    -- tool is on Hackage.
+    Tool hackageName' -> do
+      case item^.link of
+        Just l  -> a_ [href_ l] (toHtml (item^.name))
+        Nothing -> toHtml (item^.name)
+      case hackageName' of
+        Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
+        Nothing -> return ()
+    -- And now everything else
+    Other -> do
+      case item^.link of
+        Just l  -> a_ [href_ l] (toHtml (item^.name))
+        Nothing -> toHtml (item^.name)
+
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: Category -> Item -> HtmlT IO ()
 renderItemInfo cat item = do
@@ -343,34 +377,7 @@ renderItemInfo cat item = do
     section "normal" [shown, noScriptShown] $ do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
-        let hackageLink x = "https://hackage.haskell.org/package/" <> x
-        case item^.kind of
-          -- If the library is on Hackage, the title links to its Hackage
-          -- page; otherwise, it doesn't link anywhere. Even if the link
-          -- field is present, it's going to be rendered as “(site)”, not
-          -- linked in the title.
-          Library hackageName' -> do
-            case hackageName' of
-              Just x  -> a_ [href_ (hackageLink x)] (toHtml (item^.name))
-              Nothing -> toHtml (item^.name)
-            case item^.link of
-              Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-              Nothing -> return ()
-          -- For tools, it's the opposite – the title links to the item site
-          -- (if present), and there's a separate “(Hackage)” link if the
-          -- tool is on Hackage.
-          Tool hackageName' -> do
-            case item^.link of
-              Just l  -> a_ [href_ l] (toHtml (item^.name))
-              Nothing -> toHtml (item^.name)
-            case hackageName' of
-              Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
-              Nothing -> return ()
-          -- And now everything else
-          Other -> do
-            case item^.link of
-              Just l  -> a_ [href_ l] (toHtml (item^.name))
-              Nothing -> toHtml (item^.name)
+        renderItemHeader item
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
@@ -652,6 +659,22 @@ renderItemNotes item = do
 
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
+
+renderItemForFeed :: Item -> Html ()
+renderItemForFeed item = do
+  h1_ $ renderItemHeader item
+  when (item^.description /= "") $
+    toHtml (item^.description)
+  h2_ "Pros"
+  ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
+  h2_ "Cons"
+  ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
+  when (item^.ecosystem /= "") $ do
+    h2_ "Ecosystem"
+    toHtml (item^.ecosystem)
+  when (item^.notes /= "") $ do
+    h2_ "Notes"
+    toHtml (item^.notes)
 
 -- Utils
 

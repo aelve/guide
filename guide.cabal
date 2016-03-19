@@ -47,6 +47,8 @@ executable guide
                      , containers >= 0.5
                      , ekg
                      , ekg-core
+                     , feed >= 0.3.11 && < 0.4
+                     , filepath
                      , lucid
                      , megaparsec
                      , microlens-platform >= 0.2.3
@@ -63,6 +65,7 @@ executable guide
                      , uniplate
                      , wai-middleware-metrics
                      , wai-middleware-static
+                     , xml
                      , xss-sanitize
   ghc-options:         -Wall -fno-warn-unused-do-bind
                        -threaded "-with-rtsopts=-T -N"

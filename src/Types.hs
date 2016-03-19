@@ -31,6 +31,7 @@ module Types
     title,
     groups,
     items,
+    categorySlug,
   GlobalState(..),
     categories,
 
@@ -276,6 +277,10 @@ data Category = Category {
 
 deriveSafeCopy 2 'extension ''Category
 makeFields ''Category
+
+categorySlug :: Category -> Text
+categorySlug category =
+  format "{}-{}" (makeSlug (category^.title), category^.uid)
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a

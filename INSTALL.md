@@ -82,9 +82,9 @@ env LC_ALL=en_US.UTF-8
 exec dist/build/guide/guide
 ~~~
 
-(Also possibly `env GUIDE_TRACKING=1`.)
+If you want tracking, add `env GUIDE_TRACKING=1`. If you want e.g. feeds to work correctly, add `env GUIDE_URL="url of your instance here"` (and don't forget about `http://` or `https://`).
 
-And start the daemon:
+Start the daemon:
 
     $ service guide start
 

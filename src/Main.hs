@@ -4,7 +4,6 @@ ScopedTypeVariables,
 TypeFamilies,
 DataKinds,
 MultiWayIf,
-ViewPatterns,
 NoImplicitPrelude
   #-}
 
@@ -22,19 +21,27 @@ import Lens.Micro.Platform hiding ((&))
 import qualified Data.Map as M
 -- Text
 import Data.Text (Text)
-import qualified Data.Text as T
+import qualified Data.Text          as T
 import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
+-- Paths
+import System.FilePath ((</>))
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
+import qualified Lucid
 import Network.Wai.Middleware.Static
+-- Feeds
+import qualified Text.Feed.Types as Feed
+import qualified Text.Feed.Util  as Feed
+import qualified Text.Atom.Feed  as Atom
 -- Highlighting
 import Cheapskate.Highlight
 -- Monitoring
 import qualified System.Remote.Monitoring as EKG
-import qualified Network.Wai.Metrics as EKG
-import qualified System.Metrics.Gauge as EKG.Gauge
+import qualified Network.Wai.Metrics      as EKG
+import qualified System.Metrics.Gauge     as EKG.Gauge
 import Data.Generics.Uniplate.Data
 -- acid-state
 import Data.Acid as Acid
@@ -252,6 +259,43 @@ otherMethods = do
     Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
       dbUpdate (DeleteTrait itemId traitId)
 
+  -- Feeds
+  baseUrl <- fromMaybe "" <$> liftIO (lookupEnv "GUIDE_URL")
+  Spock.subcomponent "feed" $ do
+    -- Feed for items in a category
+    Spock.get categoryVar $ \catId -> do
+      category <- dbQuery (GetCategory catId)
+      let sortedItems = reverse $ sortBy cmp (category^.items)
+            where cmp = comparing (^.created) <> comparing (^.uid)
+      let route = "feed" <//> categoryVar
+      let feedUrl = baseUrl </> T.unpack (renderRoute route (category^.uid))
+          feedTitle = Atom.TextString (T.unpack (category^.title) ++
+                                       " – Aelve Guide")
+          feedLastUpdate = case sortedItems of
+            (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
+            _        -> ""
+      let feedBase = Atom.nullFeed feedUrl feedTitle feedLastUpdate
+      atomFeed $ feedBase {
+        Atom.feedEntries = map (itemToFeedEntry baseUrl category) sortedItems,
+        Atom.feedLinks   = [Atom.nullLink feedUrl] }
+
+itemToFeedEntry :: String -> Category -> Item -> Atom.Entry
+itemToFeedEntry baseUrl category item =
+  entryBase {
+    Atom.entryLinks = [Atom.nullLink entryLink],
+    Atom.entryContent = Just (Atom.HTMLContent (TL.unpack entryContent)) }
+  where
+    entryLink = baseUrl </>
+                T.unpack (format "{}#item-{}"
+                                 (categorySlug category, item^.uid))
+    entryContent = Lucid.renderText (renderItemForFeed item)
+    entryBase = Atom.nullEntry
+      (T.unpack (uidToText (item^.uid)))
+      (Atom.TextString (T.unpack (item^.name)))
+      (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created))
+
+-- TODO: add # links to items
+
 main :: IO ()
 main = do
   let emptyState = GlobalState mempty
@@ -312,18 +356,17 @@ main = do
       Spock.get var $ \path -> do
         -- The links look like /generating-feeds-gao238b1 (because it's nice
         -- when you can find out where a link leads just by looking at it)
-        let (T.init -> urlSlug, catId) = T.breakOnEnd "-" path
+        let (_, catId) = T.breakOnEnd "-" path
         when (T.null catId) $
           Spock.jumpNext
         mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
         case mbCategory of
           Nothing -> Spock.jumpNext
           Just category -> do
-            let slug = makeSlug (category^.title)
             -- If the slug in the url is old or something (i.e. if it doesn't
             -- match the one we would've generated now), let's do a redirect
-            when (urlSlug /= slug) $
-              Spock.redirect (format "/{}-{}" (slug, category^.uid))
+            when (categorySlug category /= path) $
+              Spock.redirect ("/" <> categorySlug category)
             lucidIO $ renderCategoryPage category
       -- The add/set methods return rendered parts of the structure (added
       -- categories, changed items, etc) so that the Javascript part could
@@ -333,8 +376,6 @@ main = do
       setMethods
       addMethods
       otherMethods
-
--- TODO: RSS feeds for categories
 
 -- TODO: when a category with the same name exists, show an error message and
 -- redirect to that other category
