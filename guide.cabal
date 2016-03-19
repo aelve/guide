@@ -36,6 +36,7 @@ executable guide
     View
   -- other-extensions:    
   build-depends:       Spock
+                     , Spock-lucid == 0.2.*
                      , acid-state == 0.14.*
                      , base >=4.8 && <4.9
                      , base-prelude

@@ -34,7 +34,6 @@ module Utils
   includeCSS,
 
   -- * Spock
-  lucid,
 )
 where
 
@@ -143,7 +142,3 @@ includeJS url = with (script_ "") [src_ url]
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
-lucid :: MonadIO m => HtmlT IO a -> ActionCtxT ctx m a
-lucid h = do
-  htmlText <- liftIO (renderTextT h)
-  html (TL.toStrict htmlText)

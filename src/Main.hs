@@ -27,6 +27,7 @@ import qualified Data.Text.Encoding as T
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
+import Web.Spock.Lucid
 import Network.Wai.Middleware.Static
 -- Highlighting
 import Cheapskate.Highlight
@@ -82,11 +83,11 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    lucid $ renderCategoryTitle category
+    lucidIO $ renderCategoryTitle category
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    lucid $ renderCategoryNotes category
+    lucidIO $ renderCategoryNotes category
   -- Item colors
   Spock.get (itemVar <//> "colors") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -98,19 +99,19 @@ renderMethods = Spock.subcomponent "render" $ do
   Spock.get (itemVar <//> "info") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemInfo category item
+    lucidIO $ renderItemInfo category item
   -- Item description
   Spock.get (itemVar <//> "description") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    lucid $ renderItemDescription item
+    lucidIO $ renderItemDescription item
   -- Item ecosystem
   Spock.get (itemVar <//> "ecosystem") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    lucid $ renderItemEcosystem item
+    lucidIO $ renderItemEcosystem item
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    lucid $ renderItemNotes item
+    lucidIO $ renderItemNotes item
 
 -- TODO: [easy] use window.onerror to catch and show all JS errors (showing
 -- could be done by displaying an alert)
@@ -121,12 +122,12 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
     category <- dbUpdate (SetCategoryTitle catId content')
-    lucid $ renderCategoryTitle category
+    lucidIO $ renderCategoryTitle category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
     category <- dbUpdate (SetCategoryNotes catId content')
-    lucid $ renderCategoryNotes category
+    lucidIO $ renderCategoryNotes category
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the
@@ -160,27 +161,27 @@ setMethods = Spock.subcomponent "set" $ do
     dbUpdate (SetItemGroup itemId group')
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
-    lucid $ renderItemInfo category item
+    lucidIO $ renderItemInfo category item
   -- Item description
   Spock.post (itemVar <//> "description") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemDescription itemId content')
-    lucid $ renderItemDescription item
+    lucidIO $ renderItemDescription item
   -- Item ecosystem
   Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemEcosystem itemId content')
-    lucid $ renderItemEcosystem item
+    lucidIO $ renderItemEcosystem item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
     item <- dbUpdate (SetItemNotes itemId content')
-    lucid $ renderItemNotes item
+    lucidIO $ renderItemNotes item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
     trait <- dbUpdate (SetTraitContent itemId traitId content')
-    lucid $ renderTrait itemId trait
+    lucidIO $ renderTrait itemId trait
 
 -- TODO: [easy] add stuff like “add/category” here in comments to make it
 -- easier to search with C-s (or maybe just don't use subcomponent?)
@@ -192,7 +193,7 @@ addMethods = Spock.subcomponent "add" $ do
     catId <- randomShortUid
     time <- liftIO getCurrentTime
     newCategory <- dbUpdate (AddCategory catId title' time)
-    lucid $ renderCategory newCategory
+    lucidIO $ renderCategory newCategory
   -- New item in a category
   Spock.post (categoryVar <//> "item") $ \catId -> do
     name' <- param' "name"
@@ -206,19 +207,19 @@ addMethods = Spock.subcomponent "add" $ do
       then dbUpdate (AddItem catId itemId name' time (Library (Just name')))
       else dbUpdate (AddItem catId itemId name' time Other)
     category <- dbQuery (GetCategory catId)
-    lucid $ renderItem category newItem
+    lucidIO $ renderItem category newItem
   -- Pro (argument in favor of an item)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
     newTrait <- dbUpdate (AddPro itemId traitId content')
-    lucid $ renderTrait itemId newTrait
+    lucidIO $ renderTrait itemId newTrait
   -- Con (argument against an item)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
     newTrait <- dbUpdate (AddCon itemId traitId content')
-    lucid $ renderTrait itemId newTrait
+    lucidIO $ renderTrait itemId newTrait
 
 otherMethods :: SpockM () () DB ()
 otherMethods = do
@@ -303,10 +304,10 @@ main = do
       Spock.get root $ do
         s <- dbQuery GetGlobalState
         q <- param "q"
-        lucid $ renderRoot s q
+        lucidIO $ renderRoot s q
       -- Donation page
       Spock.get "donate" $ do
-        lucid $ renderDonate
+        lucidIO $ renderDonate
       -- Category pages
       Spock.get var $ \path -> do
         -- The links look like /generating-feeds-gao238b1 (because it's nice
@@ -323,7 +324,7 @@ main = do
             -- match the one we would've generated now), let's do a redirect
             when (urlSlug /= slug) $
               Spock.redirect (format "/{}-{}" (slug, category^.uid))
-            lucid $ renderCategoryPage category
+            lucidIO $ renderCategoryPage category
       -- The add/set methods return rendered parts of the structure (added
       -- categories, changed items, etc) so that the Javascript part could
       -- take them and inject into the page. We don't want to duplicate
