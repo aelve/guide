@@ -294,7 +294,8 @@ main = do
       EKG.Gauge.set textGauge (fromIntegral textLength)
       threadDelay (1000000 * 60)
     -- Run the server
-    let config = defaultSpockCfg () PCNoDatabase db
+    let config = (defaultSpockCfg () PCNoDatabase db) {
+                   spc_maxRequestSize = Just (1024*1024) }
     runSpock 8080 $ spock config $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
