@@ -201,7 +201,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
 
 renderCategoryPage :: Category -> HtmlT IO ()
 renderCategoryPage category =
-  wrapPage ("Aelve Guide – " <> category^.title) $ do
+  wrapPage (category^.title <> " – Aelve Guide") $ do
     renderCategory category
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
