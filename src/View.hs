@@ -106,7 +106,6 @@ renderRoot globalState mbSearchQuery =
         you won't be able to edit anything.
         |]
     renderHelp
-    onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
     form_ $ do
       input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
               value_ (fromMaybe "" mbSearchQuery)]
@@ -218,6 +217,7 @@ renderCategoryPage category =
         Javascript, but since all editing needs Javascript to work,
         you won't be able to edit anything.
         |]
+    renderHelp
     renderCategory category
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
@@ -251,6 +251,8 @@ renderHelp = do
         "If you're finished reading, "
         a_ [href_ "#", onclick_ handler] "hide this message"
         "."
+
+  onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
 
 helpVersion :: Int
 helpVersion = 3
