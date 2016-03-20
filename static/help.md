@@ -1,9 +1,11 @@
 You can edit everything, without registration. (But if you delete everything, I'll roll it back and then make a voodoo doll of you and stick some needles into it).
 
-The most important rule is: **it's collaborative notes, not Wikipedia**. In other words, incomplete entries like this are welcome here:
+The most important rule is: **it's collaborative notes, not Wikipedia**. This implies two things. First, incomplete entries like this are welcome here:
 
 > **pros:** pretty nice API\
 > **cons:** buggy (see an example on my Github, here's the link)
+
+Second, you should write as if you were writing for a friend. If a friend asks you about X, you don't go on X's site and copy the standard “X is a powerful modern framework blah blah blah” blurb – well, don't do it here either. Here is the whole version of the [unwritten rules](/unwritten-rules), except that they are written and aren't rules.
 
 Markdown is supported in most places. 2 noteworthy features: you can write `[pkg](@hk)` to get a link to package `pkg` on Hackage (the full list of shortcuts is [here](https://hackage.haskell.org/package/shortcut-links/docs/ShortcutLinks-All.html), and you can mark snippets of code with `repl` to show that they come from GHCi:
 
@@ -14,20 +16,6 @@ Markdown is supported in most places. 2 noteworthy features: you can write `[pkg
 ~~~
 ~~~~
 
-Some additional guidelines/observations/etc that probably make sense:
-
-  * sort pros/cons by importance
-
-  * a library can be in several categories – list only pros/cons and examples that are relevant to the category
-
-  * don't write about a library if it's worse than all other libraries and doesn't have *anything* that could make it the preferred choice in some situation
-
-  * if you don't like something for any reason, edit it
-
-  * if you're unsure about something, still write it (just warn others that you're unsure)
-
-  * if you have useful information of any kind that doesn't fit, add it to the category notes
-
-Finally, all content here is licensed under [CC BY-SA 3.0][] (it's the same license as on Wikipedia and Stackoverflow).
+Finally, all content here is licensed under [CC BY-SA 3.0][] (it's the same license as on Wikipedia and Stackoverflow), and so everything that you contribute will be under that license as well.
 
 [CC BY-SA 3.0]: https://creativecommons.org/licenses/by-sa/3.0/

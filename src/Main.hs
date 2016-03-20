@@ -358,6 +358,10 @@ main = do
       Spock.get "donate" $ do
         lucidIO $ renderDonate
 
+      -- Unwritten rules
+      Spock.get "unwritten-rules" $ do
+        lucidIO $ renderUnwrittenRules
+
       -- Haskell
       Spock.subcomponent "haskell" $ do
         Spock.get root $ do

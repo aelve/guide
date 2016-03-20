@@ -13,6 +13,7 @@ module View
   renderRoot,
   renderDonate,
   renderCategoryPage,
+  renderUnwrittenRules,
 
   -- * Tracking
   renderTracking,
@@ -152,9 +153,13 @@ renderDonate = doctypehtml_ $ do
     title_ "Donate to Artyom"
     includeCSS "/css.css"
     renderTracking
-
   body_ $
     toHtmlRaw =<< liftIO (readFile "static/donate.html")
+
+renderUnwrittenRules :: HtmlT IO ()
+renderUnwrittenRules = wrapPage "Unwritten rules" $ do
+  toHtml . renderMarkdownBlock =<<
+    liftIO (T.readFile "static/unwritten-rules.md")
 
 -- Include all the necessary things
 wrapPage :: Text -> HtmlT IO () -> HtmlT IO ()
@@ -240,7 +245,7 @@ renderHelp = do
       toHtml $ renderMarkdownBlock help
 
 helpVersion :: Int
-helpVersion = 2
+helpVersion = 3
 
 -- TODO: when conflicts happen, maybe create an alert like “The thing you're
 -- editing has been edited in the meantime. Here is a link with a diff of
