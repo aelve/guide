@@ -71,6 +71,7 @@ a:visited {color: #B40EB4; text-decoration: none;}
 a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
 .text-button > a:visited {color: #008ACE;}
+h1           > a:visited {color: #008ACE;}  /* for header in category pages */
 
 a.anchor {
   margin-right: 0.5em;

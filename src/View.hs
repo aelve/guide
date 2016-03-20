@@ -95,6 +95,15 @@ instead of simple
 renderRoot :: GlobalState -> Maybe Text -> HtmlT IO ()
 renderRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
+    -- TODO: [very-easy] this header looks bad when the page is narrow, it
+    -- should be fixed in css.css by adding line-height to it
+    h1_ "The Haskeller's guide"
+    noscript_ $ div_ [id_ "noscript-message"] $
+      toHtml $ renderMarkdownBlock [text|
+        You have Javascript disabled! This site works fine without
+        Javascript, but since all editing needs Javascript to work,
+        you won't be able to edit anything.
+        |]
     renderHelp
     onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
     form_ $ do
@@ -180,18 +189,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
       |]
 
   body_ $ do
-    -- TODO: [very-easy] this header looks bad when the page is narrow, it
-    -- should be fixed in css.css by adding line-height to it
-    h1_ "The Haskeller's guide"
-    noscript_ $ div_ [id_ "noscript-message"] $
-      toHtml $ renderMarkdownBlock [text|
-        You have Javascript disabled! This site works fine without
-        Javascript, but since all editing needs Javascript to work,
-        you won't be able to edit anything.
-        |]
-
     page
-
     div_ [id_ "footer"] $ do
       "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
       emptySpan "2em"
@@ -205,6 +203,16 @@ wrapPage pageTitle page = doctypehtml_ $ do
 renderCategoryPage :: Category -> HtmlT IO ()
 renderCategoryPage category =
   wrapPage (category^.title <> " – Aelve Guide") $ do
+    -- TODO: [very-easy] this header looks bad when the page is narrow, it
+    -- should be fixed in css.css by adding line-height to it
+    -- TODO: another absolute link [absolute-links]
+    h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
+    noscript_ $ div_ [id_ "noscript-message"] $
+      toHtml $ renderMarkdownBlock [text|
+        You have Javascript disabled! This site works fine without
+        Javascript, but since all editing needs Javascript to work,
+        you won't be able to edit anything.
+        |]
     renderCategory category
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
