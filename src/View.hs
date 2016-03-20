@@ -243,6 +243,14 @@ renderHelp = do
       -- substantially and you think the users should reread it
       help <- liftIO $ T.readFile "static/help.md"
       toHtml $ renderMarkdownBlock help
+      -- Replicating “hide help” so that it would be more noticeable
+      p_ $ do
+        let handler =
+              fromJS (JS.hideHelp (JS.selectId "help", helpVersion)) <>
+              "return false;"
+        "If you're finished reading, "
+        a_ [href_ "#", onclick_ handler] "hide this message"
+        "."
 
 helpVersion :: Int
 helpVersion = 3
