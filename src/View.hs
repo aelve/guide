@@ -355,8 +355,8 @@ renderItem category item =
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
-renderItemHeader :: Monad m => Item -> HtmlT m ()
-renderItemHeader item = do
+renderItemTitle :: Monad m => Item -> HtmlT m ()
+renderItemTitle item = do
   let hackageLink x = "https://hackage.haskell.org/package/" <> x
   case item^.kind of
     -- If the library is on Hackage, the title links to its Hackage
@@ -401,7 +401,7 @@ renderItemInfo cat item = do
         -- TODO: absolute links again [absolute-links]
         let link' = format "/haskell/{}#item-{}" (categorySlug cat, item^.uid)
         a_ [class_ "anchor", href_ link'] "#"
-        renderItemHeader item
+        renderItemTitle item
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
@@ -681,7 +681,7 @@ renderItemNotes item = do
 
 renderItemForFeed :: Item -> Html ()
 renderItemForFeed item = do
-  h1_ $ renderItemHeader item
+  h1_ $ renderItemTitle item
   when (item^.description /= "") $
     toHtml (item^.description)
   h2_ "Pros"
