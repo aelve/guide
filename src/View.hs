@@ -353,9 +353,6 @@ renderItem category item =
 -- TODO: some spinning thingy that spins in the corner of the page while a
 -- request is happening
 
--- TODO: find some way to give all functions access to category and item (or
--- category, item and trait) without passing everything explicitly?
-
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
 renderItemHeader :: Monad m => Item -> HtmlT m ()
@@ -497,8 +494,6 @@ renderItemInfo cat item = do
         button "Cancel" [] $
           JS.switchSection (this, "normal" :: Text)
 
--- TODO: use triangle icons instead of arrows [very-easy]
-
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
 
@@ -588,7 +583,6 @@ renderItemTraits item = do
         JS.switchSectionsEverywhere(this, "normal" :: Text)
 
 renderTrait :: Uid -> Trait -> HtmlT IO ()
--- TODO: probably use renderMarkdownBlock here as well
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
       this   = JS.selectId thisId

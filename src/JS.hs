@@ -45,7 +45,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addPro, addCon,
   -- Set methods
   submitCategoryTitle, submitItemDescription, submitCategoryNotes,
-  -- TODO: rename this to submitItemHeader or something?
   submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
   -- Other things
