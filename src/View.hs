@@ -407,8 +407,6 @@ renderItemInfo cat item = do
       span_ [class_ "controls"] $ do
         let itemNode = JS.selectId ("item-" <> uidToText (item^.uid))
         imgButton "move item up" "/arrow-thick-top.svg" [] $
-          -- TODO: [easy] the item should blink or somehow else show where it
-          -- has been moved
           JS.moveItemUp (item^.uid, itemNode)
         imgButton "move item down" "/arrow-thick-bottom.svg" [] $
           JS.moveItemDown (item^.uid, itemNode)

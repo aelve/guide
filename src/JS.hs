@@ -38,6 +38,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
   switchSection, switchSectionsEverywhere,
+  fadeIn,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
   -- Add methods
@@ -191,6 +192,26 @@ switchSectionsEverywhere =
     autosize($('textarea'));
     autosize.update($('textarea'));
   |]
+
+fadeIn :: JSFunction a => a
+fadeIn =
+  makeJSFunction "fadeIn" ["node"]
+  [text|
+    $(node).fadeTo(0,0.2).fadeTo(600,1);
+  |]
+
+{- Note [fadeOut]
+~~~~~~~~~~~~~~~~~
+
+There is no 'fadeOut' because it's only used when deleting items and the problem with jQuery is that if you do
+
+    fadeOut(x);
+    $(x).remove();
+
+then the item is removed before the animation is complete, so we have to explicitly chain them:
+
+    $(x).fadeTo(600,0.2,function(){$(x).remove();})
+-}
 
 showHelp :: JSFunction a => a
 showHelp =
@@ -358,6 +379,7 @@ moveTraitUp =
   [text|
     $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
     moveNodeUp(traitNode);
+    fadeIn(traitNode);
   |]
 
 moveTraitDown :: JSFunction a => a
@@ -366,6 +388,7 @@ moveTraitDown =
   [text|
     $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
     moveNodeDown(traitNode);
+    fadeIn(traitNode);
   |]
 
 deleteTrait :: JSFunction a => a
@@ -374,7 +397,8 @@ deleteTrait =
   [text|
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId);
-      $(traitNode).remove();
+      // see Note [fadeOut]
+      $(traitNode).fadeTo(400,0.2,function(){$(traitNode).remove()});
     }
   |]
 
@@ -384,6 +408,7 @@ moveItemUp =
   [text|
     $.post("/haskell/move/item/"+itemId, {direction: "up"});
     moveNodeUp(itemNode);
+    fadeIn(itemNode);
   |]
 
 moveItemDown :: JSFunction a => a
@@ -392,7 +417,10 @@ moveItemDown =
   [text|
     $.post("/haskell/move/item/"+itemId, {direction: "down"});
     moveNodeDown(itemNode);
+    fadeIn(itemNode);
   |]
+
+-- TODO: only delete/etc when the request is complete
 
 deleteItem :: JSFunction a => a
 deleteItem =
@@ -400,7 +428,8 @@ deleteItem =
   [text|
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/item/"+itemId);
-      $(itemNode).remove();
+      // see Note [fadeOut]
+      $(itemNode).fadeTo(400,0.2,function(){$(itemNode).remove()});
     }
   |]
 
