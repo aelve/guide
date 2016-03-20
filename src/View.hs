@@ -322,7 +322,7 @@ getItemHue category item = case item^.group_ of
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: Category -> Item -> HtmlT IO ()
 renderItem category item =
-  -- The id is used for links in feeds
+  -- The id is used for links in feeds, and for anchor links
   div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
     renderItemInfo category item
     -- TODO: replace “edit description” with a big half-transparent pencil
@@ -386,6 +386,9 @@ renderItemInfo cat item = do
     section "normal" [shown, noScriptShown] $ do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
+        -- TODO: absolute links again [absolute-links]
+        let link' = format "/haskell/{}#item-{}" (categorySlug cat, item^.uid)
+        a_ [class_ "anchor", href_ link'] "#"
         renderItemHeader item
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))

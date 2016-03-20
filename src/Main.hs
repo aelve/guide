@@ -286,8 +286,6 @@ itemToFeedEntry baseUrl category item =
       (Atom.TextString (T.unpack (item^.name)))
       (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created))
 
--- TODO: add # links to items
-
 main :: IO ()
 main = do
   let emptyState = GlobalState mempty
