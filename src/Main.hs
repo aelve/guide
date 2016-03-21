@@ -4,6 +4,7 @@ ScopedTypeVariables,
 TypeFamilies,
 DataKinds,
 MultiWayIf,
+FlexibleContexts,
 NoImplicitPrelude
   #-}
 
@@ -15,6 +16,8 @@ module Main (main) where
 import BasePrelude hiding (Category)
 -- Monads and monad transformers
 import Control.Monad.State
+import Control.Monad.Reader
+import Control.Monad.Morph
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Containers
@@ -49,8 +52,9 @@ import Data.Acid as Acid
 import Data.Time
 
 -- Local
-import View
+import Config
 import Types
+import View
 import JS (JS(..), allJSFunctions)
 import Markdown
 import Utils
@@ -62,19 +66,31 @@ import Utils
 
 type DB = AcidState GlobalState
 
-dbUpdate :: (MonadIO m, HasSpock m, SpockState m ~ DB,
+dbUpdate :: (MonadIO m, HasSpock m, SpockState m ~ ServerState,
              EventState event ~ GlobalState, UpdateEvent event)
          => event -> m (EventResult event)
 dbUpdate x = do
-  db <- Spock.getState
+  db <- _db <$> Spock.getState
   liftIO $ Acid.update db x
 
-dbQuery :: (MonadIO m, HasSpock m, SpockState m ~ DB,
+dbQuery :: (MonadIO m, HasSpock m, SpockState m ~ ServerState,
             EventState event ~ GlobalState, QueryEvent event)
         => event -> m (EventResult event)
 dbQuery x = do
-  db <- Spock.getState
+  db <- _db <$> Spock.getState
   liftIO $ Acid.query db x
+
+------------------------------------------------------------------------------
+-- Server state
+------------------------------------------------------------------------------
+
+data ServerState = ServerState {
+  _config :: Config,
+  _db     :: DB }
+
+getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
+          => m Config
+getConfig = _config <$> Spock.getState
 
 itemVar :: Path '[Uid]
 itemVar = "item" <//> var
@@ -85,7 +101,7 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid]
 traitVar = "trait" <//> var
 
-renderMethods :: SpockM () () DB ()
+renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Title of a category
   Spock.get (categoryVar <//> "title") $ \catId -> do
@@ -123,7 +139,7 @@ renderMethods = Spock.subcomponent "render" $ do
 -- TODO: [easy] use window.onerror to catch and show all JS errors (showing
 -- could be done by displaying an alert)
 
-setMethods :: SpockM () () DB ()
+setMethods :: SpockM () () ServerState ()
 setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
   Spock.post (categoryVar <//> "title") $ \catId -> do
@@ -192,7 +208,7 @@ setMethods = Spock.subcomponent "set" $ do
 
 -- TODO: [easy] add stuff like “add/category” here in comments to make it
 -- easier to search with C-s (or maybe just don't use subcomponent?)
-addMethods :: SpockM () () DB ()
+addMethods :: SpockM () () ServerState ()
 addMethods = Spock.subcomponent "add" $ do
   -- New category
   Spock.post "category" $ do
@@ -228,7 +244,7 @@ addMethods = Spock.subcomponent "add" $ do
     newTrait <- dbUpdate (AddCon itemId traitId content')
     lucidIO $ renderTrait itemId newTrait
 
-otherMethods :: SpockM () () DB ()
+otherMethods :: SpockM () () ServerState ()
 otherMethods = do
   -- Moving things
   Spock.subcomponent "move" $ do
@@ -252,7 +268,7 @@ otherMethods = do
 
   -- Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
-  baseUrl <- (</> "haskell") . fromMaybe "/" <$> liftIO (lookupEnv "GUIDE_URL")
+  baseUrl <- (</> "haskell") . T.unpack . _baseUrl <$> getConfig
   Spock.subcomponent "feed" $ do
     -- Feed for items in a category
     Spock.get categoryVar $ \catId -> do
@@ -286,8 +302,19 @@ itemToFeedEntry baseUrl category item =
       (Atom.TextString (T.unpack (item^.name)))
       (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created))
 
+-- TODO: rename GlobalState to DB, and DB to AcidDB
+
+lucidWithConfig
+  :: (MonadIO m, HasSpock (ActionCtxT cxt m),
+      SpockState (ActionCtxT cxt m) ~ ServerState)
+  => HtmlT (ReaderT Config IO) a -> ActionCtxT cxt m a
+lucidWithConfig x = do
+  cfg <- getConfig
+  lucidIO (hoist (flip runReaderT cfg) x)
+
 main :: IO ()
 main = do
+  config <- readConfig
   let emptyState = GlobalState mempty
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
@@ -329,9 +356,12 @@ main = do
       EKG.Gauge.set textGauge (fromIntegral textLength)
       threadDelay (1000000 * 60)
     -- Run the server
-    let config = (defaultSpockCfg () PCNoDatabase db) {
-                   spc_maxRequestSize = Just (1024*1024) }
-    runSpock 8080 $ spock config $ do
+    let serverState = ServerState {
+          _config = config,
+          _db     = db }
+    let spockConfig = (defaultSpockCfg () PCNoDatabase serverState) {
+          spc_maxRequestSize = Just (1024*1024) }
+    runSpock 8080 $ spock spockConfig $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
@@ -345,29 +375,30 @@ main = do
       -- (css.css is a static file and so isn't handled here)
 
       -- Main page
-      Spock.get root $ lucidIO $ do
-        head_ $ do
-          title_ "Aelve Guide"
-          includeCSS "/css.css"
-          renderTracking
-        body_ $ do
-          h1_ "Aelve Guide"
-          h2_ (a_ [href_ "/haskell"] "Haskell")
+      Spock.get root $
+        lucidWithConfig $ do
+          head_ $ do
+            title_ "Aelve Guide"
+            includeCSS "/css.css"
+            renderTracking
+          body_ $ do
+            h1_ "Aelve Guide"
+            h2_ (a_ [href_ "/haskell"] "Haskell")
 
       -- Donation page
-      Spock.get "donate" $ do
-        lucidIO $ renderDonate
+      Spock.get "donate" $
+        lucidWithConfig $ renderDonate
 
       -- Unwritten rules
       Spock.get "unwritten-rules" $ do
-        lucidIO $ renderUnwrittenRules
+        lucidWithConfig $ renderUnwrittenRules
 
       -- Haskell
       Spock.subcomponent "haskell" $ do
         Spock.get root $ do
           s <- dbQuery GetGlobalState
           q <- param "q"
-          lucidIO $ renderRoot s q
+          lucidWithConfig $ renderRoot s q
         -- Category pages
         Spock.get var $ \path -> do
           -- The links look like /parsers-gao238b1 (because it's nice when
@@ -384,7 +415,7 @@ main = do
               when (categorySlug category /= path) $
                 -- TODO: this link shouldn't be absolute [absolute-links]
                 Spock.redirect ("/haskell/" <> categorySlug category)
-              lucidIO $ renderCategoryPage category
+              lucidWithConfig $ renderCategoryPage category
         -- The add/set methods return rendered parts of the structure (added
         -- categories, changed items, etc) so that the Javascript part could
         -- take them and inject into the page. We don't want to duplicate

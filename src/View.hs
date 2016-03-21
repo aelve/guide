@@ -51,6 +51,7 @@ import BasePrelude hiding (Category)
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
+import Control.Monad.Reader
 -- Containers
 import qualified Data.Map as M
 -- Text
@@ -62,6 +63,7 @@ import NeatInterpolation
 import Lucid hiding (for_)
 
 -- Local
+import Config
 import Types
 import Utils
 import JS (JS(..), JQuerySelector)
@@ -93,7 +95,9 @@ instead of simple
 
 -}
 
-renderRoot :: GlobalState -> Maybe Text -> HtmlT IO ()
+renderRoot
+  :: (MonadIO m, MonadReader Config m)
+  => GlobalState -> Maybe Text -> HtmlT m ()
 renderRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
@@ -136,9 +140,9 @@ renderRoot globalState mbSearchQuery =
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
-renderTracking :: HtmlT IO ()
+renderTracking :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderTracking = do
-  trackingEnabled <- (== Just "1") <$> liftIO (lookupEnv "GUIDE_TRACKING")
+  trackingEnabled <- lift (asks _trackingEnabled)
   when trackingEnabled $ do
     tracking <- liftIO $ T.readFile "static/tracking.html"
     toHtmlRaw tracking
@@ -146,7 +150,7 @@ renderTracking = do
 -- TODO: include jQuery locally so that it'd be possible to test the site
 -- without internet
 
-renderDonate :: HtmlT IO ()
+renderDonate :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderDonate = doctypehtml_ $ do
   head_ $ do
     title_ "Donate to Artyom"
@@ -155,13 +159,17 @@ renderDonate = doctypehtml_ $ do
   body_ $
     toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
-renderUnwrittenRules :: HtmlT IO ()
+renderUnwrittenRules :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderUnwrittenRules = wrapPage "Unwritten rules" $ do
   toHtml . renderMarkdownBlock =<<
     liftIO (T.readFile "static/unwritten-rules.md")
 
 -- Include all the necessary things
-wrapPage :: Text -> HtmlT IO () -> HtmlT IO ()
+wrapPage
+  :: (MonadIO m, MonadReader Config m)
+  => Text                              -- ^ Page title
+  -> HtmlT m ()
+  -> HtmlT m ()
 wrapPage pageTitle page = doctypehtml_ $ do
   head_ $ do
     title_ (toHtml pageTitle)
@@ -204,7 +212,8 @@ wrapPage pageTitle page = doctypehtml_ $ do
       a_ [href_ "/donate"] "donate"
       sup_ [style_ "font-size:50%"] "I don't have a job"
 
-renderCategoryPage :: Category -> HtmlT IO ()
+renderCategoryPage
+  :: (MonadIO m, MonadReader Config m) => Category -> HtmlT m ()
 renderCategoryPage category =
   wrapPage (category^.title <> " – Aelve Guide") $ do
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
@@ -226,7 +235,7 @@ renderCategoryPage category =
 -- TODO: add a list for “interesting libraries, but too lazy to describe, so
 -- somebody describe them for me”
 
-renderHelp :: HtmlT IO ()
+renderHelp :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderHelp = do
   div_ [id_ "help"] $ do
 
@@ -266,12 +275,12 @@ helpVersion = 3
 -- TODO: automatic merge should be possible too (e.g. if the changes are in
 -- different paragraphs)
 
-renderCategoryList :: [Category] -> HtmlT IO ()
+renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
 renderCategoryList cats =
   div_ [id_ "categories"] $
     mapM_ renderCategory cats
 
-renderCategoryTitle :: Category -> HtmlT IO ()
+renderCategoryTitle :: Monad m => Category -> HtmlT m ()
 renderCategoryTitle category = do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
@@ -294,7 +303,7 @@ renderCategoryTitle category = do
       textButton "cancel" $
         JS.switchSection (this, "normal" :: Text)
 
-renderCategoryNotes :: Category -> HtmlT IO ()
+renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
 renderCategoryNotes category = do
   let thisId = "category-notes-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
@@ -314,7 +323,7 @@ renderCategoryNotes category = do
         (\val -> JS.submitCategoryNotes (this, category^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderCategory :: Category -> HtmlT IO ()
+renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category =
   div_ [class_ "category", uid_ (category^.uid)] $ do
     renderCategoryTitle category
@@ -335,7 +344,7 @@ getItemHue category item = case item^.group_ of
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
-renderItem :: Category -> Item -> HtmlT IO ()
+renderItem :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItem category item =
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
@@ -387,7 +396,7 @@ renderItemTitle item = do
         Nothing -> toHtml (item^.name)
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: Category -> Item -> HtmlT IO ()
+renderItemInfo :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItemInfo cat item = do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
@@ -498,7 +507,7 @@ renderItemInfo cat item = do
 -- TODO: categories without items (e.g. “web dev”) that list links to other
 -- categories
 
-renderItemDescription :: Item -> HtmlT IO ()
+renderItemDescription :: MonadIO m => Item -> HtmlT m ()
 renderItemDescription item = do
   let thisId = "item-description-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -518,7 +527,7 @@ renderItemDescription item = do
         (\val -> JS.submitItemDescription (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderItemEcosystem :: Item -> HtmlT IO ()
+renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
 renderItemEcosystem item = do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -540,7 +549,9 @@ renderItemEcosystem item = do
         (\val -> JS.submitItemEcosystem (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderItemTraits :: Item -> HtmlT IO ()
+-- TODO: change MonadIO to MonadRandom mostly everywhere
+
+renderItemTraits :: MonadIO m => Item -> HtmlT m ()
 renderItemTraits item = do
   div_ [class_ "item-traits"] $ do
     this <- thisNode
@@ -580,7 +591,7 @@ renderItemTraits item = do
       textButton "edit off" $
         JS.switchSectionsEverywhere(this, "normal" :: Text)
 
-renderTrait :: Uid -> Trait -> HtmlT IO ()
+renderTrait :: MonadIO m => Uid -> Trait -> HtmlT m ()
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
       this   = JS.selectId thisId
@@ -636,7 +647,7 @@ renderTrait itemId trait = do
 
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
-renderItemNotes :: Item -> HtmlT IO ()
+renderItemNotes :: MonadIO m => Item -> HtmlT m ()
 renderItemNotes item = do
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -679,7 +690,7 @@ renderItemNotes item = do
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
 
-renderItemForFeed :: Item -> Html ()
+renderItemForFeed :: Monad m => Item -> HtmlT m ()
 renderItemForFeed item = do
   h1_ $ renderItemTitle item
   when (item^.description /= "") $
@@ -697,10 +708,10 @@ renderItemForFeed item = do
 
 -- Utils
 
-onPageLoad :: JS -> HtmlT IO ()
+onPageLoad :: Monad m => JS -> HtmlT m ()
 onPageLoad js = script_ $ format "$(document).ready(function(){{}});" [js]
 
-emptySpan :: Text -> HtmlT IO ()
+emptySpan :: Monad m => Text -> HtmlT m ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
 -- Use inputValue to get the value (works with input_ and textarea_)
@@ -708,7 +719,7 @@ onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
   format "if (event.keyCode == 13) {{} return false;}" [handler]
 
-textInput :: [Attribute] -> HtmlT IO ()
+textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
 
 inputValue :: JS
@@ -720,7 +731,7 @@ clearInput = JS "this.value = '';"
 onFormSubmit :: (JS -> JS) -> Attribute
 onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
 
-button :: Text -> [Attribute] -> JS -> HtmlT IO ()
+button :: Monad m => Text -> [Attribute] -> JS -> HtmlT m ()
 button value attrs handler =
   input_ (type_ "button" : value_ value : onclick_ handler' : attrs)
   where
@@ -730,9 +741,10 @@ button value attrs handler =
 -- 
 -- TODO: consider dotted links instead?
 textButton
-  :: Text         -- ^ Button text
+  :: Monad m
+  => Text         -- ^ Button text
   -> JS           -- ^ Onclick handler
-  -> HtmlT IO ()
+  -> HtmlT m ()
 textButton caption (JS handler) =
   span_ [class_ "text-button"] $
     -- “#” is used instead of javascript:void(0) because the latter is slow
@@ -741,17 +753,18 @@ textButton caption (JS handler) =
        (toHtml caption)
 
 -- So far all icons used here have been from <https://useiconic.com/open/>
-imgButton :: Text -> Url -> [Attribute] -> JS -> HtmlT IO ()
+imgButton :: Monad m => Text -> Url -> [Attribute] -> JS -> HtmlT m ()
 imgButton alt src attrs (JS handler) =
   a_ [href_ "#", onclick_ (handler <> "return false;")]
      (img_ (src_ src : alt_ alt : attrs))
 
 markdownEditor
-  :: [Attribute]
+  :: MonadIO m
+  => [Attribute]
   -> MarkdownBlock  -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> JS             -- ^ “Cancel” handler
-  -> HtmlT IO ()
+  -> HtmlT m ()
 markdownEditor attr (markdownBlockText -> s) submit cancel = do
   textareaId <- randomLongUid
   -- Autocomplete has to be turned off thanks to
@@ -770,11 +783,12 @@ markdownEditor attr (markdownBlockText -> s) submit cancel = do
   "Markdown"
 
 smallMarkdownEditor
-  :: [Attribute]
+  :: MonadIO m
+  => [Attribute]
   -> MarkdownInline -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
-  -> HtmlT IO ()
+  -> HtmlT m ()
 smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
   textareaId <- randomLongUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
@@ -789,7 +803,7 @@ smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
         JS.assign val s <>
         cancel
 
-thisNode :: HtmlT IO JQuerySelector
+thisNode :: MonadIO m => HtmlT m JQuerySelector
 thisNode = do
   uid' <- randomLongUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and

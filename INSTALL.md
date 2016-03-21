@@ -5,7 +5,11 @@ The `state/` directory contains the database. You can download the current datab
     $ git clone https://github.com/aelve/guide-database
     $ mv guide-database state
 
-If you want to enable tracking, replace the contents of `static/tracking.md` and set the environment variable `GUIDE_TRACKING=1` when running the server.
+The `config.json` file contains the config (it will be created at the 1st start). There are 2 settings so far:
+
+  * `tracking-enabled` enables tracking. If you do enable it, don't forget to replace the contents of `static/tracking.md` with your own tracking script.
+
+  * `base-url` is the URL of the server (which should contain `http://` or `https://`). It's used for feed generation.
 
 # How to install locally
 
@@ -81,8 +85,6 @@ chdir /root/guide
 env LC_ALL=en_US.UTF-8
 exec dist/build/guide/guide
 ~~~
-
-If you want tracking, add `env GUIDE_TRACKING=1`. If you want e.g. feeds to work correctly, add `env GUIDE_URL="url of your instance here"` (and don't forget about `http://` or `https://`).
 
 Start the daemon:
 
