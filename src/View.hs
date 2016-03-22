@@ -288,7 +288,8 @@ renderCategoryTitle category = do
     -- TODO: this link shouldn't be absolute [absolute-links]
     span_ [class_ "controls"] $
       a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
-        img_ [src_ "/rss-alt.svg", alt_ "category feed"]
+        img_ [src_ "/rss-alt.svg",
+              alt_ "category feed", title_ "category feed"]
 
     sectionSpan "normal" [shown, noScriptShown] $ do
       -- TODO: this link shouldn't be absolute [absolute-links]
@@ -761,7 +762,7 @@ textButton caption (JS handler) =
 imgButton :: Monad m => Text -> Url -> [Attribute] -> JS -> HtmlT m ()
 imgButton alt src attrs (JS handler) =
   a_ [href_ "#", onclick_ (handler <> "return false;")]
-     (img_ (src_ src : alt_ alt : attrs))
+     (img_ (src_ src : alt_ alt : title_ alt : attrs))
 
 markdownEditor
   :: MonadIO m
