@@ -154,6 +154,8 @@ renderDonate :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderDonate = doctypehtml_ $ do
   head_ $ do
     title_ "Donate to Artyom"
+    meta_ [name_ "viewport",
+           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
     includeCSS "/css.css"
     renderTracking
   body_ $
