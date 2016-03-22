@@ -9,6 +9,7 @@ module Config
 (
   Config(..),
   readConfig,
+  writeConfig,
   modifyConfig,
 )
 where
@@ -62,12 +63,19 @@ readConfig = do
   contents <- BSL.fromStrict <$> BS.readFile filename
   case Aeson.eitherDecode' contents of
     Left err  -> error ("error when reading config: " ++ err)
-    Right cfg -> return cfg
+    Right cfg -> do
+      -- If after an update there are new fields in the config, we should add
+      -- them to the file – which can be done by writing the config to the
+      -- file after we've read it.
+      writeConfig cfg
+      return cfg
 
-modifyConfig :: (Config -> IO Config) -> IO ()
-modifyConfig func = do
-  file <- readConfig
+writeConfig :: Config -> IO ()
+writeConfig cfg = do
   -- Create-and-rename is safer than just rewriting the file
   let newFile = "config-new.json"
-  BSL.writeFile newFile . Aeson.encodePretty =<< func file
+  BSL.writeFile newFile (Aeson.encodePretty cfg)
   renameFile newFile "config.json"
+
+modifyConfig :: (Config -> IO Config) -> IO ()
+modifyConfig func = writeConfig =<< func =<< readConfig
