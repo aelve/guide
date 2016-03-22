@@ -284,7 +284,12 @@ renderCategoryTitle :: Monad m => Category -> HtmlT m ()
 renderCategoryTitle category = do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  h2_ [id_ thisId] $ do
+  h2_ [id_ thisId, class_ "category-title"] $ do
+    -- TODO: this link shouldn't be absolute [absolute-links]
+    span_ [class_ "controls"] $
+      a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
+        img_ [src_ "/rss-alt.svg", alt_ "category feed"]
+
     sectionSpan "normal" [shown, noScriptShown] $ do
       -- TODO: this link shouldn't be absolute [absolute-links]
       a_ [href_ ("/haskell/" <> categorySlug category)] $

@@ -37,6 +37,14 @@ body {
   opacity: 0.4;
   height: 23px; }
 
+.category-title .controls {
+  margin-right: 0.5em;
+  vertical-align: -1px; }
+
+.category-title .controls img {
+  opacity: 0.3;
+  height: 20px; }
+
 .item-traits, .item-notes, .item-description, .item-ecosystem {
   padding: 10px 15px 20px 15px; }
 
