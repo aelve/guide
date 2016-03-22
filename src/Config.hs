@@ -17,6 +17,8 @@ where
 
 -- General
 import BasePrelude
+-- Text
+import Data.Text (Text)
 -- JSON
 import Data.Aeson               as Aeson
 import Data.Aeson.Encode.Pretty as Aeson hiding (Config)
@@ -34,24 +36,28 @@ import Utils
 
 data Config = Config {
   _trackingEnabled :: Bool,
-  _baseUrl         :: Url }
+  _baseUrl         :: Url,
+  _adminPassword   :: Text }
   deriving (Eq, Show)
 
 instance Default Config where
   def = Config {
     _trackingEnabled = False,
-    _baseUrl         = "/" }
+    _baseUrl         = "/",
+    _adminPassword   = "" }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
     _trackingEnabled <- o .:? "tracking-enabled" .!= _trackingEnabled def
     _baseUrl         <- o .:? "base-url"         .!= _baseUrl def
+    _adminPassword   <- o .:? "admin-password"   .!= _adminPassword def
     return Config{..}
 
 instance ToJSON Config where
   toJSON Config{..} = object [
     "tracking-enabled" .= _trackingEnabled,
-    "base-url"         .= _baseUrl ]
+    "base-url"         .= _baseUrl,
+    "admin-password"   .= _adminPassword ]
 
 readConfig :: IO Config
 readConfig = do

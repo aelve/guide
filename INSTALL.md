@@ -5,9 +5,11 @@ The `state/` directory contains the database. You can download the current datab
     $ git clone https://github.com/aelve/guide-database
     $ mv guide-database state
 
-The `config.json` file contains the config (it will be created at the 1st start). There are 2 settings so far:
+The `config.json` file contains the config (it will be created at the 1st start). There are 3 settings so far:
 
   * `tracking-enabled` enables tracking. If you do enable it, don't forget to replace the contents of `static/tracking.md` with your own tracking script.
+
+  * `admin-password` is the password for the admin panel (at `/admin`). Leave it empty if you don't want any password.
 
   * `base-url` is the URL of the server (which should contain `http://` or `https://`). It's used for feed generation.
 

@@ -35,6 +35,7 @@ import qualified Web.Spock as Spock
 import Web.Spock.Lucid
 import Lucid
 import Network.Wai.Middleware.Static
+import qualified Network.HTTP.Types.Status as HTTP
 -- Feeds
 import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
@@ -385,6 +386,11 @@ main = do
             h1_ "Aelve Guide"
             h2_ (a_ [href_ "/haskell"] "Haskell")
 
+      -- Admin page
+      prehook adminHook $ do
+        Spock.get "admin" $
+          lucid $ "You're an admin!"
+
       -- Donation page
       Spock.get "donate" $
         lucidWithConfig $ renderDonate
@@ -424,6 +430,16 @@ main = do
         setMethods
         addMethods
         otherMethods
+
+adminHook :: ActionCtxT ctx (WebStateM () () ServerState) ()
+adminHook = do
+  adminPassword <- _adminPassword <$> getConfig
+  unless (adminPassword == "") $ do
+    let check user pass =
+          unless (user == "admin" && pass == adminPassword) $ do
+            Spock.setStatus HTTP.status401
+            Spock.text "Wrong password!"
+    Spock.requireBasicAuth "Authenticate (login = admin)" check return
 
 -- TODO: when a category with the same name exists, show an error message and
 -- redirect to that other category
