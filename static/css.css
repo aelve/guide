@@ -1,3 +1,6 @@
+*, *:before, *:after {
+  box-sizing: border-box; }
+
 body {
   padding-top: 2em;
   margin: auto;
@@ -110,7 +113,6 @@ form {
   margin: 0; }
 
 textarea {
-  box-sizing: border-box;
   border: 1px solid #ccc;
   padding: 5px 7px; }
 
