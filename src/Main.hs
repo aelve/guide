@@ -137,9 +137,6 @@ renderMethods = Spock.subcomponent "render" $ do
     item <- dbQuery (GetItem itemId)
     lucidIO $ renderItemNotes item
 
--- TODO: [easy] use window.onerror to catch and show all JS errors (showing
--- could be done by displaying an alert)
-
 setMethods :: SpockM () () ServerState ()
 setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
@@ -207,8 +204,6 @@ setMethods = Spock.subcomponent "set" $ do
     trait <- dbUpdate (SetTraitContent itemId traitId content')
     lucidIO $ renderTrait itemId trait
 
--- TODO: [easy] add stuff like “add/category” here in comments to make it
--- easier to search with C-s (or maybe just don't use subcomponent?)
 addMethods :: SpockM () () ServerState ()
 addMethods = Spock.subcomponent "add" $ do
   -- New category

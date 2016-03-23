@@ -177,6 +177,16 @@ wrapPage pageTitle page = doctypehtml_ $ do
     title_ (toHtml pageTitle)
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
+    -- Report all Javascript errors with alerts
+    script_ [text|
+      window.onerror = function (msg, url, lineNo, columnNo, error) {
+        alert("Error in "+url+" at "+lineNo+":"+columnNo+": "+msg+
+              "\n\n"+
+              "========== Please report it! =========="+
+              "\n\n"+
+              "https://github.com/aelve/guide/issues");
+        return false; };
+      |]
     let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
     includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
     -- See Note [autosize]
