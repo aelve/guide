@@ -372,14 +372,7 @@ main = do
 
       -- Main page
       Spock.get root $
-        lucidWithConfig $ do
-          head_ $ do
-            title_ "Aelve Guide"
-            includeCSS "/css.css"
-            renderTracking
-          body_ $ do
-            h1_ "Aelve Guide"
-            h2_ (a_ [href_ "/haskell"] "Haskell")
+        lucidWithConfig $ renderRoot
 
       -- Admin page
       prehook adminHook $ do
@@ -399,7 +392,7 @@ main = do
         Spock.get root $ do
           s <- dbQuery GetGlobalState
           q <- param "q"
-          lucidWithConfig $ renderRoot s q
+          lucidWithConfig $ renderHaskellRoot s q
         -- Category pages
         Spock.get var $ \path -> do
           -- The links look like /parsers-gao238b1 (because it's nice when

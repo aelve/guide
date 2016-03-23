@@ -11,6 +11,7 @@ module View
 (
   -- * Pages
   renderRoot,
+  renderHaskellRoot,
   renderDonate,
   renderCategoryPage,
   renderUnwrittenRules,
@@ -95,10 +96,16 @@ instead of simple
 
 -}
 
-renderRoot
+renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
+renderRoot = do
+  wrapPage "Aelve Guide" $ do
+    h1_ "Aelve Guide"
+    h2_ (a_ [href_ "/haskell"] "Haskell")
+
+renderHaskellRoot
   :: (MonadIO m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
-renderRoot globalState mbSearchQuery =
+renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
@@ -137,6 +144,23 @@ renderRoot globalState mbSearchQuery =
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
 
+renderCategoryPage
+  :: (MonadIO m, MonadReader Config m) => Category -> HtmlT m ()
+renderCategoryPage category =
+  wrapPage (category^.title <> " – Aelve Guide") $ do
+    -- TODO: [very-easy] this header looks bad when the page is narrow, it
+    -- should be fixed in css.css by adding line-height to it
+    -- TODO: another absolute link [absolute-links]
+    h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
+    noscript_ $ div_ [id_ "noscript-message"] $
+      toHtml $ renderMarkdownBlock [text|
+        You have Javascript disabled! This site works fine without
+        Javascript, but since all editing needs Javascript to work,
+        you won't be able to edit anything.
+        |]
+    renderHelp
+    renderCategory category
+
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
 
@@ -151,15 +175,8 @@ renderTracking = do
 -- without internet
 
 renderDonate :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-renderDonate = doctypehtml_ $ do
-  head_ $ do
-    title_ "Donate to Artyom"
-    meta_ [name_ "viewport",
-           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
-    includeCSS "/css.css"
-    renderTracking
-  body_ $
-    toHtmlRaw =<< liftIO (readFile "static/donate.html")
+renderDonate = wrapPage "Donate to Artyom" $ do
+  toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
 renderUnwrittenRules :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderUnwrittenRules = wrapPage "Unwritten rules" $ do
@@ -213,7 +230,8 @@ wrapPage pageTitle page = doctypehtml_ $ do
       |]
 
   body_ $ do
-    page
+    div_ [id_ "main"] $
+      page
     div_ [id_ "footer"] $ do
       "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
       emptySpan "2em"
@@ -223,23 +241,6 @@ wrapPage pageTitle page = doctypehtml_ $ do
       emptySpan "2em"
       a_ [href_ "/donate"] "donate"
       sup_ [style_ "font-size:50%"] "I don't have a job"
-
-renderCategoryPage
-  :: (MonadIO m, MonadReader Config m) => Category -> HtmlT m ()
-renderCategoryPage category =
-  wrapPage (category^.title <> " – Aelve Guide") $ do
-    -- TODO: [very-easy] this header looks bad when the page is narrow, it
-    -- should be fixed in css.css by adding line-height to it
-    -- TODO: another absolute link [absolute-links]
-    h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
-    noscript_ $ div_ [id_ "noscript-message"] $
-      toHtml $ renderMarkdownBlock [text|
-        You have Javascript disabled! This site works fine without
-        Javascript, but since all editing needs Javascript to work,
-        you won't be able to edit anything.
-        |]
-    renderHelp
-    renderCategory category
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)

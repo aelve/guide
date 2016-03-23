@@ -1,5 +1,27 @@
+/* Making textboxes and other text inputs behave normally (i.e. now an input
+   with “width:100%;padding:10px” is going to take 100% of width, not
+   100%+20px) */
+
 *, *:before, *:after {
   box-sizing: border-box; }
+
+/* Making the footer stick to the bottom of the screen */
+
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column; }
+
+#main {
+  flex: 1; }
+
+/* Other CSS */
+
+#footer {
+  text-align: center;
+  padding: 1.5em 0;
+  margin-top: 2em;
+  border-top: 1px solid black; }
 
 body {
   padding-top: 2em;
@@ -11,12 +33,6 @@ body {
 #noscript-message {
   padding: 1px 1em;
   background-color: #FFEBEE; }
-
-#footer {
-  text-align: center;
-  padding: 1.5em 0;
-  margin-top: 2em;
-  border-top: 1px solid black; }
 
 #search {
   font-size: 200%;
