@@ -557,8 +557,6 @@ deleteItem itemId = do
 
 deleteTrait :: Uid -> Uid -> Acid.Update GlobalState ()
 deleteTrait itemId traitId = do
-  itemById itemId . pros %= deleteFirst ((== traitId) . view uid)
-  itemById itemId . cons %= deleteFirst ((== traitId) . view uid)
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   let isOurTrait trait = trait^.uid == traitId
