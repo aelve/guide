@@ -31,6 +31,7 @@ module Types
     title,
     groups,
     items,
+    itemsDeleted,
     categorySlug,
   GlobalState(..),
     categories,
@@ -272,10 +273,11 @@ data Category = Category {
   _categoryCreated :: UTCTime,
   _categoryNotes :: MarkdownBlock,
   _categoryGroups :: Map Text Hue,
-  _categoryItems :: [Item] }
+  _categoryItems :: [Item],
+  _categoryItemsDeleted :: [Item] }
   deriving (Eq, Data)
 
-deriveSafeCopy 2 'extension ''Category
+deriveSafeCopy 3 'extension ''Category
 makeFields ''Category
 
 categorySlug :: Category -> Text
@@ -285,25 +287,26 @@ categorySlug category =
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v1 = Category_v1 {
-  _categoryUid_v1 :: Uid,
-  _categoryTitle_v1 :: Text,
-  _categoryNotes_v1 :: MarkdownBlock,
-  _categoryGroups_v1 :: Map Text Hue,
-  _categoryItems_v1 :: [Item] }
+data Category_v2 = Category_v2 {
+  _categoryUid_v2 :: Uid,
+  _categoryTitle_v2 :: Text,
+  _categoryCreated_v2 :: UTCTime,
+  _categoryNotes_v2 :: MarkdownBlock,
+  _categoryGroups_v2 :: Map Text Hue,
+  _categoryItems_v2 :: [Item] }
 
-deriveSafeCopy 1 'base ''Category_v1
+deriveSafeCopy 2 'base ''Category_v2
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v1
-  migrate Category_v1{..} = Category {
-    _categoryUid = _categoryUid_v1,
-    _categoryTitle = _categoryTitle_v1,
-    _categoryCreated = UTCTime (fromGregorian 2016 3 10)
-                               (secondsToDiffTime 40000),
-    _categoryNotes = _categoryNotes_v1,
-    _categoryGroups = _categoryGroups_v1,
-    _categoryItems = _categoryItems_v1 }
+  type MigrateFrom Category = Category_v2
+  migrate Category_v2{..} = Category {
+    _categoryUid = _categoryUid_v2,
+    _categoryTitle = _categoryTitle_v2,
+    _categoryCreated = _categoryCreated_v2,
+    _categoryNotes = _categoryNotes_v2,
+    _categoryGroups = _categoryGroups_v2,
+    _categoryItems = _categoryItems_v2,
+    _categoryItemsDeleted = [] }
 
 --
 
@@ -395,7 +398,8 @@ addCategory catId title' created' = do
         _categoryCreated = created',
         _categoryNotes = "",
         _categoryGroups = mempty,
-        _categoryItems = [] }
+        _categoryItems = [],
+        _categoryItemsDeleted = [] }
   categories %= (newCategory :)
   return newCategory
 
@@ -538,18 +542,21 @@ deleteItem itemId = do
       categoryLens = categoryByItem itemId
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
-  -- If the item was the only item in its group, delete the group (and
-  -- make the hue available for new items)
-  oldGroup <- use (itemLens.group_)
-  case oldGroup of
-    Nothing -> return ()
-    Just g  -> do
-      allItems <- use (categoryLens.items)
-      let inOurGroup item = item^.group_ == Just g
-      when (length (filter inOurGroup allItems) == 1) $
-        categoryLens.groups %= M.delete g
-  -- And now delete the item
-  categoryLens.items %= deleteFirst ((== itemId) . view uid)
+  mbItem <- preuse itemLens
+  for_ mbItem $ \item -> do
+    -- If the item was the only item in its group, delete the group (and
+    -- make the hue available for new items)
+    case item^.group_ of
+      Nothing       -> return ()
+      Just oldGroup -> do
+        allItems <- use (categoryLens.items)
+        let itemsInOurGroup = [item' | item' <- allItems,
+                                       item'^.group_ == Just oldGroup]
+        when (length itemsInOurGroup == 1) $
+          categoryLens.groups %= M.delete oldGroup
+    -- And now delete the item (i.e. move it to “deleted”)
+    categoryLens.items        %= deleteFirst ((== itemId) . view uid)
+    categoryLens.itemsDeleted %= (item:)
 
 deleteTrait :: Uid -> Uid -> Acid.Update GlobalState ()
 deleteTrait itemId traitId = do
