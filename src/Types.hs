@@ -7,7 +7,6 @@ RecordWildCards,
 TypeFamilies,
 OverloadedStrings,
 RankNTypes,
-DeriveDataTypeable,
 NoImplicitPrelude
   #-}
 
@@ -112,7 +111,7 @@ import Markdown
 data Trait = Trait {
   _traitUid :: Uid,
   _traitContent :: MarkdownInline }
-  deriving (Eq, Data)
+  deriving (Eq)
 
 deriveSafeCopy 1 'extension ''Trait
 makeFields ''Trait
@@ -138,7 +137,7 @@ data ItemKind
   = Library {_itemKindHackageName :: Maybe Text}
   | Tool {_itemKindHackageName :: Maybe Text}
   | Other
-  deriving (Eq, Show, Data)
+  deriving (Eq, Show)
 
 deriveSafeCopy 2 'base ''ItemKind
 makeFields ''ItemKind
@@ -161,7 +160,7 @@ data Item = Item {
   _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
-  deriving (Eq, Data)
+  deriving (Eq)
 
 deriveSafeCopy 7 'extension ''Item
 makeFields ''Item
@@ -204,7 +203,7 @@ instance Migrate Item where
 --
 
 data Hue = NoHue | Hue Int
-  deriving (Eq, Ord, Data)
+  deriving (Eq, Ord)
 
 deriveSafeCopy 0 'base ''Hue
 
@@ -272,7 +271,7 @@ data Category = Category {
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
-  deriving (Eq, Data)
+  deriving (Eq)
 
 deriveSafeCopy 3 'extension ''Category
 makeFields ''Category
@@ -310,7 +309,6 @@ instance Migrate Category where
 data GlobalState = GlobalState {
   _categories :: [Category],
   _categoriesDeleted :: [Category] }
-  deriving (Data)
 
 deriveSafeCopy 1 'extension ''GlobalState
 makeLenses ''GlobalState

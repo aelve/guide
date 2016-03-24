@@ -2,7 +2,6 @@
 OverloadedStrings,
 TemplateHaskell,
 GeneralizedNewtypeDeriving,
-DeriveDataTypeable,
 NoImplicitPrelude
   #-}
 
@@ -111,7 +110,7 @@ makeSlug =
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid = Uid {uidToText :: Text}
-  deriving (Eq, Ord, Show, PathPiece, Format.Buildable, Data)
+  deriving (Eq, Ord, Show, PathPiece, Format.Buildable)
 
 deriveSafeCopy 0 'base ''Uid
 

@@ -70,7 +70,6 @@ executable guide
                      , text-format
                      , time >= 1.5
                      , transformers
-                     , uniplate
                      , wai-middleware-metrics
                      , wai-middleware-static
                      , xml

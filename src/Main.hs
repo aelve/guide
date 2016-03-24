@@ -46,7 +46,6 @@ import Cheapskate.Highlight
 import qualified System.Remote.Monitoring as EKG
 import qualified Network.Wai.Metrics      as EKG
 import qualified System.Metrics.Gauge     as EKG.Gauge
-import Data.Generics.Uniplate.Data
 -- acid-state
 import Data.Acid as Acid
 -- Time
@@ -57,7 +56,6 @@ import Config
 import Types
 import View
 import JS (JS(..), allJSFunctions)
-import Markdown
 import Utils
 
 
@@ -337,21 +335,12 @@ main = do
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
     itemGauge <- EKG.getGauge "db.items" ekg
-    textGauge <- EKG.getGauge "db.text_length" ekg
     forkOS $ forever $ do
       globalState <- Acid.query db GetGlobalState
       let allCategories = globalState^.categories
-      let allItems = allCategories^.each.items
-      -- Count length of all Text values in global state. This actually
-      -- doesn't work because for some reason Uniplate doesn't see Text
-      -- inside MarkdownInline and MarkdownBlock, so instead we gather all
-      -- Markdown values and look into them manually.
-      let textLength =
-            sum (map (T.length . markdownInlineText) (childrenBi globalState))
-           +sum (map (T.length . markdownBlockText)  (childrenBi globalState))
+      let allItems = allCategories^..each.items.each
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
-      EKG.Gauge.set textGauge (fromIntegral textLength)
       threadDelay (1000000 * 60)
     -- Run the server
     let serverState = ServerState {

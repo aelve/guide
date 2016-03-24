@@ -134,28 +134,6 @@ instance Eq MarkdownInline where
 instance Eq MarkdownBlock where
   (==) = (==) `on` markdownBlockText
 
-markdownInlineDatatype :: DataType
-markdownInlineDatatype =
-  mkDataType "MarkdownInline" [markdownInlineConstr]
-markdownInlineConstr :: Constr
-markdownInlineConstr =
-  mkConstr markdownInlineDatatype "MarkdownInline" [] Prefix
-markdownBlockDatatype :: DataType
-markdownBlockDatatype =
-  mkDataType "MarkdownBlock" [markdownBlockConstr]
-markdownBlockConstr :: Constr
-markdownBlockConstr =
-  mkConstr markdownBlockDatatype "MarkdownBlock" [] Prefix
-
-instance Data MarkdownInline where
-  gunfold k z _ = k (z (flip MarkdownInline (error "MarkdownInline: gunfold")))
-  toConstr _ = markdownInlineConstr
-  dataTypeOf _ = markdownInlineDatatype
-instance Data MarkdownBlock where
-  gunfold k z _ = k (z (flip MarkdownBlock (error "MarkdownBlock: gunfold")))
-  toConstr _ = markdownBlockConstr
-  dataTypeOf _ = markdownBlockDatatype
-
 instance ToHtml MarkdownInline where
   toHtml    = builderToHtml . markdownInlineHtml
   toHtmlRaw = builderToHtml . markdownInlineHtml
