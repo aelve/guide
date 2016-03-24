@@ -20,7 +20,9 @@ module Types
   Item(..),
     group_,
     pros,
+    prosDeleted,
     cons,
+    consDeleted,
     ecosystem,
     link,
     kind,
@@ -152,47 +154,52 @@ data Item = Item {
   _itemGroup_      :: Maybe Text,
   _itemDescription :: MarkdownBlock,
   _itemPros        :: [Trait],
+  _itemProsDeleted :: [Trait],
   _itemCons        :: [Trait],
+  _itemConsDeleted :: [Trait],
   _itemEcosystem   :: MarkdownBlock,
   _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
   deriving (Eq, Data)
 
-deriveSafeCopy 6 'extension ''Item
+deriveSafeCopy 7 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v5 = Item_v5 {
-  _itemUid_v5         :: Uid,
-  _itemName_v5        :: Text,
-  _itemGroup__v5      :: Maybe Text,
-  _itemDescription_v5 :: MarkdownBlock,
-  _itemPros_v5        :: [Trait],
-  _itemCons_v5        :: [Trait],
-  _itemEcosystem_v5   :: MarkdownBlock,
-  _itemNotes_v5       :: MarkdownBlock,
-  _itemLink_v5        :: Maybe Url,
-  _itemKind_v5        :: ItemKind }
+data Item_v6 = Item_v6 {
+  _itemUid_v6         :: Uid,
+  _itemName_v6        :: Text,
+  _itemCreated_v6     :: UTCTime,
+  _itemGroup__v6      :: Maybe Text,
+  _itemDescription_v6 :: MarkdownBlock,
+  _itemPros_v6        :: [Trait],
+  _itemCons_v6        :: [Trait],
+  _itemEcosystem_v6   :: MarkdownBlock,
+  _itemNotes_v6       :: MarkdownBlock,
+  _itemLink_v6        :: Maybe Url,
+  _itemKind_v6        :: ItemKind }
 
-deriveSafeCopy 5 'base ''Item_v5
+deriveSafeCopy 6 'base ''Item_v6
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v5
-  migrate Item_v5{..} = Item {
-    _itemUid = _itemUid_v5,
-    _itemName = _itemName_v5,
-    _itemCreated = UTCTime (fromGregorian 2016 3 10) (secondsToDiffTime 40000),
-    _itemGroup_ = _itemGroup__v5,
-    _itemDescription = _itemDescription_v5,
-    _itemPros = _itemPros_v5,
-    _itemCons = _itemCons_v5,
-    _itemEcosystem = _itemEcosystem_v5,
-    _itemNotes = _itemNotes_v5,
-    _itemLink = _itemLink_v5,
-    _itemKind = _itemKind_v5 }
+  type MigrateFrom Item = Item_v6
+  migrate Item_v6{..} = Item {
+    _itemUid = _itemUid_v6,
+    _itemName = _itemName_v6,
+    _itemCreated = _itemCreated_v6,
+    _itemGroup_ = _itemGroup__v6,
+    _itemDescription = _itemDescription_v6,
+    _itemPros = _itemPros_v6,
+    _itemProsDeleted = [],
+    _itemCons = _itemCons_v6,
+    _itemConsDeleted = [],
+    _itemEcosystem = _itemEcosystem_v6,
+    _itemNotes = _itemNotes_v6,
+    _itemLink = _itemLink_v6,
+    _itemKind = _itemKind_v6 }
 
 --
 
@@ -408,7 +415,9 @@ addItem catId itemId name' created' kind' = do
         _itemGroup_      = Nothing,
         _itemDescription = "",
         _itemPros        = [],
+        _itemProsDeleted = [],
         _itemCons        = [],
+        _itemConsDeleted = [],
         _itemEcosystem   = "",
         _itemNotes       = "",
         _itemLink        = Nothing,
@@ -552,6 +561,22 @@ deleteTrait :: Uid -> Uid -> Acid.Update GlobalState ()
 deleteTrait itemId traitId = do
   itemById itemId . pros %= deleteFirst ((== traitId) . view uid)
   itemById itemId . cons %= deleteFirst ((== traitId) . view uid)
+  let itemLens :: Lens' GlobalState Item
+      itemLens = itemById itemId
+  let isOurTrait trait = trait^.uid == traitId
+  item <- use itemLens
+  -- Determine whether the trait is a pro or a con, and proceed accordingly
+  case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
+    -- It's in neither group, which means it was deleted. Do nothing.
+    (Nothing, Nothing) -> return ()
+    -- It's a pro
+    (Just trait, _) -> do
+      itemLens.pros        %= deleteFirst isOurTrait
+      itemLens.prosDeleted %= (trait:)
+    -- It's a con
+    (_, Just trait) -> do
+      itemLens.cons        %= deleteFirst isOurTrait
+      itemLens.consDeleted %= (trait:)
 
 -- other methods
 
