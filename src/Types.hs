@@ -560,19 +560,20 @@ deleteTrait itemId traitId = do
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   let isOurTrait trait = trait^.uid == traitId
-  item <- use itemLens
-  -- Determine whether the trait is a pro or a con, and proceed accordingly
-  case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
-    -- It's in neither group, which means it was deleted. Do nothing.
-    (Nothing, Nothing) -> return ()
-    -- It's a pro
-    (Just trait, _) -> do
-      itemLens.pros        %= deleteFirst isOurTrait
-      itemLens.prosDeleted %= (trait:)
-    -- It's a con
-    (_, Just trait) -> do
-      itemLens.cons        %= deleteFirst isOurTrait
-      itemLens.consDeleted %= (trait:)
+  mbItem <- preuse itemLens
+  for_ mbItem $ \item -> do
+    -- Determine whether the trait is a pro or a con, and proceed accordingly
+    case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
+      -- It's in neither group, which means it was deleted. Do nothing.
+      (Nothing, Nothing) -> return ()
+      -- It's a pro
+      (Just trait, _) -> do
+        itemLens.pros        %= deleteFirst isOurTrait
+        itemLens.prosDeleted %= (trait:)
+      -- It's a con
+      (_, Just trait) -> do
+        itemLens.cons        %= deleteFirst isOurTrait
+        itemLens.consDeleted %= (trait:)
 
 -- other methods
 
