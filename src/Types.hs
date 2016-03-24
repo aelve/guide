@@ -141,16 +141,6 @@ data ItemKind
 deriveSafeCopy 2 'base ''ItemKind
 makeFields ''ItemKind
 
--- Old version, needed for safe migration. It can most likely be already
--- deleted (if a checkpoint has been created), but it's been left here as a
--- template for future migrations.
-data ItemKind_v1
-  = Library_v1 {_itemKindOnHackage_v1 :: Bool}
-  | Tool_v1 {_itemKindOnHackage_v1 :: Bool}
-  | Other_v1
-
-deriveSafeCopy 1 'base ''ItemKind_v1
-
 --
 
 -- TODO: add a field like “people to ask on IRC about this library if you
