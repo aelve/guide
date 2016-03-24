@@ -39,6 +39,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   moveNodeUp, moveNodeDown,
   switchSection, switchSectionsEverywhere,
   fadeIn,
+  setMonospace,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
   -- Add methods
@@ -212,6 +213,19 @@ then the item is removed before the animation is complete, so we have to explici
 
     $(x).fadeTo(600,0.2,function(){$(x).remove();})
 -}
+
+setMonospace :: JSFunction a => a
+setMonospace =
+  makeJSFunction "setMonospace" ["node", "p"]
+  [text|
+    if (p)
+      $(node).css("font-family", "monospace")
+    else
+      $(node).css("font-family", "");
+    // See Note [autosize]; the size of the textarea will definitely change
+    // after the font has been changed
+    autosize.update($(node));
+  |]
 
 showHelp :: JSFunction a => a
 showHelp =

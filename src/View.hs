@@ -645,7 +645,6 @@ renderTrait itemId trait = do
 -- database of modules or something)
 
 -- TODO: [very-easy] write about the all-is-text extension
--- TODO: [easy] add a button to make default editor font monospace
 -- TODO: [easy] write that arrows are for arranging stuff, not upvoting
 
 -- TODO: record IPs in the acid-state transaction log
@@ -785,13 +784,13 @@ markdownEditor
   -> JS             -- ^ “Cancel” handler
   -> HtmlT m ()
 markdownEditor attr (markdownBlockText -> s) submit cancel = do
-  textareaId <- randomLongUid
+  textareaUid <- randomLongUid
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
-  textarea_ ([uid_ textareaId, autocomplete_ "off", class_ "big fullwidth"]
+  textarea_ ([uid_ textareaUid, autocomplete_ "off", class_ "big fullwidth"]
              ++ attr) $
     toHtml s
-  let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
+  let val = JS $ format "document.getElementById(\"{}\").value" [textareaUid]
   button "Save" [] $
     submit val
   emptySpan "6px"
@@ -800,6 +799,14 @@ markdownEditor attr (markdownBlockText -> s) submit cancel = do
     cancel
   emptySpan "6px"
   "Markdown"
+  emptySpan "6px"
+  -- TODO: this jumps around when there's a lot of text, need to somehow
+  -- prevent jumping
+  let checkHandler = fromJS $
+        JS.setMonospace (JS.selectUid textareaUid, JS "this.checked")
+  label_ $ do
+    input_ [type_ "checkbox", name_ "monospace", onchange_ checkHandler]
+    "monospace editor"
 
 smallMarkdownEditor
   :: MonadIO m
