@@ -34,6 +34,7 @@ module Types
     categorySlug,
   GlobalState(..),
     categories,
+    categoriesDeleted,
 
   -- * Overloaded lenses
   uid,
@@ -307,11 +308,23 @@ instance Migrate Category where
 --
 
 data GlobalState = GlobalState {
-  _categories :: [Category] }
+  _categories :: [Category],
+  _categoriesDeleted :: [Category] }
   deriving (Data)
 
-deriveSafeCopy 0 'base ''GlobalState
+deriveSafeCopy 1 'extension ''GlobalState
 makeLenses ''GlobalState
+
+data GlobalState_v0 = GlobalState_v0 {
+  _categories_v0 :: [Category] }
+
+deriveSafeCopy 0 'base ''GlobalState_v0
+
+instance Migrate GlobalState where
+  type MigrateFrom GlobalState = GlobalState_v0
+  migrate GlobalState_v0{..} = GlobalState {
+    _categories = _categories_v0,
+    _categoriesDeleted = [] }
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs

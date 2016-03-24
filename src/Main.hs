@@ -311,7 +311,9 @@ lucidWithConfig x = do
 main :: IO ()
 main = do
   config <- readConfig
-  let emptyState = GlobalState mempty
+  let emptyState = GlobalState {
+        _categories = [],
+        _categoriesDeleted = [] }
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
