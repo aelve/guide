@@ -168,10 +168,10 @@ moveNodeDown =
       el.next().after(el);
   |]
 
--- TODO: document the way hiding/showing works
-
 -- | Given something that contains section divs (or spans), show one and
 -- hide the rest. The div/span with the given @class@ will be chosen.
+--
+-- See Note [show-hide]
 switchSection :: JSFunction a => a
 switchSection =
   makeJSFunction "switchSection" ["node", "section"]
@@ -183,6 +183,9 @@ switchSection =
     autosize.update($('textarea'));
   |]
 
+-- | Switch sections /everywhere/ inside the container.
+--
+-- See Note [show-hide]
 switchSectionsEverywhere :: JSFunction a => a
 switchSectionsEverywhere =
   makeJSFunction "switchSectionsEverywhere" ["node", "section"]

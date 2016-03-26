@@ -96,6 +96,43 @@ instead of simple
 
 -}
 
+{- Note [show-hide]
+~~~~~~~~~~~~~~~~~~~
+
+A lot of things (help, notes, etc) can be expanded/collapsed by pressing a button. Similarly, pressing “edit” replaces rendered text with a textbox, or adds buttons to pros/cons. All this is done with sections and show/hide.
+
+A section is something that can be shown or hidden. You define a section by using 'section' (which creates a <div>) or 'sectionSpan' (which creates a <span>).
+
+    section "normal" [shown, noScriptShown] $ do
+      renderText
+      ...
+
+    section "editing" [] $ do
+      renderEditbox
+      ...
+
+The list parameter is used to add attributes to the section. 'shown' is an attribute that means that the section is normally visible; 'noScriptShown' means that the section will be visible when Javascipt is disabled. Sections without either attribute will be hidden. (Usually 'shown' and 'noScriptShown' go together, but not always.)
+
+When several sections are in the same container (e.g. a <div>), you can toggle between them with 'JS.switchSection', which shows the section (or several sections) with given name, and hides all sections with other names. The elements that aren't sections are not affected.
+
+Also, there's another function available – 'JS.switchSectionEverywhere' – that switches sections everywhere inside the container, not only among container's direct children. It's useful when you have something like a list of pros/cons and you want to switch them all into the “editable” state.
+
+And now, here's how it's all implemented.
+
+In 'wrapPage' there's a piece of CSS wrapped in <noscript> that hides everything except for 'noScriptShown' things:
+
+    .section:not(.noscript-shown) {display:none;}
+
+There's also a piece of Javascript that, when executed, will change it to the following CSS:
+
+    .section:not(.shown) {display:none;}
+
+So, if Javascript is disabled we hide all sections except for those that have the 'noScriptShown' attribute, and if it's enabled we hide all sections except for those that have the 'shown' attribute.
+
+After that switching sections is simply done by adding/removing the “shown” class. (Note that we don't have to choose between “noscript-shown” and “shown” because switching sections is *only* possible if Javascript is enabled, and in this case the relevant tag will always be “shown” and not “noscript-shown”.)
+
+-}
+
 renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderRoot = do
   wrapPage "Aelve Guide" $ do
@@ -218,7 +255,8 @@ wrapPage pageTitle page = doctypehtml_ $ do
     -- static folder – it's generated and served in 'otherMethods'.)
     includeJS "/js.js"
     renderTracking
-    -- CSS that makes 'shown' and 'noScriptShown' work
+    -- CSS that makes 'shown' and 'noScriptShown' work;
+    -- see Note [show-hide]
     noscript_ $ style_ [text|
       .section:not(.noscript-shown) {display:none;}
       |]
@@ -605,6 +643,7 @@ renderItemTraits item = do
             Nothing
     section "normal" [shown, noScriptShown] $ do
       textButton "edit pros/cons" $
+        -- Switches sections in *all* traits
         JS.switchSectionsEverywhere(this, "editable" :: Text)
     section "editable" [] $ do
       textButton "edit off" $
@@ -837,16 +876,27 @@ thisNode = do
   span_ [uid_ uid', class_ "dummy"] mempty
   return (JS.selectParent (JS.selectUid uid'))
 
--- Wheh changing these, also look at 'JS.switchSection'.
-
+-- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute
 shown          = class_ " shown "
 noScriptShown  = class_ " noscript-shown "
 
-section :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+-- See Note [show-hide]
+section
+  :: Monad m
+  => Text           -- ^ Section name
+  -> [Attribute]    -- ^ Additional attributes
+  -> HtmlT m ()     -- ^ Content of the section
+  -> HtmlT m ()
 section t attrs = div_ (class_ (t <> " section ") : attrs)
 
-sectionSpan :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+-- See Note [show-hide]
+sectionSpan
+  :: Monad m
+  => Text           -- ^ Section name
+  -> [Attribute]    -- ^ Additional attributes
+  -> HtmlT m ()     -- ^ Content of the section
+  -> HtmlT m ()
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
 -- TODO: add something to edit a particular paragraph of the notes
