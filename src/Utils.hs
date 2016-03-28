@@ -112,6 +112,7 @@ makeSlug =
 newtype Uid = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, PathPiece, Format.Buildable)
 
+-- See Note [acid-state]
 deriveSafeCopy 0 'base ''Uid
 
 instance IsString Uid where

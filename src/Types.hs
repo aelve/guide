@@ -113,12 +113,15 @@ data Trait = Trait {
   _traitContent :: MarkdownInline }
   deriving (Eq)
 
+-- See Note [acid-state]
 deriveSafeCopy 1 'extension ''Trait
 makeFields ''Trait
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
+--
+-- Again, see Note [acid-state].
 data Trait_v0 = Trait_v0 {
   _traitUid_v0 :: Uid,
   _traitContent_v0 :: Text }
@@ -306,6 +309,7 @@ instance Migrate Category where
 
 --
 
+-- See Note [acid-state]
 data GlobalState = GlobalState {
   _categories :: [Category],
   _categoriesDeleted :: [Category] }
