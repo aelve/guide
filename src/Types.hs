@@ -7,6 +7,7 @@ RecordWildCards,
 TypeFamilies,
 OverloadedStrings,
 RankNTypes,
+TupleSections,
 NoImplicitPrelude
   #-}
 
@@ -37,6 +38,8 @@ module Types
   GlobalState(..),
     categories,
     categoriesDeleted,
+    pendingEdits,
+    editIdCounter,
 
   -- * Overloaded lenses
   uid,
@@ -45,6 +48,11 @@ module Types
   description,
   notes,
   created,
+
+  -- * Edits
+  Edit(..),
+    isVacuousEdit,
+  EditDetails(..),
 
   -- * acid-state methods
   -- ** query
@@ -84,12 +92,15 @@ module Types
   -- ** other
   MoveItem(..),
   MoveTrait(..),
+  RegisterEdit(..),
   )
 where
 
 
 -- General
 import BasePrelude hiding (Category)
+-- Monads and monad transformers
+import Control.Monad.State
 -- Lenses
 import Lens.Micro.Platform
 -- Containers
@@ -307,26 +318,153 @@ instance Migrate Category where
     _categoryItems = _categoryItems_v2,
     _categoryItemsDeleted = [] }
 
---
+-- Edits
+
+-- | Edits made by users. It should always be possible to undo an edit.
+data Edit
+  -- Add
+  = Edit'AddCategory {
+      editCategoryUid   :: Uid,
+      editCategoryTitle :: Text }
+  | Edit'AddItem {
+      editCategoryUid   :: Uid,
+      editItemUid       :: Uid,
+      editItemName      :: Text }
+  | Edit'AddPro {
+      editItemUid       :: Uid,
+      editTraitId       :: Uid,
+      editTraitContent  :: Text }
+  | Edit'AddCon {
+      editItemUid       :: Uid,
+      editTraitId       :: Uid,
+      editTraitContent  :: Text }
+
+  -- Change category properties
+  | Edit'SetCategoryTitle {
+      editCategoryUid      :: Uid,
+      editCategoryTitle    :: Text,
+      editCategoryNewTitle :: Text }
+  | Edit'SetCategoryNotes {
+      editCategoryUid      :: Uid,
+      editCategoryNotes    :: Text,
+      editCategoryNewNotes :: Text }
+
+  -- Change item properties
+  | Edit'SetItemName {
+      editItemUid            :: Uid,
+      editItemName           :: Text,
+      editItemNewName        :: Text }
+  | Edit'SetItemLink {
+      editItemUid            :: Uid,
+      editItemLink           :: Maybe Url,
+      editItemNewLink        :: Maybe Url }
+  | Edit'SetItemGroup {
+      editItemUid            :: Uid,
+      editItemGroup          :: Maybe Text,
+      editItemNewGroup       :: Maybe Text }
+  | Edit'SetItemKind {
+      editItemUid            :: Uid,
+      editItemKind           :: ItemKind,
+      editItemNewKind        :: ItemKind }
+  | Edit'SetItemDescription {
+      editItemUid            :: Uid,
+      editItemDescription    :: Text,
+      editItemNewDescription :: Text }
+  | Edit'SetItemNotes {
+      editItemUid            :: Uid,
+      editItemNotes          :: Text,
+      editItemNewNotes       :: Text }
+  | Edit'SetItemEcosystem {
+      editItemUid            :: Uid,
+      editItemEcosystem      :: Text,
+      editItemNewEcosystem   :: Text }
+
+  -- Change trait properties
+  | Edit'SetTraitContent {
+      editItemUid         :: Uid,
+      editTraitUid        :: Uid,
+      editTraitContent    :: Text,
+      editTraitNewContent :: Text }
+
+  -- Delete
+  | Edit'DeleteItem {
+      editItemUid       :: Uid,
+      editItemPosition  :: Int }
+  | Edit'DeleteTrait {
+      editItemUid       :: Uid,
+      editTraitUid      :: Uid,
+      editTraitPosition :: Int }
+
+  -- Other
+  | Edit'MoveItem {
+      editItemUid   :: Uid,
+      editDirection :: Bool }
+  | Edit'MoveTrait {
+      editItemUid   :: Uid,
+      editTraitUid  :: Uid,
+      editDirection :: Bool }
+
+  deriving (Eq, Show)
+
+deriveSafeCopy 0 'base ''Edit
+
+-- | Determine whether the edit doesn't actually change anything and so isn't
+-- worth recording in the list of pending edits.
+isVacuousEdit :: Edit -> Bool
+isVacuousEdit Edit'SetCategoryTitle{..} =
+  editCategoryTitle == editCategoryNewTitle
+isVacuousEdit Edit'SetCategoryNotes{..} =
+  editCategoryNotes == editCategoryNewNotes
+isVacuousEdit Edit'SetItemName{..} =
+  editItemName == editItemNewName
+isVacuousEdit Edit'SetItemLink{..} =
+  editItemLink == editItemNewLink
+isVacuousEdit Edit'SetItemGroup{..} =
+  editItemGroup == editItemNewGroup
+isVacuousEdit Edit'SetItemKind{..} =
+  editItemKind == editItemNewKind
+isVacuousEdit Edit'SetItemDescription{..} =
+  editItemDescription == editItemNewDescription
+isVacuousEdit Edit'SetItemNotes{..} =
+  editItemNotes == editItemNewNotes
+isVacuousEdit Edit'SetItemEcosystem{..} =
+  editItemEcosystem == editItemNewEcosystem
+isVacuousEdit Edit'SetTraitContent{..} =
+  editTraitContent == editTraitNewContent
+isVacuousEdit _ = False
+
+data EditDetails = EditDetails {
+  editIP   :: Maybe IP,
+  editDate :: UTCTime,
+  editId   :: Int }
+  deriving (Eq, Show)
+
+deriveSafeCopy 0 'base ''EditDetails
 
 -- See Note [acid-state]
+
 data GlobalState = GlobalState {
   _categories :: [Category],
-  _categoriesDeleted :: [Category] }
+  _categoriesDeleted :: [Category],
+  _pendingEdits :: [(Edit, EditDetails)],
+  _editIdCounter :: Int }            -- ID of next edit that will be made
 
-deriveSafeCopy 1 'extension ''GlobalState
+deriveSafeCopy 2 'extension ''GlobalState
 makeLenses ''GlobalState
 
-data GlobalState_v0 = GlobalState_v0 {
-  _categories_v0 :: [Category] }
+data GlobalState_v1 = GlobalState_v1 {
+  _categories_v1 :: [Category],
+  _categoriesDeleted_v1 :: [Category] }
 
-deriveSafeCopy 0 'base ''GlobalState_v0
+deriveSafeCopy 1 'base ''GlobalState_v1
 
 instance Migrate GlobalState where
-  type MigrateFrom GlobalState = GlobalState_v0
-  migrate GlobalState_v0{..} = GlobalState {
-    _categories = _categories_v0,
-    _categoriesDeleted = [] }
+  type MigrateFrom GlobalState = GlobalState_v1
+  migrate GlobalState_v1{..} = GlobalState {
+    _categories = _categories_v1,
+    _categoriesDeleted = _categoriesDeleted_v1,
+    _pendingEdits = [],
+    _editIdCounter = 0 }
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
@@ -383,13 +521,19 @@ getTrait
   -> Acid.Query GlobalState Trait
 getTrait itemId traitId = view (itemById itemId . traitById traitId)
 
+-- | A useful lens operator that modifies something and returns the old value.
+(<<.=) :: MonadState s m => LensLike ((,) a) s s a b -> b -> m a
+(<<.=) l b = state (l (,b))
+{-# INLINE (<<.=) #-}
+infix 4 <<.=
+
 -- add
 
 addCategory
   :: Uid        -- ^ New category's id
   -> Text       -- ^ Title
   -> UTCTime    -- ^ Creation time
-  -> Acid.Update GlobalState Category
+  -> Acid.Update GlobalState (Edit, Category)
 addCategory catId title' created' = do
   let newCategory = Category {
         _categoryUid = catId,
@@ -400,15 +544,16 @@ addCategory catId title' created' = do
         _categoryItems = [],
         _categoryItemsDeleted = [] }
   categories %= (newCategory :)
-  return newCategory
+  let edit = Edit'AddCategory catId title'
+  return (edit, newCategory)
 
 addItem
   :: Uid        -- ^ Category id
   -> Uid        -- ^ New item's id
-  -> Text       -- ^ Title
+  -> Text       -- ^ Name
   -> UTCTime    -- ^ Creation time
   -> ItemKind   -- ^ Kind
-  -> Acid.Update GlobalState Item
+  -> Acid.Update GlobalState (Edit, Item)
 addItem catId itemId name' created' kind' = do
   let newItem = Item {
         _itemUid         = itemId,
@@ -425,58 +570,67 @@ addItem catId itemId name' created' kind' = do
         _itemLink        = Nothing,
         _itemKind        = kind' }
   categoryById catId . items %= (++ [newItem])
-  return newItem
+  let edit = Edit'AddItem catId itemId name'
+  return (edit, newItem)
 
 addPro
   :: Uid       -- ^ Item id
   -> Uid       -- ^ Trait id
   -> Text
-  -> Acid.Update GlobalState Trait
+  -> Acid.Update GlobalState (Edit, Trait)
 addPro itemId traitId text' = do
   let newTrait = Trait traitId (renderMarkdownInline text')
   itemById itemId . pros %= (++ [newTrait])
-  return newTrait
+  let edit = Edit'AddPro itemId traitId text'
+  return (edit, newTrait)
 
 addCon
   :: Uid       -- ^ Item id
   -> Uid       -- ^ Trait id
   -> Text
-  -> Acid.Update GlobalState Trait
+  -> Acid.Update GlobalState (Edit, Trait)
 addCon itemId traitId text' = do
   let newTrait = Trait traitId (renderMarkdownInline text')
   itemById itemId . cons %= (++ [newTrait])
-  return newTrait
+  let edit = Edit'AddCon itemId traitId text'
+  return (edit, newTrait)
 
 -- set
+
+-- Almost all of these return an edit that could be used to undo the action
+-- they've just done
 
 -- | Can be useful sometimes (e.g. if you want to regenerate all uids), but
 -- generally shouldn't be used.
 setGlobalState :: GlobalState -> Acid.Update GlobalState ()
 setGlobalState = (id .=)
 
-setCategoryTitle :: Uid -> Text -> Acid.Update GlobalState Category
+setCategoryTitle :: Uid -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryTitle catId title' = do
-  categoryById catId . title .= title'
-  use (categoryById catId)
+  oldTitle <- categoryById catId . title <<.= title'
+  let edit = Edit'SetCategoryTitle catId oldTitle title'
+  (edit,) <$> use (categoryById catId)
 
-setCategoryNotes :: Uid -> Text -> Acid.Update GlobalState Category
+setCategoryNotes :: Uid -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
-  categoryById catId . notes .=
-    renderMarkdownBlock notes'
-  use (categoryById catId)
+  oldNotes <- categoryById catId . notes <<.= renderMarkdownBlock notes'
+  let edit = Edit'SetCategoryNotes catId (markdownBlockText oldNotes) notes'
+  (edit,) <$> use (categoryById catId)
 
-setItemName :: Uid -> Text -> Acid.Update GlobalState Item
+setItemName :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemName itemId name' = do
-  itemById itemId . name .= name'
-  use (itemById itemId)
+  oldName <- itemById itemId . name <<.= name'
+  let edit = Edit'SetItemName itemId oldName name'
+  (edit,) <$> use (itemById itemId)
 
-setItemLink :: Uid -> Maybe Url -> Acid.Update GlobalState Item
+setItemLink :: Uid -> Maybe Url -> Acid.Update GlobalState (Edit, Item)
 setItemLink itemId link' = do
-  itemById itemId . link .= link'
-  use (itemById itemId)
+  oldLink <- itemById itemId . link <<.= link'
+  let edit = Edit'SetItemLink itemId oldLink link'
+  (edit,) <$> use (itemById itemId)
 
 -- Also updates the list of groups in the category
-setItemGroup :: Uid -> Maybe Text -> Acid.Update GlobalState Item
+setItemGroup :: Uid -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemGroup itemId newGroup = do
   let categoryLens :: Lens' GlobalState Category
       categoryLens = categoryByItem itemId
@@ -504,96 +658,123 @@ setItemGroup itemId newGroup = do
         categoryLens.groups %= M.delete g
   -- Now we can actually change the group
   itemLens.group_ .= newGroup
-  use itemLens
+  let edit = Edit'SetItemGroup itemId oldGroup newGroup
+  (edit,) <$> use itemLens
 
-setItemKind :: Uid -> ItemKind -> Acid.Update GlobalState Item
+setItemKind :: Uid -> ItemKind -> Acid.Update GlobalState (Edit, Item)
 setItemKind itemId kind' = do
-  itemById itemId . kind .= kind'
-  use (itemById itemId)
+  oldKind <- itemById itemId . kind <<.= kind'
+  let edit = Edit'SetItemKind itemId oldKind kind'
+  (edit,) <$> use (itemById itemId)
 
-setItemDescription :: Uid -> Text -> Acid.Update GlobalState Item
+setItemDescription :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemDescription itemId description' = do
-  itemById itemId . description .=
-    renderMarkdownBlock description'
-  use (itemById itemId)
+  oldDescr <- itemById itemId . description <<.=
+                renderMarkdownBlock description'
+  let edit = Edit'SetItemDescription itemId
+               (markdownBlockText oldDescr) description'
+  (edit,) <$> use (itemById itemId)
 
-setItemNotes :: Uid -> Text -> Acid.Update GlobalState Item
+setItemNotes :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
-  itemById itemId . notes .=
-    renderMarkdownBlock notes'
-  use (itemById itemId)
+  oldNotes <- itemById itemId . notes <<.= renderMarkdownBlock notes'
+  let edit = Edit'SetItemNotes itemId (markdownBlockText oldNotes) notes'
+  (edit,) <$> use (itemById itemId)
 
-setItemEcosystem :: Uid -> Text -> Acid.Update GlobalState Item
+setItemEcosystem :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
-  itemById itemId . ecosystem .=
-    renderMarkdownBlock ecosystem'
-  use (itemById itemId)
+  oldEcosystem <- itemById itemId . ecosystem <<.=
+                    renderMarkdownBlock ecosystem'
+  let edit = Edit'SetItemEcosystem itemId
+               (markdownBlockText oldEcosystem) ecosystem'
+  (edit,) <$> use (itemById itemId)
 
-setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState Trait
+setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState (Edit, Trait)
 setTraitContent itemId traitId content' = do
-  itemById itemId . traitById traitId . content .=
-    renderMarkdownInline content'
-  use (itemById itemId . traitById traitId)
+  oldContent <- itemById itemId . traitById traitId . content <<.=
+                  renderMarkdownInline content'
+  let edit = Edit'SetTraitContent itemId traitId
+               (markdownInlineText oldContent) content'
+  (edit,) <$> use (itemById itemId . traitById traitId)
 
 -- delete
 
-deleteItem :: Uid -> Acid.Update GlobalState ()
+deleteItem :: Uid -> Acid.Update GlobalState (Maybe Edit)
 deleteItem itemId = do
   let categoryLens :: Lens' GlobalState Category
       categoryLens = categoryByItem itemId
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   mbItem <- preuse itemLens
-  for_ mbItem $ \item -> do
-    -- If the item was the only item in its group, delete the group (and
-    -- make the hue available for new items)
-    case item^.group_ of
-      Nothing       -> return ()
-      Just oldGroup -> do
-        allItems <- use (categoryLens.items)
-        let itemsInOurGroup = [item' | item' <- allItems,
-                                       item'^.group_ == Just oldGroup]
-        when (length itemsInOurGroup == 1) $
-          categoryLens.groups %= M.delete oldGroup
-    -- And now delete the item (i.e. move it to “deleted”)
-    categoryLens.items        %= deleteFirst ((== itemId) . view uid)
-    categoryLens.itemsDeleted %= (item:)
+  case mbItem of
+    Nothing   -> return Nothing
+    Just item -> do
+      allItems <- use (categoryLens.items)
+      -- If the item was the only item in its group, delete the group (and
+      -- make the hue available for new items)
+      case item^.group_ of
+        Nothing       -> return ()
+        Just oldGroup -> do
+          let itemsInOurGroup = [item' | item' <- allItems,
+                                         item'^.group_ == Just oldGroup]
+          when (length itemsInOurGroup == 1) $
+            categoryLens.groups %= M.delete oldGroup
+      -- And now delete the item (i.e. move it to “deleted”)
+      case findIndex ((== itemId) . view uid) allItems of
+        Nothing      -> return Nothing
+        Just itemPos -> do
+          categoryLens.items        %= deleteAt itemPos
+          categoryLens.itemsDeleted %= (item:)
+          return (Just (Edit'DeleteItem itemId itemPos))
 
-deleteTrait :: Uid -> Uid -> Acid.Update GlobalState ()
+deleteTrait :: Uid -> Uid -> Acid.Update GlobalState (Maybe Edit)
 deleteTrait itemId traitId = do
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   let isOurTrait trait = trait^.uid == traitId
   mbItem <- preuse itemLens
-  for_ mbItem $ \item -> do
-    -- Determine whether the trait is a pro or a con, and proceed accordingly
-    case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
-      -- It's in neither group, which means it was deleted. Do nothing.
-      (Nothing, Nothing) -> return ()
-      -- It's a pro
-      (Just trait, _) -> do
-        itemLens.pros        %= deleteFirst isOurTrait
-        itemLens.prosDeleted %= (trait:)
-      -- It's a con
-      (_, Just trait) -> do
-        itemLens.cons        %= deleteFirst isOurTrait
-        itemLens.consDeleted %= (trait:)
+  case mbItem of
+    Nothing   -> return Nothing
+    Just item -> do
+      -- Determine whether the trait is a pro or a con, and proceed accordingly
+      case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
+        -- It's in neither group, which means it was deleted. Do nothing.
+        (Nothing, Nothing) -> return Nothing
+        -- It's a pro
+        (Just trait, _) -> do
+          mbTraitPos <- findIndex isOurTrait <$> use (itemLens.pros)
+          case mbTraitPos of
+            Nothing       -> return Nothing
+            Just traitPos -> do
+              itemLens.pros        %= deleteAt traitPos
+              itemLens.prosDeleted %= (trait:)
+              return (Just (Edit'DeleteTrait itemId traitId traitPos))
+        -- It's a con
+        (_, Just trait) -> do
+          mbTraitPos <- findIndex isOurTrait <$> use (itemLens.cons)
+          case mbTraitPos of
+            Nothing       -> return Nothing
+            Just traitPos -> do
+              itemLens.cons        %= deleteAt traitPos
+              itemLens.consDeleted %= (trait:)
+              return (Just (Edit'DeleteTrait itemId traitId traitPos))
 
 -- other methods
 
 moveItem
   :: Uid
   -> Bool    -- ^ 'True' means up, 'False' means down
-  -> Acid.Update GlobalState ()
+  -> Acid.Update GlobalState Edit
 moveItem itemId up = do
   let move = if up then moveUp else moveDown
   categoryByItem itemId . items %= move ((== itemId) . view uid)
+  return (Edit'MoveItem itemId up)
 
 moveTrait
   :: Uid
   -> Uid
   -> Bool    -- ^ 'True' means up, 'False' means down
-  -> Acid.Update GlobalState ()
+  -> Acid.Update GlobalState Edit
 moveTrait itemId traitId up = do
   let move = if up then moveUp else moveDown
   -- The trait is only going to be present in one of the lists so let's do it
@@ -601,8 +782,24 @@ moveTrait itemId traitId up = do
   -- a con
   itemById itemId . pros %= move ((== traitId) . view uid)
   itemById itemId . cons %= move ((== traitId) . view uid)
+  return (Edit'MoveTrait itemId traitId up)
 
 -- TODO: add a way to delete a category
+
+-- | The edit won't be registered if it's vacuous (see 'isVacuousEdit').
+registerEdit
+  :: Edit
+  -> Maybe IP
+  -> UTCTime
+  -> Acid.Update GlobalState ()
+registerEdit ed ip date = do
+  id' <- use editIdCounter
+  let details = EditDetails {
+        editIP   = ip,
+        editDate = date,
+        editId   = id' }
+  pendingEdits %= ((ed, details):)
+  editIdCounter += 1
 
 makeAcidic ''GlobalState [
   -- queries
@@ -626,5 +823,6 @@ makeAcidic ''GlobalState [
   'deleteItem,
   'deleteTrait,
   -- other
-  'moveItem, 'moveTrait
+  'moveItem, 'moveTrait,
+  'registerEdit
   ]

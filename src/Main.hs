@@ -36,6 +36,7 @@ import Web.Spock.Lucid
 import Lucid
 import Network.Wai.Middleware.Static
 import qualified Network.HTTP.Types.Status as HTTP
+import qualified Network.Wai as Wai
 -- Feeds
 import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
@@ -117,6 +118,16 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid]
 traitVar = "trait" <//> var
 
+-- Call this whenever a user edits the database
+addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
+            SpockState (ActionCtxT ctx m) ~ ServerState)
+        => Edit -> ActionCtxT ctx m ()
+addEdit ed = do
+  time <- liftIO $ getCurrentTime
+  ip <- sockAddrToIP . Wai.remoteHost <$> Spock.request
+  unless (isVacuousEdit ed) $
+    dbUpdate (RegisterEdit ed ip time)
+
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Title of a category
@@ -157,12 +168,14 @@ setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
-    category <- dbUpdate (SetCategoryTitle catId content')
+    (edit, category) <- dbUpdate (SetCategoryTitle catId content')
+    addEdit edit
     lucidIO $ renderCategoryTitle category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
-    category <- dbUpdate (SetCategoryNotes catId content')
+    (edit, category) <- dbUpdate (SetCategoryNotes catId content')
+    addEdit edit
     lucidIO $ renderCategoryNotes category
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
@@ -186,37 +199,50 @@ setMethods = Spock.subcomponent "set" $ do
          | otherwise                   -> return (Just groupField)
     -- Modify the item
     -- TODO: actually validate the form and report errors
-    unless (T.null name') $ void $
-      dbUpdate (SetItemName itemId name')
+    unless (T.null name') $ do
+      (edit, _) <- dbUpdate (SetItemName itemId name')
+      addEdit edit
     case (T.null link', sanitiseUrl link') of
-      (True, _)   -> void $ dbUpdate (SetItemLink itemId Nothing)
-      (_, Just l) -> void $ dbUpdate (SetItemLink itemId (Just l))
-      _otherwise  -> return ()
-    dbUpdate (SetItemKind itemId kind')
+      (True, _) -> do
+          (edit, _) <- dbUpdate (SetItemLink itemId Nothing)
+          addEdit edit
+      (_, Just l) -> do
+          (edit, _) <- dbUpdate (SetItemLink itemId (Just l))
+          addEdit edit
+      _otherwise ->
+          return ()
+    do (edit, _) <- dbUpdate (SetItemKind itemId kind')
+       addEdit edit
     -- This does all the work of assigning new colors, etc. automatically
-    dbUpdate (SetItemGroup itemId group')
+    do (edit, _) <- dbUpdate (SetItemGroup itemId group')
+       addEdit edit
+    -- After all these edits we can render the item
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucidIO $ renderItemInfo category item
   -- Item description
   Spock.post (itemVar <//> "description") $ \itemId -> do
     content' <- param' "content"
-    item <- dbUpdate (SetItemDescription itemId content')
+    (edit, item) <- dbUpdate (SetItemDescription itemId content')
+    addEdit edit
     lucidIO $ renderItemDescription item
   -- Item ecosystem
   Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
     content' <- param' "content"
-    item <- dbUpdate (SetItemEcosystem itemId content')
+    (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
+    addEdit edit
     lucidIO $ renderItemEcosystem item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
-    item <- dbUpdate (SetItemNotes itemId content')
+    (edit, item) <- dbUpdate (SetItemNotes itemId content')
+    addEdit edit
     lucidIO $ renderItemNotes item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
-    trait <- dbUpdate (SetTraitContent itemId traitId content')
+    (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
+    addEdit edit
     lucidIO $ renderTrait itemId trait
 
 addMethods :: SpockM () () ServerState ()
@@ -226,7 +252,8 @@ addMethods = Spock.subcomponent "add" $ do
     title' <- param' "content"
     catId <- randomShortUid
     time <- liftIO getCurrentTime
-    newCategory <- dbUpdate (AddCategory catId title' time)
+    (edit, newCategory) <- dbUpdate (AddCategory catId title' time)
+    addEdit edit
     lucidIO $ renderCategory newCategory
   -- New item in a category
   Spock.post (categoryVar <//> "item") $ \catId -> do
@@ -237,22 +264,26 @@ addMethods = Spock.subcomponent "add" $ do
     -- If the item name looks like a Hackage library, assume it's a Hackage
     -- library.
     time <- liftIO getCurrentTime
-    newItem <- if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
-      then dbUpdate (AddItem catId itemId name' time (Library (Just name')))
-      else dbUpdate (AddItem catId itemId name' time Other)
+    (edit, newItem) <-
+      if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
+        then dbUpdate (AddItem catId itemId name' time (Library (Just name')))
+        else dbUpdate (AddItem catId itemId name' time Other)
+    addEdit edit
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderItem category newItem
   -- Pro (argument in favor of an item)
   Spock.post (itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
-    newTrait <- dbUpdate (AddPro itemId traitId content')
+    (edit, newTrait) <- dbUpdate (AddPro itemId traitId content')
+    addEdit edit
     lucidIO $ renderTrait itemId newTrait
   -- Con (argument against an item)
   Spock.post (itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
-    newTrait <- dbUpdate (AddCon itemId traitId content')
+    (edit, newTrait) <- dbUpdate (AddCon itemId traitId content')
+    addEdit edit
     lucidIO $ renderTrait itemId newTrait
 
 otherMethods :: SpockM () () ServerState ()
@@ -262,20 +293,24 @@ otherMethods = do
     -- Move item
     Spock.post itemVar $ \itemId -> do
       direction :: Text <- param' "direction"
-      dbUpdate (MoveItem itemId (direction == "up"))
+      edit <- dbUpdate (MoveItem itemId (direction == "up"))
+      addEdit edit
     -- Move trait
     Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
       direction :: Text <- param' "direction"
-      dbUpdate (MoveTrait itemId traitId (direction == "up"))
+      edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
+      addEdit edit
 
   -- Deleting things
   Spock.subcomponent "delete" $ do
     -- Delete item
     Spock.post itemVar $ \itemId -> do
-      dbUpdate (DeleteItem itemId)
+      mbEdit <- dbUpdate (DeleteItem itemId)
+      mapM_ addEdit mbEdit
     -- Delete trait
     Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
-      dbUpdate (DeleteTrait itemId traitId)
+      mbEdit <- dbUpdate (DeleteTrait itemId traitId)
+      mapM_ addEdit mbEdit
 
   -- Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
@@ -328,7 +363,9 @@ main = do
   config <- readConfig
   let emptyState = GlobalState {
         _categories = [],
-        _categoriesDeleted = [] }
+        _categoriesDeleted = [],
+        _pendingEdits = [],
+        _editIdCounter = 0 }
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
@@ -386,8 +423,9 @@ main = do
 
       -- Admin page
       prehook adminHook $ do
-        Spock.get "admin" $
-          lucid $ "You're an admin!"
+        Spock.get "admin" $ do
+          edits <- view pendingEdits <$> dbQuery GetGlobalState
+          lucid $ ul_ $ mapM_ (li_ . toHtml . tshow) edits
 
       -- Donation page
       Spock.get "donate" $

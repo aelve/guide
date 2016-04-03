@@ -6,6 +6,9 @@ NoImplicitPrelude
   #-}
 
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+
 module Utils
 (
   -- * Text
@@ -16,12 +19,17 @@ module Utils
   moveUp,
   moveDown,
   deleteFirst,
+  deleteAt,
 
   -- * URLs
   Url,
   sanitiseUrl,
   makeSlug,
 
+  -- * IP
+  IP(..),
+  sockAddrToIP,
+  
   -- * UID
   Uid(..),
   randomShortUid,
@@ -54,6 +62,9 @@ import           Data.Text.Format hiding (format)
 import qualified Data.Text.Format        as Format
 import qualified Data.Text.Format.Params as Format
 import qualified Data.Text.Buildable     as Format
+-- Network
+import qualified Network.Socket as Network
+import qualified Network.Info   as Network
 -- Web
 import Lucid
 import Web.Spock
@@ -90,6 +101,11 @@ deleteFirst :: (a -> Bool) -> [a] -> [a]
 deleteFirst _   []   = []
 deleteFirst f (x:xs) = if f x then xs else x : deleteFirst f xs
 
+deleteAt :: Int -> [a] -> [a]
+deleteAt _   []   = []
+deleteAt 0 (_:xs) = xs
+deleteAt i (x:xs) = x : deleteAt (i-1) xs
+
 type Url = Text
 
 sanitiseUrl :: Url -> Maybe Url
@@ -107,6 +123,25 @@ makeSlug =
   T.map toLower .
   T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
   T.map (\x -> if x == '_' then '-' else x)
+
+data IP = IPv4 Network.IPv4 | IPv6 Network.IPv6
+  deriving (Eq)
+
+deriveSafeCopy 0 'base ''Network.IPv4
+deriveSafeCopy 0 'base ''Network.IPv6
+
+deriveSafeCopy 0 'base ''IP 
+
+instance Show IP where
+  show (IPv4 x) = show x
+  show (IPv6 x) = show x
+
+sockAddrToIP :: Network.SockAddr -> Maybe IP
+sockAddrToIP (Network.SockAddrInet _ addr) =
+  Just (IPv4 (Network.IPv4 addr))
+sockAddrToIP (Network.SockAddrInet6 _ _ (a,b,c,d) _) =
+  Just (IPv6 (Network.IPv6 a b c d))
+sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid = Uid {uidToText :: Text}

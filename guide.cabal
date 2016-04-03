@@ -60,8 +60,10 @@ executable guide
                      , megaparsec
                      , microlens-platform >= 0.2.3
                      , mmorph == 1.*
-                     , mtl
+                     , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*
+                     , network
+                     , network-info == 0.2.*
                      , path-pieces
                      , random >= 1.1
                      , safecopy
@@ -70,6 +72,7 @@ executable guide
                      , text-format
                      , time >= 1.5
                      , transformers
+                     , wai
                      , wai-middleware-metrics
                      , wai-middleware-static
                      , xml
