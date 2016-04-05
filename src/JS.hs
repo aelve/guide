@@ -207,12 +207,12 @@ fadeIn =
 {- Note [fadeOut]
 ~~~~~~~~~~~~~~~~~
 
-There is no 'fadeOut' because it's only used when deleting items and the problem with jQuery is that if you do
+There is a 'fadeIn' utility function here, but no 'fadeOut' – because it's only used when deleting items and the problem with jQuery is that if you do
 
     fadeOut(x);
     $(x).remove();
 
-then the item is removed before the animation is complete, so we have to explicitly chain them:
+then the item is removed before the animation is complete. We have to explicitly chain them:
 
     $(x).fadeTo(600,0.2,function(){$(x).remove();})
 -}
@@ -394,18 +394,22 @@ moveTraitUp :: JSFunction a => a
 moveTraitUp =
   makeJSFunction "moveTraitUp" ["itemId", "traitId", "traitNode"]
   [text|
-    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "up"});
-    moveNodeUp(traitNode);
-    fadeIn(traitNode);
+    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "up"})
+     .done(function () {
+        moveNodeUp(traitNode);
+        fadeIn(traitNode);
+     });
   |]
 
 moveTraitDown :: JSFunction a => a
 moveTraitDown =
   makeJSFunction "moveTraitDown" ["itemId", "traitId", "traitNode"]
   [text|
-    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "down"});
-    moveNodeDown(traitNode);
-    fadeIn(traitNode);
+    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "down"})
+     .done(function () {
+        moveNodeDown(traitNode);
+        fadeIn(traitNode);
+     });
   |]
 
 deleteTrait :: JSFunction a => a
@@ -413,9 +417,11 @@ deleteTrait =
   makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
   [text|
     if (confirm("Confirm deletion?")) {
-      $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId);
-      // see Note [fadeOut]
-      $(traitNode).fadeTo(400,0.2,function(){$(traitNode).remove()});
+      $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId)
+       .done(function () {
+          // see Note [fadeOut]
+          $(traitNode).fadeTo(400,0.2,function(){$(traitNode).remove()});
+       });
     }
   |]
 
@@ -423,30 +429,34 @@ moveItemUp :: JSFunction a => a
 moveItemUp =
   makeJSFunction "moveItemUp" ["itemId", "itemNode"]
   [text|
-    $.post("/haskell/move/item/"+itemId, {direction: "up"});
-    moveNodeUp(itemNode);
-    fadeIn(itemNode);
+    $.post("/haskell/move/item/"+itemId, {direction: "up"})
+     .done(function () {
+        moveNodeUp(itemNode);
+        fadeIn(itemNode);
+     });
   |]
 
 moveItemDown :: JSFunction a => a
 moveItemDown =
   makeJSFunction "moveItemDown" ["itemId", "itemNode"]
   [text|
-    $.post("/haskell/move/item/"+itemId, {direction: "down"});
-    moveNodeDown(itemNode);
-    fadeIn(itemNode);
+    $.post("/haskell/move/item/"+itemId, {direction: "down"})
+     .done(function () {
+        moveNodeDown(itemNode);
+        fadeIn(itemNode);
+     });
   |]
-
--- TODO: only delete/etc when the request is complete
 
 deleteItem :: JSFunction a => a
 deleteItem =
   makeJSFunction "deleteItem" ["itemId", "itemNode"]
   [text|
     if (confirm("Confirm deletion?")) {
-      $.post("/haskell/delete/item/"+itemId);
-      // see Note [fadeOut]
-      $(itemNode).fadeTo(400,0.2,function(){$(itemNode).remove()});
+      $.post("/haskell/delete/item/"+itemId)
+       .done(function () {
+          // see Note [fadeOut]
+          $(itemNode).fadeTo(400,0.2,function(){$(itemNode).remove()});
+       });
     }
   |]
 
