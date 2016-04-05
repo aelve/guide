@@ -147,12 +147,7 @@ renderHaskellRoot globalState mbSearchQuery =
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
     h1_ "The Haskeller's guide"
-    noscript_ $ div_ [id_ "noscript-message"] $
-      toHtml $ renderMarkdownBlock [text|
-        You have Javascript disabled! This site works fine without
-        Javascript, but since all editing needs Javascript to work,
-        you won't be able to edit anything.
-        |]
+    renderNoScriptWarning
     renderHelp
     form_ $ do
       input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
@@ -189,14 +184,18 @@ renderCategoryPage category =
     -- should be fixed in css.css by adding line-height to it
     -- TODO: another absolute link [absolute-links]
     h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
-    noscript_ $ div_ [id_ "noscript-message"] $
-      toHtml $ renderMarkdownBlock [text|
-        You have Javascript disabled! This site works fine without
-        Javascript, but since all editing needs Javascript to work,
-        you won't be able to edit anything.
-        |]
+    renderNoScriptWarning
     renderHelp
     renderCategory category
+
+renderNoScriptWarning :: MonadIO m => HtmlT m ()
+renderNoScriptWarning =
+  noscript_ $ div_ [id_ "noscript-message"] $
+    toHtml $ renderMarkdownBlock [text|
+      You have Javascript disabled! This site works fine without
+      Javascript, but since all editing needs Javascript to work,
+      you won't be able to edit anything.
+      |]
 
 -- TODO: when submitting a text field, gray it out (but leave it selectable)
 -- until it's been submitted
