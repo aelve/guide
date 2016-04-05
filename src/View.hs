@@ -207,9 +207,6 @@ renderTracking = do
     tracking <- liftIO $ T.readFile "static/tracking.html"
     toHtmlRaw tracking
 
--- TODO: include jQuery locally so that it'd be possible to test the site
--- without internet
-
 renderDonate :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderDonate = wrapPage "Donate to Artyom" $ do
   toHtmlRaw =<< liftIO (readFile "static/donate.html")
@@ -240,10 +237,9 @@ wrapPage pageTitle page = doctypehtml_ $ do
               "https://github.com/aelve/guide/issues");
         return false; };
       |]
-    let cdnjs = "https://cdnjs.cloudflare.com/ajax/libs/"
-    includeJS (cdnjs <> "jquery/2.2.0/jquery.min.js")
+    includeJS "/jquery-2.2.0.min.js"
     -- See Note [autosize]
-    includeJS (cdnjs <> "autosize.js/3.0.15/autosize.min.js")
+    includeJS "/autosize-3.0.15.min.js"
     onPageLoad (JS "autosize($('textarea'));")
     -- It's important that css.css comes second – it overwrites some rules
     -- from highlight.css (see the rule for div.sourceCode)
