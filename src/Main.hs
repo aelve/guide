@@ -429,7 +429,8 @@ main = do
       prehook adminHook $ do
         Spock.get "admin" $ do
           edits <- view pendingEdits <$> dbQuery GetGlobalState
-          lucid $ ul_ $ mapM_ (li_ . toHtml . tshow) edits
+          s <- dbQuery GetGlobalState
+          lucidIO $ renderAdmin s edits
 
       -- Donation page
       Spock.get "donate" $

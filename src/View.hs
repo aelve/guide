@@ -3,6 +3,7 @@ QuasiQuotes,
 OverloadedStrings,
 FlexibleContexts,
 ViewPatterns,
+RecordWildCards,
 NoImplicitPrelude
   #-}
 
@@ -11,6 +12,7 @@ module View
 (
   -- * Pages
   renderRoot,
+  renderAdmin,
   renderHaskellRoot,
   renderDonate,
   renderCategoryPage,
@@ -62,6 +64,8 @@ import Data.Text (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
+-- Time
+import Data.Time.Format.Human
 
 -- Local
 import Config
@@ -138,6 +142,151 @@ renderRoot = do
   wrapPage "Aelve Guide" $ do
     h1_ "Aelve Guide"
     h2_ (a_ [href_ "/haskell"] "Haskell")
+
+-- TODO: on the search page there should be a link to the main page
+
+-- TODO: when the “q” parameter is empty, don't add it at all
+
+-- TODO: show a “category not found” page
+
+renderAdmin :: MonadIO m => GlobalState -> [(Edit, EditDetails)] -> HtmlT m ()
+renderAdmin globalState edits = do
+  ul_ $ for_ edits $ \(edit, EditDetails{..}) -> li_ $ do
+    p_ $ do
+      case editIP of
+        Nothing -> "<unknown IP>"
+        Just ip -> toHtml (show ip)
+      ", "
+      toHtml =<< liftIO (humanReadableTime editDate)
+    renderEdit globalState edit
+
+-- TODO: move Markdown CSS into a separate CSS file and include it in
+-- renderAdmin
+
+renderEdit :: Monad m => GlobalState -> Edit -> HtmlT m ()
+renderEdit globalState edit = do
+  let quote :: Monad m => HtmlT m () -> HtmlT m ()
+      quote a = "“" *> a <* "”"
+  -- We're searching for everything (items/categories) both in normal lists
+  -- and in lists of deleted things. Just in case.
+  let allCategories = globalState^.categories ++
+                      globalState^.categoriesDeleted
+  let findCategory catId = fromMaybe err (find ourCategory allCategories)
+        where
+          ourCategory category = category^.uid == catId
+          err = error ("renderEdit: couldn't find category with uid = " ++
+                       T.unpack (uidToText catId))
+  let findItem itemId = (category, item)
+        where
+          getItems = view (items <> itemsDeleted)
+          ourItem item' = item'^.uid == itemId
+          ourCategory = any ourItem . getItems
+          err = error ("renderEdit: couldn't find item with uid = " ++
+                       T.unpack (uidToText itemId))
+          category = fromMaybe err (find ourCategory allCategories)
+          item = fromJust (find ourItem (getItems category))
+  let findTrait itemId traitId = (category, item, trait)
+        where
+          (category, item) = findItem itemId
+          getTraits = view (cons <> consDeleted <> pros <> prosDeleted)
+          ourTrait trait' = trait'^.uid == traitId
+          err = error ("renderEdit: couldn't find trait with uid = " ++
+                       T.unpack (uidToText traitId))
+          trait = fromMaybe err (find ourTrait (getTraits item))
+
+  let printCategory catId = do
+        let category = findCategory catId
+        quote $ toHtml (category ^. title)
+  let printItem itemId = do
+        let (_, item) = findItem itemId
+        quote $ toHtml (item ^. name)
+
+  case edit of
+    -- Add
+    Edit'AddCategory _catId title' -> p_ $ do
+      "added category " >> quote (toHtml title')
+    Edit'AddItem catId _itemId name' -> p_ $ do
+      "added item " >> quote (toHtml name')
+      " to category " >> printCategory catId
+    Edit'AddPro itemId _traitId content' -> do
+      p_ $ "added pro to item " >> printItem itemId
+      p_ $ toHtml (renderMarkdownInline content')
+    Edit'AddCon itemId _traitId content' -> do
+      p_ $ "added con to item " >> printItem itemId
+      p_ $ toHtml (renderMarkdownInline content')
+
+    -- Change category properties
+    Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
+      "changed title of category " >> quote (toHtml oldTitle)
+      " to " >> quote (toHtml newTitle)
+    Edit'SetCategoryNotes catId oldNotes newNotes -> do
+      p_ $ "changed notes of category " >> printCategory catId
+      table_ $ tr_ $ do
+        td_ $ toHtml (renderMarkdownBlock oldNotes)
+        td_ $ toHtml (renderMarkdownBlock newNotes)
+
+    -- Change item properties
+    Edit'SetItemName _itemId oldName newName -> p_ $ do
+      "changed name of item " >> quote (toHtml oldName)
+      " to " >> quote (toHtml newName)
+    Edit'SetItemLink itemId oldLink newLink -> p_ $ do
+      "changed link of item " >> printItem itemId
+      " from " >> code_ (toHtml (show oldLink))
+      " to "   >> code_ (toHtml (show newLink))
+    Edit'SetItemGroup itemId oldGroup newGroup -> p_ $ do
+      "changed group of item " >> printItem itemId
+      " from " >> code_ (toHtml (show oldGroup))
+      " to "   >> code_ (toHtml (show newGroup))
+    Edit'SetItemKind itemId oldKind newKind -> p_ $ do
+      "changed kind of item " >> printItem itemId
+      " from " >> code_ (toHtml (show oldKind))
+      " to "   >> code_ (toHtml (show newKind))
+    Edit'SetItemDescription itemId oldDescr newDescr -> do
+      p_ $ "changed description of item " >> printItem itemId
+      table_ $ tr_ $ do
+        td_ $ toHtml (renderMarkdownBlock oldDescr)
+        td_ $ toHtml (renderMarkdownBlock newDescr)
+    Edit'SetItemNotes itemId oldNotes newNotes -> do
+      p_ $ "changed notes of item " >> printItem itemId
+      table_ $ tr_ $ do
+        td_ $ toHtml (renderMarkdownBlock oldNotes)
+        td_ $ toHtml (renderMarkdownBlock newNotes)
+    Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
+      p_ $ "changed ecosystem of item " >> printItem itemId
+      table_ $ tr_ $ do
+        td_ $ toHtml (renderMarkdownBlock oldEcosystem)
+        td_ $ toHtml (renderMarkdownBlock newEcosystem)
+
+    -- Change trait properties
+    Edit'SetTraitContent itemId _traitId oldContent newContent -> do
+      p_ $ "changed trait of item " >> printItem itemId
+      table_ $ tr_ $ do
+        td_ $ p_ (toHtml (renderMarkdownInline oldContent))
+        td_ $ p_ (toHtml (renderMarkdownInline newContent))
+
+    -- Delete
+    Edit'DeleteCategory catId _pos -> p_ $ do
+      "deleted category " >> printCategory catId
+    Edit'DeleteItem itemId _pos -> p_ $ do
+      let (category, item) = findItem itemId
+      "deleted item " >> quote (toHtml (item^.name))
+      " from category " >> quote (toHtml (category^.title))
+    Edit'DeleteTrait itemId traitId _pos -> do
+      let (_, item, trait) = findTrait itemId traitId
+      p_ $ "deleted trait from item " >> quote (toHtml (item^.name))
+      p_ (toHtml (trait^.content))
+
+    -- Other
+    Edit'MoveItem itemId direction -> p_ $ do
+      "moved item " >> printItem itemId
+      if direction then " up" else " down"
+    Edit'MoveTrait itemId traitId direction -> do
+      let (_, item, trait) = findTrait itemId traitId
+      p_ $ "moved trait of item " >> quote (toHtml (item^.name)) >>
+           if direction then " up" else " down"
+      p_ (toHtml (trait^.content))
+
+-- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 renderHaskellRoot
   :: (MonadIO m, MonadReader Config m)

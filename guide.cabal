@@ -55,6 +55,7 @@ executable guide
                      , ekg-core
                      , feed >= 0.3.11 && < 0.4
                      , filepath
+                     , friendly-time == 0.4.*
                      , http-types
                      , lucid >= 2.9.5 && < 3
                      , megaparsec
