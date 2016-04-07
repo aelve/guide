@@ -102,6 +102,7 @@ where
 import BasePrelude hiding (Category)
 -- Monads and monad transformers
 import Control.Monad.State
+import Control.Monad.Reader
 -- Lenses
 import Lens.Micro.Platform
 -- Containers
@@ -549,19 +550,19 @@ categoryById catId = singular $
   error ("categoryById: couldn't find category with uid " ++
          T.unpack (uidToText catId))
 
-categoryByItem :: Uid -> Lens' GlobalState Category
-categoryByItem itemId = singular $
-  categories.each . filtered hasItem `failing`
-  error ("categoryByItem: couldn't find category with item with uid " ++
-         T.unpack (uidToText itemId))
-  where
-    hasItem category = itemId `elem` (category^..items.each.uid)
-
 itemById :: Uid -> Lens' GlobalState Item
 itemById itemId = singular $
   categories.each . items.each . filtered ((== itemId) . view uid) `failing`
   error ("itemById: couldn't find item with uid " ++
          T.unpack (uidToText itemId))
+
+findCategoryByItem :: Uid -> GlobalState -> Category
+findCategoryByItem itemId s =
+  fromMaybe (error err) (find hasItem (s^.categories))
+  where
+    err = "findCategoryByItem: couldn't find category with item with uid " ++
+          T.unpack (uidToText itemId)
+    hasItem category = itemId `elem` (category^..items.each.uid)
 
 -- get
 
@@ -578,7 +579,7 @@ getCategoryMaybe :: Uid -> Acid.Query GlobalState (Maybe Category)
 getCategoryMaybe uid' = preview (categoryById uid')
 
 getCategoryByItem :: Uid -> Acid.Query GlobalState Category
-getCategoryByItem uid' = view (categoryByItem uid')
+getCategoryByItem uid' = findCategoryByItem uid' <$> ask
 
 getItem :: Uid -> Acid.Query GlobalState Item
 getItem uid' = view (itemById uid')
@@ -703,8 +704,9 @@ setItemLink itemId link' = do
 -- Also updates the list of groups in the category
 setItemGroup :: Uid -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemGroup itemId newGroup = do
+  catId <- view uid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
-      categoryLens = categoryByItem itemId
+      categoryLens = categoryById catId
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   -- If the group is new, add it to the list of groups in the category (which
@@ -787,8 +789,9 @@ deleteCategory catId = do
 
 deleteItem :: Uid -> Acid.Update GlobalState (Maybe Edit)
 deleteItem itemId = do
+  catId <- view uid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
-      categoryLens = categoryByItem itemId
+      categoryLens = categoryById catId
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   mbItem <- preuse itemLens
@@ -853,7 +856,8 @@ moveItem
   -> Acid.Update GlobalState Edit
 moveItem itemId up = do
   let move = if up then moveUp else moveDown
-  categoryByItem itemId . items %= move ((== itemId) . view uid)
+  catId <- view uid . findCategoryByItem itemId <$> get
+  categoryById catId . items %= move ((== itemId) . view uid)
   return (Edit'MoveItem itemId up)
 
 moveTrait
