@@ -108,6 +108,7 @@ import Lens.Micro.Platform
 import qualified Data.Map as M
 import Data.Map (Map)
 -- Text
+import qualified Data.Text as T
 import Data.Text (Text)
 -- Time
 import Data.Time
@@ -538,21 +539,29 @@ addGroupIfDoesNotExist g gs
 traitById :: Uid -> Lens' Item Trait
 traitById uid' = singular $
   (pros.each . filtered ((== uid') . view uid)) `failing`
-  (cons.each . filtered ((== uid') . view uid))
+  (cons.each . filtered ((== uid') . view uid)) `failing`
+  error ("traitById: couldn't find trait with uid " ++
+         T.unpack (uidToText uid'))
 
 categoryById :: Uid -> Lens' GlobalState Category
 categoryById catId = singular $
-  categories.each . filtered ((== catId) . view uid)
+  categories.each . filtered ((== catId) . view uid) `failing`
+  error ("categoryById: couldn't find category with uid " ++
+         T.unpack (uidToText catId))
 
 categoryByItem :: Uid -> Lens' GlobalState Category
 categoryByItem itemId = singular $
-  categories.each . filtered hasItem
+  categories.each . filtered hasItem `failing`
+  error ("categoryByItem: couldn't find category with item with uid " ++
+         T.unpack (uidToText itemId))
   where
     hasItem category = itemId `elem` (category^..items.each.uid)
 
 itemById :: Uid -> Lens' GlobalState Item
 itemById itemId = singular $
-  categories.each . items.each . filtered ((== itemId) . view uid)
+  categories.each . items.each . filtered ((== itemId) . view uid) `failing`
+  error ("itemById: couldn't find item with uid " ++
+         T.unpack (uidToText itemId))
 
 -- get
 
