@@ -344,6 +344,11 @@ renderCategoryTitle category = do
       emptySpan "1em"
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
+      emptySpan "1em"
+      -- TODO: when on the category page, deleting the category should
+      -- redirect to the main page
+      textButton "delete" $
+        JS.deleteCategory (category^.uid, categoryNode category)
 
     sectionSpan "editing" [] $ do
       textInput [
@@ -377,7 +382,7 @@ renderCategoryNotes category = do
 
 renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category =
-  div_ [class_ "category", uid_ (category^.uid)] $ do
+  div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryTitle category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
@@ -399,7 +404,7 @@ getItemHue category item = case item^.group_ of
 renderItem :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItem category item =
   -- The id is used for links in feeds, and for anchor links
-  div_ [id_ ("item-" <> uidToText (item^.uid)), class_ "item"] $ do
+  div_ [id_ (itemNodeId item), class_ "item"] $ do
     renderItemInfo category item
     -- TODO: replace “edit description” with a big half-transparent pencil
     -- to the left of it
@@ -460,23 +465,22 @@ renderItemInfo cat item = do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
         -- TODO: absolute links again [absolute-links]
-        let link' = format "/haskell/{}#item-{}" (categorySlug cat, item^.uid)
+        let link' = format "/haskell/{}#{}" (categorySlug cat, itemNodeId item)
         a_ [class_ "anchor", href_ link'] "#"
         renderItemTitle item
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
       span_ [class_ "controls"] $ do
-        let itemNode = JS.selectId ("item-" <> uidToText (item^.uid))
         imgButton "move item up" "/arrow-thick-top.svg" [] $
-          JS.moveItemUp (item^.uid, itemNode)
+          JS.moveItemUp (item^.uid, itemNode item)
         imgButton "move item down" "/arrow-thick-bottom.svg" [] $
-          JS.moveItemDown (item^.uid, itemNode)
+          JS.moveItemDown (item^.uid, itemNode item)
         emptySpan "1.5em"
         imgButton "edit item info" "/pencil.svg" [] $
           JS.switchSection (this, "editing" :: Text)
         emptySpan "0.5em"
         imgButton "delete item" "/x.svg" [] $
-          JS.deleteItem (item^.uid, itemNode)
+          JS.deleteItem (item^.uid, itemNode item)
         -- TODO: link to Stackage too
         -- TODO: should check for Stackage automatically
 
@@ -870,6 +874,18 @@ thisNode = do
   -- 'JS.moveNodeDown'.
   span_ [uid_ uid', class_ "dummy"] mempty
   return (JS.selectParent (JS.selectUid uid'))
+
+itemNodeId :: Item -> Text
+itemNodeId item = "item-" <> uidToText (item^.uid)
+
+itemNode :: Item -> JQuerySelector
+itemNode = JS.selectId . itemNodeId
+
+categoryNodeId :: Category -> Text
+categoryNodeId category = "category-" <> uidToText (category^.uid)
+
+categoryNode :: Category -> JQuerySelector
+categoryNode = JS.selectId . categoryNodeId
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute

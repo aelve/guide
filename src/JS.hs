@@ -50,6 +50,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
   -- Other things
+  deleteCategory,
   moveTraitUp, moveTraitDown, deleteTrait,
   moveItemUp, moveItemDown, deleteItem ]
 
@@ -388,6 +389,19 @@ submitItemInfo =
             $(infoNode).replaceWith(data);
          });
      });
+  |]
+
+deleteCategory :: JSFunction a => a
+deleteCategory =
+  makeJSFunction "deleteCategory" ["catId", "catNode"]
+  [text|
+    if (confirm("Confirm deletion?")) {
+      $.post("/haskell/delete/category/"+catId)
+       .done(function () {
+          // see Note [fadeOut]
+          $(catNode).fadeTo(400,0.2,function(){$(catNode).remove()});
+       });
+    }
   |]
 
 moveTraitUp :: JSFunction a => a

@@ -303,6 +303,10 @@ otherMethods = do
 
   -- Deleting things
   Spock.subcomponent "delete" $ do
+    -- Delete category
+    Spock.post categoryVar $ \catId -> do
+      mbEdit <- dbUpdate (DeleteCategory catId)
+      mapM_ addEdit mbEdit
     -- Delete item
     Spock.post itemVar $ \itemId -> do
       mbEdit <- dbUpdate (DeleteItem itemId)

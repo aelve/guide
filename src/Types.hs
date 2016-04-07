@@ -86,6 +86,7 @@ module Types
   SetTraitContent(..),
 
   -- ** delete
+  DeleteCategory(..),
   DeleteItem(..),
   DeleteTrait(..),
 
@@ -387,13 +388,16 @@ data Edit
       editTraitNewContent :: Text }
 
   -- Delete
+  | Edit'DeleteCategory {
+      editCategoryUid       :: Uid,
+      editCategoryPosition  :: Int }
   | Edit'DeleteItem {
-      editItemUid       :: Uid,
-      editItemPosition  :: Int }
+      editItemUid           :: Uid,
+      editItemPosition      :: Int }
   | Edit'DeleteTrait {
-      editItemUid       :: Uid,
-      editTraitUid      :: Uid,
-      editTraitPosition :: Int }
+      editItemUid           :: Uid,
+      editTraitUid          :: Uid,
+      editTraitPosition     :: Int }
 
   -- Other
   | Edit'MoveItem {
@@ -406,7 +410,65 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopy 0 'base ''Edit
+deriveSafeCopy 1 'extension ''Edit
+
+genVer ''Edit 0 [
+  -- Add
+  Copy 'Edit'AddCategory,
+  Copy 'Edit'AddItem,
+  Copy 'Edit'AddPro,
+  Copy 'Edit'AddCon,
+  -- Change category properties
+  Copy 'Edit'SetCategoryTitle,
+  Copy 'Edit'SetCategoryNotes,
+  -- Change item properties
+  Copy 'Edit'SetItemName,
+  Copy 'Edit'SetItemLink,
+  Copy 'Edit'SetItemGroup,
+  Copy 'Edit'SetItemKind,
+  Copy 'Edit'SetItemDescription,
+  Copy 'Edit'SetItemNotes,
+  Copy 'Edit'SetItemEcosystem,
+  -- Change trait properties
+  Copy 'Edit'SetTraitContent,
+  -- Delete
+  Copy 'Edit'DeleteCategory,
+  Copy 'Edit'DeleteItem,
+  Copy 'Edit'DeleteTrait,
+  -- Other
+  Copy 'Edit'MoveItem,
+  Copy 'Edit'MoveTrait ]
+
+deriveSafeCopy 0 'base ''Edit_v0
+
+instance Migrate Edit where
+  type MigrateFrom Edit = Edit_v0
+  migrate = $(migrateVer ''Edit 0 [
+    CopyM 'Edit'AddCategory,
+    CopyM 'Edit'AddItem,
+    CopyM 'Edit'AddPro,
+    CopyM 'Edit'AddCon,
+    -- Change category properties
+    CopyM 'Edit'SetCategoryTitle,
+    CopyM 'Edit'SetCategoryNotes,
+    -- Change item properties
+    CopyM 'Edit'SetItemName,
+    CopyM 'Edit'SetItemLink,
+    CopyM 'Edit'SetItemGroup,
+    CopyM 'Edit'SetItemKind,
+    CopyM 'Edit'SetItemDescription,
+    CopyM 'Edit'SetItemNotes,
+    CopyM 'Edit'SetItemEcosystem,
+    -- Change trait properties
+    CopyM 'Edit'SetTraitContent,
+    -- Delete
+    CopyM 'Edit'DeleteCategory,
+    CopyM 'Edit'DeleteItem,
+    CopyM 'Edit'DeleteTrait,
+    -- Other
+    CopyM 'Edit'MoveItem,
+    CopyM 'Edit'MoveTrait
+    ])
 
 -- | Determine whether the edit doesn't actually change anything and so isn't
 -- worth recording in the list of pending edits.
@@ -699,6 +761,21 @@ setTraitContent itemId traitId content' = do
 
 -- delete
 
+deleteCategory :: Uid -> Acid.Update GlobalState (Maybe Edit)
+deleteCategory catId = do
+  mbCategory <- preuse (categoryById catId)
+  let isOurCategory category = category^.uid == catId
+  case mbCategory of
+    Nothing       -> return Nothing
+    Just category -> do
+      mbCategoryPos <- findIndex isOurCategory <$> use categories
+      case mbCategoryPos of
+        Nothing          -> return Nothing
+        Just categoryPos -> do
+          categories %= deleteAt categoryPos
+          categoriesDeleted %= (category:)
+          return (Just (Edit'DeleteCategory catId categoryPos))
+
 deleteItem :: Uid -> Acid.Update GlobalState (Maybe Edit)
 deleteItem itemId = do
   let categoryLens :: Lens' GlobalState Category
@@ -784,8 +861,6 @@ moveTrait itemId traitId up = do
   itemById itemId . cons %= move ((== traitId) . view uid)
   return (Edit'MoveTrait itemId traitId up)
 
--- TODO: add a way to delete a category
-
 -- | The edit won't be registered if it's vacuous (see 'isVacuousEdit').
 registerEdit
   :: Edit
@@ -820,6 +895,7 @@ makeAcidic ''GlobalState [
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete
+  'deleteCategory,
   'deleteItem,
   'deleteTrait,
   -- other
