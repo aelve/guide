@@ -2,6 +2,7 @@
 OverloadedStrings,
 TemplateHaskell,
 GeneralizedNewtypeDeriving,
+FlexibleContexts,
 NoImplicitPrelude
   #-}
 
@@ -42,12 +43,20 @@ module Utils
 
   -- * Spock
   atomFeed,
+
+  -- * Safecopy
+  GenConstructor(..),
+  genVer,
+  MigrateConstructor(..),
+  migrateVer,
 )
 where
 
 
 -- General
 import BasePrelude
+-- Lenses
+import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
 -- Random
@@ -76,6 +85,8 @@ import qualified Text.Atom.Feed.Export as Atom
 import qualified Text.XML.Light.Output as XML
 -- acid-state
 import Data.SafeCopy
+-- Template Haskell
+import Language.Haskell.TH
 
 
 -- | Format a string (a bit like 'Text.Printf.printf' but with different
@@ -187,3 +198,93 @@ atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
   bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+
+data GenConstructor = Copy Name | Custom String [(String, Name)]
+
+genVer :: Name -> Int -> [GenConstructor] -> Q [Dec]
+genVer tyName ver constructors = do
+  -- Get information about the new version of the datatype
+  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  -- Let's do some checks first
+  unless (null _cxt) $
+    fail "genVer: can't yet work with types with context"
+  unless (null _vars) $
+    fail "genVer: can't yet work with types with variables"
+
+  let oldName n = mkName (nameBase n ++ "_v" ++ show ver)
+
+  let copyConstructor conName =
+        case [c | c@(RecC n _) <- cons, n == conName] of
+          [] -> fail ("genVer: couldn't find a record constructor " ++
+                      show conName)
+          [RecC _ fields] ->
+            recC (oldName conName)
+                 (map return (fields & each._1 %~ oldName))
+          other -> fail ("genVer: copyConstructor: got " ++ show other)
+
+  let customConstructor conName fields =
+        recC (oldName (mkName conName))
+             [varStrictType (oldName (mkName fName))
+                            (strictType notStrict (conT fType))
+               | (fName, fType) <- fields]
+
+  cons' <- for constructors $ \genCons -> do
+    case genCons of
+      Copy conName -> copyConstructor conName
+      Custom conName fields -> customConstructor conName fields
+
+  decl <- dataD
+    -- no context
+    (cxt [])
+    -- name of our type (e.g. SomeType_v3 if the previous version was 3)
+    (oldName tyName)
+    -- no variables
+    []
+    -- constructors
+    (map return cons')
+    -- not deriving anything
+    []
+  return [decl]
+
+-- TODO: [easy] add a test that takes data from aelve/guide-database and
+-- checks that the data can be loaded
+
+data MigrateConstructor = CopyM Name | CustomM Name ExpQ
+
+migrateVer :: Name -> Int -> [MigrateConstructor] -> Q Exp
+migrateVer tyName ver constructors = do
+  -- Get information about the new version of the datatype
+  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  -- Let's do some checks first
+  unless (null _cxt) $
+    fail "migrateVer: can't yet work with types with context"
+  unless (null _vars) $
+    fail "migrateVer: can't yet work with types with variables"
+
+  let oldName n = mkName (nameBase n ++ "_v" ++ show ver)
+
+  arg <- newName "x"
+
+  let copyConstructor conName =
+        case [c | c@(RecC n _) <- cons, n == conName] of
+          [] -> fail ("migrateVer: couldn't find a record constructor " ++
+                      show conName)
+          [RecC _ fields] -> do
+            -- SomeConstr_v3{} -> SomeConstr (field1 x) (field2 x) ...
+            let getField f = varE (oldName (f ^. _1)) `appE` varE arg
+            match (recP (oldName conName) [])
+                  (normalB (appsE (conE conName : map getField fields)))
+                  []
+          other -> fail ("migrateVer: copyConstructor: got " ++ show other)
+
+  let customConstructor conName res =
+        match (recP (oldName conName) [])
+              (normalB res)
+              []
+
+  branches' <- for constructors $ \genCons -> do
+    case genCons of
+      CopyM conName -> copyConstructor conName
+      CustomM conName res -> customConstructor conName res
+
+  lam1E (varP arg) (caseE (varE arg) (map return branches'))

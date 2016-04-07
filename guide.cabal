@@ -68,6 +68,7 @@ executable guide
                      , random >= 1.1
                      , safecopy
                      , shortcut-links >= 0.4.2
+                     , template-haskell
                      , text
                      , text-format
                      , time >= 1.5
