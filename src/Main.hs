@@ -225,9 +225,6 @@ undoEdit (Edit'MoveItem itemId direction) = do
 undoEdit (Edit'MoveTrait itemId traitId direction) = do
   Right () <$ dbUpdate (MoveTrait itemId traitId (not direction))
 
--- TODO: write something like “uidEq” and replace all constructs like
--- «(== catId) . view uid» with it
-
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Title of a category

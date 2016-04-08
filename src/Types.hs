@@ -2,6 +2,7 @@
 TemplateHaskell,
 MultiParamTypeClasses,
 FunctionalDependencies,
+FlexibleContexts,
 FlexibleInstances,
 RecordWildCards,
 TypeFamilies,
@@ -44,8 +45,9 @@ module Types
     pendingEdits,
     editIdCounter,
 
-  -- * Overloaded lenses
+  -- * Overloaded things
   uid,
+  hasUid,
   content,
   name,
   description,
@@ -578,20 +580,20 @@ addGroupIfDoesNotExist g gs
 
 traitById :: Uid -> Lens' Item Trait
 traitById uid' = singular $
-  (pros.each . filtered ((== uid') . view uid)) `failing`
-  (cons.each . filtered ((== uid') . view uid)) `failing`
+  (pros.each . filtered (hasUid uid')) `failing`
+  (cons.each . filtered (hasUid uid')) `failing`
   error ("traitById: couldn't find trait with uid " ++
          T.unpack (uidToText uid'))
 
 categoryById :: Uid -> Lens' GlobalState Category
 categoryById catId = singular $
-  categories.each . filtered ((== catId) . view uid) `failing`
+  categories.each . filtered (hasUid catId) `failing`
   error ("categoryById: couldn't find category with uid " ++
          T.unpack (uidToText catId))
 
 itemById :: Uid -> Lens' GlobalState Item
 itemById itemId = singular $
-  categories.each . items.each . filtered ((== itemId) . view uid) `failing`
+  categories.each . items.each . filtered (hasUid itemId) `failing`
   error ("itemById: couldn't find item with uid " ++
          T.unpack (uidToText itemId))
 
@@ -602,6 +604,9 @@ findCategoryByItem itemId s =
     err = "findCategoryByItem: couldn't find category with item with uid " ++
           T.unpack (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
+
+hasUid :: HasUid a Uid => Uid -> a -> Bool
+hasUid u x = x^.uid == u
 
 -- get
 
@@ -814,11 +819,10 @@ setTraitContent itemId traitId content' = do
 deleteCategory :: Uid -> Acid.Update GlobalState (Either String Edit)
 deleteCategory catId = do
   mbCategory <- preuse (categoryById catId)
-  let isOurCategory category = category^.uid == catId
   case mbCategory of
     Nothing       -> return (Left "category not found")
     Just category -> do
-      mbCategoryPos <- findIndex isOurCategory <$> use categories
+      mbCategoryPos <- findIndex (hasUid catId) <$> use categories
       case mbCategoryPos of
         Nothing          -> return (Left "category not found")
         Just categoryPos -> do
@@ -848,7 +852,7 @@ deleteItem itemId = do
           when (length itemsInOurGroup == 1) $
             categoryLens.groups %= M.delete oldGroup
       -- And now delete the item (i.e. move it to “deleted”)
-      case findIndex ((== itemId) . view uid) allItems of
+      case findIndex (hasUid itemId) allItems of
         Nothing      -> return (Left "item not found")
         Just itemPos -> do
           categoryLens.items        %= deleteAt itemPos
@@ -859,18 +863,18 @@ deleteTrait :: Uid -> Uid -> Acid.Update GlobalState (Either String Edit)
 deleteTrait itemId traitId = do
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
-  let isOurTrait trait = trait^.uid == traitId
   mbItem <- preuse itemLens
   case mbItem of
     Nothing   -> return (Left "item not found")
     Just item -> do
       -- Determine whether the trait is a pro or a con, and proceed accordingly
-      case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
+      case (find (hasUid traitId) (item^.pros),
+            find (hasUid traitId) (item^.cons)) of
         -- It's in neither group, which means it was deleted. Do nothing.
         (Nothing, Nothing) -> return (Left "trait not found")
         -- It's a pro
         (Just trait, _) -> do
-          mbTraitPos <- findIndex isOurTrait <$> use (itemLens.pros)
+          mbTraitPos <- findIndex (hasUid traitId) <$> use (itemLens.pros)
           case mbTraitPos of
             Nothing       -> return (Left "trait not found")
             Just traitPos -> do
@@ -879,7 +883,7 @@ deleteTrait itemId traitId = do
               return (Right (Edit'DeleteTrait itemId traitId traitPos))
         -- It's a con
         (_, Just trait) -> do
-          mbTraitPos <- findIndex isOurTrait <$> use (itemLens.cons)
+          mbTraitPos <- findIndex (hasUid traitId) <$> use (itemLens.cons)
           case mbTraitPos of
             Nothing       -> return (Left "trait not found")
             Just traitPos -> do
@@ -896,7 +900,7 @@ moveItem
 moveItem itemId up = do
   let move = if up then moveUp else moveDown
   catId <- view uid . findCategoryByItem itemId <$> get
-  categoryById catId . items %= move ((== itemId) . view uid)
+  categoryById catId . items %= move (hasUid itemId)
   return (Edit'MoveItem itemId up)
 
 moveTrait
@@ -909,31 +913,30 @@ moveTrait itemId traitId up = do
   -- The trait is only going to be present in one of the lists so let's do it
   -- in each list because we're too lazy to figure out whether it's a pro or
   -- a con
-  itemById itemId . pros %= move ((== traitId) . view uid)
-  itemById itemId . cons %= move ((== traitId) . view uid)
+  itemById itemId . pros %= move (hasUid traitId)
+  itemById itemId . cons %= move (hasUid traitId)
   return (Edit'MoveTrait itemId traitId up)
 
 restoreCategory :: Uid -> Int -> Acid.Update GlobalState (Either String ())
 restoreCategory catId pos = do
   deleted <- use categoriesDeleted
-  case find ((== catId) . view uid) deleted of
+  case find (hasUid catId) deleted of
     Nothing -> return (Left "category not found in deleted categories")
     Just category -> do
-      categoriesDeleted %= deleteFirst ((== catId) . view uid)
+      categoriesDeleted %= deleteFirst (hasUid catId)
       categories        %= insertAt pos category
       return (Right ())
 
 restoreItem :: Uid -> Int -> Acid.Update GlobalState (Either String ())
 restoreItem itemId pos = do
-  let ourItem item' = item'^.uid == itemId
-      ourCategory = any ourItem . view itemsDeleted
+  let ourCategory = any (hasUid itemId) . view itemsDeleted
   allCategories <- use (categories <> categoriesDeleted)
   case find ourCategory allCategories of
     Nothing -> return (Left "item not found in deleted items")
     Just category -> do
-      let item = fromJust (find ourItem (category^.itemsDeleted))
+      let item = fromJust (find (hasUid itemId) (category^.itemsDeleted))
       let category' = category
-            & itemsDeleted %~ deleteFirst ourItem
+            & itemsDeleted %~ deleteFirst (hasUid itemId)
             & items        %~ insertAt pos item
       categories        . each . filtered ourCategory .= category'
       categoriesDeleted . each . filtered ourCategory .= category'
@@ -941,35 +944,33 @@ restoreItem itemId pos = do
 
 restoreTrait :: Uid -> Uid -> Int -> Acid.Update GlobalState (Either String ())
 restoreTrait itemId traitId pos = do
-  let ourTrait trait' = trait'^.uid == traitId
-      ourItem item' = item'^.uid == itemId
-      getItems = view (items <> itemsDeleted)
-      ourCategory = any ourItem . getItems
+  let getItems = view (items <> itemsDeleted)
+      ourCategory = any (hasUid itemId) . getItems
   allCategories <- use (categories <> categoriesDeleted)
   case find ourCategory allCategories of
     Nothing -> return (Left "item -that the trait belongs to- not found")
     Just category -> do
-      let item = fromJust (find ourItem (getItems category))
-      case (find ourTrait (item^.prosDeleted),
-            find ourTrait (item^.consDeleted)) of
+      let item = fromJust (find (hasUid itemId) (getItems category))
+      case (find (hasUid traitId) (item^.prosDeleted),
+            find (hasUid traitId) (item^.consDeleted)) of
         (Nothing, Nothing) -> return (Left "trait not found in deleted traits")
         (Just trait, _) -> do
           let item' = item
-                & prosDeleted %~ deleteFirst ourTrait
+                & prosDeleted %~ deleteFirst (hasUid traitId)
                 & pros        %~ insertAt pos trait
           let category' = category
-                & items        . each . filtered ourItem .~ item'
-                & itemsDeleted . each . filtered ourItem .~ item'
+                & items        . each . filtered (hasUid itemId) .~ item'
+                & itemsDeleted . each . filtered (hasUid itemId) .~ item'
           categories        . each . filtered ourCategory .= category'
           categoriesDeleted . each . filtered ourCategory .= category'
           return (Right ())
         (_, Just trait) -> do
           let item' = item
-                & consDeleted %~ deleteFirst ourTrait
+                & consDeleted %~ deleteFirst (hasUid traitId)
                 & cons        %~ insertAt pos trait
           let category' = category
-                & items        . each . filtered ourItem .~ item'
-                & itemsDeleted . each . filtered ourItem .~ item'
+                & items        . each . filtered (hasUid itemId) .~ item'
+                & itemsDeleted . each . filtered (hasUid itemId) .~ item'
           categories        . each . filtered ourCategory .= category'
           categoriesDeleted . each . filtered ourCategory .= category'
           return (Right ())

@@ -177,6 +177,9 @@ renderAdmin globalState edits = do
 -- TODO: move Markdown CSS into a separate CSS file and include it in
 -- renderAdmin
 
+-- TODO: when showing Edit'DeleteCategory, show the amount of items in that
+-- category and titles of items themselves
+
 renderEdit :: Monad m => GlobalState -> Edit -> HtmlT m ()
 renderEdit globalState edit = do
   let quote :: Monad m => HtmlT m () -> HtmlT m ()
@@ -185,28 +188,25 @@ renderEdit globalState edit = do
   -- and in lists of deleted things. Just in case.
   let allCategories = globalState^.categories ++
                       globalState^.categoriesDeleted
-  let findCategory catId = fromMaybe err (find ourCategory allCategories)
+  let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
         where
-          ourCategory category = category^.uid == catId
           err = error ("renderEdit: couldn't find category with uid = " ++
                        T.unpack (uidToText catId))
   let findItem itemId = (category, item)
         where
           getItems = view (items <> itemsDeleted)
-          ourItem item' = item'^.uid == itemId
-          ourCategory = any ourItem . getItems
+          ourCategory = any (hasUid itemId) . getItems
           err = error ("renderEdit: couldn't find item with uid = " ++
                        T.unpack (uidToText itemId))
           category = fromMaybe err (find ourCategory allCategories)
-          item = fromJust (find ourItem (getItems category))
+          item = fromJust (find (hasUid itemId) (getItems category))
   let findTrait itemId traitId = (category, item, trait)
         where
           (category, item) = findItem itemId
           getTraits = view (cons <> consDeleted <> pros <> prosDeleted)
-          ourTrait trait' = trait'^.uid == traitId
           err = error ("renderEdit: couldn't find trait with uid = " ++
                        T.unpack (uidToText traitId))
-          trait = fromMaybe err (find ourTrait (getTraits item))
+          trait = fromMaybe err (find (hasUid traitId) (getTraits item))
 
   let printCategory catId = do
         let category = findCategory catId
