@@ -129,7 +129,11 @@ addEdit ed = do
                                  (Spock.header "X-Forwarded-For")
   ip <- case mbForwardedFor of
     Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
-    Just ff -> return (read (T.unpack ip))
+    Just ff -> case readMaybe (T.unpack ip) of
+      Nothing -> error ("couldn't read Forwarded-For address: " ++
+                        show ip ++ " (full header: " ++
+                        show ff ++ ")")
+      Just i  -> return i
       where
         addr = T.strip . snd . T.breakOnEnd "," $ ff
         ip -- [IPv6]:port
