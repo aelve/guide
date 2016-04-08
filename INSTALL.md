@@ -73,6 +73,10 @@ If you want the status page to be available as well, write:
 
 (Note that it will only be available at `/status/`, not `/status`.)
 
+Enable the `remoteip` module (this is needed so that the `/admin` page would display actual IPs instead of `127.0.0.1`):
+
+    $ a2enmod remoteip
+
 Enable the site:
 
     $ a2ensite guide

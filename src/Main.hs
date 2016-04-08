@@ -34,7 +34,7 @@ import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
 import Lucid
-import Network.Wai.Middleware.Static
+import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai as Wai
 -- Feeds
@@ -125,7 +125,22 @@ addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
         => Edit -> ActionCtxT ctx m ()
 addEdit ed = do
   time <- liftIO $ getCurrentTime
-  ip <- sockAddrToIP . Wai.remoteHost <$> Spock.request
+  mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
+                                 (Spock.header "X-Forwarded-For")
+  ip <- case mbForwardedFor of
+    Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
+    Just ff -> return (read (T.unpack ip))
+      where
+        addr = T.strip . snd . T.breakOnEnd "," $ ff
+        ip -- [IPv6]:port
+           | T.take 1 addr == "[" =
+               T.drop 1 (T.takeWhile (/= ']') addr)
+           -- IPv4 or IPv4:port
+           | T.any (== '.') addr =
+               T.takeWhile (/= ':') addr
+           -- IPv6 without port
+           | otherwise =
+               addr
   unless (isVacuousEdit ed) $
     dbUpdate (RegisterEdit ed ip time)
 
