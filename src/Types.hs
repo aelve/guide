@@ -90,10 +90,17 @@ module Types
   DeleteItem(..),
   DeleteTrait(..),
 
+  -- ** edits
+  GetEdit(..),
+  RegisterEdit(..),
+  RemovePendingEdit(..),
+
   -- ** other
   MoveItem(..),
   MoveTrait(..),
-  RegisterEdit(..),
+  RestoreCategory(..),
+  RestoreItem(..),
+  RestoreTrait(..),
   )
 where
 
@@ -104,7 +111,7 @@ import BasePrelude hiding (Category)
 import Control.Monad.State
 import Control.Monad.Reader
 -- Lenses
-import Lens.Micro.Platform
+import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 import Data.Map (Map)
@@ -772,22 +779,22 @@ setTraitContent itemId traitId content' = do
 
 -- delete
 
-deleteCategory :: Uid -> Acid.Update GlobalState (Maybe Edit)
+deleteCategory :: Uid -> Acid.Update GlobalState (Either String Edit)
 deleteCategory catId = do
   mbCategory <- preuse (categoryById catId)
   let isOurCategory category = category^.uid == catId
   case mbCategory of
-    Nothing       -> return Nothing
+    Nothing       -> return (Left "category not found")
     Just category -> do
       mbCategoryPos <- findIndex isOurCategory <$> use categories
       case mbCategoryPos of
-        Nothing          -> return Nothing
+        Nothing          -> return (Left "category not found")
         Just categoryPos -> do
           categories %= deleteAt categoryPos
           categoriesDeleted %= (category:)
-          return (Just (Edit'DeleteCategory catId categoryPos))
+          return (Right (Edit'DeleteCategory catId categoryPos))
 
-deleteItem :: Uid -> Acid.Update GlobalState (Maybe Edit)
+deleteItem :: Uid -> Acid.Update GlobalState (Either String Edit)
 deleteItem itemId = do
   catId <- view uid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
@@ -796,7 +803,7 @@ deleteItem itemId = do
       itemLens = itemById itemId
   mbItem <- preuse itemLens
   case mbItem of
-    Nothing   -> return Nothing
+    Nothing   -> return (Left "item not found")
     Just item -> do
       allItems <- use (categoryLens.items)
       -- If the item was the only item in its group, delete the group (and
@@ -810,43 +817,43 @@ deleteItem itemId = do
             categoryLens.groups %= M.delete oldGroup
       -- And now delete the item (i.e. move it to “deleted”)
       case findIndex ((== itemId) . view uid) allItems of
-        Nothing      -> return Nothing
+        Nothing      -> return (Left "item not found")
         Just itemPos -> do
           categoryLens.items        %= deleteAt itemPos
           categoryLens.itemsDeleted %= (item:)
-          return (Just (Edit'DeleteItem itemId itemPos))
+          return (Right (Edit'DeleteItem itemId itemPos))
 
-deleteTrait :: Uid -> Uid -> Acid.Update GlobalState (Maybe Edit)
+deleteTrait :: Uid -> Uid -> Acid.Update GlobalState (Either String Edit)
 deleteTrait itemId traitId = do
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
   let isOurTrait trait = trait^.uid == traitId
   mbItem <- preuse itemLens
   case mbItem of
-    Nothing   -> return Nothing
+    Nothing   -> return (Left "item not found")
     Just item -> do
       -- Determine whether the trait is a pro or a con, and proceed accordingly
       case (find isOurTrait (item^.pros), find isOurTrait (item^.cons)) of
         -- It's in neither group, which means it was deleted. Do nothing.
-        (Nothing, Nothing) -> return Nothing
+        (Nothing, Nothing) -> return (Left "trait not found")
         -- It's a pro
         (Just trait, _) -> do
           mbTraitPos <- findIndex isOurTrait <$> use (itemLens.pros)
           case mbTraitPos of
-            Nothing       -> return Nothing
+            Nothing       -> return (Left "trait not found")
             Just traitPos -> do
               itemLens.pros        %= deleteAt traitPos
               itemLens.prosDeleted %= (trait:)
-              return (Just (Edit'DeleteTrait itemId traitId traitPos))
+              return (Right (Edit'DeleteTrait itemId traitId traitPos))
         -- It's a con
         (_, Just trait) -> do
           mbTraitPos <- findIndex isOurTrait <$> use (itemLens.cons)
           case mbTraitPos of
-            Nothing       -> return Nothing
+            Nothing       -> return (Left "trait not found")
             Just traitPos -> do
               itemLens.cons        %= deleteAt traitPos
               itemLens.consDeleted %= (trait:)
-              return (Just (Edit'DeleteTrait itemId traitId traitPos))
+              return (Right (Edit'DeleteTrait itemId traitId traitPos))
 
 -- other methods
 
@@ -874,6 +881,78 @@ moveTrait itemId traitId up = do
   itemById itemId . cons %= move ((== traitId) . view uid)
   return (Edit'MoveTrait itemId traitId up)
 
+restoreCategory :: Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreCategory catId pos = do
+  deleted <- use categoriesDeleted
+  case find ((== catId) . view uid) deleted of
+    Nothing -> return (Left "category not found in deleted categories")
+    Just category -> do
+      categoriesDeleted %= deleteFirst ((== catId) . view uid)
+      categories        %= insertAt pos category
+      return (Right ())
+
+restoreItem :: Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreItem itemId pos = do
+  let ourItem item' = item'^.uid == itemId
+      ourCategory = any ourItem . view itemsDeleted
+  allCategories <- use (categories <> categoriesDeleted)
+  case find ourCategory allCategories of
+    Nothing -> return (Left "item not found in deleted items")
+    Just category -> do
+      let item = fromJust (find ourItem (category^.itemsDeleted))
+      let category' = category
+            & itemsDeleted %~ deleteFirst ourItem
+            & items        %~ insertAt pos item
+      categories        . each . filtered ourCategory .= category'
+      categoriesDeleted . each . filtered ourCategory .= category'
+      return (Right ())
+
+restoreTrait :: Uid -> Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreTrait itemId traitId pos = do
+  let ourTrait trait' = trait'^.uid == traitId
+      ourItem item' = item'^.uid == itemId
+      getItems = view (items <> itemsDeleted)
+      ourCategory = any ourItem . getItems
+  allCategories <- use (categories <> categoriesDeleted)
+  case find ourCategory allCategories of
+    Nothing -> return (Left "item -that the trait belongs to- not found")
+    Just category -> do
+      let item = fromJust (find ourItem (getItems category))
+      case (find ourTrait (item^.prosDeleted),
+            find ourTrait (item^.consDeleted)) of
+        (Nothing, Nothing) -> return (Left "trait not found in deleted traits")
+        (Just trait, _) -> do
+          let item' = item
+                & prosDeleted %~ deleteFirst ourTrait
+                & pros        %~ insertAt pos trait
+          let category' = category
+                & items        . each . filtered ourItem .~ item'
+                & itemsDeleted . each . filtered ourItem .~ item'
+          categories        . each . filtered ourCategory .= category'
+          categoriesDeleted . each . filtered ourCategory .= category'
+          return (Right ())
+        (_, Just trait) -> do
+          let item' = item
+                & consDeleted %~ deleteFirst ourTrait
+                & cons        %~ insertAt pos trait
+          let category' = category
+                & items        . each . filtered ourItem .~ item'
+                & itemsDeleted . each . filtered ourItem .~ item'
+          categories        . each . filtered ourCategory .= category'
+          categoriesDeleted . each . filtered ourCategory .= category'
+          return (Right ())
+
+-- TODO: maybe have a single list of traits with pro/con being signified by
+-- something like TraitType? or maybe TraitType could even be a part of the
+-- trait itself?
+
+getEdit :: Int -> Acid.Query GlobalState (Edit, EditDetails)
+getEdit n = do
+  edits <- view pendingEdits
+  case find ((== n) . editId . snd) edits of
+    Nothing   -> error ("no edit with id " ++ show n)
+    Just edit -> return edit
+
 -- | The edit won't be registered if it's vacuous (see 'isVacuousEdit').
 registerEdit
   :: Edit
@@ -888,6 +967,15 @@ registerEdit ed ip date = do
         editId   = id' }
   pendingEdits %= ((ed, details):)
   editIdCounter += 1
+
+removePendingEdit :: Int -> Acid.Update GlobalState (Edit, EditDetails)
+removePendingEdit n = do
+  edits <- use pendingEdits
+  case find ((== n) . editId . snd) edits of
+    Nothing   -> error ("no edit with id " ++ show n)
+    Just edit -> do
+      pendingEdits %= deleteFirst ((== n) . editId . snd)
+      return edit
 
 makeAcidic ''GlobalState [
   -- queries
@@ -911,7 +999,11 @@ makeAcidic ''GlobalState [
   'deleteCategory,
   'deleteItem,
   'deleteTrait,
+  -- edits
+  'getEdit,
+  'registerEdit,
+  'removePendingEdit,
   -- other
   'moveItem, 'moveTrait,
-  'registerEdit
+  'restoreCategory, 'restoreItem, 'restoreTrait
   ]

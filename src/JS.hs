@@ -52,7 +52,10 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Other things
   deleteCategory,
   moveTraitUp, moveTraitDown, deleteTrait,
-  moveItemUp, moveItemDown, deleteItem ]
+  moveItemUp, moveItemDown, deleteItem,
+  -- Admin things
+  acceptEdit,
+  undoEdit ]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -460,6 +463,33 @@ moveItemDown =
         fadeIn(itemNode);
      });
   |]
+
+acceptEdit :: JSFunction a => a
+acceptEdit =
+  makeJSFunction "acceptEdit" ["editId", "editNode"]
+  [text|
+    $.post("/admin/edit/"+editId+"/accept")
+     .done(function () {
+        // see Note [fadeOut]
+        $(editNode).fadeTo(400,0.2,function(){$(editNode).remove()});
+     });
+  |]
+
+undoEdit :: JSFunction a => a
+undoEdit =
+  makeJSFunction "undoEdit" ["editId", "editNode"]
+  [text|
+    $.post("/admin/edit/"+editId+"/undo")
+     .done(function (data) {
+        if (data == "")
+          // see Note [fadeOut]
+          $(editNode).fadeTo(400,0.2,function(){$(editNode).remove()})
+        else
+          alert("couldn't undo edit: " + data);
+     });
+  |]
+
+-- TODO: write something like fadeOutAndRemove
 
 deleteItem :: JSFunction a => a
 deleteItem =

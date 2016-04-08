@@ -21,6 +21,7 @@ module Utils
   moveDown,
   deleteFirst,
   deleteAt,
+  insertAt,
 
   -- * URLs
   Url,
@@ -116,6 +117,11 @@ deleteAt :: Int -> [a] -> [a]
 deleteAt _   []   = []
 deleteAt 0 (_:xs) = xs
 deleteAt i (x:xs) = x : deleteAt (i-1) xs
+
+insertAt :: Int -> a -> [a] -> [a]
+insertAt _ a   []   = [a]
+insertAt 0 a   xs   = a:xs
+insertAt n a (x:xs) = x : insertAt (n-1) a xs
 
 type Url = Text
 

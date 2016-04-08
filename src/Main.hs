@@ -58,6 +58,7 @@ import Types
 import View
 import JS (JS(..), allJSFunctions)
 import Utils
+import Markdown
 
 
 {- Note [acid-state]
@@ -127,6 +128,86 @@ addEdit ed = do
   ip <- sockAddrToIP . Wai.remoteHost <$> Spock.request
   unless (isVacuousEdit ed) $
     dbUpdate (RegisterEdit ed ip time)
+
+-- | Do an action that would undo an edit.
+--
+-- 'Left' signifies failure.
+--
+-- TODO: many of these don't work when the changed category/item/etc has been
+-- deleted; this should change.
+undoEdit :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
+         => Edit -> m (Either String ())
+undoEdit (Edit'AddCategory catId _) = do
+  void <$> dbUpdate (DeleteCategory catId)
+undoEdit (Edit'AddItem _catId itemId _) = do
+  void <$> dbUpdate (DeleteItem itemId)
+undoEdit (Edit'AddPro itemId traitId _) = do
+  void <$> dbUpdate (DeleteTrait itemId traitId)
+undoEdit (Edit'AddCon itemId traitId _) = do
+  void <$> dbUpdate (DeleteTrait itemId traitId)
+undoEdit (Edit'SetCategoryTitle catId old new) = do
+  now <- view title <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "title has been changed further")
+    else Right () <$ dbUpdate (SetCategoryTitle catId old)
+undoEdit (Edit'SetCategoryNotes catId old new) = do
+  now <- markdownBlockText . view notes <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "notes have been changed further")
+    else Right () <$ dbUpdate (SetCategoryNotes catId old)
+undoEdit (Edit'SetItemName itemId old new) = do
+  now <- view name <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "name has been changed further")
+    else Right () <$ dbUpdate (SetItemName itemId old)
+undoEdit (Edit'SetItemLink itemId old new) = do
+  now <- view link <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "link has been changed further")
+    else Right () <$ dbUpdate (SetItemLink itemId old)
+undoEdit (Edit'SetItemGroup itemId old new) = do
+  now <- view group_ <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "group has been changed further")
+    else Right () <$ dbUpdate (SetItemGroup itemId old)
+undoEdit (Edit'SetItemKind itemId old new) = do
+  now <- view kind <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "kind has been changed further")
+    else Right () <$ dbUpdate (SetItemKind itemId old)
+undoEdit (Edit'SetItemDescription itemId old new) = do
+  now <- markdownBlockText . view description <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "description has been changed further")
+    else Right () <$ dbUpdate (SetItemDescription itemId old)
+undoEdit (Edit'SetItemNotes itemId old new) = do
+  now <- markdownBlockText . view notes <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "notes have been changed further")
+    else Right () <$ dbUpdate (SetItemNotes itemId old)
+undoEdit (Edit'SetItemEcosystem itemId old new) = do
+  now <- markdownBlockText . view ecosystem <$> dbQuery (GetItem itemId)
+  if now /= new
+    then return (Left "ecosystem has been changed further")
+    else Right () <$ dbUpdate (SetItemEcosystem itemId old)
+undoEdit (Edit'SetTraitContent itemId traitId old new) = do
+  now <- markdownInlineText . view content <$> dbQuery (GetTrait itemId traitId)
+  if now /= new
+    then return (Left "trait has been changed further")
+    else Right () <$ dbUpdate (SetTraitContent itemId traitId old)
+undoEdit (Edit'DeleteCategory catId pos) = do
+  dbUpdate (RestoreCategory catId pos)
+undoEdit (Edit'DeleteItem itemId pos) = do
+  dbUpdate (RestoreItem itemId pos)
+undoEdit (Edit'DeleteTrait itemId traitId pos) = do
+  dbUpdate (RestoreTrait itemId traitId pos)
+undoEdit (Edit'MoveItem itemId direction) = do
+  Right () <$ dbUpdate (MoveItem itemId (not direction))
+undoEdit (Edit'MoveTrait itemId traitId direction) = do
+  Right () <$ dbUpdate (MoveTrait itemId traitId (not direction))
+
+-- TODO: write something like “uidEq” and replace all constructs like
+-- «(== catId) . view uid» with it
 
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
@@ -426,11 +507,22 @@ main = do
         lucidWithConfig $ renderRoot
 
       -- Admin page
-      prehook adminHook $ do
-        Spock.get "admin" $ do
-          edits <- view pendingEdits <$> dbQuery GetGlobalState
-          s <- dbQuery GetGlobalState
-          lucidIO $ renderAdmin s edits
+      prehook adminHook $
+        Spock.subcomponent "admin" $ do
+          Spock.get root $ do
+            edits <- view pendingEdits <$> dbQuery GetGlobalState
+            s <- dbQuery GetGlobalState
+            lucidIO $ renderAdmin s edits
+          Spock.post ("edit" <//> var <//> "accept") $ \n -> do
+            dbUpdate (RemovePendingEdit n)
+            return ()
+          Spock.post ("edit" <//> var <//> "undo") $ \n -> do
+            (edit, _) <- dbQuery (GetEdit n)
+            res <- undoEdit edit
+            case res of
+              Left err -> Spock.text (T.pack err)
+              Right () -> do dbUpdate (RemovePendingEdit n)
+                             Spock.text ""
 
       -- Donation page
       Spock.get "donate" $

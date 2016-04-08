@@ -151,14 +151,28 @@ renderRoot = do
 
 renderAdmin :: MonadIO m => GlobalState -> [(Edit, EditDetails)] -> HtmlT m ()
 renderAdmin globalState edits = do
-  ul_ $ for_ edits $ \(edit, EditDetails{..}) -> li_ $ do
-    p_ $ do
-      case editIP of
-        Nothing -> "<unknown IP>"
-        Just ip -> toHtml (show ip)
-      ", "
-      toHtml =<< liftIO (humanReadableTime editDate)
-    renderEdit globalState edit
+  head_ $ do
+    includeJS "/js.js"
+    includeJS "/jquery-2.2.0.min.js"
+    meta_ [name_ "viewport",
+           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
+
+  body_ $ do
+    ul_ $ for_ edits $ \(edit, EditDetails{..}) -> li_ $ do
+      editNode <- thisNode
+      p_ $ do
+        case editIP of
+          Nothing -> "<unknown IP>"
+          Just ip -> toHtml (show ip)
+        ", "
+        toHtml =<< liftIO (humanReadableTime editDate)
+        emptySpan "1em"
+        textButton "accept" $
+          JS.acceptEdit (editId, editNode)
+        emptySpan "0.5em"
+        textButton "try to undo" $
+          JS.undoEdit (editId, editNode)
+      renderEdit globalState edit
 
 -- TODO: move Markdown CSS into a separate CSS file and include it in
 -- renderAdmin
