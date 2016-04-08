@@ -454,6 +454,7 @@ main = do
   do args <- getArgs
      when (args == ["--dry-run"]) $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+       putStrLn "loaded the database successfully"
        closeAcidState db
        exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
