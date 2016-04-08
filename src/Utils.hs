@@ -29,7 +29,6 @@ module Utils
   makeSlug,
 
   -- * IP
-  IP(..),
   sockAddrToIP,
   
   -- * UID
@@ -74,7 +73,7 @@ import qualified Data.Text.Format.Params as Format
 import qualified Data.Text.Buildable     as Format
 -- Network
 import qualified Network.Socket as Network
-import qualified Network.Info   as Network
+import Data.IP
 -- Web
 import Lucid
 import Web.Spock
@@ -141,23 +140,13 @@ makeSlug =
   T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
   T.map (\x -> if x == '_' then '-' else x)
 
-data IP = IPv4 Network.IPv4 | IPv6 Network.IPv6
-  deriving (Eq)
-
-deriveSafeCopy 0 'base ''Network.IPv4
-deriveSafeCopy 0 'base ''Network.IPv6
-
-deriveSafeCopy 0 'base ''IP 
-
-instance Show IP where
-  show (IPv4 x) = show x
-  show (IPv6 x) = show x
+deriveSafeCopy 0 'base ''IPv4
+deriveSafeCopy 0 'base ''IPv6
+deriveSafeCopy 0 'base ''IP
 
 sockAddrToIP :: Network.SockAddr -> Maybe IP
-sockAddrToIP (Network.SockAddrInet _ addr) =
-  Just (IPv4 (Network.IPv4 addr))
-sockAddrToIP (Network.SockAddrInet6 _ _ (a,b,c,d) _) =
-  Just (IPv6 (Network.IPv6 a b c d))
+sockAddrToIP (Network.SockAddrInet  _   x)   = Just (IPv4 (fromHostAddress x))
+sockAddrToIP (Network.SockAddrInet6 _ _ x _) = Just (IPv6 (fromHostAddress6 x))
 sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.

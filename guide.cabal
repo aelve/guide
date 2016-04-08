@@ -57,6 +57,7 @@ executable guide
                      , filepath
                      , friendly-time == 0.4.*
                      , http-types
+                     , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
                      , megaparsec
                      , microlens-platform >= 0.2.3
@@ -64,7 +65,8 @@ executable guide
                      , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*
                      , network
-                     , network-info == 0.2.*
+                     -- not needed once the migration of EditDetails is done
+                     , network-info
                      , path-pieces
                      , random >= 1.1
                      , safecopy

@@ -12,6 +12,9 @@ NoImplicitPrelude
   #-}
 
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+
 module Types
 (
   Trait(..),
@@ -120,6 +123,9 @@ import qualified Data.Text as T
 import Data.Text (Text)
 -- Time
 import Data.Time
+-- Network
+import Data.IP
+import qualified Network.Info as Network
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
@@ -510,7 +516,33 @@ data EditDetails = EditDetails {
   editId   :: Int }
   deriving (Eq, Show)
 
-deriveSafeCopy 0 'base ''EditDetails
+deriveSafeCopy 1 'extension ''EditDetails
+
+data IP_v0 = IPv4_v0 Network.IPv4 | IPv6_v0 Network.IPv6
+
+deriveSafeCopy 0 'base ''Network.IPv4
+deriveSafeCopy 0 'base ''Network.IPv6
+deriveSafeCopy 0 'base ''IP_v0
+
+-- TODO: When this goes away, remove the dependency on network-info
+data EditDetails_v0 = EditDetails_v0 {
+  editIP_v0   :: Maybe IP_v0,
+  editDate_v0 :: UTCTime,
+  editId_v0   :: Int }
+
+deriveSafeCopy 0 'base ''EditDetails_v0
+
+instance Migrate EditDetails where
+  type MigrateFrom EditDetails = EditDetails_v0
+  migrate EditDetails_v0{..} = EditDetails {
+    editIP = migrateIP <$> editIP_v0,
+    editDate = editDate_v0,
+    editId = editId_v0 }
+    where
+      migrateIP (IPv4_v0 ip) = IPv4 (read (show ip))
+      migrateIP (IPv6_v0 ip) = IPv6 (read (show ip))
+
+-- TODO: add a function to create a checkpoint to the admin panel?
 
 -- See Note [acid-state]
 
