@@ -127,13 +127,13 @@ addEdit ed = do
   time <- liftIO $ getCurrentTime
   mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
                                  (Spock.header "X-Forwarded-For")
-  ip <- case mbForwardedFor of
+  mbIP <- case mbForwardedFor of
     Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
     Just ff -> case readMaybe (T.unpack ip) of
       Nothing -> error ("couldn't read Forwarded-For address: " ++
                         show ip ++ " (full header: " ++
                         show ff ++ ")")
-      Just i  -> return i
+      Just i  -> return (Just i)
       where
         addr = T.strip . snd . T.breakOnEnd "," $ ff
         ip -- [IPv6]:port
@@ -146,7 +146,7 @@ addEdit ed = do
            | otherwise =
                addr
   unless (isVacuousEdit ed) $
-    dbUpdate (RegisterEdit ed ip time)
+    dbUpdate (RegisterEdit ed mbIP time)
 
 -- | Do an action that would undo an edit.
 --
