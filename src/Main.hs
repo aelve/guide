@@ -451,6 +451,11 @@ main = do
         _categoriesDeleted = [],
         _pendingEdits = [],
         _editIdCounter = 0 }
+  do args <- getArgs
+     when (args == ["--dry-run"]) $ do
+       db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+       closeAcidState db
+       exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to

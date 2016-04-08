@@ -252,9 +252,6 @@ genVer tyName ver constructors = do
     []
   return [decl]
 
--- TODO: [easy] add a test that takes data from aelve/guide-database and
--- checks that the data can be loaded
-
 data MigrateConstructor = CopyM Name | CustomM Name ExpQ
 
 migrateVer :: Name -> Int -> [MigrateConstructor] -> Q Exp
