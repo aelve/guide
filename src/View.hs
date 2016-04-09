@@ -154,6 +154,7 @@ renderAdmin globalState edits = do
   head_ $ do
     includeJS "/js.js"
     includeJS "/jquery-2.2.0.min.js"
+    includeCSS "/markup.css"
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
 
@@ -173,9 +174,6 @@ renderAdmin globalState edits = do
         textButton "try to undo" $
           JS.undoEdit (editId, editNode)
       renderEdit globalState edit
-
--- TODO: move Markdown CSS into a separate CSS file and include it in
--- renderAdmin
 
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves
@@ -404,9 +402,13 @@ wrapPage pageTitle page = doctypehtml_ $ do
     -- See Note [autosize]
     includeJS "/autosize-3.0.15.min.js"
     onPageLoad (JS "autosize($('textarea'));")
-    -- It's important that css.css comes second – it overwrites some rules
-    -- from highlight.css (see the rule for div.sourceCode)
+    -- The order is important – markup.css overrides some rules from
+    -- highlight.css (e.g. div.sourceCode), css.css overrides the rule for
+    -- a.anchor from markup.css.
+    --
+    -- TODO: maybe use !important or something instead?
     includeCSS "/highlight.css"
+    includeCSS "/markup.css"
     includeCSS "/css.css"
     -- Include definitions of all Javascript functions that we have defined
     -- in this file. (This isn't an actual file, so don't look for it in the
