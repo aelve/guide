@@ -138,7 +138,7 @@ import Markdown
 
 
 data Trait = Trait {
-  _traitUid :: Uid,
+  _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
   deriving (Eq)
 
@@ -152,7 +152,7 @@ makeFields ''Trait
 --
 -- Again, see Note [acid-state].
 data Trait_v0 = Trait_v0 {
-  _traitUid_v0 :: Uid,
+  _traitUid_v0 :: Uid Trait,
   _traitContent_v0 :: Text }
 
 deriveSafeCopy 0 'base ''Trait_v0
@@ -179,7 +179,7 @@ makeFields ''ItemKind
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 data Item = Item {
-  _itemUid         :: Uid,
+  _itemUid         :: Uid Item,
   _itemName        :: Text,
   _itemCreated     :: UTCTime,
   _itemGroup_      :: Maybe Text,
@@ -201,7 +201,7 @@ makeFields ''Item
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
 data Item_v6 = Item_v6 {
-  _itemUid_v6         :: Uid,
+  _itemUid_v6         :: Uid Item,
   _itemName_v6        :: Text,
   _itemCreated_v6     :: UTCTime,
   _itemGroup__v6      :: Maybe Text,
@@ -296,7 +296,7 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 --
 
 data Category = Category {
-  _categoryUid :: Uid,
+  _categoryUid :: Uid Category,
   _categoryTitle :: Text,
   _categoryCreated :: UTCTime,
   _categoryNotes :: MarkdownBlock,
@@ -316,7 +316,7 @@ categorySlug category =
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
 data Category_v2 = Category_v2 {
-  _categoryUid_v2 :: Uid,
+  _categoryUid_v2 :: Uid Category,
   _categoryTitle_v2 :: Text,
   _categoryCreated_v2 :: UTCTime,
   _categoryNotes_v2 :: MarkdownBlock,
@@ -342,87 +342,87 @@ instance Migrate Category where
 data Edit
   -- Add
   = Edit'AddCategory {
-      editCategoryUid   :: Uid,
+      editCategoryUid   :: Uid Category,
       editCategoryTitle :: Text }
   | Edit'AddItem {
-      editCategoryUid   :: Uid,
-      editItemUid       :: Uid,
+      editCategoryUid   :: Uid Category,
+      editItemUid       :: Uid Item,
       editItemName      :: Text }
   | Edit'AddPro {
-      editItemUid       :: Uid,
-      editTraitId       :: Uid,
+      editItemUid       :: Uid Item,
+      editTraitId       :: Uid Trait,
       editTraitContent  :: Text }
   | Edit'AddCon {
-      editItemUid       :: Uid,
-      editTraitId       :: Uid,
+      editItemUid       :: Uid Item,
+      editTraitId       :: Uid Trait,
       editTraitContent  :: Text }
 
   -- Change category properties
   | Edit'SetCategoryTitle {
-      editCategoryUid      :: Uid,
+      editCategoryUid      :: Uid Category,
       editCategoryTitle    :: Text,
       editCategoryNewTitle :: Text }
   | Edit'SetCategoryNotes {
-      editCategoryUid      :: Uid,
+      editCategoryUid      :: Uid Category,
       editCategoryNotes    :: Text,
       editCategoryNewNotes :: Text }
 
   -- Change item properties
   | Edit'SetItemName {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemName           :: Text,
       editItemNewName        :: Text }
   | Edit'SetItemLink {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemLink           :: Maybe Url,
       editItemNewLink        :: Maybe Url }
   | Edit'SetItemGroup {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemGroup          :: Maybe Text,
       editItemNewGroup       :: Maybe Text }
   | Edit'SetItemKind {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemKind           :: ItemKind,
       editItemNewKind        :: ItemKind }
   | Edit'SetItemDescription {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemDescription    :: Text,
       editItemNewDescription :: Text }
   | Edit'SetItemNotes {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemNotes          :: Text,
       editItemNewNotes       :: Text }
   | Edit'SetItemEcosystem {
-      editItemUid            :: Uid,
+      editItemUid            :: Uid Item,
       editItemEcosystem      :: Text,
       editItemNewEcosystem   :: Text }
 
   -- Change trait properties
   | Edit'SetTraitContent {
-      editItemUid         :: Uid,
-      editTraitUid        :: Uid,
+      editItemUid         :: Uid Item,
+      editTraitUid        :: Uid Trait,
       editTraitContent    :: Text,
       editTraitNewContent :: Text }
 
   -- Delete
   | Edit'DeleteCategory {
-      editCategoryUid       :: Uid,
+      editCategoryUid       :: Uid Category,
       editCategoryPosition  :: Int }
   | Edit'DeleteItem {
-      editItemUid           :: Uid,
+      editItemUid           :: Uid Item,
       editItemPosition      :: Int }
   | Edit'DeleteTrait {
-      editItemUid           :: Uid,
-      editTraitUid          :: Uid,
+      editItemUid           :: Uid Item,
+      editTraitUid          :: Uid Trait,
       editTraitPosition     :: Int }
 
   -- Other
   | Edit'MoveItem {
-      editItemUid   :: Uid,
+      editItemUid   :: Uid Item,
       editDirection :: Bool }
   | Edit'MoveTrait {
-      editItemUid   :: Uid,
-      editTraitUid  :: Uid,
+      editItemUid   :: Uid Item,
+      editTraitUid  :: Uid Trait,
       editDirection :: Bool }
 
   deriving (Eq, Show)
@@ -578,26 +578,26 @@ addGroupIfDoesNotExist g gs
   where
     firstNotTaken = head $ map Hue [1..] \\ M.elems gs
 
-traitById :: Uid -> Lens' Item Trait
+traitById :: Uid Trait -> Lens' Item Trait
 traitById uid' = singular $
   (pros.each . filtered (hasUid uid')) `failing`
   (cons.each . filtered (hasUid uid')) `failing`
   error ("traitById: couldn't find trait with uid " ++
          T.unpack (uidToText uid'))
 
-categoryById :: Uid -> Lens' GlobalState Category
+categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
   categories.each . filtered (hasUid catId) `failing`
   error ("categoryById: couldn't find category with uid " ++
          T.unpack (uidToText catId))
 
-itemById :: Uid -> Lens' GlobalState Item
+itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
   categories.each . items.each . filtered (hasUid itemId) `failing`
   error ("itemById: couldn't find item with uid " ++
          T.unpack (uidToText itemId))
 
-findCategoryByItem :: Uid -> GlobalState -> Category
+findCategoryByItem :: Uid Item -> GlobalState -> Category
 findCategoryByItem itemId s =
   fromMaybe (error err) (find hasItem (s^.categories))
   where
@@ -605,7 +605,7 @@ findCategoryByItem itemId s =
           T.unpack (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
 
-hasUid :: HasUid a Uid => Uid -> a -> Bool
+hasUid :: HasUid a (Uid u) => Uid u -> a -> Bool
 hasUid u x = x^.uid == u
 
 -- get
@@ -616,25 +616,22 @@ getGlobalState = view id
 getCategories :: Acid.Query GlobalState [Category]
 getCategories = view categories
 
-getCategory :: Uid -> Acid.Query GlobalState Category
+getCategory :: Uid Category -> Acid.Query GlobalState Category
 getCategory uid' = view (categoryById uid')
 
-getCategoryMaybe :: Uid -> Acid.Query GlobalState (Maybe Category)
+getCategoryMaybe :: Uid Category -> Acid.Query GlobalState (Maybe Category)
 getCategoryMaybe uid' = preview (categoryById uid')
 
-getCategoryByItem :: Uid -> Acid.Query GlobalState Category
+getCategoryByItem :: Uid Item -> Acid.Query GlobalState Category
 getCategoryByItem uid' = findCategoryByItem uid' <$> ask
 
-getItem :: Uid -> Acid.Query GlobalState Item
+getItem :: Uid Item -> Acid.Query GlobalState Item
 getItem uid' = view (itemById uid')
 
 -- TODO: this doesn't need the item id, but then we have to be a bit cleverer
 -- and store a (TraitId -> ItemId) map in global state (and update it
 -- accordingly whenever anything happens, so perhaps let's not do it!)
-getTrait
-  :: Uid   -- ^ Item id
-  -> Uid   -- ^ Trait id
-  -> Acid.Query GlobalState Trait
+getTrait :: Uid Item -> Uid Trait -> Acid.Query GlobalState Trait
 getTrait itemId traitId = view (itemById itemId . traitById traitId)
 
 -- | A useful lens operator that modifies something and returns the old value.
@@ -646,9 +643,9 @@ infix 4 <<.=
 -- add
 
 addCategory
-  :: Uid        -- ^ New category's id
-  -> Text       -- ^ Title
-  -> UTCTime    -- ^ Creation time
+  :: Uid Category    -- ^ New category's id
+  -> Text            -- ^ Title
+  -> UTCTime         -- ^ Creation time
   -> Acid.Update GlobalState (Edit, Category)
 addCategory catId title' created' = do
   let newCategory = Category {
@@ -664,11 +661,11 @@ addCategory catId title' created' = do
   return (edit, newCategory)
 
 addItem
-  :: Uid        -- ^ Category id
-  -> Uid        -- ^ New item's id
-  -> Text       -- ^ Name
-  -> UTCTime    -- ^ Creation time
-  -> ItemKind   -- ^ Kind
+  :: Uid Category    -- ^ Category id
+  -> Uid Item        -- ^ New item's id
+  -> Text            -- ^ Name
+  -> UTCTime         -- ^ Creation time
+  -> ItemKind        -- ^ Kind
   -> Acid.Update GlobalState (Edit, Item)
 addItem catId itemId name' created' kind' = do
   let newItem = Item {
@@ -690,8 +687,8 @@ addItem catId itemId name' created' kind' = do
   return (edit, newItem)
 
 addPro
-  :: Uid       -- ^ Item id
-  -> Uid       -- ^ Trait id
+  :: Uid Item       -- ^ Item id
+  -> Uid Trait      -- ^ New trait's id
   -> Text
   -> Acid.Update GlobalState (Edit, Trait)
 addPro itemId traitId text' = do
@@ -701,8 +698,8 @@ addPro itemId traitId text' = do
   return (edit, newTrait)
 
 addCon
-  :: Uid       -- ^ Item id
-  -> Uid       -- ^ Trait id
+  :: Uid Item       -- ^ Item id
+  -> Uid Trait      -- ^ New trait's id
   -> Text
   -> Acid.Update GlobalState (Edit, Trait)
 addCon itemId traitId text' = do
@@ -721,32 +718,32 @@ addCon itemId traitId text' = do
 setGlobalState :: GlobalState -> Acid.Update GlobalState ()
 setGlobalState = (id .=)
 
-setCategoryTitle :: Uid -> Text -> Acid.Update GlobalState (Edit, Category)
+setCategoryTitle :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryTitle catId title' = do
   oldTitle <- categoryById catId . title <<.= title'
   let edit = Edit'SetCategoryTitle catId oldTitle title'
   (edit,) <$> use (categoryById catId)
 
-setCategoryNotes :: Uid -> Text -> Acid.Update GlobalState (Edit, Category)
+setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . notes <<.= renderMarkdownBlock notes'
   let edit = Edit'SetCategoryNotes catId (markdownBlockText oldNotes) notes'
   (edit,) <$> use (categoryById catId)
 
-setItemName :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemName itemId name' = do
   oldName <- itemById itemId . name <<.= name'
   let edit = Edit'SetItemName itemId oldName name'
   (edit,) <$> use (itemById itemId)
 
-setItemLink :: Uid -> Maybe Url -> Acid.Update GlobalState (Edit, Item)
+setItemLink :: Uid Item -> Maybe Url -> Acid.Update GlobalState (Edit, Item)
 setItemLink itemId link' = do
   oldLink <- itemById itemId . link <<.= link'
   let edit = Edit'SetItemLink itemId oldLink link'
   (edit,) <$> use (itemById itemId)
 
 -- Also updates the list of groups in the category
-setItemGroup :: Uid -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
+setItemGroup :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemGroup itemId newGroup = do
   catId <- view uid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
@@ -778,13 +775,13 @@ setItemGroup itemId newGroup = do
   let edit = Edit'SetItemGroup itemId oldGroup newGroup
   (edit,) <$> use itemLens
 
-setItemKind :: Uid -> ItemKind -> Acid.Update GlobalState (Edit, Item)
+setItemKind :: Uid Item -> ItemKind -> Acid.Update GlobalState (Edit, Item)
 setItemKind itemId kind' = do
   oldKind <- itemById itemId . kind <<.= kind'
   let edit = Edit'SetItemKind itemId oldKind kind'
   (edit,) <$> use (itemById itemId)
 
-setItemDescription :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemDescription :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemDescription itemId description' = do
   oldDescr <- itemById itemId . description <<.=
                 renderMarkdownBlock description'
@@ -792,13 +789,13 @@ setItemDescription itemId description' = do
                (markdownBlockText oldDescr) description'
   (edit,) <$> use (itemById itemId)
 
-setItemNotes :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   oldNotes <- itemById itemId . notes <<.= renderMarkdownBlock notes'
   let edit = Edit'SetItemNotes itemId (markdownBlockText oldNotes) notes'
   (edit,) <$> use (itemById itemId)
 
-setItemEcosystem :: Uid -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
   oldEcosystem <- itemById itemId . ecosystem <<.=
                     renderMarkdownBlock ecosystem'
@@ -806,7 +803,7 @@ setItemEcosystem itemId ecosystem' = do
                (markdownBlockText oldEcosystem) ecosystem'
   (edit,) <$> use (itemById itemId)
 
-setTraitContent :: Uid -> Uid -> Text -> Acid.Update GlobalState (Edit, Trait)
+setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
 setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . content <<.=
                   renderMarkdownInline content'
@@ -816,7 +813,7 @@ setTraitContent itemId traitId content' = do
 
 -- delete
 
-deleteCategory :: Uid -> Acid.Update GlobalState (Either String Edit)
+deleteCategory :: Uid Category -> Acid.Update GlobalState (Either String Edit)
 deleteCategory catId = do
   mbCategory <- preuse (categoryById catId)
   case mbCategory of
@@ -830,7 +827,7 @@ deleteCategory catId = do
           categoriesDeleted %= (category:)
           return (Right (Edit'DeleteCategory catId categoryPos))
 
-deleteItem :: Uid -> Acid.Update GlobalState (Either String Edit)
+deleteItem :: Uid Item -> Acid.Update GlobalState (Either String Edit)
 deleteItem itemId = do
   catId <- view uid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
@@ -859,7 +856,7 @@ deleteItem itemId = do
           categoryLens.itemsDeleted %= (item:)
           return (Right (Edit'DeleteItem itemId itemPos))
 
-deleteTrait :: Uid -> Uid -> Acid.Update GlobalState (Either String Edit)
+deleteTrait :: Uid Item -> Uid Trait -> Acid.Update GlobalState (Either String Edit)
 deleteTrait itemId traitId = do
   let itemLens :: Lens' GlobalState Item
       itemLens = itemById itemId
@@ -894,8 +891,8 @@ deleteTrait itemId traitId = do
 -- other methods
 
 moveItem
-  :: Uid
-  -> Bool    -- ^ 'True' means up, 'False' means down
+  :: Uid Item
+  -> Bool       -- ^ 'True' means up, 'False' means down
   -> Acid.Update GlobalState Edit
 moveItem itemId up = do
   let move = if up then moveUp else moveDown
@@ -904,9 +901,9 @@ moveItem itemId up = do
   return (Edit'MoveItem itemId up)
 
 moveTrait
-  :: Uid
-  -> Uid
-  -> Bool    -- ^ 'True' means up, 'False' means down
+  :: Uid Item
+  -> Uid Trait
+  -> Bool        -- ^ 'True' means up, 'False' means down
   -> Acid.Update GlobalState Edit
 moveTrait itemId traitId up = do
   let move = if up then moveUp else moveDown
@@ -917,7 +914,7 @@ moveTrait itemId traitId up = do
   itemById itemId . cons %= move (hasUid traitId)
   return (Edit'MoveTrait itemId traitId up)
 
-restoreCategory :: Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreCategory :: Uid Category -> Int -> Acid.Update GlobalState (Either String ())
 restoreCategory catId pos = do
   deleted <- use categoriesDeleted
   case find (hasUid catId) deleted of
@@ -927,7 +924,7 @@ restoreCategory catId pos = do
       categories        %= insertAt pos category
       return (Right ())
 
-restoreItem :: Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreItem :: Uid Item -> Int -> Acid.Update GlobalState (Either String ())
 restoreItem itemId pos = do
   let ourCategory = any (hasUid itemId) . view itemsDeleted
   allCategories <- use (categories <> categoriesDeleted)
@@ -942,7 +939,7 @@ restoreItem itemId pos = do
       categoriesDeleted . each . filtered ourCategory .= category'
       return (Right ())
 
-restoreTrait :: Uid -> Uid -> Int -> Acid.Update GlobalState (Either String ())
+restoreTrait :: Uid Item -> Uid Trait -> Int -> Acid.Update GlobalState (Either String ())
 restoreTrait itemId traitId pos = do
   let getItems = view (items <> itemsDeleted)
       ourCategory = any (hasUid itemId) . getItems

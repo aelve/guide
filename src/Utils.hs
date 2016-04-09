@@ -33,6 +33,7 @@ module Utils
   
   -- * UID
   Uid(..),
+  Node,
   randomShortUid,
   randomLongUid,
   uid_,
@@ -150,13 +151,13 @@ sockAddrToIP (Network.SockAddrInet6 _ _ x _) = Just (IPv6 (fromHostAddress6 x))
 sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
-newtype Uid = Uid {uidToText :: Text}
+newtype Uid a = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, PathPiece, Format.Buildable)
 
 -- See Note [acid-state]
 deriveSafeCopy 0 'base ''Uid
 
-instance IsString Uid where
+instance IsString (Uid a) where
   fromString = Uid . T.pack
 
 randomText :: Int -> IO Text
@@ -172,15 +173,18 @@ randomText n = do
   xs <- replicateM (n-1) randomChar
   return (T.pack (x:xs))
 
-randomLongUid :: MonadIO m => m Uid
+randomLongUid :: MonadIO m => m (Uid a)
 randomLongUid = liftIO $ Uid <$> randomText 12
 
 -- These are only used for items and categories (because their uids can occur
 -- in links and so they should look a bit nicer).
-randomShortUid :: MonadIO m => m Uid
+randomShortUid :: MonadIO m => m (Uid a)
 randomShortUid = liftIO $ Uid <$> randomText 8
 
-uid_ :: Uid -> Attribute
+-- | A marker for Uids that would be used with HTML nodes
+data Node
+
+uid_ :: Uid Node -> Attribute
 uid_ = id_ . uidToText
 
 includeJS :: Monad m => Url -> HtmlT m ()

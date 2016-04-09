@@ -71,7 +71,7 @@ instance ToJS Integer where
   toJS = JS . tshow
 instance ToJS Int where
   toJS = JS . tshow
-instance ToJS Uid where
+instance ToJS (Uid a) where
   toJS = toJS . uidToText
 
 -- | A helper class for calling Javascript functions.
@@ -541,7 +541,7 @@ newtype JQuerySelector = JQuerySelector Text
 selectId :: Text -> JQuerySelector
 selectId x = JQuerySelector $ format "#{}" [x]
 
-selectUid :: Uid -> JQuerySelector
+selectUid :: Uid Node -> JQuerySelector
 selectUid x = JQuerySelector $ format "#{}" [x]
 
 selectClass :: Text -> JQuerySelector

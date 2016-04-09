@@ -110,13 +110,13 @@ getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
           => m Config
 getConfig = _config <$> Spock.getState
 
-itemVar :: Path '[Uid]
+itemVar :: Path '[Uid Item]
 itemVar = "item" <//> var
 
-categoryVar :: Path '[Uid]
+categoryVar :: Path '[Uid Category]
 categoryVar = "category" <//> var
 
-traitVar :: Path '[Uid]
+traitVar :: Path '[Uid Trait]
 traitVar = "trait" <//> var
 
 -- Call this whenever a user edits the database

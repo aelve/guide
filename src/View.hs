@@ -813,7 +813,7 @@ renderItemTraits item = do
       textButton "edit off" $
         JS.switchSectionsEverywhere(this, "normal" :: Text)
 
-renderTrait :: MonadIO m => Uid -> Trait -> HtmlT m ()
+renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
       this   = JS.selectId thisId
