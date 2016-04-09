@@ -891,8 +891,8 @@ renderItemNotes item = do
       buttons
       if item^.notes == ""
         then p_ "add something!"
-        else toHtml (item^.notes)
-      buttons
+        else toHtml (item^.notes) >>
+             buttons
       -- TODO: [easy] the lower “hide notes” should scroll back to item when
       -- the notes are closed (but don't scroll if it's already visible after
       -- the notes have been hidden)
