@@ -10,10 +10,15 @@ fi
 git clone --depth 1 https://github.com/aelve/guide-database.git
 mv guide-database state
 
+cd state
+git branch -v
+git status
+cd ..
+
 cabal build
 dist/build/guide/guide --dry-run
 
-rm -rf state
+rm -vrf state
 
 if [ -d "state-old" ]; then
   mv state-old state
