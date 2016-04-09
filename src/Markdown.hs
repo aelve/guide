@@ -134,6 +134,12 @@ instance Eq MarkdownInline where
 instance Eq MarkdownBlock where
   (==) = (==) `on` markdownBlockText
 
+instance Show MarkdownInline where
+  show = show . markdownInlineText
+
+instance Show MarkdownBlock where
+  show = show . markdownBlockText
+
 instance ToHtml MarkdownInline where
   toHtml    = builderToHtml . markdownInlineHtml
   toHtmlRaw = builderToHtml . markdownInlineHtml

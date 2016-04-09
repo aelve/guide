@@ -140,7 +140,7 @@ import Markdown
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- See Note [acid-state]
 deriveSafeCopy 1 'extension ''Trait
@@ -192,7 +192,7 @@ data Item = Item {
   _itemNotes       :: MarkdownBlock,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 deriveSafeCopy 7 'extension ''Item
 makeFields ''Item
@@ -303,7 +303,7 @@ data Category = Category {
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 deriveSafeCopy 3 'extension ''Category
 makeFields ''Category
@@ -553,6 +553,7 @@ data GlobalState = GlobalState {
   _categoriesDeleted :: [Category],
   _pendingEdits :: [(Edit, EditDetails)],
   _editIdCounter :: Int }            -- ID of next edit that will be made
+  deriving (Show)
 
 deriveSafeCopy 2 'extension ''GlobalState
 makeLenses ''GlobalState
