@@ -38,7 +38,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   replaceWithData, prependData, appendData,
   moveNodeUp, moveNodeDown,
   switchSection, switchSectionsEverywhere,
-  fadeIn,
+  fadeIn, fadeOutAndRemove,
   setMonospace,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
@@ -201,6 +201,9 @@ switchSectionsEverywhere =
     autosize.update($('textarea'));
   |]
 
+-- | This function makes the node half-transparent and then animates it to
+-- full opaqueness. It's useful when e.g. something has been moved and you
+-- want to “flash” the item to draw user's attention to it.
 fadeIn :: JSFunction a => a
 fadeIn =
   makeJSFunction "fadeIn" ["node"]
@@ -208,18 +211,19 @@ fadeIn =
     $(node).fadeTo(0,0.2).fadeTo(600,1);
   |]
 
-{- Note [fadeOut]
-~~~~~~~~~~~~~~~~~
-
-There is a 'fadeIn' utility function here, but no 'fadeOut' – because it's only used when deleting items and the problem with jQuery is that if you do
-
-    fadeOut(x);
-    $(x).remove();
-
-then the item is removed before the animation is complete. We have to explicitly chain them:
-
-    $(x).fadeTo(600,0.2,function(){$(x).remove();})
--}
+-- | This function animates the node to half-transparency and then removes it
+-- completely. It's useful when you're removing something and you want to
+-- draw user's attention to the fact that it's being removed.
+--
+-- The reason there isn't a simple @fadeOut@ utility function here is that
+-- removal has to be done by passing a callback to @fadeTo@. In jQuery you
+-- can't simply wait until the animation has stopped.
+fadeOutAndRemove :: JSFunction a => a
+fadeOutAndRemove =
+  makeJSFunction "fadeOutAndRemove" ["node"]
+  [text|
+     $(node).fadeTo(400,0.2,function(){$(node).remove()});
+  |]
 
 setMonospace :: JSFunction a => a
 setMonospace =
@@ -401,8 +405,7 @@ deleteCategory =
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/category/"+catId)
        .done(function () {
-          // see Note [fadeOut]
-          $(catNode).fadeTo(400,0.2,function(){$(catNode).remove()});
+          fadeOutAndRemove(catNode);
        });
     }
   |]
@@ -436,8 +439,7 @@ deleteTrait =
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId)
        .done(function () {
-          // see Note [fadeOut]
-          $(traitNode).fadeTo(400,0.2,function(){$(traitNode).remove()});
+          fadeOutAndRemove(traitNode);
        });
     }
   |]
@@ -470,8 +472,7 @@ acceptEdit =
   [text|
     $.post("/admin/edit/"+editId+"/accept")
      .done(function () {
-        // see Note [fadeOut]
-        $(editNode).fadeTo(400,0.2,function(){$(editNode).remove()});
+        fadeOutAndRemove(editNode);
      });
   |]
 
@@ -482,14 +483,11 @@ undoEdit =
     $.post("/admin/edit/"+editId+"/undo")
      .done(function (data) {
         if (data == "")
-          // see Note [fadeOut]
-          $(editNode).fadeTo(400,0.2,function(){$(editNode).remove()})
+          fadeOutAndRemove(editNode);
         else
           alert("couldn't undo edit: " + data);
      });
   |]
-
--- TODO: write something like fadeOutAndRemove
 
 deleteItem :: JSFunction a => a
 deleteItem =
@@ -498,8 +496,7 @@ deleteItem =
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/item/"+itemId)
        .done(function () {
-          // see Note [fadeOut]
-          $(itemNode).fadeTo(400,0.2,function(){$(itemNode).remove()});
+          fadeOutAndRemove(itemNode);
        });
     }
   |]
