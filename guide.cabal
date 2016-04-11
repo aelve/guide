@@ -65,8 +65,6 @@ executable guide
                      , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*
                      , network
-                     -- not needed once the migration of EditDetails is done
-                     , network-info
                      , path-pieces
                      , random >= 1.1
                      , safecopy

@@ -127,7 +127,6 @@ import Data.Text (Text)
 import Data.Time
 -- Network
 import Data.IP
-import qualified Network.Info as Network
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
@@ -143,7 +142,7 @@ data Trait = Trait {
   deriving (Eq, Show)
 
 -- See Note [acid-state]
-deriveSafeCopy 1 'extension ''Trait
+deriveSafeCopySimple 2 'extension ''Trait
 makeFields ''Trait
 
 -- Old version, needed for safe migration. It can most likely be already
@@ -151,17 +150,18 @@ makeFields ''Trait
 -- template for future migrations.
 --
 -- Again, see Note [acid-state].
-data Trait_v0 = Trait_v0 {
-  _traitUid_v0 :: Uid Trait,
-  _traitContent_v0 :: Text }
+data Trait_v1 = Trait_v1 {
+  _traitUid_v1 :: Uid Trait,
+  _traitContent_v1 :: MarkdownInline }
 
-deriveSafeCopy 0 'base ''Trait_v0
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 1 'base ''Trait_v1
 
 instance Migrate Trait where
-  type MigrateFrom Trait = Trait_v0
-  migrate Trait_v0{..} = Trait {
-    _traitUid = _traitUid_v0,
-    _traitContent = renderMarkdownInline _traitContent_v0 }
+  type MigrateFrom Trait = Trait_v1
+  migrate Trait_v1{..} = Trait {
+    _traitUid = _traitUid_v1,
+    _traitContent = _traitContent_v1 }
 
 --
 
@@ -171,8 +171,24 @@ data ItemKind
   | Other
   deriving (Eq, Show)
 
-deriveSafeCopy 2 'base ''ItemKind
+deriveSafeCopySimple 3 'extension ''ItemKind
 makeFields ''ItemKind
+
+data ItemKind_v2
+  = Library_v2 {_itemKindHackageName_v2 :: Maybe Text}
+  | Tool_v2 {_itemKindHackageName_v2 :: Maybe Text}
+  | Other_v2
+
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 2 'base ''ItemKind_v2
+
+instance Migrate ItemKind where
+  type MigrateFrom ItemKind = ItemKind_v2
+  migrate Library_v2{..} = Library {
+    _itemKindHackageName = _itemKindHackageName_v2 }
+  migrate Tool_v2{..} = Tool {
+    _itemKindHackageName = _itemKindHackageName_v2 }
+  migrate Other_v2 = Other
 
 --
 
@@ -194,50 +210,63 @@ data Item = Item {
   _itemKind        :: ItemKind }
   deriving (Eq, Show)
 
-deriveSafeCopy 7 'extension ''Item
+deriveSafeCopySimple 8 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v6 = Item_v6 {
-  _itemUid_v6         :: Uid Item,
-  _itemName_v6        :: Text,
-  _itemCreated_v6     :: UTCTime,
-  _itemGroup__v6      :: Maybe Text,
-  _itemDescription_v6 :: MarkdownBlock,
-  _itemPros_v6        :: [Trait],
-  _itemCons_v6        :: [Trait],
-  _itemEcosystem_v6   :: MarkdownBlock,
-  _itemNotes_v6       :: MarkdownBlock,
-  _itemLink_v6        :: Maybe Url,
-  _itemKind_v6        :: ItemKind }
+data Item_v7 = Item_v7 {
+  _itemUid_v7         :: Uid Item,
+  _itemName_v7        :: Text,
+  _itemCreated_v7     :: UTCTime,
+  _itemGroup__v7      :: Maybe Text,
+  _itemDescription_v7 :: MarkdownBlock,
+  _itemPros_v7        :: [Trait],
+  _itemProsDeleted_v7 :: [Trait],
+  _itemCons_v7        :: [Trait],
+  _itemConsDeleted_v7 :: [Trait],
+  _itemEcosystem_v7   :: MarkdownBlock,
+  _itemNotes_v7       :: MarkdownBlock,
+  _itemLink_v7        :: Maybe Url,
+  _itemKind_v7        :: ItemKind }
 
-deriveSafeCopy 6 'base ''Item_v6
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 7 'base ''Item_v7
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v6
-  migrate Item_v6{..} = Item {
-    _itemUid = _itemUid_v6,
-    _itemName = _itemName_v6,
-    _itemCreated = _itemCreated_v6,
-    _itemGroup_ = _itemGroup__v6,
-    _itemDescription = _itemDescription_v6,
-    _itemPros = _itemPros_v6,
-    _itemProsDeleted = [],
-    _itemCons = _itemCons_v6,
-    _itemConsDeleted = [],
-    _itemEcosystem = _itemEcosystem_v6,
-    _itemNotes = _itemNotes_v6,
-    _itemLink = _itemLink_v6,
-    _itemKind = _itemKind_v6 }
+  type MigrateFrom Item = Item_v7
+  migrate Item_v7{..} = Item {
+    _itemUid = _itemUid_v7,
+    _itemName = _itemName_v7,
+    _itemCreated = _itemCreated_v7,
+    _itemGroup_ = _itemGroup__v7,
+    _itemDescription = _itemDescription_v7,
+    _itemPros = _itemPros_v7,
+    _itemProsDeleted = _itemProsDeleted_v7,
+    _itemCons = _itemCons_v7,
+    _itemConsDeleted = _itemConsDeleted_v7,
+    _itemEcosystem = _itemEcosystem_v7,
+    _itemNotes = _itemNotes_v7,
+    _itemLink = _itemLink_v7,
+    _itemKind = _itemKind_v7 }
 
 --
 
 data Hue = NoHue | Hue Int
   deriving (Eq, Ord)
 
-deriveSafeCopy 0 'base ''Hue
+deriveSafeCopySimple 1 'extension ''Hue
+
+data Hue_v0 = NoHue_v0 | Hue_v0 Int
+
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 0 'base ''Hue_v0
+
+instance Migrate Hue where
+  type MigrateFrom Hue = Hue_v0
+  migrate NoHue_v0 = NoHue
+  migrate (Hue_v0 i) = Hue i
 
 instance Show Hue where
   show NoHue   = "0"
@@ -305,7 +334,7 @@ data Category = Category {
   _categoryItemsDeleted :: [Item] }
   deriving (Eq, Show)
 
-deriveSafeCopy 3 'extension ''Category
+deriveSafeCopySimple 4 'extension ''Category
 makeFields ''Category
 
 categorySlug :: Category -> Text
@@ -315,26 +344,28 @@ categorySlug category =
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v2 = Category_v2 {
-  _categoryUid_v2 :: Uid Category,
-  _categoryTitle_v2 :: Text,
-  _categoryCreated_v2 :: UTCTime,
-  _categoryNotes_v2 :: MarkdownBlock,
-  _categoryGroups_v2 :: Map Text Hue,
-  _categoryItems_v2 :: [Item] }
+data Category_v3 = Category_v3 {
+  _categoryUid_v3 :: Uid Category,
+  _categoryTitle_v3 :: Text,
+  _categoryCreated_v3 :: UTCTime,
+  _categoryNotes_v3 :: MarkdownBlock,
+  _categoryGroups_v3 :: Map Text Hue,
+  _categoryItems_v3 :: [Item],
+  _categoryItemsDeleted_v3 :: [Item] }
 
-deriveSafeCopy 2 'base ''Category_v2
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 3 'base ''Category_v3
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v2
-  migrate Category_v2{..} = Category {
-    _categoryUid = _categoryUid_v2,
-    _categoryTitle = _categoryTitle_v2,
-    _categoryCreated = _categoryCreated_v2,
-    _categoryNotes = _categoryNotes_v2,
-    _categoryGroups = _categoryGroups_v2,
-    _categoryItems = _categoryItems_v2,
-    _categoryItemsDeleted = [] }
+  type MigrateFrom Category = Category_v3
+  migrate Category_v3{..} = Category {
+    _categoryUid = _categoryUid_v3,
+    _categoryTitle = _categoryTitle_v3,
+    _categoryCreated = _categoryCreated_v3,
+    _categoryNotes = _categoryNotes_v3,
+    _categoryGroups = _categoryGroups_v3,
+    _categoryItems = _categoryItems_v3,
+    _categoryItemsDeleted = _categoryItemsDeleted_v3 }
 
 -- Edits
 
@@ -427,9 +458,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopy 1 'extension ''Edit
+deriveSafeCopySimple 2 'extension ''Edit
 
-genVer ''Edit 0 [
+genVer ''Edit 1 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -456,11 +487,12 @@ genVer ''Edit 0 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopy 0 'base ''Edit_v0
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 1 'base ''Edit_v1
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v0
-  migrate = $(migrateVer ''Edit 0 [
+  type MigrateFrom Edit = Edit_v1
+  migrate = $(migrateVer ''Edit 1 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -518,31 +550,22 @@ data EditDetails = EditDetails {
   editId   :: Int }
   deriving (Eq, Show)
 
-deriveSafeCopy 1 'extension ''EditDetails
+deriveSafeCopySimple 2 'extension ''EditDetails
 
-data IP_v0 = IPv4_v0 Network.IPv4 | IPv6_v0 Network.IPv6
+data EditDetails_v1 = EditDetails_v1 {
+  editIP_v1   :: Maybe IP,
+  editDate_v1 :: UTCTime,
+  editId_v1   :: Int }
 
-deriveSafeCopy 0 'base ''Network.IPv4
-deriveSafeCopy 0 'base ''Network.IPv6
-deriveSafeCopy 0 'base ''IP_v0
-
--- TODO: When this goes away, remove the dependency on network-info
-data EditDetails_v0 = EditDetails_v0 {
-  editIP_v0   :: Maybe IP_v0,
-  editDate_v0 :: UTCTime,
-  editId_v0   :: Int }
-
-deriveSafeCopy 0 'base ''EditDetails_v0
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 1 'base ''EditDetails_v1
 
 instance Migrate EditDetails where
-  type MigrateFrom EditDetails = EditDetails_v0
-  migrate EditDetails_v0{..} = EditDetails {
-    editIP = migrateIP <$> editIP_v0,
-    editDate = editDate_v0,
-    editId = editId_v0 }
-    where
-      migrateIP (IPv4_v0 ip) = IPv4 (read (show ip))
-      migrateIP (IPv6_v0 ip) = IPv6 (read (show ip))
+  type MigrateFrom EditDetails = EditDetails_v1
+  migrate EditDetails_v1{..} = EditDetails {
+    editIP = editIP_v1,
+    editDate = editDate_v1,
+    editId = editId_v1 }
 
 -- TODO: add a function to create a checkpoint to the admin panel?
 
@@ -555,22 +578,25 @@ data GlobalState = GlobalState {
   _editIdCounter :: Int }            -- ID of next edit that will be made
   deriving (Show)
 
-deriveSafeCopy 2 'extension ''GlobalState
+deriveSafeCopySimple 3 'extension ''GlobalState
 makeLenses ''GlobalState
 
-data GlobalState_v1 = GlobalState_v1 {
-  _categories_v1 :: [Category],
-  _categoriesDeleted_v1 :: [Category] }
+data GlobalState_v2 = GlobalState_v2 {
+  _categories_v2 :: [Category],
+  _categoriesDeleted_v2 :: [Category],
+  _pendingEdits_v2 :: [(Edit, EditDetails)],
+  _editIdCounter_v2 :: Int }
 
-deriveSafeCopy 1 'base ''GlobalState_v1
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 2 'base ''GlobalState_v2
 
 instance Migrate GlobalState where
-  type MigrateFrom GlobalState = GlobalState_v1
-  migrate GlobalState_v1{..} = GlobalState {
-    _categories = _categories_v1,
-    _categoriesDeleted = _categoriesDeleted_v1,
-    _pendingEdits = [],
-    _editIdCounter = 0 }
+  type MigrateFrom GlobalState = GlobalState_v2
+  migrate GlobalState_v2{..} = GlobalState {
+    _categories = _categories_v2,
+    _categoriesDeleted = _categoriesDeleted_v2,
+    _pendingEdits = _pendingEdits_v2,
+    _editIdCounter = _editIdCounter_v2 }
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs

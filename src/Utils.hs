@@ -143,9 +143,9 @@ makeSlug =
   T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
   T.map (\x -> if x == '_' then '-' else x)
 
-deriveSafeCopy 0 'base ''IPv4
-deriveSafeCopy 0 'base ''IPv6
-deriveSafeCopy 0 'base ''IP
+deriveSafeCopySimple 0 'base ''IPv4
+deriveSafeCopySimple 0 'base ''IPv6
+deriveSafeCopySimple 0 'base ''IP
 
 sockAddrToIP :: Network.SockAddr -> Maybe IP
 sockAddrToIP (Network.SockAddrInet  _   x)   = Just (IPv4 (fromHostAddress x))
@@ -157,16 +157,17 @@ newtype Uid a = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, PathPiece, Format.Buildable)
 
 -- See Note [acid-state]
-deriveSafeCopy 1 'extension ''Uid
+deriveSafeCopySimple 2 'extension ''Uid
 
-newtype Uid_v0 = Uid_v0 {uidToText_v0 :: Text}
+newtype Uid_v1 a = Uid_v1 {uidToText_v1 :: Text}
 
-deriveSafeCopy 0 'base ''Uid_v0
+-- TODO: at the next migration change this to deriveSafeCopySimple!
+deriveSafeCopy 1 'base ''Uid_v1
 
-instance Migrate (Uid a) where
-  type MigrateFrom (Uid a) = Uid_v0
-  migrate Uid_v0{..} = Uid {
-    uidToText = uidToText_v0 }
+instance SafeCopy a => Migrate (Uid a) where
+  type MigrateFrom (Uid a) = Uid_v1 a
+  migrate Uid_v1{..} = Uid {
+    uidToText = uidToText_v1 }
 
 instance IsString (Uid a) where
   fromString = Uid . T.pack
