@@ -3,7 +3,7 @@ set -ev
 
 # Test that the official database can be loaded
 
-if [ -d "state" ]; then
+if [ -d state ]; then
   mv state state-old
 fi
 
@@ -13,13 +13,14 @@ mv guide-database state
 cd state
 git branch -v
 git status
+ls
 cd ..
 
 cabal build
 dist/build/guide/guide --dry-run
 
-rm -vrf state
+rm -rf state
 
-if [ -d "state-old" ]; then
+if [ -d state-old ]; then
   mv state-old state
 fi
