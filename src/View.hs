@@ -115,11 +115,15 @@ A section is something that can be shown or hidden. You define a section by usin
       renderEditbox
       ...
 
+You can even give 2 names to a section – e.g. "normal editing" if you want the section be visible both in “normal” mode and in “editing” mode.
+
 The list parameter is used to add attributes to the section. 'shown' is an attribute that means that the section is normally visible; 'noScriptShown' means that the section will be visible when Javascipt is disabled. Sections without either attribute will be hidden. (Usually 'shown' and 'noScriptShown' go together, but not always.)
 
 When several sections are in the same container (e.g. a <div>), you can toggle between them with 'JS.switchSection', which shows the section (or several sections) with given name, and hides all sections with other names. The elements that aren't sections are not affected.
 
 Also, there's another function available – 'JS.switchSectionEverywhere' – that switches sections everywhere inside the container, not only among container's direct children. It's useful when you have something like a list of pros/cons and you want to switch them all into the “editable” state.
+
+////////////////////////////////////
 
 And now, here's how it's all implemented.
 
@@ -819,11 +823,10 @@ renderTrait itemId trait = do
       this   = JS.selectId thisId
   li_ [id_ thisId] $ do
 
-    sectionSpan "normal" [shown, noScriptShown] $ do
+    sectionSpan "normal editable" [shown, noScriptShown] $ do
       toHtml (trait^.content)
 
-    section "editable" [] $ do
-      toHtml (trait^.content)
+    sectionSpan "editable" [] $ do
       br_ []
       imgButton "move trait up" "/arrow-thick-top.svg" [width_ "12"] $
         JS.moveTraitUp (itemId, trait^.uid, this)
@@ -1060,7 +1063,7 @@ noScriptShown  = class_ " noscript-shown "
 -- See Note [show-hide]
 section
   :: Monad m
-  => Text           -- ^ Section name
+  => Text           -- ^ Section name (or names)
   -> [Attribute]    -- ^ Additional attributes
   -> HtmlT m ()     -- ^ Content of the section
   -> HtmlT m ()
@@ -1069,7 +1072,7 @@ section t attrs = div_ (class_ (t <> " section ") : attrs)
 -- See Note [show-hide]
 sectionSpan
   :: Monad m
-  => Text           -- ^ Section name
+  => Text           -- ^ Section name (or names)
   -> [Attribute]    -- ^ Additional attributes
   -> HtmlT m ()     -- ^ Content of the section
   -> HtmlT m ()
