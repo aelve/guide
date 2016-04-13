@@ -159,6 +159,7 @@ renderAdmin globalState edits = do
     includeJS "/js.js"
     includeJS "/jquery-2.2.0.min.js"
     includeCSS "/markup.css"
+    includeCSS "/admin.css"
     title_ "admin – Aelve Guide"
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
@@ -232,10 +233,10 @@ renderEdit globalState edit = do
       " to category " >> printCategory catId
     Edit'AddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
-      p_ $ toHtml (renderMarkdownInline content')
+      blockquote_ $ p_ $ toHtml (renderMarkdownInline content')
     Edit'AddCon itemId _traitId content' -> do
       p_ $ "added con to item " >> printItem itemId
-      p_ $ toHtml (renderMarkdownInline content')
+      blockquote_ $ p_ $ toHtml (renderMarkdownInline content')
 
     -- Change category properties
     Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
@@ -244,8 +245,8 @@ renderEdit globalState edit = do
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ "changed notes of category " >> printCategory catId
       table_ $ tr_ $ do
-        td_ $ toHtml (renderMarkdownBlock oldNotes)
-        td_ $ toHtml (renderMarkdownBlock newNotes)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldNotes)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newNotes)
 
     -- Change item properties
     Edit'SetItemName _itemId oldName newName -> p_ $ do
@@ -266,25 +267,25 @@ renderEdit globalState edit = do
     Edit'SetItemDescription itemId oldDescr newDescr -> do
       p_ $ "changed description of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ toHtml (renderMarkdownBlock oldDescr)
-        td_ $ toHtml (renderMarkdownBlock newDescr)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldDescr)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newDescr)
     Edit'SetItemNotes itemId oldNotes newNotes -> do
       p_ $ "changed notes of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ toHtml (renderMarkdownBlock oldNotes)
-        td_ $ toHtml (renderMarkdownBlock newNotes)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldNotes)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newNotes)
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
       p_ $ "changed ecosystem of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ toHtml (renderMarkdownBlock oldEcosystem)
-        td_ $ toHtml (renderMarkdownBlock newEcosystem)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldEcosystem)
+        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newEcosystem)
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ "changed trait of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ p_ (toHtml (renderMarkdownInline oldContent))
-        td_ $ p_ (toHtml (renderMarkdownInline newContent))
+        td_ $ blockquote_ $ p_ (toHtml (renderMarkdownInline oldContent))
+        td_ $ blockquote_ $ p_ (toHtml (renderMarkdownInline newContent))
 
     -- Delete
     Edit'DeleteCategory catId _pos -> p_ $ do
@@ -296,7 +297,7 @@ renderEdit globalState edit = do
     Edit'DeleteTrait itemId traitId _pos -> do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "deleted trait from item " >> quote (toHtml (item^.name))
-      p_ (toHtml (trait^.content))
+      blockquote_ $ p_ $ toHtml (trait^.content)
 
     -- Other
     Edit'MoveItem itemId direction -> p_ $ do
@@ -306,7 +307,7 @@ renderEdit globalState edit = do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "moved trait of item " >> quote (toHtml (item^.name)) >>
            if direction then " up" else " down"
-      p_ (toHtml (trait^.content))
+      blockquote_ $ p_ $ toHtml (trait^.content)
 
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 

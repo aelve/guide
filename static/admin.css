@@ -1,0 +1,49 @@
+/* Making textboxes and other text inputs behave normally (i.e. now an input
+   with “width:100%;padding:10px” is going to take 100% of width, not
+   100%+20px) */
+
+*, *:before, *:after {
+  box-sizing: border-box; }
+
+body {
+  font-family: sans-serif; }
+
+.text-button {
+  font-size: 10pt;
+  font-weight: normal; }
+
+.text-button::before {content: "[";}
+.text-button::after  {content: "]";}
+
+textarea {
+  font-family: sans-serif;
+  font-size: 100%; }
+
+input {
+  font-size: 100%; }
+
+.text-button > a:visited {color: #008ACE;}
+
+textarea {
+  border: 1px solid #ccc;
+  padding: 5px 7px; }
+
+textarea:focus {
+  outline: 0px none;
+  border: 1px solid #07C; }
+
+table {
+  width: 100%;
+  border: none;
+  table-layout: fixed; }
+
+td {
+  vertical-align: top;
+  width: 100%;
+  padding: 0.5em 0.5em; }
+
+td:first-child {
+  padding-left: 0; }
+
+td:last-child {
+  padding-right: 0; }
