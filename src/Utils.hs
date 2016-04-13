@@ -25,6 +25,9 @@ module Utils
   deleteAt,
   insertAt,
 
+  -- * 'Eq'
+  equating,
+
   -- * URLs
   Url,
   sanitiseUrl,
@@ -124,6 +127,9 @@ insertAt :: Int -> a -> [a] -> [a]
 insertAt _ a   []   = [a]
 insertAt 0 a   xs   = a:xs
 insertAt n a (x:xs) = x : insertAt (n-1) a xs
+
+equating :: Eq b => (a -> b) -> (a -> a -> Bool)
+equating f = (==) `on` f
 
 type Url = Text
 

@@ -159,25 +159,31 @@ renderAdmin globalState edits = do
     includeJS "/js.js"
     includeJS "/jquery-2.2.0.min.js"
     includeCSS "/markup.css"
+    title_ "admin – Aelve Guide"
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
 
   body_ $ do
-    ul_ $ for_ edits $ \(edit, EditDetails{..}) -> li_ $ do
-      editNode <- thisNode
-      p_ $ do
-        case editIP of
-          Nothing -> "<unknown IP>"
-          Just ip -> toHtml (show ip)
-        ", "
-        toHtml =<< liftIO (humanReadableTime editDate)
-        emptySpan "1em"
-        textButton "accept" $
-          JS.acceptEdit (editId, editNode)
-        emptySpan "0.5em"
-        textButton "try to undo" $
-          JS.undoEdit (editId, editNode)
-      renderEdit globalState edit
+    h1_ "Pending edits"
+    -- Group edits by IP
+    let editGroups = groupBy (equating (editIP . snd)) edits
+    -- For each group, show the IP and then edits as a list
+    for_ editGroups $ \editGroup -> do
+      h2_ $ case editIP (snd (head editGroup)) of
+              Nothing -> "<unknown IP>"
+              Just ip -> toHtml (show ip)
+      ul_ $ do
+        for_ editGroup $ \(edit, EditDetails{..}) -> li_ $ do
+          editNode <- thisNode
+          p_ $ do
+            toHtml =<< liftIO (humanReadableTime editDate)
+            emptySpan "1em"
+            textButton "accept" $
+              JS.acceptEdit (editId, editNode)
+            emptySpan "0.5em"
+            textButton "try to undo" $
+              JS.undoEdit (editId, editNode)
+          renderEdit globalState edit
 
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves
