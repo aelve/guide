@@ -19,7 +19,7 @@ The `config.json` file contains the config (it will be created at the 1st start)
     $ cabal build
     $ dist/build/guide/guide
 
-And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>.
+And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:8080/admin>.
 
 # How to install on a server
 
