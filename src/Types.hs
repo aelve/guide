@@ -565,8 +565,6 @@ instance Migrate EditDetails where
     editDate = editDate_v1,
     editId = editId_v1 }
 
--- TODO: add a function to create a checkpoint to the admin panel?
-
 -- See Note [acid-state]
 
 data GlobalState = GlobalState {

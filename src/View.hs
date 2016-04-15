@@ -163,6 +163,10 @@ renderAdmin globalState edits = do
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
 
   body_ $ do
+    h1_ "Miscellaneous"
+    buttonUid <- randomLongUid
+    button "Create checkpoint" [uid_ buttonUid] $
+      JS.createCheckpoint [JS.selectUid buttonUid]
     h1_ "Pending edits"
     renderEdits globalState (map (,Nothing) edits)
 

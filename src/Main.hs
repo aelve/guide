@@ -383,6 +383,41 @@ addMethods = Spock.subcomponent "add" $ do
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
 
+adminMethods :: SpockM () () ServerState ()
+adminMethods = Spock.subcomponent "admin" $ do
+  -- Accept an edit
+  Spock.post ("edit" <//> var <//> "accept") $ \n -> do
+    dbUpdate (RemovePendingEdit n)
+    return ()
+  -- Undo an edit
+  Spock.post ("edit" <//> var <//> "undo") $ \n -> do
+    (edit, _) <- dbQuery (GetEdit n)
+    res <- undoEdit edit
+    case res of
+      Left err -> Spock.text (T.pack err)
+      Right () -> do dbUpdate (RemovePendingEdit n)
+                     Spock.text ""
+  -- Accept a range of edits
+  Spock.post ("edits" <//> var <//> var <//> "accept") $ \m n -> do
+    dbUpdate (RemovePendingEdits m n)
+  -- Undo a range of edits
+  Spock.post ("edits" <//> var <//> var <//> "undo") $ \m n -> do
+    edits <- dbQuery (GetEdits m n)
+    s <- dbQuery GetGlobalState
+    failed <- fmap catMaybes $ for edits $ \(edit, details) -> do
+      res <- undoEdit edit
+      case res of
+        Left err -> return (Just ((edit, details), Just err))
+        Right () -> do dbUpdate (RemovePendingEdit (editId details))
+                       return Nothing
+    case failed of
+      [] -> Spock.text ""
+      _  -> lucidIO $ renderEdits s failed
+  -- Create a checkpoint
+  Spock.post "create-checkpoint" $ do
+    db <- _db <$> Spock.getState
+    liftIO $ createCheckpoint db
+
 otherMethods :: SpockM () () ServerState ()
 otherMethods = do
   -- Moving things
@@ -529,36 +564,12 @@ main = do
         lucidWithConfig $ renderRoot
 
       -- Admin page
-      prehook adminHook $
-        Spock.subcomponent "admin" $ do
-          Spock.get root $ do
-            edits <- view pendingEdits <$> dbQuery GetGlobalState
-            s <- dbQuery GetGlobalState
-            lucidIO $ renderAdmin s edits
-          Spock.post ("edit" <//> var <//> "accept") $ \n -> do
-            dbUpdate (RemovePendingEdit n)
-            return ()
-          Spock.post ("edit" <//> var <//> "undo") $ \n -> do
-            (edit, _) <- dbQuery (GetEdit n)
-            res <- undoEdit edit
-            case res of
-              Left err -> Spock.text (T.pack err)
-              Right () -> do dbUpdate (RemovePendingEdit n)
-                             Spock.text ""
-          Spock.post ("edits" <//> var <//> var <//> "accept") $ \m n -> do
-            dbUpdate (RemovePendingEdits m n)
-          Spock.post ("edits" <//> var <//> var <//> "undo") $ \m n -> do
-            edits <- dbQuery (GetEdits m n)
-            s <- dbQuery GetGlobalState
-            failed <- fmap catMaybes $ for edits $ \(edit, details) -> do
-              res <- undoEdit edit
-              case res of
-                Left err -> return (Just ((edit, details), Just err))
-                Right () -> do dbUpdate (RemovePendingEdit (editId details))
-                               return Nothing
-            case failed of
-              [] -> Spock.text ""
-              _  -> lucidIO $ renderEdits s failed
+      prehook adminHook $ do
+        Spock.get "admin" $ do
+          edits <- view pendingEdits <$> dbQuery GetGlobalState
+          s <- dbQuery GetGlobalState
+          lucidIO $ renderAdmin s edits
+        adminMethods
 
       -- Donation page
       Spock.get "donate" $

@@ -54,10 +54,9 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   moveTraitUp, moveTraitDown, deleteTrait,
   moveItemUp, moveItemDown, deleteItem,
   -- Admin things
-  acceptEdit,
-  undoEdit,
-  acceptBlock,
-  undoBlock ]
+  acceptEdit, undoEdit,
+  acceptBlock, undoBlock,
+  createCheckpoint ]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -511,6 +510,16 @@ undoBlock =
           fadeOutAndRemove(blockNode);
         else
           $(blockNode).replaceWith(data);
+     });
+  |]
+
+createCheckpoint :: JSFunction a => a
+createCheckpoint =
+  makeJSFunction "createCheckpoint" ["buttonNode"]
+  [text|
+    $.post("/admin/create-checkpoint")
+     .done(function () {
+        fadeIn(buttonNode);
      });
   |]
 
