@@ -144,7 +144,7 @@ extractSections blocks = go sections
 renderMarkdownInline :: Text -> MarkdownInline
 renderMarkdownInline s = MarkdownInline s (htmlToBuilder md) inlines
   where
-    Doc opts blocks = markdown def{allowRawHtml=False} s
+    Doc opts blocks = markdown def s
     inlines = extractInlines =<< blocks
     md = renderInlines opts (walk shortcutLinks inlines)
     --
