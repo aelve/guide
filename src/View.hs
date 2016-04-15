@@ -149,10 +149,6 @@ renderRoot = do
     h1_ "Aelve Guide"
     h2_ (a_ [href_ "/haskell"] "Haskell")
 
--- TODO: on the search page there should be a link to the main page
-
--- TODO: when the “q” parameter is empty, don't add it at all
-
 -- TODO: show a “category not found” page
 
 renderAdmin :: MonadIO m => GlobalState -> [(Edit, EditDetails)] -> HtmlT m ()
@@ -343,7 +339,10 @@ renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
-    h1_ "The Haskeller's guide"
+    case mbSearchQuery of
+      Nothing -> h1_ "The Haskeller's guide"
+      -- A search page isn't the main page, so we need a link to the main page
+      Just _  -> h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning
     renderHelp
     form_ $ do
