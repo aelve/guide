@@ -574,10 +574,14 @@ renderCategoryNotes category = do
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
-    section "editing" [] $
+    section "editing" [] $ do
+      contents <- if category^.notes == ""
+        then liftIO $ renderMarkdownBlock <$>
+               T.readFile "static/category-notes-template.md"
+        else return (category^.notes)
       markdownEditor
         [rows_ "10"]
-        (category^.notes)
+        contents
         (\val -> JS.submitCategoryNotes (this, category^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
