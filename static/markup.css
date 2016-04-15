@@ -1,3 +1,6 @@
+h3 {
+  border-bottom: 1px solid black; }
+
 blockquote {
   background: rgba(10,10,10,0.075);
   border-left: 5px solid rgba(10,10,10,0.15);
