@@ -55,7 +55,9 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   moveItemUp, moveItemDown, deleteItem,
   -- Admin things
   acceptEdit,
-  undoEdit ]
+  undoEdit,
+  acceptBlock,
+  undoBlock ]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -486,6 +488,29 @@ undoEdit =
           fadeOutAndRemove(editNode);
         else
           alert("couldn't undo edit: " + data);
+     });
+  |]
+
+acceptBlock :: JSFunction a => a
+acceptBlock =
+  makeJSFunction "acceptBlock" ["editLatest", "editEarliest", "blockNode"]
+  [text|
+    $.post("/admin/edits/"+editLatest+"/"+editEarliest+"/accept")
+     .done(function () {
+        fadeOutAndRemove(blockNode);
+     });
+  |]
+
+undoBlock :: JSFunction a => a
+undoBlock =
+  makeJSFunction "undoBlock" ["editLatest", "editEarliest", "blockNode"]
+  [text|
+    $.post("/admin/edits/"+editLatest+"/"+editEarliest+"/undo")
+     .done(function (data) {
+        if (data == "")
+          fadeOutAndRemove(blockNode);
+        else
+          $(blockNode).replaceWith(data);
      });
   |]
 

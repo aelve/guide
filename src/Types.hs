@@ -96,9 +96,9 @@ module Types
   DeleteTrait(..),
 
   -- ** edits
-  GetEdit(..),
+  GetEdit(..), GetEdits(..),
   RegisterEdit(..),
-  RemovePendingEdit(..),
+  RemovePendingEdit(..), RemovePendingEdits(..),
 
   -- ** other
   MoveItem(..),
@@ -574,8 +574,10 @@ instance Migrate EditDetails where
 data GlobalState = GlobalState {
   _categories :: [Category],
   _categoriesDeleted :: [Category],
+  -- | Pending edits, newest first
   _pendingEdits :: [(Edit, EditDetails)],
-  _editIdCounter :: Int }            -- ID of next edit that will be made
+  -- | ID of next edit that will be made
+  _editIdCounter :: Int }
   deriving (Show)
 
 deriveSafeCopySimple 3 'extension ''GlobalState
@@ -737,8 +739,8 @@ addCon itemId traitId text' = do
 
 -- set
 
--- Almost all of these return an edit that could be used to undo the action
--- they've just done
+-- Almost all of these return an 'Edit' that corresponds to the edit that has
+-- been performed.
 
 -- | Can be useful sometimes (e.g. if you want to regenerate all uids), but
 -- generally shouldn't be used.
@@ -1010,6 +1012,14 @@ getEdit n = do
     Nothing   -> error ("no edit with id " ++ show n)
     Just edit -> return edit
 
+-- | Returns edits in order from latest to earliest.
+getEdits
+  :: Int            -- ^ Id of latest edit
+  -> Int            -- ^ Id of earliest edit
+  -> Acid.Query GlobalState [(Edit, EditDetails)]
+getEdits m n =
+  filter (\(_, d) -> n <= editId d && editId d <= m) <$> view pendingEdits
+
 -- | The edit won't be registered if it's vacuous (see 'isVacuousEdit').
 registerEdit
   :: Edit
@@ -1034,6 +1044,13 @@ removePendingEdit n = do
       pendingEdits %= deleteFirst ((== n) . editId . snd)
       return edit
 
+removePendingEdits
+  :: Int            -- ^ Id of latest edit
+  -> Int            -- ^ Id of earliest edit
+  -> Acid.Update GlobalState ()
+removePendingEdits m n = do
+  pendingEdits %= filter (\(_, d) -> editId d < n || m < editId d)
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -1057,9 +1074,9 @@ makeAcidic ''GlobalState [
   'deleteItem,
   'deleteTrait,
   -- edits
-  'getEdit,
+  'getEdit, 'getEdits,
   'registerEdit,
-  'removePendingEdit,
+  'removePendingEdit, 'removePendingEdits,
   -- other
   'moveItem, 'moveTrait,
   'restoreCategory, 'restoreItem, 'restoreTrait

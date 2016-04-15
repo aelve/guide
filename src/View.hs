@@ -4,6 +4,7 @@ OverloadedStrings,
 FlexibleContexts,
 ViewPatterns,
 RecordWildCards,
+TupleSections,
 NoImplicitPrelude
   #-}
 
@@ -13,6 +14,7 @@ module View
   -- * Pages
   renderRoot,
   renderAdmin,
+  renderEdits,
   renderHaskellRoot,
   renderDonate,
   renderCategoryPage,
@@ -166,28 +168,51 @@ renderAdmin globalState edits = do
 
   body_ $ do
     h1_ "Pending edits"
-    -- Group edits by IP
-    let editGroups = groupBy (equating (editIP . snd)) edits
-    -- For each group, show the IP and then edits as a list
-    for_ editGroups $ \editGroup -> do
-      h2_ $ case editIP (snd (head editGroup)) of
-              Nothing -> "<unknown IP>"
-              Just ip -> toHtml (show ip)
-      ul_ $ do
-        for_ editGroup $ \(edit, EditDetails{..}) -> li_ $ do
-          editNode <- thisNode
-          p_ $ do
-            toHtml =<< liftIO (humanReadableTime editDate)
-            emptySpan "1em"
-            textButton "accept" $
-              JS.acceptEdit (editId, editNode)
-            emptySpan "0.5em"
-            textButton "try to undo" $
-              JS.undoEdit (editId, editNode)
-          renderEdit globalState edit
+    renderEdits globalState (map (,Nothing) edits)
 
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves
+
+-- | Group edits by IP and render them
+renderEdits
+  :: MonadIO m
+  => GlobalState
+  -> [((Edit, EditDetails), Maybe String)]
+  -> HtmlT m ()
+renderEdits globalState edits = do
+  let editBlocks = groupBy (equating (editIP . snd . fst)) edits
+  for_ editBlocks $ \editBlock -> div_ $ do
+    blockNode <- thisNode
+    h2_ $ do
+      case editIP (editBlock ^?! _head._1._2) of
+        Nothing -> "<unknown IP>"
+        Just ip -> toHtml (show ip)
+      emptySpan "1em"
+      textButton "accept all" $
+        JS.acceptBlock (editId (editBlock ^?! _head._1._2),
+                        editId (editBlock ^?! _last._1._2),
+                        blockNode)
+      emptySpan "0.5em"
+      textButton "undo all" $
+        JS.undoBlock (editId (editBlock ^?! _head._1._2),
+                      editId (editBlock ^?! _last._1._2),
+                      blockNode)
+    ul_ $ do
+      for_ editBlock $ \((edit, EditDetails{..}), mbErr) -> li_ $ do
+        editNode <- thisNode
+        p_ $ do
+          toHtml =<< liftIO (humanReadableTime editDate)
+          emptySpan "1em"
+          textButton "accept" $
+            JS.acceptEdit (editId, editNode)
+          emptySpan "0.5em"
+          textButton "try to undo" $
+            JS.undoEdit (editId, editNode)
+        case mbErr of
+          Nothing  -> return ()
+          Just err -> p_ $ span_ [style_ "background-color:#E57373"] $
+            "Can't apply the edit: " >> toHtml err
+        renderEdit globalState edit
 
 renderEdit :: Monad m => GlobalState -> Edit -> HtmlT m ()
 renderEdit globalState edit = do

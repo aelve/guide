@@ -545,6 +545,20 @@ main = do
               Left err -> Spock.text (T.pack err)
               Right () -> do dbUpdate (RemovePendingEdit n)
                              Spock.text ""
+          Spock.post ("edits" <//> var <//> var <//> "accept") $ \m n -> do
+            dbUpdate (RemovePendingEdits m n)
+          Spock.post ("edits" <//> var <//> var <//> "undo") $ \m n -> do
+            edits <- dbQuery (GetEdits m n)
+            s <- dbQuery GetGlobalState
+            failed <- fmap catMaybes $ for edits $ \(edit, details) -> do
+              res <- undoEdit edit
+              case res of
+                Left err -> return (Just ((edit, details), Just err))
+                Right () -> do dbUpdate (RemovePendingEdit (editId details))
+                               return Nothing
+            case failed of
+              [] -> Spock.text ""
+              _  -> lucidIO $ renderEdits s failed
 
       -- Donation page
       Spock.get "donate" $
