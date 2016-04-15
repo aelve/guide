@@ -752,7 +752,7 @@ setCategoryTitle catId title' = do
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . notes <<.= renderMarkdownBlock notes'
-  let edit = Edit'SetCategoryNotes catId (markdownBlockText oldNotes) notes'
+  let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdText) notes'
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -811,13 +811,13 @@ setItemDescription itemId description' = do
   oldDescr <- itemById itemId . description <<.=
                 renderMarkdownBlock description'
   let edit = Edit'SetItemDescription itemId
-               (markdownBlockText oldDescr) description'
+               (oldDescr ^. mdText) description'
   (edit,) <$> use (itemById itemId)
 
 setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   oldNotes <- itemById itemId . notes <<.= renderMarkdownBlock notes'
-  let edit = Edit'SetItemNotes itemId (markdownBlockText oldNotes) notes'
+  let edit = Edit'SetItemNotes itemId (oldNotes ^. mdText) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -825,7 +825,7 @@ setItemEcosystem itemId ecosystem' = do
   oldEcosystem <- itemById itemId . ecosystem <<.=
                     renderMarkdownBlock ecosystem'
   let edit = Edit'SetItemEcosystem itemId
-               (markdownBlockText oldEcosystem) ecosystem'
+               (oldEcosystem ^. mdText) ecosystem'
   (edit,) <$> use (itemById itemId)
 
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
@@ -833,7 +833,7 @@ setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . content <<.=
                   renderMarkdownInline content'
   let edit = Edit'SetTraitContent itemId traitId
-               (markdownInlineText oldContent) content'
+               (oldContent ^. mdText) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
 
 -- delete

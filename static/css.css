@@ -119,3 +119,7 @@ textarea.big {
 
 textarea.fullwidth {
   resize: vertical; }
+
+.notes-toc {
+  background-color: rgba(10, 10, 10, 0.1);
+  padding: 1px 0; }

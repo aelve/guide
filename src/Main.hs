@@ -170,7 +170,7 @@ undoEdit (Edit'SetCategoryTitle catId old new) = do
     then return (Left "title has been changed further")
     else Right () <$ dbUpdate (SetCategoryTitle catId old)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
-  now <- markdownBlockText . view notes <$> dbQuery (GetCategory catId)
+  now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetCategoryNotes catId old)
@@ -195,22 +195,22 @@ undoEdit (Edit'SetItemKind itemId old new) = do
     then return (Left "kind has been changed further")
     else Right () <$ dbUpdate (SetItemKind itemId old)
 undoEdit (Edit'SetItemDescription itemId old new) = do
-  now <- markdownBlockText . view description <$> dbQuery (GetItem itemId)
+  now <- view (description.mdText) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "description has been changed further")
     else Right () <$ dbUpdate (SetItemDescription itemId old)
 undoEdit (Edit'SetItemNotes itemId old new) = do
-  now <- markdownBlockText . view notes <$> dbQuery (GetItem itemId)
+  now <- view (notes.mdText) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetItemNotes itemId old)
 undoEdit (Edit'SetItemEcosystem itemId old new) = do
-  now <- markdownBlockText . view ecosystem <$> dbQuery (GetItem itemId)
+  now <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
 undoEdit (Edit'SetTraitContent itemId traitId old new) = do
-  now <- markdownInlineText . view content <$> dbQuery (GetTrait itemId traitId)
+  now <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
   if now /= new
     then return (Left "trait has been changed further")
     else Right () <$ dbUpdate (SetTraitContent itemId traitId old)

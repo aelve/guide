@@ -52,6 +52,8 @@ where
 
 -- General
 import BasePrelude hiding (Category)
+-- Default
+import Data.Default
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
@@ -59,6 +61,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
 -- Containers
 import qualified Data.Map as M
+import Data.Tree
 -- Text
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -68,6 +71,9 @@ import NeatInterpolation
 import Lucid hiding (for_)
 -- Time
 import Data.Time.Format.Human
+-- Markdown
+import Cheapskate.Lucid
+import Cheapskate.Types
 
 -- Local
 import Config
@@ -903,16 +909,24 @@ renderItemNotes item = do
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-notes"] $ do
-    -- TODO: this duplicates code from renderCategoryNotes, try to reduce
-    -- duplication
 
     section "collapsed" [shown] $ do
-      textButton "show notes/examples" $
+      textButton "expand notes" $
         JS.switchSection (this, "expanded" :: Text)
+      br_ []
+      let toc = extractSections (item^.notes.mdMarkdown)
+      unless (null toc) $ div_ [class_ "notes-toc"] $ do
+        let renderTOC :: Monad m => Forest Inlines -> HtmlT m ()
+            renderTOC [] = return ()
+            renderTOC xs = ul_ $ do
+              for_ xs $ \(Node x children) -> li_ $ do
+                renderInlines def x
+                renderTOC children
+        renderTOC toc
 
     section "expanded" [noScriptShown] $ do
       let buttons = do
-            textButton "hide notes" $
+            textButton "collapse notes" $
               JS.switchSection (this, "collapsed" :: Text)
             emptySpan "1em"
             textButton "edit notes" $
@@ -1013,7 +1027,7 @@ markdownEditor
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> JS             -- ^ “Cancel” handler
   -> HtmlT m ()
-markdownEditor attr (markdownBlockText -> s) submit cancel = do
+markdownEditor attr (view mdText -> s) submit cancel = do
   textareaUid <- randomLongUid
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
@@ -1045,7 +1059,7 @@ smallMarkdownEditor
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> HtmlT m ()
-smallMarkdownEditor attr (markdownInlineText -> s) submit mbCancel = do
+smallMarkdownEditor attr (view mdText -> s) submit mbCancel = do
   textareaId <- randomLongUid
   let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
