@@ -354,8 +354,6 @@ renderHaskellRoot globalState mbSearchQuery =
       autocomplete_ "off",
       onEnter $ JS.addCategory (JS.selectId "categories", inputValue) <>
                 clearInput ]
-    -- TODO: sort categories by popularity, somehow? or provide a list of
-    -- “commonly used categories” or even a nested catalog
     case mbSearchQuery of
       Nothing -> renderCategoryList (globalState^.categories)
       Just query' -> do
@@ -621,9 +619,6 @@ renderItem category item =
       -- TODO: add a separator here? [very-easy]
       renderItemNotes item
 
--- TODO: some spinning thingy that spins in the corner of the page while a
--- request is happening
-
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
 renderItemTitle :: Monad m => Item -> HtmlT m ()
@@ -869,8 +864,6 @@ renderTrait itemId trait = do
       imgButton "move trait down" "/arrow-thick-bottom.svg" [width_ "12"] $
         JS.moveTraitDown (itemId, trait^.uid, this)
       -- TODO: these 3 icons in a row don't look nice
-      -- TODO: there should be some way to undelete things (e.g. a list of
-      -- deleted traits under each item)
       imgButton "delete trait" "/x.svg" [width_ "12"] $
         JS.deleteTrait (itemId, trait^.uid, this)
       textButton "edit" $
@@ -889,8 +882,6 @@ renderTrait itemId trait = do
 -- TODO: [very-easy] write about the all-is-text extension
 -- TODO: [easy] write that arrows are for arranging stuff, not upvoting
 
--- TODO: record IPs in the acid-state transaction log
-
 -- TODO: [easy] add Hayoo search, Hoogle search, and Hackage search shortcut
 -- boxes
 
@@ -901,9 +892,6 @@ renderTrait itemId trait = do
 -- people instead just write “TODO fix grammar” in description and then such
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
-
--- TODO: make it possible to link to notes (and automatically expand when
--- linked)
 
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
@@ -916,7 +904,6 @@ renderItemNotes item = do
     -- duplication
 
     section "collapsed" [shown] $ do
-      -- TODO: when notes are hidden, show a list of headers in the notes
       textButton "show notes/examples" $
         JS.switchSection (this, "expanded" :: Text)
 
@@ -998,8 +985,6 @@ button value attrs handler =
     handler' = fromJS handler
 
 -- A text button looks like “[cancel]”
--- 
--- TODO: consider dotted links instead?
 textButton
   :: Monad m
   => Text         -- ^ Button text
@@ -1113,8 +1098,6 @@ sectionSpan
   -> HtmlT m ()     -- ^ Content of the section
   -> HtmlT m ()
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
-
--- TODO: add something to edit a particular paragraph of the notes
 
 newGroupValue :: Text
 newGroupValue = "-new-group-"

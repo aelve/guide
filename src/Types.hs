@@ -298,8 +298,6 @@ gray        : FAFAFA F5F5F5 EEEEEE
 blue gray   : ECEFF1 CFD8DC B0BEC5
 -}
 
--- TODO: more colors and don't repeat them!
--- TODO: check how all colors look (not just deep purple)
 hueToDarkColor :: Hue -> Text
 hueToDarkColor NoHue = "#D6D6D6"  -- the color for gray isn't from Google's
                                   -- palette, since their “100” is too light
