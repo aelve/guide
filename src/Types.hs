@@ -272,32 +272,8 @@ instance Show Hue where
   show NoHue   = "0"
   show (Hue n) = show n
 
-{-
-https://www.google.com/design/spec/style/color.html#color-color-palette
-
-                50     100    200
-              ------ ------ ------
-red         : FFEBEE FFCDD2 EF9A9A
-pink        : FCE4EC F8BBD0 F48FB1
-purple      : F3E5F5 E1BEE7 CE93D8
-deep purple : EDE7F6 D1C4E9 B39DDB
-indigo      : E8EAF6 C5CAE9 9FA8DA
-blue        : E3F2FD BBDEFB 90CAF9
-light blue  : E1F5FE B3E5FC 81D4FA
-cyan        : E0F7FA B2EBF2 80DEEA
-teal        : E0F2F1 B2DFDB 80CBC4
-green       : E8F5E9 C8E6C9 A5D6A7
-light green : F1F8E9 DCEDC8 C5E1A5
-lime        : F9FBE7 F0F4C3 E6EE9C
-yellow      : FFFDE7 FFF9C4 FFF59D
-amber       : FFF8E1 FFECB3 FFE082
-orange      : FFF3E0 FFE0B2 FFCC80
-deep orange : FBE9E7 FFCCBC FFAB91
-brown       : EFEBE9 D7CCC8 BCAAA4
-gray        : FAFAFA F5F5F5 EEEEEE
-blue gray   : ECEFF1 CFD8DC B0BEC5
--}
-
+-- Colors taken from:
+-- <https://www.google.com/design/spec/style/color.html#color-color-palette>
 hueToDarkColor :: Hue -> Text
 hueToDarkColor NoHue = "#D6D6D6"  -- the color for gray isn't from Google's
                                   -- palette, since their “100” is too light
@@ -307,7 +283,11 @@ hueToDarkColor (Hue i) = table !! ((i-1) `mod` length table)
     table = ["#D1C4E9",   -- deep purple
              "#C8E6C9",   -- green
              "#FFECB3",   -- amber
-             "#FFCDD2"]   -- red
+             "#BBDEFB",   -- blue
+             "#FFCDD2",   -- red
+             "#D7CCC8",   -- brown
+             "#B2DFDB",   -- teal
+             "#F0F4C3"]   -- lime
 
 hueToLightColor :: Hue -> Text
 hueToLightColor NoHue = "#F0F0F0"  -- the color for gray isn't from Google's
@@ -315,10 +295,14 @@ hueToLightColor NoHue = "#F0F0F0"  -- the color for gray isn't from Google's
 hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
   where
     -- the “50” colors
-    table = ["#EDE7F6",
-             "#E8F5E9",
-             "#FFF8E1",
-             "#FFEBEE"]
+    table = ["#EDE7F6",   -- deep purple
+             "#E8F5E9",   -- green
+             "#FFF8E1",   -- amber
+             "#E3F2FD",   -- blue
+             "#FFEBEE",   -- red
+             "#EFEBE9",   -- brown
+             "#E0F2F1",   -- teal
+             "#F9FBE7"]   -- lime
 
 --
 
