@@ -164,11 +164,13 @@ renderAdmin globalState edits = do
     includeJS "/jquery-2.2.0.min.js"
     includeCSS "/markup.css"
     includeCSS "/admin.css"
+    includeCSS "/loader.css"
     title_ "admin – Aelve Guide"
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
 
   body_ $ do
+    script_ $ fromJS $ JS.createAjaxIndicator ()
     h1_ "Miscellaneous"
     buttonUid <- randomLongUid
     button "Create checkpoint" [uid_ buttonUid] $
@@ -453,6 +455,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
     includeCSS "/highlight.css"
     includeCSS "/markup.css"
     includeCSS "/css.css"
+    includeCSS "/loader.css"
     -- Include definitions of all Javascript functions that we have defined
     -- in this file. (This isn't an actual file, so don't look for it in the
     -- static folder – it's generated and served in 'otherMethods'.)
@@ -471,6 +474,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
       |]
 
   body_ $ do
+    script_ $ fromJS $ JS.createAjaxIndicator ()
     div_ [id_ "main"] $
       page
     div_ [id_ "footer"] $ do

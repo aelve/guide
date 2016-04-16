@@ -42,6 +42,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   setMonospace,
   -- Help
   showOrHideHelp, showHelp, hideHelp,
+  -- Misc
+  createAjaxIndicator,
   -- Add methods
   addCategory, addItem,
   addPro, addCon,
@@ -265,6 +267,20 @@ showOrHideHelp =
       showHelp(node, version)
     else
       hideHelp(node, version);
+  |]
+
+createAjaxIndicator :: JSFunction a => a
+createAjaxIndicator =
+  makeJSFunction "createAjaxIndicator" []
+  [text|
+    $("body").prepend('<div id="ajax-indicator"></div>');
+    $(document).ajaxStart(function() {
+      $("#ajax-indicator").show();
+    });
+    $(document).ajaxStop(function() {
+      $("#ajax-indicator").hide();
+    });
+    $("#ajax-indicator").hide();
   |]
 
 -- | Create a new category.

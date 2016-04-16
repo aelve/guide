@@ -1,0 +1,25 @@
+/* From https://www.pexels.com/blog/css-only-loaders/ */
+
+.loader {
+  animation: rotate 0.8s infinite linear;
+  border: 6px solid #333;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+#ajax-indicator {
+  position: fixed;
+  top: 0.5em;
+  right: 0.5em;
+  width: 2em;
+  height: 2em;
+  animation: rotate 0.8s infinite linear;
+  border: 6px solid #333;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+@keyframes rotate {
+  0%    { transform: rotate(0deg); }
+  100%  { transform: rotate(360deg); }
+}
