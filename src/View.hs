@@ -865,6 +865,7 @@ renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
       this   = JS.selectId thisId
+  editingSectionUid <- randomLongUid
   li_ [id_ thisId] $ do
 
     sectionSpan "normal editable" [shown, noScriptShown] $ do
@@ -879,15 +880,17 @@ renderTrait itemId trait = do
       -- TODO: these 3 icons in a row don't look nice
       imgButton "delete trait" "/x.svg" [width_ "12"] $
         JS.deleteTrait (itemId, trait^.uid, this)
+      textareaUid <- randomLongUid
       textButton "edit" $
-        JS.switchSection (this, "editing" :: Text)
+        JS.makeTraitEditor (this, JS.selectUid editingSectionUid,
+                            textareaUid,
+                            trait^.content.mdText,
+                            itemId, trait^.uid) <>
+        JS.switchSection (this, "editing" :: Text) <>
+        JS.autosizeTextarea [JS.selectUid textareaUid]
 
-    section "editing" [] $ do
-      smallMarkdownEditor
-        [rows_ "5"]
-        (trait^.content)
-        (\val -> JS.submitTrait (this, itemId, trait^.uid, val))
-        (Just (JS.switchSection (this, "editable" :: Text)))
+    section "editing" [uid_ editingSectionUid] $ do
+      return ()
 
 -- TODO: automatically provide links to modules in Markdown (and have a
 -- database of modules or something)
@@ -912,6 +915,7 @@ renderItemNotes :: MonadIO m => Item -> HtmlT m ()
 renderItemNotes item = do
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
+  editingSectionUid <- randomLongUid
   div_ [id_ thisId, class_ "item-notes"] $ do
 
     section "collapsed" [shown] $ do
@@ -929,12 +933,22 @@ renderItemNotes item = do
         renderTOC toc
 
     section "expanded" [noScriptShown] $ do
+      textareaUid <- randomLongUid
+      contents <- if item^.notes == ""
+        then liftIO $ T.readFile "static/item-notes-template.md"
+        else return (item^.notes.mdText)
       let buttons = do
             textButton "collapse notes" $
               JS.switchSection (this, "collapsed" :: Text)
             emptySpan "1em"
             textButton "edit notes" $
-              JS.switchSection (this, "editing" :: Text)
+              JS.makeItemNotesEditor (
+                   this, JS.selectUid editingSectionUid,
+                   textareaUid,
+                   contents,
+                   item^.uid) <>
+              JS.switchSection (this, "editing" :: Text) <>
+              JS.autosizeTextarea [JS.selectUid textareaUid]
       buttons
       if item^.notes == ""
         then p_ "add something!"
@@ -944,16 +958,8 @@ renderItemNotes item = do
       -- the notes are closed (but don't scroll if it's already visible after
       -- the notes have been hidden)
 
-    section "editing" [] $ do
-      contents <- if item^.notes == ""
-        then liftIO $ renderMarkdownBlock <$>
-               T.readFile "static/item-notes-template.md"
-        else return (item^.notes)
-      markdownEditor
-        [rows_ "10"]
-        contents
-        (\val -> JS.submitItemNotes (this, item^.uid, val))
-        (JS.switchSection (this, "expanded" :: Text))
+    section "editing" [uid_ editingSectionUid] $
+      return ()
 
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
@@ -1049,7 +1055,7 @@ markdownEditor attr (view mdText -> s) submit cancel = do
   "Markdown"
   emptySpan "6px"
   -- TODO: this jumps around when there's a lot of text, need to somehow
-  -- prevent jumping
+  -- prevent jumping (and in JS.makeItemNotesEditor too)
   let checkHandler = fromJS $
         JS.setMonospace (JS.selectUid textareaUid, JS "this.checked")
   label_ $ do

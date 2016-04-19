@@ -44,6 +44,10 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   showOrHideHelp, showHelp, hideHelp,
   -- Misc
   createAjaxIndicator,
+  autosizeTextarea,
+  -- Creating parts of interface
+  makeTraitEditor,
+  makeItemNotesEditor,
   -- Add methods
   addCategory, addItem,
   addPro, addCon,
@@ -85,12 +89,16 @@ instance JSParams () where
   jsParams () = []
 instance ToJS a => JSParams [a] where
   jsParams = map toJS
-instance (ToJS a, ToJS b) => JSParams (a,b) where
+instance (ToJS a,ToJS b) => JSParams (a,b) where
   jsParams (a,b) = [toJS a, toJS b]
-instance (ToJS a, ToJS b, ToJS c) => JSParams (a,b,c) where
+instance (ToJS a,ToJS b,ToJS c) => JSParams (a,b,c) where
   jsParams (a,b,c) = [toJS a, toJS b, toJS c]
-instance (ToJS a, ToJS b, ToJS c, ToJS d) => JSParams (a,b,c,d) where
+instance (ToJS a,ToJS b,ToJS c,ToJS d) => JSParams (a,b,c,d) where
   jsParams (a,b,c,d) = [toJS a, toJS b, toJS c, toJS d]
+instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e) => JSParams (a,b,c,d,e) where
+  jsParams (a,b,c,d,e) = [toJS a, toJS b, toJS c, toJS d, toJS e]
+instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e,ToJS f) => JSParams (a,b,c,d,e,f) where
+  jsParams (a,b,c,d,e,f) = [toJS a, toJS b, toJS c, toJS d, toJS e, toJS f]
 
 {- | This hacky class lets you construct and use Javascript functions; you give 'makeJSFunction' function name, function parameters, and function body, and you get a polymorphic value of type @JSFunction a => a@, which you can use either as a complete function definition (if you set @a@ to be @JS@), or as a function that you can give some parameters and it would return a Javascript call:
 
@@ -281,6 +289,82 @@ createAjaxIndicator =
       $("#ajax-indicator").hide();
     });
     $("#ajax-indicator").hide();
+  |]
+
+autosizeTextarea :: JSFunction a => a
+autosizeTextarea =
+  makeJSFunction "autosizeTextarea" ["textareaNode"]
+  [text|
+    autosize(textareaNode);
+    autosize.update(textareaNode);
+  |]
+
+makeTraitEditor :: JSFunction a => a
+makeTraitEditor =
+  makeJSFunction "makeTraitEditor"
+    ["traitNode", "sectionNode", "textareaUid", "content", "itemId", "traitId"]
+  [text|
+    $(sectionNode).html("");
+    area = $("<textarea>", {
+      "autocomplete" : "off",
+      "rows"         : "5",
+      "id"           : textareaUid,
+      "class"        : "fullwidth",
+      "text"         : content })[0];
+    area.onkeydown = function () {
+      if (event.keyCode == 13) {
+        submitTrait(traitNode, itemId, traitId, area.value);
+        return false; } };
+    br = $("<br>")[0];
+    a = $("<a>", {
+      "href"    : "#",
+      "text"    : "cancel" })[0];
+    a.onclick = function () {
+      $(sectionNode).html("");
+      switchSection(traitNode, "editable");
+      return false; };
+    cancelBtn = $("<span>", {"class":"text-button"})[0];
+    $(cancelBtn).append(a);
+    $(sectionNode).append(area, br, cancelBtn);
+  |]
+
+makeItemNotesEditor :: JSFunction a => a
+makeItemNotesEditor =
+  makeJSFunction "makeItemNotesEditor"
+    ["notesNode", "sectionNode", "textareaUid", "content", "itemId"]
+  [text|
+    $(sectionNode).html("");
+    area = $("<textarea>", {
+      "autocomplete" : "off",
+      "rows"         : "10",
+      "id"           : textareaUid,
+      "class"        : "big fullwidth",
+      "text"         : content })[0];
+    saveBtn = $("<input>", {
+      "value" : "Save",
+      "type"  : "button" })[0];
+    saveBtn.onclick = function () {
+      submitItemNotes(notesNode, itemId, area.value); };
+    // Can't use $()-generation here because then the <span> would have
+    // to be cloned (since we're inserting it multiple times) and I don't
+    // know how to do that.
+    space = "<span style='margin-left:6px'></span>";
+    cancelBtn = $("<input>", {
+      "value" : "Cancel",
+      "type"  : "button" })[0];
+    cancelBtn.onclick = function () {
+      $(sectionNode).html("");
+      switchSection(notesNode, "expanded"); };
+    monospace = $("<input>", {
+      "name" : "monospace",
+      "type" : "checkbox" })[0];
+    monospace.onchange = function () {
+      setMonospace(area, monospace.checked); };
+    monospaceLabel = $("<label>")[0];
+    $(monospaceLabel).append(monospace, "monospace editor");
+    $(sectionNode).append(
+      area, saveBtn, $(space), cancelBtn, $(space),
+      "Markdown", $(space), monospaceLabel);
   |]
 
 -- | Create a new category.
