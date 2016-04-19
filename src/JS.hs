@@ -45,6 +45,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Misc
   createAjaxIndicator,
   autosizeTextarea,
+  expandHash,
+  expandItemNotes,
   -- Creating parts of interface
   makeTraitEditor,
   makeItemNotesEditor,
@@ -297,6 +299,29 @@ autosizeTextarea =
   [text|
     autosize(textareaNode);
     autosize.update(textareaNode);
+  |]
+
+-- | Read the anchor from the address bar (i.e. the thing after #) and use it
+-- to expand something (e.g. notes). It's needed to implement linking
+-- properly – e.g. notes are usually unexpanded, but when you're giving
+-- someone a direct link to notes, it makes sense to expand them. If you call
+-- 'expandHash' after the page has loaded, it will do just that.
+expandHash :: JSFunction a => a
+expandHash =
+  makeJSFunction "expandHash" []
+  [text|
+    hash = $(location).attr('hash');
+    if (hash.slice(0,12) == "#item-notes-") {
+      itemId = hash.slice(12);
+      expandItemNotes(itemId);
+    }
+  |]
+
+expandItemNotes :: JSFunction a => a
+expandItemNotes =
+  makeJSFunction "expandItemNotes" ["itemId"]
+  [text|
+    switchSection("#item-notes-"+itemId, "expanded");
   |]
 
 makeTraitEditor :: JSFunction a => a

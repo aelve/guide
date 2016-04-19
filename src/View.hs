@@ -349,6 +349,7 @@ renderHaskellRoot
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
+    onPageLoad $ JS.expandHash ()
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
     case mbSearchQuery of
@@ -386,6 +387,7 @@ renderCategoryPage
   :: (MonadIO m, MonadReader Config m) => Category -> HtmlT m ()
 renderCategoryPage category =
   wrapPage (category^.title <> " – Aelve Guide") $ do
+    onPageLoad $ JS.expandHash ()
     -- TODO: [very-easy] this header looks bad when the page is narrow, it
     -- should be fixed in css.css by adding line-height to it
     -- TODO: another absolute link [absolute-links]
@@ -402,9 +404,6 @@ renderNoScriptWarning =
       Javascript, but since all editing needs Javascript to work,
       you won't be able to edit anything.
       |]
-
--- TODO: when submitting a text field, gray it out (but leave it selectable)
--- until it's been submitted
 
 renderTracking :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderTracking = do
@@ -523,15 +522,6 @@ renderHelp = do
 
 helpVersion :: Int
 helpVersion = 3
-
--- TODO: when conflicts happen, maybe create an alert like “The thing you're
--- editing has been edited in the meantime. Here is a link with a diff of
--- your variant and the other person's variant. Please merge the changes
--- manually and submit them again, or press this button and we'll merge the
--- changes for you (don't worry, it's not a big deal for us). Thanks!”
-
--- TODO: automatic merge should be possible too (e.g. if the changes are in
--- different paragraphs)
 
 renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
 renderCategoryList cats =
@@ -739,9 +729,6 @@ renderItemInfo cat item = do
           "Group" >> br_ []
           -- When “new group” is selected in the list, we show a field for
           -- entering new group's name
-          --
-          -- TODO: when a new group is created, add it to all other lists in
-          -- forms in the category
           let selectHandler = [text|
                   if (this.value == "$newGroupValue") {
                     $("#$idText").show();
@@ -913,6 +900,7 @@ renderTrait itemId trait = do
 -- .focus() on it)
 renderItemNotes :: MonadIO m => Item -> HtmlT m ()
 renderItemNotes item = do
+  -- Don't change this ID, it's used in e.g. 'JS.expandHash'
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
   editingSectionUid <- randomLongUid
@@ -920,7 +908,7 @@ renderItemNotes item = do
 
     section "collapsed" [shown] $ do
       textButton "expand notes" $
-        JS.switchSection (this, "expanded" :: Text)
+        JS.expandItemNotes [item^.uid]
       br_ []
       let toc = extractSections (item^.notes.mdMarkdown)
       unless (null toc) $ div_ [class_ "notes-toc"] $ do
