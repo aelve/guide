@@ -311,7 +311,7 @@ makeTraitEditor =
       "id"           : textareaUid,
       "class"        : "fullwidth",
       "text"         : content })[0];
-    area.onkeydown = function () {
+    area.onkeydown = function (event) {
       if (event.keyCode == 13) {
         submitTrait(traitNode, itemId, traitId, area.value);
         return false; } };
