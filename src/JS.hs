@@ -314,6 +314,10 @@ expandHash =
     if (hash.slice(0,12) == "#item-notes-") {
       itemId = hash.slice(12);
       expandItemNotes(itemId);
+    } else
+    if (hash.slice(0,6) == "#item-") {
+      itemId = hash.slice(6);
+      expandItemNotes(itemId);
     }
   |]
 
