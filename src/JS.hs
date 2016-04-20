@@ -509,6 +509,8 @@ submitItemInfo :: JSFunction a => a
 submitItemInfo =
   makeJSFunction "submitItemInfo" ["infoNode", "bodyNode", "itemId", "form"]
   [text|
+    custom = $(form)[0].elements["custom-group"].value;
+    items = $(form).closest(".items").find(".item");
     // If the group was changed, we need to recolor the whole item,
     // but we don't want to rerender the item on the server because
     // it would lose the item's state (e.g. what if the traits were
@@ -525,6 +527,17 @@ submitItemInfo =
             $(bodyNode).css("background-color", colors.light);
             $(infoNode).replaceWith(data);
          });
+        // And now, if a custom group was created, we should add it to other
+        // items' lists.
+        if (custom != "") {
+          items.each(function (i, item) {
+            groups = $(item).find("select[name=group]")[0];
+            isOurOption = function (opt) {return opt.text == custom};
+            alreadyExists = $.grep(groups.options, isOurOption).length > 0;
+            if (!alreadyExists) {
+              groups.add(new Option(custom, custom), 1); }
+          });
+        }
      });
   |]
 
