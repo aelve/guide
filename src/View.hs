@@ -361,9 +361,7 @@ renderHaskellRoot globalState mbSearchQuery =
       Just _  -> h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning
     renderHelp
-    form_ $ do
-      input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
-              value_ (fromMaybe "" mbSearchQuery)]
+    renderSearch mbSearchQuery
     textInput [
       placeholder_ "add a category",
       autocomplete_ "off",
@@ -398,6 +396,7 @@ renderCategoryPage category =
     h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning
     renderHelp
+    renderSearch Nothing
     renderCategory category
 
 renderNoScriptWarning :: MonadRandom m => HtmlT m ()
@@ -498,6 +497,12 @@ wrapPage pageTitle page = doctypehtml_ $ do
 
 -- TODO: add a list for “interesting libraries, but too lazy to describe, so
 -- somebody describe them for me”
+
+renderSearch :: Monad m => Maybe Text -> HtmlT m ()
+renderSearch mbSearchQuery = do
+  form_ [action_ "/haskell"] $ do
+    input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
+            value_ (fromMaybe "" mbSearchQuery)]
 
 renderHelp :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
 renderHelp = do
