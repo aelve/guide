@@ -365,8 +365,7 @@ renderHaskellRoot globalState mbSearchQuery =
     textInput [
       placeholder_ "add a category",
       autocomplete_ "off",
-      onEnter $ JS.addCategory (JS.selectId "categories", inputValue) <>
-                clearInput ]
+      onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
       Nothing -> renderCategoryList (globalState^.categories)
       Just query' -> do
@@ -538,7 +537,11 @@ helpVersion = 3
 renderCategoryList :: (MonadIO m, MonadRandom m) => [Category] -> HtmlT m ()
 renderCategoryList cats =
   div_ [id_ "categories"] $
-    mapM_ renderCategory cats
+    for_ cats $ \category -> do
+      -- TODO: this link shouldn't be absolute [absolute-links]
+      a_ [href_ ("/haskell/" <> categorySlug category)] $
+        toHtml (category^.title)
+      br_ []
 
 renderCategoryTitle :: Monad m => Category -> HtmlT m ()
 renderCategoryTitle category = do

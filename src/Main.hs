@@ -347,11 +347,19 @@ addMethods = Spock.subcomponent "add" $ do
   -- New category
   Spock.post "category" $ do
     title' <- param' "content"
-    catId <- randomShortUid
-    time <- liftIO getCurrentTime
-    (edit, newCategory) <- dbUpdate (AddCategory catId title' time)
-    addEdit edit
-    lucidIO $ renderCategory newCategory
+    -- If the category exists already, don't create it
+    cats <- view categories <$> dbQuery GetGlobalState
+    category <- case find ((== title') . view title) cats of
+      Just c  -> return c
+      Nothing -> do
+        catId <- randomShortUid
+        time <- liftIO getCurrentTime
+        (edit, newCategory) <- dbUpdate (AddCategory catId title' time)
+        addEdit edit
+        return newCategory
+    -- And now send the URL of the new (or old) category
+    Spock.text ("/haskell/" <> categorySlug category)
+
   -- New item in a category
   Spock.post (categoryVar <//> "item") $ \catId -> do
     name' <- param' "name"

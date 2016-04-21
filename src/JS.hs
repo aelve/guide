@@ -9,6 +9,8 @@ NoImplicitPrelude
 
 
 -- TODO: try to make it more type-safe somehow?
+
+-- TODO: maybe use jmacro or something?
 module JS where
 
 
@@ -51,7 +53,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   makeTraitEditor,
   makeItemNotesEditor,
   -- Add methods
-  addCategory, addItem,
+  addCategoryAndRedirect, addItem,
   addPro, addCon,
   -- Set methods
   submitCategoryTitle, submitItemDescription, submitCategoryNotes,
@@ -396,13 +398,16 @@ makeItemNotesEditor =
       "Markdown", $(space), monospaceLabel);
   |]
 
--- | Create a new category.
-addCategory :: JSFunction a => a
-addCategory =
-  makeJSFunction "addCategory" ["node", "s"]
+-- | Create a new category and redirect to it (or redirect to an old category
+-- if it exists already).
+addCategoryAndRedirect :: JSFunction a => a
+addCategoryAndRedirect =
+  makeJSFunction "addCategoryAndRedirect" ["s"]
   [text|
     $.post("/haskell/add/category", {content: s})
-     .done(prependData(node));
+     .done(function (url) {
+        window.location.href = url;
+      });
   |]
 
 -- | Add a new item to some category.
