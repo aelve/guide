@@ -4,6 +4,7 @@ TemplateHaskell,
 MultiParamTypeClasses,
 FunctionalDependencies,
 FlexibleInstances,
+FlexibleContexts,
 NoImplicitPrelude
   #-}
 
@@ -13,18 +14,22 @@ module Markdown
   -- * Types
   MarkdownInline(..),
   MarkdownBlock(..),
+  MarkdownBlockWithTOC(..),
 
   -- * Lenses
   mdHtml,
   mdText,
   mdMarkdown,
+  mdIdPrefix,
+  mdTOC,
 
   -- * Rendering
   renderMarkdownInline,
   renderMarkdownBlock,
+  renderMarkdownBlockWithTOC,
 
-  -- * Miscellaneous
-  extractSections,
+  -- * Misc
+  markdownNull,
 )
 where
 
@@ -32,23 +37,25 @@ where
 -- General
 import BasePrelude hiding (Space)
 -- Lenses
-import Lens.Micro.Platform
+import Lens.Micro.Platform hiding ((&))
 -- Monad transformers and monads
 import Control.Monad.Writer
+import Control.Monad.State
 import Data.Functor.Identity
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
 -- Parsing
-import Text.Megaparsec
+import Text.Megaparsec hiding (State)
 -- HTML
 import Lucid
 import Lucid.Base
 import Blaze.ByteString.Builder (Builder)
--- Sequence (used by Cheapskate)
-import Data.Sequence
--- Tree (used by extractSections)
+-- Containers
+import Data.Sequence ((<|), singleton)
 import Data.Tree
+import qualified Data.Set as S
+import Data.Set (Set)
 -- Markdown
 import Cheapskate
 import Cheapskate.Lucid
@@ -57,6 +64,9 @@ import ShortcutLinks
 import ShortcutLinks.All (hackage)
 -- acid-state
 import Data.SafeCopy
+
+-- Local
+import Utils
 
 
 data MarkdownInline = MarkdownInline {
@@ -69,11 +79,44 @@ data MarkdownBlock = MarkdownBlock {
   markdownBlockMdHtml     :: !Builder,
   markdownBlockMdMarkdown :: !Blocks }
 
+data MarkdownBlockWithTOC = MarkdownBlockWithTOC {
+  markdownBlockWithTOCMdText     :: Text,
+  markdownBlockWithTOCMdHtml     :: !Builder,
+  markdownBlockWithTOCMdMarkdown :: !Blocks,
+  markdownBlockWithTOCMdIdPrefix :: Text,
+  markdownBlockWithTOCMdTOC      :: Forest (Inlines, Text) }
+
 makeFields ''MarkdownInline
 makeFields ''MarkdownBlock
+makeFields ''MarkdownBlockWithTOC
+
+genTOC
+  :: (Text -> Text)                    -- ^ Function for generating a slug
+  -> Blocks                            -- ^ Markdown
+  -> (Forest (Inlines, Text), Blocks)  -- ^ TOC and modified blocks
+genTOC slugify blocks =
+  let (blocks', (_, headers)) = runState (mapM process blocks) (mempty, [])
+  in  (makeTOC (reverse headers), blocks')
+  where
+    makeTOC :: [(Int, Inlines, Text)] -> Forest (Inlines, Text)
+    makeTOC [] = []
+    makeTOC ((level,contents,slug):xs) =
+      let (sub, rest) = span ((>level) . view _1) xs
+      in  Node (contents, slug) (makeTOC sub) : makeTOC rest
+    --
+    process :: Block -> State (Set Text, [(Int, Inlines, Text)]) Block
+    process (Header n is) = do
+      previousIds <- use _1
+      let slug = until (`S.notMember` previousIds) (<> "_")
+                   (slugify (stringify is))
+      _1 %= S.insert slug
+      _2 %= ((n, is, slug):)
+      let anchor = RawHtml ("<span id='" <> slug <> "'></span>")
+      return (Header n (anchor <| is))
+    process b = return b
 
 -- | Convert a Markdown structure to a string with formatting removed.
-stringify :: Inline -> Text
+stringify :: Inlines -> Text
 stringify = execWriter . walkM go
   where
     go :: Inline -> Writer Text Inline
@@ -98,7 +141,7 @@ shortcutLinks i@(Link is url title) | '@' <- T.head url =
   case parseLink (T.replace "%20" " " url) of
     Left _err -> i
     Right (shortcut, opt, text) -> do
-      let text' = fromMaybe (stringify i) text
+      let text' = fromMaybe (stringify (singleton i)) text
       let shortcuts = (["hk"], hackage) : allShortcuts
       case useShortcutFrom shortcuts shortcut opt text' of
         Success link ->
@@ -133,14 +176,6 @@ parseLink = either (Left . show) Right . parse p ""
            <*> optional (T.pack <$> opt)
            <*> optional (T.pack <$> text)
 
-extractSections :: Blocks -> Forest Inlines
-extractSections blocks = go sections
-  where
-    sections = [(level, contents) | Header level contents <- toList blocks]
-    go [] = []
-    go ((level,contents):xs) = let (sub, rest) = span ((>level).fst) xs
-                               in  Node contents (go sub) : go rest
-
 renderMarkdownInline :: Text -> MarkdownInline
 renderMarkdownInline s = MarkdownInline s (htmlToBuilder md) inlines
   where
@@ -157,19 +192,32 @@ renderMarkdownInline s = MarkdownInline s (htmlToBuilder md) inlines
     extractInlines HRule = mempty
 
 renderMarkdownBlock :: Text -> MarkdownBlock
-renderMarkdownBlock s = MarkdownBlock s (htmlToBuilder md) blocks
+renderMarkdownBlock s = MarkdownBlock {
+  markdownBlockMdText     = s,
+  markdownBlockMdHtml     = htmlToBuilder md,
+  markdownBlockMdMarkdown = blocks }
   where
     Doc opts blocks = highlightDoc . walk shortcutLinks . markdown def $ s
     md = renderDoc (Doc opts blocks)
 
-instance Eq MarkdownInline where
-  (==) = (==) `on` view mdText
-instance Eq MarkdownBlock where
-  (==) = (==) `on` view mdText
+renderMarkdownBlockWithTOC :: Text -> Text -> MarkdownBlockWithTOC
+renderMarkdownBlockWithTOC idPrefix s = MarkdownBlockWithTOC {
+  markdownBlockWithTOCMdText     = s,
+  markdownBlockWithTOCMdHtml     = htmlToBuilder md,
+  markdownBlockWithTOCMdMarkdown = blocks',
+  markdownBlockWithTOCMdIdPrefix = idPrefix,
+  markdownBlockWithTOCMdTOC      = toc }
+  where
+    Doc opts blocks = highlightDoc . walk shortcutLinks . markdown def $ s
+    (toc, blocks') = let slugify x = idPrefix <> makeSlug x
+                     in  genTOC slugify blocks
+    md = renderDoc (Doc opts blocks')
 
 instance Show MarkdownInline where
   show = show . view mdText
 instance Show MarkdownBlock where
+  show = show . view mdText
+instance Show MarkdownBlockWithTOC where
   show = show . view mdText
 
 instance ToHtml MarkdownInline where
@@ -178,17 +226,15 @@ instance ToHtml MarkdownInline where
 instance ToHtml MarkdownBlock where
   toHtml    = builderToHtml . view mdHtml
   toHtmlRaw = builderToHtml . view mdHtml
+instance ToHtml MarkdownBlockWithTOC where
+  toHtml    = builderToHtml . view mdHtml
+  toHtmlRaw = builderToHtml . view mdHtml
 
 builderToHtml :: Monad m => Builder -> HtmlT m ()
 builderToHtml b = HtmlT (return (\_ -> b, ()))
 
 htmlToBuilder :: Html () -> Builder
 htmlToBuilder = runIdentity . execHtmlT
-
-instance IsString MarkdownInline where
-  fromString = renderMarkdownInline . fromString
-instance IsString MarkdownBlock where
-  fromString = renderMarkdownBlock . fromString
 
 instance SafeCopy MarkdownInline where
   version = 0
@@ -200,3 +246,14 @@ instance SafeCopy MarkdownBlock where
   kind = base
   putCopy = contain . safePut . view mdText
   getCopy = contain $ renderMarkdownBlock <$> safeGet
+instance SafeCopy MarkdownBlockWithTOC where
+  version = 0
+  kind = base
+  putCopy md = contain $ do
+    safePut (md ^. mdIdPrefix)
+    safePut (md ^. mdText)
+  getCopy = contain $
+    renderMarkdownBlockWithTOC <$> safeGet <*> safeGet
+
+markdownNull :: HasMdText a Text => a -> Bool
+markdownNull = T.null . view mdText

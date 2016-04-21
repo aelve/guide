@@ -314,7 +314,12 @@ expandHash =
   [text|
     hash = $(location).attr('hash');
     if (hash.slice(0,12) == "#item-notes-") {
-      itemId = hash.slice(12);
+      if (hash.indexOf('-', 12) != (-1))
+        // For links to sections of items' notes (from the TOC)
+        itemId = hash.slice(12, hash.indexOf('-', 12))
+      else
+        // For links to items' notes
+        itemId = hash.slice(12);
       expandItemNotes(itemId);
     } else
     if (hash.slice(0,6) == "#item-") {

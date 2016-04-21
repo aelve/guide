@@ -258,7 +258,8 @@ renderMethods = Spock.subcomponent "render" $ do
   -- Item notes
   Spock.get (itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
-    lucidIO $ renderItemNotes item
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucidIO $ renderItemNotes category item
 
 setMethods :: SpockM () () ServerState ()
 setMethods = Spock.subcomponent "set" $ do
@@ -334,7 +335,8 @@ setMethods = Spock.subcomponent "set" $ do
     content' <- param' "content"
     (edit, item) <- dbUpdate (SetItemNotes itemId content')
     addEdit edit
-    lucidIO $ renderItemNotes item
+    category <- dbQuery (GetCategoryByItem itemId)
+    lucidIO $ renderItemNotes category item
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"

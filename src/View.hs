@@ -585,14 +585,14 @@ renderCategoryNotes category = do
 
     section "normal" [shown, noScriptShown] $ do
       div_ [class_ "notes-like"] $ do
-        if category^.notes == ""
+        if markdownNull (category^.notes)
           then p_ "write something here!"
           else toHtml (category^.notes)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
     section "editing" [] $ do
-      contents <- if category^.notes == ""
+      contents <- if markdownNull (category^.notes)
         then liftIO $ renderMarkdownBlock <$>
                T.readFile "static/category-notes-template.md"
         else return (category^.notes)
@@ -636,7 +636,7 @@ renderItem category item =
       renderItemTraits item
       renderItemEcosystem item
       -- TODO: add a separator here? [very-easy]
-      renderItemNotes item
+      renderItemNotes category item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
@@ -684,8 +684,7 @@ renderItemInfo cat item = do
       -- TODO: [very-easy] move this style_ into css.css
       span_ [style_ "font-size:150%"] $ do
         -- TODO: absolute links again [absolute-links]
-        let link' = format "/haskell/{}#{}" (categorySlug cat, itemNodeId item)
-        a_ [class_ "anchor", href_ link'] "#"
+        a_ [class_ "anchor", href_ (itemLink cat item)] "#"
         renderItemTitle item
       emptySpan "2em"
       toHtml (fromMaybe "other" (item^.group_))
@@ -787,7 +786,7 @@ renderItemDescription item = do
 
     section "normal" [shown, noScriptShown] $ do
       div_ [class_ "notes-like"] $ do
-        if item^.description == ""
+        if markdownNull (item^.description)
           then p_ "write something here!"
           else toHtml (item^.description)
       textButton "edit description" $
@@ -812,7 +811,7 @@ renderItemEcosystem item = do
       JS.switchSection (this, "editing" :: Text)
 
     section "normal" [shown, noScriptShown] $ do
-      unless (item^.ecosystem == "") $
+      unless (markdownNull (item^.ecosystem)) $
         toHtml (item^.ecosystem)
 
     section "editing" [] $
@@ -837,7 +836,7 @@ renderItemTraits item = do
         section "editable" [] $
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add pro"]
-            ""
+            (renderMarkdownInline "")
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
@@ -851,7 +850,7 @@ renderItemTraits item = do
         section "editable" [] $
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add con"]
-            ""
+            (renderMarkdownInline "")
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
@@ -913,8 +912,10 @@ renderTrait itemId trait = do
 
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
-renderItemNotes :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
-renderItemNotes item = do
+renderItemNotes
+  :: (MonadIO m, MonadRandom m)
+  => Category -> Item -> HtmlT m ()
+renderItemNotes category item = do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -922,16 +923,26 @@ renderItemNotes item = do
   div_ [id_ thisId, class_ "item-notes"] $ do
 
     let renderTOC = do
-          let toc = extractSections (item^.notes.mdMarkdown)
+          let toc = item^.notes.mdTOC
           div_ [class_ "notes-toc"] $ do
-            let renderTree :: Monad m => Forest Inlines -> HtmlT m ()
+            let renderTree :: Monad m => Forest (Inlines, Text) -> HtmlT m ()
                 renderTree [] = return ()
                 renderTree xs = ul_ $ do
-                  for_ xs $ \(Node x children) -> li_ $ do
-                    renderInlines def x
+                  for_ xs $ \(Node (is, id') children) -> li_ $ do
+                    let handler = fromJS (JS.expandItemNotes [item^.uid])
+                        -- The link has to be full because sometimes we are
+                        -- looking at items from pages different from the
+                        -- proper category pages (e.g. if a search returned a
+                        -- list of items). Well, actually it doesn't happen
+                        -- yet (at the moment of writing), but it might start
+                        -- happening and then it's better to be prepared.
+                        fullLink = format "/haskell/{}#{}"
+                                          (categorySlug category, id')
+                    a_ [href_ fullLink, onclick_ handler] $
+                      renderInlines def is
                     renderTree children
             if null toc
-              then p_ "<notes are empty>"
+              then p_ (emptySpan "1.5em" >> "<notes are empty>")
               else renderTree toc
 
     section "collapsed" [shown] $ do
@@ -941,7 +952,7 @@ renderItemNotes item = do
 
     section "expanded" [noScriptShown] $ do
       textareaUid <- randomLongUid
-      contents <- if item^.notes == ""
+      contents <- if markdownNull (item^.notes)
         then liftIO $ T.readFile "static/item-notes-template.md"
         else return (item^.notes.mdText)
       let buttons = do
@@ -959,10 +970,10 @@ renderItemNotes item = do
       buttons
       renderTOC
       div_ [class_ "notes-like"] $ do
-        if item^.notes == ""
+        if markdownNull (item^.notes)
           then p_ "add something!"
           else toHtml (item^.notes)
-      unless (item^.notes == "") $
+      unless (markdownNull (item^.notes)) $
         buttons
       -- TODO: [easy] the lower “hide notes” should scroll back to item when
       -- the notes are closed (but don't scroll if it's already visible after
@@ -977,16 +988,16 @@ renderItemNotes item = do
 renderItemForFeed :: Monad m => Item -> HtmlT m ()
 renderItemForFeed item = do
   h1_ $ renderItemTitle item
-  when (item^.description /= "") $
+  unless (markdownNull (item^.description)) $
     toHtml (item^.description)
   h2_ "Pros"
   ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
   h2_ "Cons"
   ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
-  when (item^.ecosystem /= "") $ do
+  unless (markdownNull (item^.ecosystem)) $ do
     h2_ "Ecosystem"
     toHtml (item^.ecosystem)
-  when (item^.notes /= "") $ do
+  unless (markdownNull (item^.notes)) $ do
     h2_ "Notes"
     toHtml (item^.notes)
 
@@ -1112,6 +1123,10 @@ categoryNodeId category = "category-" <> uidToText (category^.uid)
 
 categoryNode :: Category -> JQuerySelector
 categoryNode = JS.selectId . categoryNodeId
+
+itemLink :: Category -> Item -> Text
+itemLink category item =
+  format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute

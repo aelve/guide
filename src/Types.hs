@@ -139,7 +139,7 @@ import Markdown
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
-  deriving (Eq, Show)
+  deriving (Show)
 
 -- See Note [acid-state]
 deriveSafeCopySimple 2 'extension ''Trait
@@ -205,51 +205,52 @@ data Item = Item {
   _itemCons        :: [Trait],
   _itemConsDeleted :: [Trait],
   _itemEcosystem   :: MarkdownBlock,
-  _itemNotes       :: MarkdownBlock,
+  _itemNotes       :: MarkdownBlockWithTOC,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
-  deriving (Eq, Show)
+  deriving (Show)
 
-deriveSafeCopySimple 8 'extension ''Item
+deriveSafeCopySimple 9 'extension ''Item
 makeFields ''Item
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Item_v7 = Item_v7 {
-  _itemUid_v7         :: Uid Item,
-  _itemName_v7        :: Text,
-  _itemCreated_v7     :: UTCTime,
-  _itemGroup__v7      :: Maybe Text,
-  _itemDescription_v7 :: MarkdownBlock,
-  _itemPros_v7        :: [Trait],
-  _itemProsDeleted_v7 :: [Trait],
-  _itemCons_v7        :: [Trait],
-  _itemConsDeleted_v7 :: [Trait],
-  _itemEcosystem_v7   :: MarkdownBlock,
-  _itemNotes_v7       :: MarkdownBlock,
-  _itemLink_v7        :: Maybe Url,
-  _itemKind_v7        :: ItemKind }
+data Item_v8 = Item_v8 {
+  _itemUid_v8         :: Uid Item,
+  _itemName_v8        :: Text,
+  _itemCreated_v8     :: UTCTime,
+  _itemGroup__v8      :: Maybe Text,
+  _itemDescription_v8 :: MarkdownBlock,
+  _itemPros_v8        :: [Trait],
+  _itemProsDeleted_v8 :: [Trait],
+  _itemCons_v8        :: [Trait],
+  _itemConsDeleted_v8 :: [Trait],
+  _itemEcosystem_v8   :: MarkdownBlock,
+  _itemNotes_v8       :: MarkdownBlock,
+  _itemLink_v8        :: Maybe Url,
+  _itemKind_v8        :: ItemKind }
 
--- TODO: at the next migration change this to deriveSafeCopySimple!
-deriveSafeCopy 7 'base ''Item_v7
+deriveSafeCopySimple 8 'base ''Item_v8
 
 instance Migrate Item where
-  type MigrateFrom Item = Item_v7
-  migrate Item_v7{..} = Item {
-    _itemUid = _itemUid_v7,
-    _itemName = _itemName_v7,
-    _itemCreated = _itemCreated_v7,
-    _itemGroup_ = _itemGroup__v7,
-    _itemDescription = _itemDescription_v7,
-    _itemPros = _itemPros_v7,
-    _itemProsDeleted = _itemProsDeleted_v7,
-    _itemCons = _itemCons_v7,
-    _itemConsDeleted = _itemConsDeleted_v7,
-    _itemEcosystem = _itemEcosystem_v7,
-    _itemNotes = _itemNotes_v7,
-    _itemLink = _itemLink_v7,
-    _itemKind = _itemKind_v7 }
+  type MigrateFrom Item = Item_v8
+  migrate Item_v8{..} = Item {
+    _itemUid = _itemUid_v8,
+    _itemName = _itemName_v8,
+    _itemCreated = _itemCreated_v8,
+    _itemGroup_ = _itemGroup__v8,
+    _itemDescription = _itemDescription_v8,
+    _itemPros = _itemPros_v8,
+    _itemProsDeleted = _itemProsDeleted_v8,
+    _itemCons = _itemCons_v8,
+    _itemConsDeleted = _itemConsDeleted_v8,
+    _itemEcosystem = _itemEcosystem_v8,
+    _itemNotes = let pref = "item-notes-" <> uidToText _itemUid_v8 <> "-"
+                     md   = _itemNotes_v8 ^. mdText
+                 in renderMarkdownBlockWithTOC pref md,
+    _itemLink = _itemLink_v8,
+    _itemKind = _itemKind_v8 }
 
 --
 
@@ -314,7 +315,7 @@ data Category = Category {
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
-  deriving (Eq, Show)
+  deriving (Show)
 
 deriveSafeCopySimple 4 'extension ''Category
 makeFields ''Category
@@ -661,7 +662,7 @@ addCategory catId title' created' = do
         _categoryUid = catId,
         _categoryTitle = title',
         _categoryCreated = created',
-        _categoryNotes = "",
+        _categoryNotes = renderMarkdownBlock "",
         _categoryGroups = mempty,
         _categoryItems = [],
         _categoryItemsDeleted = [] }
@@ -682,13 +683,14 @@ addItem catId itemId name' created' kind' = do
         _itemName        = name',
         _itemCreated     = created',
         _itemGroup_      = Nothing,
-        _itemDescription = "",
+        _itemDescription = renderMarkdownBlock "",
         _itemPros        = [],
         _itemProsDeleted = [],
         _itemCons        = [],
         _itemConsDeleted = [],
-        _itemEcosystem   = "",
-        _itemNotes       = "",
+        _itemEcosystem   = renderMarkdownBlock "",
+        _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
+                           in  renderMarkdownBlockWithTOC pref "",
         _itemLink        = Nothing,
         _itemKind        = kind' }
   categoryById catId . items %= (++ [newItem])
@@ -800,7 +802,9 @@ setItemDescription itemId description' = do
 
 setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
-  oldNotes <- itemById itemId . notes <<.= renderMarkdownBlock notes'
+  let pref = "item-notes-" <> uidToText itemId <> "-"
+  oldNotes <- itemById itemId . notes <<.=
+                renderMarkdownBlockWithTOC pref notes'
   let edit = Edit'SetItemNotes itemId (oldNotes ^. mdText) notes'
   (edit,) <$> use (itemById itemId)
 
