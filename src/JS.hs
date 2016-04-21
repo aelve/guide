@@ -60,7 +60,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
   -- Other things
-  deleteCategory,
+  deleteCategoryAndRedirect,
   moveTraitUp, moveTraitDown, deleteTrait,
   moveItemUp, moveItemDown, deleteItem,
   -- Admin things
@@ -551,14 +551,14 @@ submitItemInfo =
      });
   |]
 
-deleteCategory :: JSFunction a => a
-deleteCategory =
-  makeJSFunction "deleteCategory" ["catId", "catNode"]
+deleteCategoryAndRedirect :: JSFunction a => a
+deleteCategoryAndRedirect =
+  makeJSFunction "deleteCategoryAndRedirect" ["catId"]
   [text|
     if (confirm("Confirm deletion?")) {
       $.post("/haskell/delete/category/"+catId)
        .done(function () {
-          fadeOutAndRemove(catNode);
+          window.location.href = "/haskell";
        });
     }
   |]

@@ -562,10 +562,8 @@ renderCategoryTitle category = do
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
       emptySpan "1em"
-      -- TODO: when on the category page, deleting the category should
-      -- redirect to the main page
       textButton "delete" $
-        JS.deleteCategory (category^.uid, categoryNode category)
+        JS.deleteCategoryAndRedirect [category^.uid]
 
     sectionSpan "editing" [] $ do
       textInput [
@@ -1117,9 +1115,6 @@ itemNode = JS.selectId . itemNodeId
 
 categoryNodeId :: Category -> Text
 categoryNodeId category = "category-" <> uidToText (category^.uid)
-
-categoryNode :: Category -> JQuerySelector
-categoryNode = JS.selectId . categoryNodeId
 
 itemLink :: Category -> Item -> Text
 itemLink category item =
