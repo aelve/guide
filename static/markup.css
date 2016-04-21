@@ -1,8 +1,8 @@
-notes-like h1 {
+.notes-like h1 {
   font-size: 1.2em; }
-notes-like h2 {
+.notes-like h2 {
   font-size: 1em; }
-notes-like h3 {
+.notes-like h3 {
   font-size: 0.8em; }
 
 blockquote {
