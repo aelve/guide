@@ -349,7 +349,8 @@ addMethods = Spock.subcomponent "add" $ do
     title' <- param' "content"
     -- If the category exists already, don't create it
     cats <- view categories <$> dbQuery GetGlobalState
-    category <- case find ((== title') . view title) cats of
+    let hasSameTitle cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+    category <- case find hasSameTitle cats of
       Just c  -> return c
       Nothing -> do
         catId <- randomShortUid
