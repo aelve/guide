@@ -775,9 +775,6 @@ renderItemInfo cat item = do
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
 
--- TODO: categories without items (e.g. “web dev”) that list links to other
--- categories
-
 renderItemDescription :: MonadRandom m => Item -> HtmlT m ()
 renderItemDescription item = do
   let thisId = "item-description-" <> uidToText (item^.uid)

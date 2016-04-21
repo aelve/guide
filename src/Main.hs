@@ -634,8 +634,5 @@ adminHook = do
 
 -- TODO: a function to find all links to Hackage that have version in them
 
--- TODO: why not compare Haskellers too? e.g. for April Fools' we could ask
--- people to list their pros and cons
-
 -- TODO: is it indexable by Google? <given that we're hiding text and
 -- Googlebot can execute Javascript>
