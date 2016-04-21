@@ -584,9 +584,10 @@ renderCategoryNotes category = do
   div_ [id_ thisId] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      if category^.notes == ""
-        then p_ "write something here!"
-        else toHtml (category^.notes)
+      div_ [class_ "notes-like"] $ do
+        if category^.notes == ""
+          then p_ "write something here!"
+          else toHtml (category^.notes)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
@@ -785,9 +786,10 @@ renderItemDescription item = do
   div_ [id_ thisId, class_ "item-description"] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      if item^.description == ""
-        then p_ "write something here!"
-        else toHtml (item^.description)
+      div_ [class_ "notes-like"] $ do
+        if item^.description == ""
+          then p_ "write something here!"
+          else toHtml (item^.description)
       textButton "edit description" $
         JS.switchSection (this, "editing" :: Text)
 
@@ -951,10 +953,12 @@ renderItemNotes item = do
               JS.switchSection (this, "editing" :: Text) <>
               JS.autosizeTextarea [JS.selectUid textareaUid]
       buttons
-      if item^.notes == ""
-        then p_ "add something!"
-        else toHtml (item^.notes) >>
-             buttons
+      div_ [class_ "notes-like"] $ do
+        if item^.notes == ""
+          then p_ "add something!"
+          else toHtml (item^.notes)
+      unless (item^.notes == "") $
+        buttons
       -- TODO: [easy] the lower “hide notes” should scroll back to item when
       -- the notes are closed (but don't scroll if it's already visible after
       -- the notes have been hidden)
