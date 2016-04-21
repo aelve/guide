@@ -921,19 +921,23 @@ renderItemNotes item = do
   editingSectionUid <- randomLongUid
   div_ [id_ thisId, class_ "item-notes"] $ do
 
+    let renderTOC = do
+          let toc = extractSections (item^.notes.mdMarkdown)
+          div_ [class_ "notes-toc"] $ do
+            let renderTree :: Monad m => Forest Inlines -> HtmlT m ()
+                renderTree [] = return ()
+                renderTree xs = ul_ $ do
+                  for_ xs $ \(Node x children) -> li_ $ do
+                    renderInlines def x
+                    renderTree children
+            if null toc
+              then p_ "<notes are empty>"
+              else renderTree toc
+
     section "collapsed" [shown] $ do
       textButton "expand notes" $
         JS.expandItemNotes [item^.uid]
-      br_ []
-      let toc = extractSections (item^.notes.mdMarkdown)
-      unless (null toc) $ div_ [class_ "notes-toc"] $ do
-        let renderTOC :: Monad m => Forest Inlines -> HtmlT m ()
-            renderTOC [] = return ()
-            renderTOC xs = ul_ $ do
-              for_ xs $ \(Node x children) -> li_ $ do
-                renderInlines def x
-                renderTOC children
-        renderTOC toc
+      renderTOC
 
     section "expanded" [noScriptShown] $ do
       textareaUid <- randomLongUid
@@ -953,6 +957,7 @@ renderItemNotes item = do
               JS.switchSection (this, "editing" :: Text) <>
               JS.autosizeTextarea [JS.selectUid textareaUid]
       buttons
+      renderTOC
       div_ [class_ "notes-like"] $ do
         if item^.notes == ""
           then p_ "add something!"
