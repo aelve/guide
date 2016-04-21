@@ -629,9 +629,6 @@ adminHook = do
             Spock.text "Wrong password!"
     Spock.requireBasicAuth "Authenticate (login = admin)" check return
 
--- TODO: when a category with the same name exists, show an error message and
--- redirect to that other category
-
 -- TODO: a function to find all links to Hackage that have version in them
 
 -- TODO: why not compare Haskellers too? e.g. for April Fools' we could ask
