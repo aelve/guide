@@ -3,6 +3,7 @@ OverloadedStrings,
 TemplateHaskell,
 GeneralizedNewtypeDeriving,
 FlexibleContexts,
+FlexibleInstances,
 TypeFamilies,
 RecordWildCards,
 NoImplicitPrelude
@@ -55,6 +56,10 @@ module Utils
   genVer,
   MigrateConstructor(..),
   migrateVer,
+
+  -- * Instances
+  -- ** 'MonadRandom' for 'HtmlT'
+  -- ** 'MonadRandom' for 'ActionCtxT'
 )
 where
 
@@ -64,9 +69,8 @@ import BasePrelude
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
-import Control.Monad.IO.Class
--- Random
-import System.Random
+import Control.Monad.Trans
+import Control.Monad.Random
 -- Text
 import Data.Text (Text)
 import qualified Data.Text          as T
@@ -178,26 +182,26 @@ instance SafeCopy a => Migrate (Uid a) where
 instance IsString (Uid a) where
   fromString = Uid . T.pack
 
-randomText :: Int -> IO Text
+randomText :: MonadRandom m => Int -> m Text
 randomText n = do
   -- We don't want the 1st char to be a digit. Just in case (I don't really
   -- have a good reason). Maybe to prevent Javascript from doing automatic
   -- conversions or something (tho it should never happen).
-  x <- randomRIO ('a', 'z')
+  x <- getRandomR ('a', 'z')
   let randomChar = do
-        i <- randomRIO (0, 35)
+        i <- getRandomR (0, 35)
         return $ if i < 10 then toEnum (fromEnum '0' + i)
                            else toEnum (fromEnum 'a' + i - 10)
   xs <- replicateM (n-1) randomChar
   return (T.pack (x:xs))
 
-randomLongUid :: MonadIO m => m (Uid a)
-randomLongUid = liftIO $ Uid <$> randomText 12
+randomLongUid :: MonadRandom m => m (Uid a)
+randomLongUid = Uid <$> randomText 12
 
 -- These are only used for items and categories (because their uids can occur
 -- in links and so they should look a bit nicer).
-randomShortUid :: MonadIO m => m (Uid a)
-randomShortUid = liftIO $ Uid <$> randomText 8
+randomShortUid :: MonadRandom m => m (Uid a)
+randomShortUid = Uid <$> randomText 8
 
 -- | A marker for Uids that would be used with HTML nodes
 data Node
@@ -302,3 +306,15 @@ migrateVer tyName ver constructors = do
       CustomM conName res -> customConstructor conName res
 
   lam1E (varP arg) (caseE (varE arg) (map return branches'))
+
+instance MonadRandom m => MonadRandom (HtmlT m) where
+  getRandom = lift getRandom
+  getRandoms = lift getRandoms
+  getRandomR = lift . getRandomR
+  getRandomRs = lift . getRandomRs
+
+instance MonadRandom (ActionCtxT a (WebStateM b c d)) where
+  getRandom = liftIO getRandom
+  getRandoms = liftIO getRandoms
+  getRandomR = liftIO . getRandomR
+  getRandomRs = liftIO . getRandomRs
