@@ -916,26 +916,30 @@ renderItemNotes category item = do
       this   = JS.selectId thisId
   editingSectionUid <- randomLongUid
   div_ [id_ thisId, class_ "item-notes"] $ do
+    let notesLink = format "/haskell/{}#{}"
+                           (categorySlug category, thisId)
+    a_ [href_ notesLink] $
+      strong_ "Notes"
 
+    let renderTree :: Monad m => Forest (Inlines, Text) -> HtmlT m ()
+        renderTree [] = return ()
+        renderTree xs = ul_ $ do
+          for_ xs $ \(Node (is, id') children) -> li_ $ do
+            let handler = fromJS (JS.expandItemNotes [item^.uid])
+                -- The link has to be full because sometimes we are
+                -- looking at items from pages different from the
+                -- proper category pages (e.g. if a search returned a
+                -- list of items). Well, actually it doesn't happen
+                -- yet (at the moment of writing), but it might start
+                -- happening and then it's better to be prepared.
+                fullLink = format "/haskell/{}#{}"
+                                  (categorySlug category, id')
+            a_ [href_ fullLink, onclick_ handler] $
+              renderInlines def is
+            renderTree children
     let renderTOC = do
           let toc = item^.notes.mdTOC
           div_ [class_ "notes-toc"] $ do
-            let renderTree :: Monad m => Forest (Inlines, Text) -> HtmlT m ()
-                renderTree [] = return ()
-                renderTree xs = ul_ $ do
-                  for_ xs $ \(Node (is, id') children) -> li_ $ do
-                    let handler = fromJS (JS.expandItemNotes [item^.uid])
-                        -- The link has to be full because sometimes we are
-                        -- looking at items from pages different from the
-                        -- proper category pages (e.g. if a search returned a
-                        -- list of items). Well, actually it doesn't happen
-                        -- yet (at the moment of writing), but it might start
-                        -- happening and then it's better to be prepared.
-                        fullLink = format "/haskell/{}#{}"
-                                          (categorySlug category, id')
-                    a_ [href_ fullLink, onclick_ handler] $
-                      renderInlines def is
-                    renderTree children
             if null toc
               then p_ (emptySpan "1.5em" >> "<notes are empty>")
               else renderTree toc
@@ -992,6 +996,7 @@ renderItemForFeed item = do
   unless (markdownNull (item^.ecosystem)) $ do
     h2_ "Ecosystem"
     toHtml (item^.ecosystem)
+  -- TODO: include .notes-like style here? otherwise the headers are too big
   unless (markdownNull (item^.notes)) $ do
     h2_ "Notes"
     toHtml (item^.notes)
