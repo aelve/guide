@@ -335,6 +335,19 @@ expandItemNotes =
     switchSection("#item-notes-"+itemId, "expanded");
   |]
 
+{- Note [dynamic interface]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+'makeTraitEditor' creates a textbox that appears when you try to edit a pro/con; 'makeItemNotesEditor' creates a textbox that appears when you try to edit item's notes. (Both also create some buttons/etc.)
+
+This is rather inelegant, rather hacky, and in most places we try *not* to create any HTML dynamically, instead relying on sections (see Note [show-hide]). However, in this case we have to – Firefox has a bug that makes loading pages with lots of <textarea>s slow, and so we have to reduce the number of <textarea>s contained on each page.
+
+See <https://github.com/aelve/guide/issues/24>.
+
+-}
+
+-- | Dynamically creates a 'View.smallMarkdownEditor' (but specifically for a
+-- trait). See Note [dynamic interface].
 makeTraitEditor :: JSFunction a => a
 makeTraitEditor =
   makeJSFunction "makeTraitEditor"
@@ -364,6 +377,8 @@ makeTraitEditor =
     $(sectionNode).append(area, br, cancelBtn);
   |]
 
+-- | Dynamically creates a 'View.markdownEdito' (but specifically for item
+-- notes). See Note [dynamic interface].
 makeItemNotesEditor :: JSFunction a => a
 makeItemNotesEditor =
   makeJSFunction "makeItemNotesEditor"

@@ -888,6 +888,7 @@ renderTrait itemId trait = do
         JS.deleteTrait (itemId, trait^.uid, this)
       textareaUid <- randomLongUid
       textButton "edit" $
+        -- See Note [dynamic interface]
         JS.makeTraitEditor (this, JS.selectUid editingSectionUid,
                             textareaUid,
                             trait^.content.mdText,
@@ -969,6 +970,7 @@ renderItemNotes category item = do
               JS.switchSection (this, "collapsed" :: Text)
             emptySpan "1em"
             textButton "edit notes" $
+              -- See Note [dynamic interface]
               JS.makeItemNotesEditor (
                    this, JS.selectUid editingSectionUid,
                    textareaUid,
