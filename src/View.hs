@@ -626,14 +626,11 @@ renderItem category item =
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ (itemNodeId item), class_ "item"] $ do
     renderItemInfo category item
-    -- TODO: replace “edit description” with a big half-transparent pencil
-    -- to the left of it
     let bg = hueToLightColor $ getItemHue category item
     div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
       renderItemDescription item
       renderItemTraits item
       renderItemEcosystem item
-      -- TODO: add a separator here? [very-easy]
       renderItemNotes category item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
@@ -780,14 +777,22 @@ renderItemDescription item = do
   div_ [id_ thisId, class_ "item-description"] $ do
 
     section "normal" [shown, noScriptShown] $ do
+      strong_ "Summary"
+      emptySpan "0.5em"
+      imgButton "edit summary" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5"] $
+        JS.switchSection (this, "editing" :: Text)
       div_ [class_ "notes-like"] $ do
         if markdownNull (item^.description)
           then p_ "write something here!"
           else toHtml (item^.description)
-      textButton "edit description" $
-        JS.switchSection (this, "editing" :: Text)
 
-    section "editing" [] $
+    section "editing" [] $ do
+      strong_ "Summary"
+      emptySpan "0.5em"
+      imgButton "undo editing summary" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5"] $
+        JS.switchSection (this, "normal" :: Text)
       markdownEditor
         [rows_ "10"]
         (item^.description)
