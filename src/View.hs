@@ -799,17 +799,22 @@ renderItemEcosystem item = do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-ecosystem"] $ do
-    strong_ "Ecosystem"
-    emptySpan "0.5em"
-    imgButton "edit ecosystem" "/pencil.svg"
-      [style_ "width:12px;opacity:0.5"] $
-      JS.switchSection (this, "editing" :: Text)
 
     section "normal" [shown, noScriptShown] $ do
+      strong_ "Ecosystem"
+      emptySpan "0.5em"
+      imgButton "edit ecosystem" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5"] $
+        JS.switchSection (this, "editing" :: Text)
       unless (markdownNull (item^.ecosystem)) $
         toHtml (item^.ecosystem)
 
-    section "editing" [] $
+    section "editing" [] $ do
+      strong_ "Ecosystem"
+      emptySpan "0.5em"
+      imgButton "undo editing ecosystem" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5"] $
+        JS.switchSection (this, "normal" :: Text)
       markdownEditor
         [rows_ "3"]
         (item^.ecosystem)
