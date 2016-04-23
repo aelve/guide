@@ -76,10 +76,14 @@ body {
   padding: 10px 15px 20px 15px; }
 
 .traits-groups-container {
-  display: flex; }
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0px -15px; }
 
 .traits-group {
-  flex: 1; }
+  flex: 1;
+  min-width: 300px;
+  padding: 0px 15px; }
 
 .traits-group > ul {
   padding-left: 1em; }

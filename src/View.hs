@@ -845,7 +845,6 @@ renderItemTraits item = do
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-      div_ (emptySpan "1em")
       div_ [class_ "traits-group"] $ do
         strong_ "Cons"
         -- TODO: [easy] maybe add a line here?
