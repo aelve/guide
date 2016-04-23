@@ -579,7 +579,7 @@ renderCategoryNotes :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
 renderCategoryNotes category = do
   let thisId = "category-notes-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId] $ do
+  div_ [id_ thisId, class_ "category-notes"] $ do
 
     section "normal" [shown, noScriptShown] $ do
       div_ [class_ "notes-like"] $ do
