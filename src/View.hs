@@ -353,8 +353,6 @@ renderHaskellRoot
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide" $ do
     onPageLoad $ JS.expandHash ()
-    -- TODO: [very-easy] this header looks bad when the page is narrow, it
-    -- should be fixed in css.css by adding line-height to it
     case mbSearchQuery of
       Nothing -> h1_ "The Haskeller's guide"
       -- A search page isn't the main page, so we need a link to the main page
@@ -389,8 +387,6 @@ renderCategoryPage
 renderCategoryPage category =
   wrapPage (category^.title <> " – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
-    -- TODO: [very-easy] this header looks bad when the page is narrow, it
-    -- should be fixed in css.css by adding line-height to it
     -- TODO: another absolute link [absolute-links]
     h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning

@@ -15,6 +15,11 @@ body {
 #main {
   flex: 1; }
 
+/* headers look bad when the width is small, so */
+
+h1 {
+  line-height: 100%; }
+
 /* Other CSS */
 
 #footer {
