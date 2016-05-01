@@ -193,6 +193,7 @@ Main.hs
 
 -}
 
+-- If you want to add a field here, see Note [extending types]
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
@@ -251,6 +252,8 @@ instance Migrate ItemKind where
 
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
+
+-- If you want to add a field here, see Note [extending types]
 data Item = Item {
   _itemUid         :: Uid Item,
   _itemName        :: Text,
@@ -364,6 +367,7 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 
 --
 
+-- If you want to add a field here, see Note [extending types]
 data Category = Category {
   _categoryUid :: Uid Category,
   _categoryTitle :: Text,
