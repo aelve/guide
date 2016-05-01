@@ -171,6 +171,7 @@ invalidateCacheForEdit ed = do
     Edit'AddPro itemId _ _             -> [CacheItem itemId]
     Edit'AddCon itemId _ _             -> [CacheItem itemId]
     Edit'SetCategoryTitle catId _ _    -> [CacheCategory catId]
+    Edit'SetCategoryGroup catId _ _    -> [CacheCategory catId]
     Edit'SetCategoryNotes catId _ _    -> [CacheCategory catId]
     Edit'SetItemName itemId _ _        -> [CacheItem itemId]
     Edit'SetItemLink itemId _ _        -> [CacheItem itemId]
@@ -212,6 +213,11 @@ undoEdit (Edit'SetCategoryTitle catId old new) = do
   if now /= new
     then return (Left "title has been changed further")
     else Right () <$ dbUpdate (SetCategoryTitle catId old)
+undoEdit (Edit'SetCategoryGroup catId old new) = do
+  now <- view group_ <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "group has been changed further")
+    else Right () <$ dbUpdate (SetCategoryGroup catId old)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
   now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
@@ -270,10 +276,10 @@ undoEdit (Edit'MoveTrait itemId traitId direction) = do
 
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
-  -- Title of a category
-  Spock.get (categoryVar <//> "title") $ \catId -> do
+  -- Header of a category
+  Spock.get (categoryVar <//> "header") $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    lucidIO $ renderCategoryTitle category
+    lucidIO $ renderCategoryHeader category
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
@@ -309,10 +315,17 @@ setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
-    invalidateCache' (CacheCategoryTitle catId)
+    invalidateCache' (CacheCategoryHeader catId)
     (edit, category) <- dbUpdate (SetCategoryTitle catId content')
     addEdit edit
-    lucidIO $ renderCategoryTitle category
+    lucidIO $ renderCategoryHeader category
+  -- Group of a category
+  Spock.post (categoryVar <//> "group") $ \catId -> do
+    content' <- param' "content"
+    invalidateCache' (CacheCategoryHeader catId)
+    (edit, category) <- dbUpdate (SetCategoryGroup catId content')
+    addEdit edit
+    lucidIO $ renderCategoryHeader category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"

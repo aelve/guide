@@ -56,7 +56,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addCategoryAndRedirect, addItem,
   addPro, addCon,
   -- Set methods
-  submitCategoryTitle, submitItemDescription, submitCategoryNotes,
+  submitCategoryTitle, submitCategoryGroup, submitCategoryNotes,
+  submitItemDescription,
   submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
   -- Other things
@@ -449,6 +450,14 @@ submitCategoryTitle =
   makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
   [text|
     $.post("/haskell/set/category/"+catId+"/title", {content: s})
+     .done(replaceWithData(node));
+  |]
+
+submitCategoryGroup :: JSFunction a => a
+submitCategoryGroup =
+  makeJSFunction "submitCategoryGroup" ["node", "catId", "s"]
+  [text|
+    $.post("/haskell/set/category/"+catId+"/group", {content: s})
      .done(replaceWithData(node));
   |]
 

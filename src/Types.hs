@@ -22,7 +22,6 @@ module Types
   ItemKind(..),
     hackageName,
   Item(..),
-    group_,
     pros,
     prosDeleted,
     cons,
@@ -54,6 +53,7 @@ module Types
   description,
   notes,
   created,
+  group_,
 
   -- * Edits
   Edit(..),
@@ -79,6 +79,7 @@ module Types
   SetGlobalState(..),
   -- *** 'Category'
   SetCategoryTitle(..),
+  SetCategoryGroup(..),
   SetCategoryNotes(..),
   -- *** 'Item'
   SetItemName(..),
@@ -136,6 +137,61 @@ import Data.Acid as Acid
 import Utils
 import Markdown
 
+
+{- Note [extending types]
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here's what you should do if you add a new field to 'Trait', 'Item', or 'Category'.
+
+
+Types.hs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  1. Fix all warnings about uninitialised fields that might appear (by e.g. providing a default value).
+
+  2. Update the migration code; see Note [acid-state]. (Usually updating the migration code means simply copying and pasting the old version of the type and adding “_n” to all fields, where ‘n’ is ‘previous n’ + 1.)
+
+  3. If the field is user-editable: add a new constructor to 'Edit' and update the migration code for 'Edit'. Update 'isVacuousEdit', too.
+
+  4. Create a method for updating the field (setSomethingField), add it to the “makeAcidic ''GlobalState” declaration, and export the SetSomethingField type.
+
+  5. Export a lens for the field (if it shares the name with some other field, move it to the “* Overloaded things” heading).
+
+
+Cache.hs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  1. If the field is non-trivial (e.g. “notes”) and it makes sense to cache it, add it to 'CacheKey'.
+
+  2. Update 'cacheDepends'.
+
+
+JS.hs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  1. If the field is user-editable, add a method for setting it and don't forget to add it to the 'allJSFunctions' list.
+
+
+View.hs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  1. If the field is non-trivial, add a method for rendering it.
+
+  2. Don't forget to actually render it if the user is supposed to see it.
+
+  3. Add a branch for the constructor you made in Types.hs/#3 to 'renderEdit'.
+
+
+Main.hs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  1. Add a case to 'invalidateCacheForEdit'.
+
+  2. Add a case to 'undoEdit'.
+
+  3. If the field is user-editable, add a method for changing it to 'setMethods'.
+
+-}
 
 data Trait = Trait {
   _traitUid :: Uid Trait,
@@ -311,6 +367,7 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 data Category = Category {
   _categoryUid :: Uid Category,
   _categoryTitle :: Text,
+  _categoryGroup_ :: Text,
   _categoryCreated :: UTCTime,
   _categoryNotes :: MarkdownBlock,
   _categoryGroups :: Map Text Hue,
@@ -318,7 +375,7 @@ data Category = Category {
   _categoryItemsDeleted :: [Item] }
   deriving (Show)
 
-deriveSafeCopySimple 4 'extension ''Category
+deriveSafeCopySimple 5 'extension ''Category
 makeFields ''Category
 
 categorySlug :: Category -> Text
@@ -328,28 +385,28 @@ categorySlug category =
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v3 = Category_v3 {
-  _categoryUid_v3 :: Uid Category,
-  _categoryTitle_v3 :: Text,
-  _categoryCreated_v3 :: UTCTime,
-  _categoryNotes_v3 :: MarkdownBlock,
-  _categoryGroups_v3 :: Map Text Hue,
-  _categoryItems_v3 :: [Item],
-  _categoryItemsDeleted_v3 :: [Item] }
+data Category_v4 = Category_v4 {
+  _categoryUid_v4 :: Uid Category,
+  _categoryTitle_v4 :: Text,
+  _categoryCreated_v4 :: UTCTime,
+  _categoryNotes_v4 :: MarkdownBlock,
+  _categoryGroups_v4 :: Map Text Hue,
+  _categoryItems_v4 :: [Item],
+  _categoryItemsDeleted_v4 :: [Item] }
 
--- TODO: at the next migration change this to deriveSafeCopySimple!
-deriveSafeCopy 3 'base ''Category_v3
+deriveSafeCopySimple 4 'base ''Category_v4
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v3
-  migrate Category_v3{..} = Category {
-    _categoryUid = _categoryUid_v3,
-    _categoryTitle = _categoryTitle_v3,
-    _categoryCreated = _categoryCreated_v3,
-    _categoryNotes = _categoryNotes_v3,
-    _categoryGroups = _categoryGroups_v3,
-    _categoryItems = _categoryItems_v3,
-    _categoryItemsDeleted = _categoryItemsDeleted_v3 }
+  type MigrateFrom Category = Category_v4
+  migrate Category_v4{..} = Category {
+    _categoryUid = _categoryUid_v4,
+    _categoryTitle = _categoryTitle_v4,
+    _categoryGroup_ = "Miscellaneous",
+    _categoryCreated = _categoryCreated_v4,
+    _categoryNotes = _categoryNotes_v4,
+    _categoryGroups = _categoryGroups_v4,
+    _categoryItems = _categoryItems_v4,
+    _categoryItemsDeleted = _categoryItemsDeleted_v4 }
 
 -- Edits
 
@@ -377,6 +434,10 @@ data Edit
       editCategoryUid      :: Uid Category,
       editCategoryTitle    :: Text,
       editCategoryNewTitle :: Text }
+  | Edit'SetCategoryGroup {
+      editCategoryUid      :: Uid Category,
+      editCategoryGroup    :: Text,
+      editCategoryNewGroup :: Text }
   | Edit'SetCategoryNotes {
       editCategoryUid      :: Uid Category,
       editCategoryNotes    :: Text,
@@ -442,9 +503,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 2 'extension ''Edit
+deriveSafeCopySimple 3 'extension ''Edit
 
-genVer ''Edit 1 [
+genVer ''Edit 2 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -471,12 +532,11 @@ genVer ''Edit 1 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
--- TODO: at the next migration change this to deriveSafeCopySimple!
-deriveSafeCopy 1 'base ''Edit_v1
+deriveSafeCopySimple 2 'base ''Edit_v2
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v1
-  migrate = $(migrateVer ''Edit 1 [
+  type MigrateFrom Edit = Edit_v2
+  migrate = $(migrateVer ''Edit 2 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -508,6 +568,8 @@ instance Migrate Edit where
 isVacuousEdit :: Edit -> Bool
 isVacuousEdit Edit'SetCategoryTitle{..} =
   editCategoryTitle == editCategoryNewTitle
+isVacuousEdit Edit'SetCategoryGroup{..} =
+  editCategoryGroup == editCategoryNewGroup
 isVacuousEdit Edit'SetCategoryNotes{..} =
   editCategoryNotes == editCategoryNewNotes
 isVacuousEdit Edit'SetItemName{..} =
@@ -662,6 +724,7 @@ addCategory catId title' created' = do
   let newCategory = Category {
         _categoryUid = catId,
         _categoryTitle = title',
+        _categoryGroup_ = "Miscellaneous",
         _categoryCreated = created',
         _categoryNotes = renderMarkdownBlock "",
         _categoryGroups = mempty,
@@ -734,6 +797,12 @@ setCategoryTitle :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Categ
 setCategoryTitle catId title' = do
   oldTitle <- categoryById catId . title <<.= title'
   let edit = Edit'SetCategoryTitle catId oldTitle title'
+  (edit,) <$> use (categoryById catId)
+
+setCategoryGroup :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
+setCategoryGroup catId group' = do
+  oldGroup <- categoryById catId . group_ <<.= group'
+  let edit = Edit'SetCategoryGroup catId oldGroup group'
   (edit,) <$> use (categoryById catId)
 
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
@@ -1050,7 +1119,7 @@ makeAcidic ''GlobalState [
   'addPro, 'addCon,
   -- set
   'setGlobalState,
-  'setCategoryTitle, 'setCategoryNotes,
+  'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,

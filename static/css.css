@@ -47,12 +47,18 @@ body {
   width: 100%; }
 
 #categories {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
   margin-top: 1em; }
 
-#categories > a {
+#categories a {
   font-weight: bold;
-  line-height: 130%;
-  font-size: 150%; }
+  line-height: 100%;
+  font-size: 110%; }
+
+.category-group {
+  min-width: 350px; }
 
 .category {
   margin-top: 3em; }
@@ -77,6 +83,11 @@ body {
 .category-title .controls img {
   opacity: 0.3;
   height: 20px; }
+
+.category-title .group {
+  font-size: 60%;
+  font-weight: normal;
+  color: gray; }
 
 .item-traits, .item-notes, .item-description, .item-ecosystem {
   padding: 10px 15px 20px 15px; }

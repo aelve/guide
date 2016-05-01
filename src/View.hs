@@ -19,6 +19,7 @@ module View
   renderDonate,
   renderCategoryPage,
   renderUnwrittenRules,
+  renderSearchResults,
 
   -- * Tracking
   renderTracking,
@@ -28,7 +29,7 @@ module View
   -- ** Categories
   renderCategoryList,
   renderCategory,
-  renderCategoryTitle,
+  renderCategoryHeader,
   renderCategoryNotes,
   -- ** Items
   renderItem,
@@ -279,6 +280,10 @@ renderEdit globalState edit = do
     Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
       "changed title of category " >> quote (toHtml oldTitle)
       " to " >> quote (toHtml newTitle)
+    Edit'SetCategoryGroup catId oldGroup newGroup -> p_ $ do
+      "changed group of category " >> printCategory catId
+      " from " >> quote (toHtml oldGroup)
+      " to "   >> quote (toHtml newGroup)
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ "changed notes of category " >> printCategory catId
       table_ $ tr_ $ do
@@ -378,7 +383,7 @@ renderHaskellRoot globalState mbSearchQuery =
               | otherwise       = filter ((/= 0) . rank) .
                                   reverse . sortOn rank
                                     $ globalState^.categories
-        renderCategoryList rankedCategories
+        renderSearchResults rankedCategories
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
 
@@ -538,14 +543,26 @@ helpVersion = 3
 renderCategoryList :: (MonadIO m, MonadRandom m) => [Category] -> HtmlT m ()
 renderCategoryList cats = cached CacheCategoryList $ do
   div_ [id_ "categories"] $
+    for_ (groupWith (view group_) cats) $ \gr ->
+      div_ [class_ "category-group"] $ do
+        h2_ $ toHtml (gr^?!_head.group_)
+        for gr $ \category -> do
+          -- TODO: this link shouldn't be absolute [absolute-links]
+          a_ [href_ ("/haskell/" <> categorySlug category)] $
+            toHtml (category^.title)
+          br_ []
+
+renderSearchResults :: Monad m => [Category] -> HtmlT m ()
+renderSearchResults cats = do
+  div_ [id_ "categories"] $
     for_ cats $ \category -> do
       -- TODO: this link shouldn't be absolute [absolute-links]
       a_ [href_ ("/haskell/" <> categorySlug category)] $
         toHtml (category^.title)
       br_ []
 
-renderCategoryTitle :: MonadIO m => Category -> HtmlT m ()
-renderCategoryTitle category = cached (CacheCategoryTitle (category^.uid)) $ do
+renderCategoryHeader :: MonadIO m => Category -> HtmlT m ()
+renderCategoryHeader category = cached (CacheCategoryHeader (category^.uid)) $ do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
   h2_ [id_ thisId, class_ "category-title"] $ do
@@ -560,6 +577,9 @@ renderCategoryTitle category = cached (CacheCategoryTitle (category^.uid)) $ do
       a_ [href_ ("/haskell/" <> categorySlug category)] $
         toHtml (category^.title)
       emptySpan "1em"
+      span_ [class_ "group"] $
+        toHtml (category^.group_)
+      emptySpan "1em"
       textButton "edit" $
         JS.switchSection (this, "editing" :: Text)
       emptySpan "1em"
@@ -572,6 +592,13 @@ renderCategoryTitle category = cached (CacheCategoryTitle (category^.uid)) $ do
         autocomplete_ "off",
         onEnter $
           JS.submitCategoryTitle (this, category^.uid, inputValue)]
+      emptySpan "0.5em"
+      textInput [
+        class_ "group",
+        value_ (category^.group_),
+        autocomplete_ "off",
+        onEnter $
+          JS.submitCategoryGroup (this, category^.uid, inputValue)]
       emptySpan "1em"
       textButton "cancel" $
         JS.switchSection (this, "normal" :: Text)
@@ -604,7 +631,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
 renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
-    renderCategoryTitle category
+    renderCategoryHeader category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem category) (category^.items)
