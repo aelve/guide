@@ -69,6 +69,8 @@ import Data.SafeCopy
 import Utils
 
 
+-- TODO: switch from Builder to ByteString here
+
 data MarkdownInline = MarkdownInline {
   markdownInlineMdText     :: Text,
   markdownInlineMdHtml     :: !Builder,

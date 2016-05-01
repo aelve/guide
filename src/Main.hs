@@ -59,6 +59,7 @@ import View
 import JS (JS(..), allJSFunctions)
 import Utils
 import Markdown
+import Cache
 
 
 {- Note [acid-state]
@@ -69,6 +70,8 @@ This application doesn't use a database – instead, it uses acid-state. Acid-st
   * Everything is stored as Haskell values (in particular, all data is stored in 'GlobalState').
 
   * All changes to the state (and all queries) have to be done by using 'dbUpdate'/'dbQuery' and types (GetItem, SetItemName, etc) from the Types.hs module.
+
+  * When doing a 'dbUpdate', don't forget to 'invalidateCache'!
 
   * The data is kept in-memory, but all changes are logged to the disk (which lets us recover the state in case of a crash by reapplying the changes) and you can't access the state directly. When the application exits, it creates a snapshot of the state (called “checkpoint”) and writes it to the disk. Additionally, a checkpoint is created every hour (grep for “createCheckpoint”).
 
@@ -119,7 +122,15 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid Trait]
 traitVar = "trait" <//> var
 
--- Call this whenever a user edits the database
+invalidateCache'
+  :: (MonadIO m, HasSpock (ActionCtxT ctx m),
+      SpockState (ActionCtxT ctx m) ~ ServerState)
+  => CacheKey -> ActionCtxT ctx m ()
+invalidateCache' key = do
+  gs <- dbQuery GetGlobalState
+  invalidateCache gs key
+
+-- | Call this whenever a user edits the database.
 addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
             SpockState (ActionCtxT ctx m) ~ ServerState)
         => Edit -> ActionCtxT ctx m ()
@@ -148,9 +159,41 @@ addEdit ed = do
   unless (isVacuousEdit ed) $
     dbUpdate (RegisterEdit ed mbIP time)
 
+invalidateCacheForEdit
+  :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
+  => Edit -> m ()
+invalidateCacheForEdit ed = do
+  gs <- dbQuery GetGlobalState
+  mapM_ (invalidateCache gs) $ case ed of
+    Edit'AddCategory catId _           -> [CacheCategory catId]
+    Edit'AddItem catId itemId _        -> [CacheCategory catId,
+                                           CacheItem itemId]
+    Edit'AddPro itemId _ _             -> [CacheItem itemId]
+    Edit'AddCon itemId _ _             -> [CacheItem itemId]
+    Edit'SetCategoryTitle catId _ _    -> [CacheCategory catId]
+    Edit'SetCategoryNotes catId _ _    -> [CacheCategory catId]
+    Edit'SetItemName itemId _ _        -> [CacheItem itemId]
+    Edit'SetItemLink itemId _ _        -> [CacheItem itemId]
+    Edit'SetItemGroup itemId _ _       -> [CacheItem itemId]
+    Edit'SetItemKind itemId _ _        -> [CacheItem itemId]
+    Edit'SetItemDescription itemId _ _ -> [CacheItem itemId]
+    Edit'SetItemNotes itemId _ _       -> [CacheItem itemId]
+    Edit'SetItemEcosystem itemId _ _   -> [CacheItem itemId]
+    Edit'SetTraitContent itemId _ _ _  -> [CacheItem itemId]
+    Edit'DeleteCategory catId _        -> [CacheCategory catId]
+    Edit'DeleteItem itemId _           -> [CacheItem itemId]
+    Edit'DeleteTrait itemId _ _        -> [CacheItem itemId]
+    Edit'MoveItem itemId _             -> [CacheItem itemId]
+    Edit'MoveTrait itemId _ _          -> [CacheItem itemId]
+
 -- | Do an action that would undo an edit.
 --
 -- 'Left' signifies failure.
+--
+-- This doesn't do cache invalidation (you have to do it at the call site
+-- using 'invalidateCacheForEdit').
+--
+-- TODO: make this do cache invalidation.
 --
 -- TODO: many of these don't work when the changed category/item/etc has been
 -- deleted; this should change.
@@ -266,12 +309,14 @@ setMethods = Spock.subcomponent "set" $ do
   -- Title of a category
   Spock.post (categoryVar <//> "title") $ \catId -> do
     content' <- param' "content"
+    invalidateCache' (CacheCategoryTitle catId)
     (edit, category) <- dbUpdate (SetCategoryTitle catId content')
     addEdit edit
     lucidIO $ renderCategoryTitle category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
+    invalidateCache' (CacheCategoryNotes catId)
     (edit, category) <- dbUpdate (SetCategoryNotes catId content')
     addEdit edit
     lucidIO $ renderCategoryNotes category
@@ -279,6 +324,7 @@ setMethods = Spock.subcomponent "set" $ do
   Spock.post (itemVar <//> "info") $ \itemId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the
     -- code and other notes saying where stuff is rendered, etc
+    invalidateCache' (CacheItemInfo itemId)
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
     kind' <- do
@@ -321,18 +367,21 @@ setMethods = Spock.subcomponent "set" $ do
   -- Item description
   Spock.post (itemVar <//> "description") $ \itemId -> do
     content' <- param' "content"
+    invalidateCache' (CacheItemDescription itemId)
     (edit, item) <- dbUpdate (SetItemDescription itemId content')
     addEdit edit
     lucidIO $ renderItemDescription item
   -- Item ecosystem
   Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
     content' <- param' "content"
+    invalidateCache' (CacheItemEcosystem itemId)
     (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
     addEdit edit
     lucidIO $ renderItemEcosystem item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
     content' <- param' "content"
+    invalidateCache' (CacheItemNotes itemId)
     (edit, item) <- dbUpdate (SetItemNotes itemId content')
     addEdit edit
     category <- dbQuery (GetCategoryByItem itemId)
@@ -340,6 +389,7 @@ setMethods = Spock.subcomponent "set" $ do
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     content' <- param' "content"
+    invalidateCache' (CacheItemTraits itemId)
     (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
     addEdit edit
     lucidIO $ renderTrait itemId trait
@@ -358,6 +408,7 @@ addMethods = Spock.subcomponent "add" $ do
         catId <- randomShortUid
         time <- liftIO getCurrentTime
         (edit, newCategory) <- dbUpdate (AddCategory catId title' time)
+        invalidateCache' (CacheCategory catId)
         addEdit edit
         return newCategory
     -- And now send the URL of the new (or old) category
@@ -376,6 +427,7 @@ addMethods = Spock.subcomponent "add" $ do
       if T.all (\c -> isAscii c && (isAlphaNum c || c == '-')) name'
         then dbUpdate (AddItem catId itemId name' time (Library (Just name')))
         else dbUpdate (AddItem catId itemId name' time Other)
+    invalidateCache' (CacheItem itemId)
     addEdit edit
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderItem category newItem
@@ -384,6 +436,7 @@ addMethods = Spock.subcomponent "add" $ do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddPro itemId traitId content')
+    invalidateCache' (CacheItemTraits itemId)
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
   -- Con (argument against an item)
@@ -391,6 +444,7 @@ addMethods = Spock.subcomponent "add" $ do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddCon itemId traitId content')
+    invalidateCache' (CacheItemTraits itemId)
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
 
@@ -406,7 +460,8 @@ adminMethods = Spock.subcomponent "admin" $ do
     res <- undoEdit edit
     case res of
       Left err -> Spock.text (T.pack err)
-      Right () -> do dbUpdate (RemovePendingEdit n)
+      Right () -> do invalidateCacheForEdit edit
+                     dbUpdate (RemovePendingEdit n)
                      Spock.text ""
   -- Accept a range of edits
   Spock.post ("edits" <//> var <//> var <//> "accept") $ \m n -> do
@@ -419,7 +474,8 @@ adminMethods = Spock.subcomponent "admin" $ do
       res <- undoEdit edit
       case res of
         Left err -> return (Just ((edit, details), Just err))
-        Right () -> do dbUpdate (RemovePendingEdit (editId details))
+        Right () -> do invalidateCacheForEdit edit
+                       dbUpdate (RemovePendingEdit (editId details))
                        return Nothing
     case failed of
       [] -> Spock.text ""
@@ -437,25 +493,30 @@ otherMethods = do
     Spock.post itemVar $ \itemId -> do
       direction :: Text <- param' "direction"
       edit <- dbUpdate (MoveItem itemId (direction == "up"))
+      invalidateCache' (CacheItem itemId)
       addEdit edit
     -- Move trait
     Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
       direction :: Text <- param' "direction"
       edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
+      invalidateCache' (CacheItemTraits itemId)
       addEdit edit
 
   -- Deleting things
   Spock.subcomponent "delete" $ do
     -- Delete category
     Spock.post categoryVar $ \catId -> do
+      invalidateCache' (CacheCategory catId)
       mbEdit <- dbUpdate (DeleteCategory catId)
       mapM_ addEdit mbEdit
     -- Delete item
     Spock.post itemVar $ \itemId -> do
+      invalidateCache' (CacheItem itemId)
       mbEdit <- dbUpdate (DeleteItem itemId)
       mapM_ addEdit mbEdit
     -- Delete trait
     Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+      invalidateCache' (CacheItemTraits itemId)
       mbEdit <- dbUpdate (DeleteTrait itemId traitId)
       mapM_ addEdit mbEdit
 

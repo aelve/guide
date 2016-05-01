@@ -44,6 +44,7 @@ module Types
     categoriesDeleted,
     pendingEdits,
     editIdCounter,
+    findCategoryByItem,
 
   -- * Overloaded things
   uid,

@@ -32,6 +32,7 @@ executable guide
     Config
     Types
     Utils
+    Cache
     Markdown
     JS
     View
@@ -57,6 +58,7 @@ executable guide
                      , feed >= 0.3.11 && < 0.4
                      , filepath
                      , friendly-time == 0.4.*
+                     , hashable
                      , http-types
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
@@ -70,6 +72,7 @@ executable guide
                      , random >= 1.1
                      , safecopy
                      , shortcut-links >= 0.4.2
+                     , stm-containers == 0.2.10.*
                      , template-haskell
                      , text
                      , text-format

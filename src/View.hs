@@ -83,6 +83,7 @@ import Utils
 import JS (JS(..), JQuerySelector)
 import qualified JS
 import Markdown
+import Cache
 
 
 {- Note [autosize]
@@ -384,7 +385,7 @@ renderHaskellRoot globalState mbSearchQuery =
 renderCategoryPage
   :: (MonadIO m, MonadRandom m, MonadReader Config m)
   => Category -> HtmlT m ()
-renderCategoryPage category =
+renderCategoryPage category = do
   wrapPage (category^.title <> " – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
     -- TODO: another absolute link [absolute-links]
@@ -530,8 +531,12 @@ renderHelp = do
 helpVersion :: Int
 helpVersion = 3
 
+-- If the presentation of the category list ever changes (e.g. to include
+-- lists of items in categories, or their counts, or something), you might
+-- have to start invalidating 'CacheCategoryList' in more things in
+-- 'Cache.invalidateCache'.
 renderCategoryList :: (MonadIO m, MonadRandom m) => [Category] -> HtmlT m ()
-renderCategoryList cats =
+renderCategoryList cats = cached CacheCategoryList $ do
   div_ [id_ "categories"] $
     for_ cats $ \category -> do
       -- TODO: this link shouldn't be absolute [absolute-links]
@@ -539,8 +544,8 @@ renderCategoryList cats =
         toHtml (category^.title)
       br_ []
 
-renderCategoryTitle :: Monad m => Category -> HtmlT m ()
-renderCategoryTitle category = do
+renderCategoryTitle :: MonadIO m => Category -> HtmlT m ()
+renderCategoryTitle category = cached (CacheCategoryTitle (category^.uid)) $ do
   let thisId = "category-title-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
   h2_ [id_ thisId, class_ "category-title"] $ do
@@ -572,7 +577,7 @@ renderCategoryTitle category = do
         JS.switchSection (this, "normal" :: Text)
 
 renderCategoryNotes :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
-renderCategoryNotes category = do
+renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
   let thisId = "category-notes-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "category-notes"] $ do
@@ -597,7 +602,7 @@ renderCategoryNotes category = do
         (JS.switchSection (this, "normal" :: Text))
 
 renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
-renderCategory category =
+renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryTitle category
     renderCategoryNotes category
@@ -618,7 +623,7 @@ getItemHue category item = case item^.group_ of
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
-renderItem category item =
+renderItem category item = cached (CacheItem (item^.uid)) $ do
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ (itemNodeId item), class_ "item"] $ do
     renderItemInfo category item
@@ -663,8 +668,8 @@ renderItemTitle item = do
         Nothing -> toHtml (item^.name)
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: MonadRandom m => Category -> Item -> HtmlT m ()
-renderItemInfo cat item = do
+renderItemInfo :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
+renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -766,8 +771,10 @@ renderItemInfo cat item = do
 -- TODO: categories that don't directly compare libraries but just list all
 -- libraries about something (e.g. Yesod plugins, or whatever)
 
-renderItemDescription :: MonadRandom m => Item -> HtmlT m ()
-renderItemDescription item = do
+-- TODO: just make a synonym for “Html with IO and randomness”
+
+renderItemDescription :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
   let thisId = "item-description-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-description"] $ do
@@ -795,8 +802,8 @@ renderItemDescription item = do
         (\val -> JS.submitItemDescription (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderItemEcosystem :: MonadRandom m => Item -> HtmlT m ()
-renderItemEcosystem item = do
+renderItemEcosystem :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "item-ecosystem"] $ do
@@ -822,8 +829,8 @@ renderItemEcosystem item = do
         (\val -> JS.submitItemEcosystem (this, item^.uid, val))
         (JS.switchSection (this, "normal" :: Text))
 
-renderItemTraits :: MonadRandom m => Item -> HtmlT m ()
-renderItemTraits item = do
+renderItemTraits :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
   div_ [class_ "item-traits"] $ do
     this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
@@ -916,7 +923,7 @@ renderTrait itemId trait = do
 renderItemNotes
   :: (MonadIO m, MonadRandom m)
   => Category -> Item -> HtmlT m ()
-renderItemNotes category item = do
+renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId

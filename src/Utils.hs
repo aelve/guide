@@ -71,6 +71,8 @@ import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.Trans
 import Control.Monad.Random
+-- Hashable (needed for Uid)
+import Data.Hashable
 -- Text
 import Data.Text (Text)
 import qualified Data.Text          as T
@@ -164,7 +166,7 @@ sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Eq, Ord, Show, PathPiece, Format.Buildable)
+  deriving (Eq, Ord, Show, PathPiece, Format.Buildable, Hashable)
 
 -- See Note [acid-state]
 deriveSafeCopySimple 2 'extension ''Uid
