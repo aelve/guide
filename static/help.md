@@ -1,8 +1,0 @@
-You can edit everything, without registration. (But if you delete everything, I'll roll it back and then make a voodoo doll of you and stick some needles into it).
-
-The most important rule is: **it's collaborative notes, not Wikipedia**. This implies two things. First, incomplete entries like this are welcome here:
-
-> **pros:** pretty nice API\
-> **cons:** buggy (see an example on my Github, here's the link)
-
-Second, you should write as if you were writing for a friend. If a friend asks you about X, you don't go on X's site and copy the standard “X is a powerful modern framework blah blah blah” blurb – well, don't do it here either. Here is the whole version of the [unwritten rules](/unwritten-rules), except that they are written and aren't rules.

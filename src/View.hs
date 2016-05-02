@@ -26,7 +26,6 @@ module View
   renderTracking,
 
   -- * Methods
-  renderHelp,
   -- ** Categories
   renderCategoryList,
   renderCategory,
@@ -115,7 +114,7 @@ instead of simple
 {- Note [show-hide]
 ~~~~~~~~~~~~~~~~~~~
 
-A lot of things (help, notes, etc) can be expanded/collapsed by pressing a button. Similarly, pressing “edit” replaces rendered text with a textbox, or adds buttons to pros/cons. All this is done with sections and show/hide.
+A lot of things (notes, etc) can be expanded/collapsed by pressing a button. Similarly, pressing “edit” replaces rendered text with a textbox, or adds buttons to pros/cons. All this is done with sections and show/hide.
 
 A section is something that can be shown or hidden. You define a section by using 'section' (which creates a <div>) or 'sectionSpan' (which creates a <span>).
 
@@ -365,7 +364,6 @@ renderHaskellRoot globalState mbSearchQuery =
       -- A search page isn't the main page, so we need a link to the main page
       Just _  -> h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning
-    renderHelp
     renderSearch mbSearchQuery
     textInput [
       placeholder_ "add a category",
@@ -397,7 +395,6 @@ renderCategoryPage category = do
     -- TODO: another absolute link [absolute-links]
     h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
     renderNoScriptWarning
-    renderHelp
     renderSearch Nothing
     renderCategory category
 
@@ -497,6 +494,8 @@ wrapPage pageTitle page = doctypehtml_ $ do
       "/"
       a_ [href_ "https://github.com/aelve/guide/issues"] "issue tracker"
       emptySpan "2em"
+      a_ [href_ "/unwritten-rules"] "rules"
+      emptySpan "2em"
       a_ [href_ "/donate"] "donate"
       sub_ [style_ "font-size:50%"] "to an unemployed guy"
       emptySpan "2em"
@@ -515,37 +514,6 @@ renderSearch mbSearchQuery = do
   form_ [action_ "/haskell"] $ do
     input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
             value_ (fromMaybe "" mbSearchQuery)]
-
-renderHelp :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
-renderHelp = do
-  div_ [id_ "help"] $ do
-
-    -- If you're going to change section names, look at 'JS.showHelp' and
-    -- 'JS.hideHelp'
-    section "collapsed" [shown] $ do
-      textButton "show help" $
-        JS.showHelp (JS.selectId "help", helpVersion)
-
-    section "expanded" [noScriptShown] $ do
-      textButton "hide help" $
-        JS.hideHelp (JS.selectId "help", helpVersion)
-      -- Don't forget to change 'helpVersion' when the text changes
-      -- substantially and you think the users should reread it
-      help <- liftIO $ T.readFile "static/help.md"
-      toHtml $ renderMarkdownBlock help
-      -- Replicating “hide help” so that it would be more noticeable
-      p_ $ do
-        let handler =
-              fromJS (JS.hideHelp (JS.selectId "help", helpVersion)) <>
-              "return false;"
-        "If you're finished reading, "
-        a_ [href_ "#", onclick_ handler] "hide this message"
-        "."
-
-  onPageLoad $ JS.showOrHideHelp (JS.selectId "help", helpVersion)
-
-helpVersion :: Int
-helpVersion = 3
 
 -- If the presentation of the category list ever changes (e.g. to include
 -- lists of items in categories, or their counts, or something), you might

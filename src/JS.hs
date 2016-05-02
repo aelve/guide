@@ -42,8 +42,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   switchSection, switchSectionsEverywhere,
   fadeIn, fadeOutAndRemove,
   setMonospace,
-  -- Help
-  showOrHideHelp, showHelp, hideHelp,
   -- Misc
   createAjaxIndicator,
   autosizeTextarea,
@@ -252,34 +250,6 @@ setMonospace =
     // See Note [autosize]; the size of the textarea will definitely change
     // after the font has been changed
     autosize.update($(node));
-  |]
-
-showHelp :: JSFunction a => a
-showHelp =
-  makeJSFunction "showHelp" ["node", "version"]
-  [text|
-    localStorage.removeItem("help-hidden-"+version);
-    switchSection(node, "expanded");
-  |]
-
-hideHelp :: JSFunction a => a
-hideHelp =
-  makeJSFunction "hideHelp" ["node", "version"]
-  [text|
-    localStorage.setItem("help-hidden-"+version, "");
-    switchSection(node, "collapsed");
-  |]
-
--- TODO: find a better name for this (to distinguish it from 'showHelp' and
--- 'hideHelp')
-showOrHideHelp :: JSFunction a => a
-showOrHideHelp =
-  makeJSFunction "showOrHideHelp" ["node", "version"]
-  [text|
-    if (localStorage.getItem("help-hidden-"+version) === null)
-      showHelp(node, version)
-    else
-      hideHelp(node, version);
   |]
 
 createAjaxIndicator :: JSFunction a => a
