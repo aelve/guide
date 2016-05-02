@@ -665,34 +665,13 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
 
 renderItemTitle :: Monad m => Item -> HtmlT m ()
 renderItemTitle item = do
+  case item^.link of
+    Just l  -> a_ [href_ l] (toHtml (item^.name))
+    Nothing -> toHtml (item^.name)
   let hackageLink x = "https://hackage.haskell.org/package/" <> x
-  case item^.kind of
-    -- If the library is on Hackage, the title links to its Hackage
-    -- page; otherwise, it doesn't link anywhere. Even if the link
-    -- field is present, it's going to be rendered as “(site)”, not
-    -- linked in the title.
-    Library hackageName' -> do
-      case hackageName' of
-        Just x  -> a_ [href_ (hackageLink x)] (toHtml (item^.name))
-        Nothing -> toHtml (item^.name)
-      case item^.link of
-        Just l  -> " (" >> a_ [href_ l] "site" >> ")"
-        Nothing -> return ()
-    -- For tools, it's the opposite – the title links to the item site
-    -- (if present), and there's a separate “(Hackage)” link if the
-    -- tool is on Hackage.
-    Tool hackageName' -> do
-      case item^.link of
-        Just l  -> a_ [href_ l] (toHtml (item^.name))
-        Nothing -> toHtml (item^.name)
-      case hackageName' of
-        Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
-        Nothing -> return ()
-    -- And now everything else
-    Other -> do
-      case item^.link of
-        Just l  -> a_ [href_ l] (toHtml (item^.name))
-        Nothing -> toHtml (item^.name)
+  case item ^. kind.hackageName of
+    Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
+    Nothing -> return ()
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
