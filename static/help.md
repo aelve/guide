@@ -15,7 +15,3 @@ Markdown is supported in most places. 2 noteworthy features: you can write `[pkg
 4
 ~~~
 ~~~~
-
-Finally, all content here is licensed under [CC BY-SA 3.0][] (it's the same license as on Wikipedia and Stackoverflow), and so everything that you contribute will be under that license as well.
-
-[CC BY-SA 3.0]: https://creativecommons.org/licenses/by-sa/3.0/

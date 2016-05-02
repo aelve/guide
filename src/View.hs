@@ -487,11 +487,15 @@ wrapPage pageTitle page = doctypehtml_ $ do
       "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
       emptySpan "2em"
       a_ [href_ "https://github.com/aelve/guide"] "source"
-      emptySpan "2em"
-      a_ [href_ "https://github.com/aelve/guide/issues"] "report an issue"
+      "/"
+      a_ [href_ "https://github.com/aelve/guide/issues"] "issue tracker"
       emptySpan "2em"
       a_ [href_ "/donate"] "donate"
-      sup_ [style_ "font-size:50%"] "I don't have a job"
+      sub_ [style_ "font-size:50%"] "to an unemployed guy"
+      emptySpan "2em"
+      "licensed under "
+      a_ [href_ "https://creativecommons.org/licenses/by-sa/3.0/"]
+        "CC BY-SA 3.0"
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
