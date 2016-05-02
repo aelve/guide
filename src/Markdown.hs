@@ -41,16 +41,15 @@ import Lens.Micro.Platform hiding ((&))
 -- Monad transformers and monads
 import Control.Monad.Writer
 import Control.Monad.State
-import Data.Functor.Identity
 -- Text
 import qualified Data.Text as T
 import Data.Text (Text)
+-- ByteString
+import qualified Data.ByteString.Lazy as BSL
 -- Parsing
 import Text.Megaparsec hiding (State)
 -- HTML
 import Lucid
-import Lucid.Base
-import Blaze.ByteString.Builder (Builder)
 -- Containers
 import Data.Sequence ((<|), singleton)
 import Data.Tree
@@ -69,21 +68,19 @@ import Data.SafeCopy
 import Utils
 
 
--- TODO: switch from Builder to ByteString here
-
 data MarkdownInline = MarkdownInline {
   markdownInlineMdText     :: Text,
-  markdownInlineMdHtml     :: !Builder,
+  markdownInlineMdHtml     :: BSL.ByteString,
   markdownInlineMdMarkdown :: !Inlines }
 
 data MarkdownBlock = MarkdownBlock {
   markdownBlockMdText     :: Text,
-  markdownBlockMdHtml     :: !Builder,
+  markdownBlockMdHtml     :: BSL.ByteString,
   markdownBlockMdMarkdown :: !Blocks }
 
 data MarkdownBlockWithTOC = MarkdownBlockWithTOC {
   markdownBlockWithTOCMdText     :: Text,
-  markdownBlockWithTOCMdHtml     :: !Builder,
+  markdownBlockWithTOCMdHtml     :: BSL.ByteString,
   markdownBlockWithTOCMdMarkdown :: !Blocks,
   markdownBlockWithTOCMdIdPrefix :: Text,
   markdownBlockWithTOCMdTOC      :: Forest (Inlines, Text) }
@@ -179,7 +176,7 @@ parseLink = either (Left . show) Right . parse p ""
            <*> optional (T.pack <$> text)
 
 renderMarkdownInline :: Text -> MarkdownInline
-renderMarkdownInline s = MarkdownInline s (htmlToBuilder md) inlines
+renderMarkdownInline s = MarkdownInline s (renderBS md) inlines
   where
     Doc opts blocks = markdown def s
     inlines = extractInlines =<< blocks
@@ -196,7 +193,7 @@ renderMarkdownInline s = MarkdownInline s (htmlToBuilder md) inlines
 renderMarkdownBlock :: Text -> MarkdownBlock
 renderMarkdownBlock s = MarkdownBlock {
   markdownBlockMdText     = s,
-  markdownBlockMdHtml     = htmlToBuilder md,
+  markdownBlockMdHtml     = renderBS md,
   markdownBlockMdMarkdown = blocks }
   where
     Doc opts blocks = highlightDoc . walk shortcutLinks . markdown def $ s
@@ -205,7 +202,7 @@ renderMarkdownBlock s = MarkdownBlock {
 renderMarkdownBlockWithTOC :: Text -> Text -> MarkdownBlockWithTOC
 renderMarkdownBlockWithTOC idPrefix s = MarkdownBlockWithTOC {
   markdownBlockWithTOCMdText     = s,
-  markdownBlockWithTOCMdHtml     = htmlToBuilder md,
+  markdownBlockWithTOCMdHtml     = renderBS md,
   markdownBlockWithTOCMdMarkdown = blocks',
   markdownBlockWithTOCMdIdPrefix = idPrefix,
   markdownBlockWithTOCMdTOC      = toc }
@@ -223,20 +220,14 @@ instance Show MarkdownBlockWithTOC where
   show = show . view mdText
 
 instance ToHtml MarkdownInline where
-  toHtml    = builderToHtml . view mdHtml
-  toHtmlRaw = builderToHtml . view mdHtml
+  toHtml    = toHtmlRaw . view mdHtml
+  toHtmlRaw = toHtmlRaw . view mdHtml
 instance ToHtml MarkdownBlock where
-  toHtml    = builderToHtml . view mdHtml
-  toHtmlRaw = builderToHtml . view mdHtml
+  toHtml    = toHtmlRaw . view mdHtml
+  toHtmlRaw = toHtmlRaw . view mdHtml
 instance ToHtml MarkdownBlockWithTOC where
-  toHtml    = builderToHtml . view mdHtml
-  toHtmlRaw = builderToHtml . view mdHtml
-
-builderToHtml :: Monad m => Builder -> HtmlT m ()
-builderToHtml b = HtmlT (return (\_ -> b, ()))
-
-htmlToBuilder :: Html () -> Builder
-htmlToBuilder = runIdentity . execHtmlT
+  toHtml    = toHtmlRaw . view mdHtml
+  toHtmlRaw = toHtmlRaw . view mdHtml
 
 instance SafeCopy MarkdownInline where
   version = 0
