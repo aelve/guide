@@ -98,6 +98,28 @@ Start the daemon:
 
     $ service guide start
 
+## DoS protection
+
+To protect against possible DoS attacks, you might use `mod_evasive`:
+
+    $ apt-get install libapache2-mod-evasive
+
+Edit the settings in `/etc/apache2/mods-available/evasive.conf`:
+
+        DOSHashTableSize    3097
+        DOSPageCount        4
+        DOSSiteCount        10
+        DOSPageInterval     10
+        DOSSiteInterval     10
+        DOSBlockingPeriod   10
+
+I'm not sure what they mean *precisely*, but seems to work.
+
+Enable the mod and restart:
+
+    $ a2enmod evasive
+    $ service apache2 restart
+
 ## Database
 
 You can set automatic backups of the database to your own repository.
