@@ -374,8 +374,13 @@ makeTraitEditor =
       switchSection(traitNode, "editable");
       return false; };
     cancelBtn = $("<span>", {"class":"text-button"})[0];
+    markdown = $("<a>", {
+      "href"   : "/markdown",
+      "target" : "_blank",
+      "style"  : "float:right",
+      "text"   : "Markdown" })[0];
     $(cancelBtn).append(a);
-    $(sectionNode).append(area, br, cancelBtn);
+    $(sectionNode).append(area, br, cancelBtn, markdown);
   |]
 
 -- | Dynamically creates a 'View.markdownEdito' (but specifically for item
@@ -413,10 +418,14 @@ makeItemNotesEditor =
     monospace.onchange = function () {
       setMonospace(area, monospace.checked); };
     monospaceLabel = $("<label>")[0];
+    markdown = $("<a>", {
+      "href"   : "/markdown",
+      "target" : "_blank",
+      "text"   : "Markdown" })[0];
     $(monospaceLabel).append(monospace, "monospace editor");
     $(sectionNode).append(
       area, saveBtn, $(space), cancelBtn, $(space),
-      "Markdown", $(space), monospaceLabel);
+      markdown, $(space), monospaceLabel);
   |]
 
 -- | Create a new category and redirect to it (or redirect to an old category

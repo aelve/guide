@@ -19,6 +19,7 @@ module View
   renderDonate,
   renderCategoryPage,
   renderUnwrittenRules,
+  renderMarkdownHelp,
   renderSearchResults,
 
   -- * Tracking
@@ -427,6 +428,12 @@ renderUnwrittenRules
 renderUnwrittenRules = wrapPage "Unwritten rules" $ do
   toHtml . renderMarkdownBlock =<<
     liftIO (T.readFile "static/unwritten-rules.md")
+
+renderMarkdownHelp
+  :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
+renderMarkdownHelp = wrapPage "Markdown" $ do
+  toHtml . renderMarkdownBlock =<<
+    liftIO (T.readFile "static/markdown.md")
 
 -- Include all the necessary things
 wrapPage
@@ -1097,7 +1104,7 @@ markdownEditor attr (view mdText -> s) submit cancel = do
     JS.assign val s <>
     cancel
   emptySpan "6px"
-  "Markdown"
+  a_ [href_ "/markdown", target_ "_blank"] "Markdown"
   emptySpan "6px"
   -- TODO: this jumps around when there's a lot of text, need to somehow
   -- prevent jumping (and in JS.makeItemNotesEditor too)
@@ -1127,6 +1134,7 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel = do
       textButton "cancel" $
         JS.assign val s <>
         cancel
+  a_ [href_ "/markdown", target_ "_blank", style_ "float:right"] "Markdown"
 
 thisNode :: MonadRandom m => HtmlT m JQuerySelector
 thisNode = do

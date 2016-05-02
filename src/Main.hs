@@ -677,6 +677,10 @@ main = do
       Spock.get "unwritten-rules" $ do
         lucidWithConfig $ renderUnwrittenRules
 
+      -- Markdown help
+      Spock.get "markdown" $ do
+        lucidWithConfig $ renderMarkdownHelp
+
       -- Haskell
       Spock.subcomponent "haskell" $ do
         Spock.get root $ do
