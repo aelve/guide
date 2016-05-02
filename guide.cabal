@@ -52,6 +52,7 @@ executable guide
                      , cheapskate-lucid == 0.1.*
                      , containers >= 0.5
                      , data-default >= 0.5
+                     , deepseq >= 1.2.0.0
                      , directory >= 1.2
                      , ekg
                      , ekg-core

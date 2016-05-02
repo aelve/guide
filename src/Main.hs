@@ -33,7 +33,7 @@ import System.FilePath ((</>))
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
-import Lucid
+import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai as Wai
@@ -51,6 +51,10 @@ import qualified System.Metrics.Gauge     as EKG.Gauge
 import Data.Acid as Acid
 -- Time
 import Data.Time
+-- Deepseq
+import Control.DeepSeq
+-- IO
+import System.IO
 
 -- Local
 import Config
@@ -606,6 +610,7 @@ main = do
         closeAcidState db
         mapM_ killThread =<< readIORef ekgId
   bracket prepare finalise $ \db -> do
+    hSetBuffering stdout NoBuffering
     -- Create a checkpoint every hour. Note: if nothing was changed,
     -- acid-state overwrites the previous checkpoint, which saves us some
     -- space.
@@ -631,6 +636,14 @@ main = do
           _db     = db }
     let spockConfig = (defaultSpockCfg () PCNoDatabase serverState) {
           spc_maxRequestSize = Just (1024*1024) }
+    when (_prerender config) $ do
+      putStr "Prerendering pages to be cached... "
+      globalState <- liftIO $ Acid.query db GetGlobalState
+      for_ (globalState^.categories) $ \cat -> do
+        putStr "|"
+        evaluate . force =<<
+          renderBST (hoist (flip runReaderT config) (renderCategoryPage cat))
+      putStrLn " done"
     runSpock 8080 $ spock spockConfig $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
