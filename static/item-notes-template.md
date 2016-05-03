@@ -1,15 +1,15 @@
-### Links
+# Links
 
 Links to tutorials, blog posts, etc.
 
-### Imports
+# Imports
 
 Most commonly used imports from the library
 
-### Usage
+# Usage
 
 Some examples
 
-### Gotchas
+# Gotchas
 
 Common mistakes and non-obvious things
