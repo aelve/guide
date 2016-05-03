@@ -156,7 +156,7 @@ renderRoot :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
 renderRoot = do
   wrapPage "Aelve Guide" $ do
     h1_ "Aelve Guide"
-    h2_ (a_ [href_ "/haskell"] "Haskell")
+    h2_ (mkLink "Haskell" "/haskell")
 
 -- TODO: show a “category not found” page
 
@@ -362,7 +362,7 @@ renderHaskellRoot globalState mbSearchQuery =
     case mbSearchQuery of
       Nothing -> h1_ "The Haskeller's guide"
       -- A search page isn't the main page, so we need a link to the main page
-      Just _  -> h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
+      Just _  -> h1_ (mkLink "The Haskeller's guide" "/haskell")
     renderNoScriptWarning
     renderSearch mbSearchQuery
     textInput [
@@ -393,7 +393,7 @@ renderCategoryPage category = do
   wrapPage (category^.title <> " – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
     -- TODO: another absolute link [absolute-links]
-    h1_ (a_ [href_ "/haskell"] "The Haskeller's guide")
+    h1_ (mkLink "The Haskeller's guide" "/haskell")
     renderNoScriptWarning
     renderSearch Nothing
     renderCategory category
@@ -488,20 +488,19 @@ wrapPage pageTitle page = doctypehtml_ $ do
     div_ [id_ "main"] $
       page
     div_ [id_ "footer"] $ do
-      "made by " >> a_ [href_ "https://artyom.me"] "Artyom"
-      emptySpan "2em"
-      a_ [href_ "https://github.com/aelve/guide"] "source"
-      "/"
-      a_ [href_ "https://github.com/aelve/guide/issues"] "issue tracker"
-      emptySpan "2em"
-      a_ [href_ "/unwritten-rules"] "rules"
-      emptySpan "2em"
-      a_ [href_ "/donate"] "donate"
-      sub_ [style_ "font-size:50%"] "to an unemployed guy"
-      emptySpan "2em"
-      "licensed under "
-      a_ [href_ "https://creativecommons.org/licenses/by-sa/3.0/"]
-        "CC BY-SA 3.0"
+      mapM_ (div_ [class_ "footer-item"]) $
+        [ do "made by "
+             mkLink "Artyom" "https://artyom.me"
+        , do mkLink "source" "https://github.com/aelve/guide"
+             "/"
+             mkLink "issue tracker" "https://github.com/aelve/guide/issues"
+        , mkLink "rules" "/unwritten-rules"
+        , do div_ (mkLink "donate" "/donate")
+             div_ [class_ "unemployed"] "I'm kinda jobless"
+        , do "licensed under "
+             mkLink "CC BY-SA 3.0"
+                    "https://creativecommons.org/licenses/by-sa/3.0/"
+        ]
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
 -- or something (but searching should still be possible)
@@ -1049,6 +1048,9 @@ imgButton :: Monad m => Text -> Url -> [Attribute] -> JS -> HtmlT m ()
 imgButton alt src attrs (JS handler) =
   a_ [href_ "#", onclick_ (handler <> "return false;")]
      (img_ (src_ src : alt_ alt : title_ alt : attrs))
+
+mkLink :: Monad m => HtmlT m a -> Url -> HtmlT m a
+mkLink x src = a_ [href_ src] x
 
 markdownEditor
   :: MonadRandom m
