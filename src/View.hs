@@ -215,7 +215,7 @@ renderStats globalState acts = do
     thead_ $ tr_ $ do
       td_ "Category"
       td_ "Visits"
-    let catVisits = map (head &&& length) . group $
+    let catVisits = map (head &&& length) . group . sort $
           [catId | (Action'CategoryVisit catId, _) <- acts']
     for_ (reverse $ sortWith snd catVisits) $ \(catId, n) -> do
       tr_ $ do
