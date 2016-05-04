@@ -22,9 +22,6 @@ module View
   renderMarkdownHelp,
   renderSearchResults,
 
-  -- * Tracking
-  renderTracking,
-
   -- * Methods
   -- ** Categories
   renderCategoryList,
@@ -72,6 +69,7 @@ import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
 -- Time
+import Data.Time
 import Data.Time.Format.Human
 -- Markdown
 import Cheapskate.Lucid
@@ -161,9 +159,8 @@ renderRoot = do
 -- TODO: show a “category not found” page
 
 renderAdmin
-  :: (MonadIO m, MonadRandom m)
-  => GlobalState -> [(Edit, EditDetails)] -> HtmlT m ()
-renderAdmin globalState edits = do
+  :: (MonadIO m, MonadRandom m) => GlobalState -> HtmlT m ()
+renderAdmin globalState = do
   head_ $ do
     includeJS "/js.js"
     includeJS "/jquery-2.2.0.min.js"
@@ -180,8 +177,81 @@ renderAdmin globalState edits = do
     buttonUid <- randomLongUid
     button "Create checkpoint" [uid_ buttonUid] $
       JS.createCheckpoint [JS.selectUid buttonUid]
-    h1_ "Pending edits"
-    renderEdits globalState (map (,Nothing) edits)
+    div_ [id_ "stats"] $ do
+      h1_ "Statistics"
+      renderStats globalState (globalState ^. actions)
+    div_ [id_ "edits"] $ do
+      h1_ "Pending edits"
+      renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
+
+renderStats
+  :: (MonadIO m)
+  => GlobalState
+  -> [(Action, ActionDetails)]
+  -> HtmlT m ()
+renderStats globalState acts = do
+  p_ "All information is for last 31 days."
+  now <- liftIO getCurrentTime
+  let thisMonth (_, d) = diffUTCTime now (actionDate d) <= 31*86400
+      acts' = takeWhile thisMonth acts
+  p_ $ do
+    "Main page visits: "
+    strong_ $ toHtml $ show $ length [() | (Action'MainPageVisit, _) <- acts']
+    ". "
+    "Edits: "
+    strong_ $ toHtml $ show $ length [() | (Action'Edit _, _) <- acts']
+    ". "
+    "Unique visitors: "
+    strong_ $ toHtml $ show $ length $ ordNub $ map (actionIP.snd) acts'
+    "."
+  let allCategories = globalState^.categories ++
+                      globalState^.categoriesDeleted
+  -- TODO: move this somewhere else (it's also used in renderEdit)
+  let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
+        where
+          err = error ("renderStats: couldn't find category with uid = " ++
+                       T.unpack (uidToText catId))
+  table_ $ do
+    thead_ $ tr_ $ do
+      td_ "Category"
+      td_ "Visits"
+    let catVisits = map (head &&& length) . group $
+          [catId | (Action'CategoryVisit catId, _) <- acts']
+    for_ (reverse $ sortWith snd catVisits) $ \(catId, n) -> do
+      tr_ $ do
+        td_ (toHtml (findCategory catId ^. title))
+        td_ (toHtml (show n))
+  table_ $ do
+    thead_ $ tr_ $ do
+      td_ "Search"
+      td_ "Repetitions"
+    let searches = map (head &&& length) . group $
+          [s | (Action'Search s, _) <- acts']
+    for_ (reverse $ sortWith snd searches) $ \(s, n) -> do
+      tr_ $ do
+        td_ (toHtml s)
+        td_ (toHtml (show n))
+  table_ $ do
+    thead_ $ tr_ $ do
+      td_ "Action"
+      td_ "Date"
+      td_ "IP"
+      td_ "User agent"
+    -- acts, not acts' (what if there were less than 10 actions in the last
+    -- month?)
+    for_ (take 10 acts) $ \(a, d) -> tr_ $ do
+      td_ $ case a of
+        Action'Edit _          -> "Edit"
+        Action'MainPageVisit   -> "Main page visit"
+        Action'CategoryVisit _ -> "Category visit"
+        Action'Search _        -> "Search"
+      td_ $ toHtml =<< liftIO (humanReadableTime (actionDate d))
+      td_ $ case actionIP d of
+        Nothing -> "<unknown IP>"
+        Just ip -> toHtml (show ip)
+      td_ $ case actionUserAgent d of
+        Nothing -> "<unknown user agent>"
+        Just ua -> toHtml ua
 
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves
@@ -407,14 +477,6 @@ renderNoScriptWarning =
       you won't be able to edit anything.
       |]
 
-renderTracking
-    :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-renderTracking = do
-  trackingEnabled <- lift (asks _trackingEnabled)
-  when trackingEnabled $ do
-    tracking <- liftIO $ T.readFile "static/tracking.html"
-    toHtmlRaw tracking
-
 renderDonate
   :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
 renderDonate = wrapPage "Donate to Artyom" $ do
@@ -470,7 +532,6 @@ wrapPage pageTitle page = doctypehtml_ $ do
     -- in this file. (This isn't an actual file, so don't look for it in the
     -- static folder – it's generated and served in 'otherMethods'.)
     includeJS "/js.js"
-    renderTracking
     -- CSS that makes 'shown' and 'noScriptShown' work;
     -- see Note [show-hide]
     noscript_ $ style_ [text|

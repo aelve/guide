@@ -41,6 +41,7 @@ module Types
   GlobalState(..),
     categories,
     categoriesDeleted,
+    actions,
     pendingEdits,
     editIdCounter,
     findCategoryByItem,
@@ -59,6 +60,10 @@ module Types
   Edit(..),
     isVacuousEdit,
   EditDetails(..),
+
+  -- * Actions
+  Action(..),
+  ActionDetails(..),
 
   -- * acid-state methods
   -- ** query
@@ -101,6 +106,9 @@ module Types
   GetEdit(..), GetEdits(..),
   RegisterEdit(..),
   RemovePendingEdit(..), RemovePendingEdits(..),
+
+  -- ** actions
+  RegisterAction(..),
 
   -- ** other
   MoveItem(..),
@@ -617,36 +625,55 @@ instance Migrate EditDetails where
     editDate = editDate_v1,
     editId = editId_v1 }
 
+data Action
+  = Action'MainPageVisit
+  | Action'CategoryVisit (Uid Category)
+  | Action'Search Text
+  | Action'Edit Edit
+  deriving (Show)
+
+deriveSafeCopySimple 0 'base ''Action
+
+data ActionDetails = ActionDetails {
+  actionIP        :: Maybe IP,
+  actionDate      :: UTCTime,
+  actionReferrer  :: Maybe Url,
+  actionUserAgent :: Maybe Text }
+  deriving (Show)
+
+deriveSafeCopySimple 0 'base ''ActionDetails
+
 -- See Note [acid-state]
 
 data GlobalState = GlobalState {
   _categories :: [Category],
   _categoriesDeleted :: [Category],
+  _actions :: [(Action, ActionDetails)],
   -- | Pending edits, newest first
   _pendingEdits :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
   _editIdCounter :: Int }
   deriving (Show)
 
-deriveSafeCopySimple 3 'extension ''GlobalState
+deriveSafeCopySimple 4 'extension ''GlobalState
 makeLenses ''GlobalState
 
-data GlobalState_v2 = GlobalState_v2 {
-  _categories_v2 :: [Category],
-  _categoriesDeleted_v2 :: [Category],
-  _pendingEdits_v2 :: [(Edit, EditDetails)],
-  _editIdCounter_v2 :: Int }
+data GlobalState_v3 = GlobalState_v3 {
+  _categories_v3 :: [Category],
+  _categoriesDeleted_v3 :: [Category],
+  _pendingEdits_v3 :: [(Edit, EditDetails)],
+  _editIdCounter_v3 :: Int }
 
--- TODO: at the next migration change this to deriveSafeCopySimple!
-deriveSafeCopy 2 'base ''GlobalState_v2
+deriveSafeCopySimple 3 'base ''GlobalState_v3
 
 instance Migrate GlobalState where
-  type MigrateFrom GlobalState = GlobalState_v2
-  migrate GlobalState_v2{..} = GlobalState {
-    _categories = _categories_v2,
-    _categoriesDeleted = _categoriesDeleted_v2,
-    _pendingEdits = _pendingEdits_v2,
-    _editIdCounter = _editIdCounter_v2 }
+  type MigrateFrom GlobalState = GlobalState_v3
+  migrate GlobalState_v3{..} = GlobalState {
+    _categories = _categories_v3,
+    _categoriesDeleted = _categoriesDeleted_v3,
+    _actions = [],
+    _pendingEdits = _pendingEdits_v3,
+    _editIdCounter = _editIdCounter_v3 }
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
@@ -1109,6 +1136,21 @@ removePendingEdits
 removePendingEdits m n = do
   pendingEdits %= filter (\(_, d) -> editId d < n || m < editId d)
 
+registerAction
+  :: Action
+  -> Maybe IP
+  -> UTCTime
+  -> Maybe Url                    -- ^ Referrer
+  -> Maybe Text                   -- ^ User-agent
+  -> Acid.Update GlobalState ()
+registerAction act ip date ref ua = do
+  let details = ActionDetails {
+        actionIP        = ip,
+        actionDate      = date,
+        actionReferrer  = ref,
+        actionUserAgent = ua }
+  actions %= ((act, details) :)
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -1135,6 +1177,8 @@ makeAcidic ''GlobalState [
   'getEdit, 'getEdits,
   'registerEdit,
   'removePendingEdit, 'removePendingEdits,
+  -- actions
+  'registerAction,
   -- other
   'moveItem, 'moveTrait,
   'restoreCategory, 'restoreItem, 'restoreTrait

@@ -35,7 +35,6 @@ import Utils
 
 
 data Config = Config {
-  _trackingEnabled :: Bool,
   _baseUrl         :: Url,
   _adminPassword   :: Text,
   _prerender       :: Bool }
@@ -43,14 +42,12 @@ data Config = Config {
 
 instance Default Config where
   def = Config {
-    _trackingEnabled = False,
     _baseUrl         = "/",
     _adminPassword   = "",
     _prerender       = False }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
-    _trackingEnabled <- o .:? "tracking-enabled" .!= _trackingEnabled def
     _baseUrl         <- o .:? "base-url"         .!= _baseUrl def
     _adminPassword   <- o .:? "admin-password"   .!= _adminPassword def
     _prerender       <- o .:? "prerender"        .!= _prerender def
@@ -58,7 +55,6 @@ instance FromJSON Config where
 
 instance ToJSON Config where
   toJSON Config{..} = object [
-    "tracking-enabled" .= _trackingEnabled,
     "base-url"         .= _baseUrl,
     "admin-password"   .= _adminPassword,
     "prerender"        .= _prerender ]

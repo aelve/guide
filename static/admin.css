@@ -32,18 +32,31 @@ textarea:focus {
   outline: 0px none;
   border: 1px solid #07C; }
 
-table {
+#edits table {
   width: 100%;
   border: none;
   table-layout: fixed; }
 
-td {
-  vertical-align: top;
+#edits td {
   width: 100%;
+  vertical-align: top;
   padding: 0.5em 0.5em; }
 
-td:first-child {
+#edits td:first-child {
   padding-left: 0; }
 
-td:last-child {
+#edits td:last-child {
   padding-right: 0; }
+
+#stats table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  empty-cells: show;
+  border: 1px solid gray;
+  margin-bottom: 1em; }
+
+#stats thead {
+  background-color: #e0e0e0; }
+
+#stats th, #stats td {
+  padding: 0.5em 1em; }

@@ -25,6 +25,7 @@ module Utils
   deleteFirst,
   deleteAt,
   insertAt,
+  ordNub,
 
   -- * 'Eq'
   equating,
@@ -71,6 +72,8 @@ import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.Trans
 import Control.Monad.Random
+-- Containers
+import qualified Data.Set as S
 -- Hashable (needed for Uid)
 import Data.Hashable
 -- Text
@@ -133,6 +136,13 @@ insertAt :: Int -> a -> [a] -> [a]
 insertAt _ a   []   = [a]
 insertAt 0 a   xs   = a:xs
 insertAt n a (x:xs) = x : insertAt (n-1) a xs
+
+ordNub :: Ord a => [a] -> [a]
+ordNub = go mempty
+  where
+    go _ [] = []
+    go s (x:xs) | x `S.member` s = go s xs
+                | otherwise      = x : go (S.insert x s) xs
 
 equating :: Eq b => (a -> b) -> (a -> a -> Bool)
 equating f = (==) `on` f

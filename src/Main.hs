@@ -29,6 +29,8 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 -- Paths
 import System.FilePath ((</>))
+-- Network
+import Data.IP (IP)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -134,11 +136,10 @@ invalidateCache' key = do
   gs <- dbQuery GetGlobalState
   invalidateCache gs key
 
--- | Call this whenever a user edits the database.
-addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
-            SpockState (ActionCtxT ctx m) ~ ServerState)
-        => Edit -> ActionCtxT ctx m ()
-addEdit ed = do
+getDetails
+  :: (MonadIO m, HasSpock (ActionCtxT ctx m))
+  => ActionCtxT ctx m (UTCTime, Maybe IP, Maybe Text, Maybe Text)
+getDetails = do
   time <- liftIO $ getCurrentTime
   mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
                                  (Spock.header "X-Forwarded-For")
@@ -160,8 +161,19 @@ addEdit ed = do
            -- IPv6 without port
            | otherwise =
                addr
-  unless (isVacuousEdit ed) $
+  mbReferrer <- Spock.header "Referer"
+  mbUA       <- Spock.header "User-Agent"
+  return (time, mbIP, mbReferrer, mbUA)
+
+-- | Call this whenever a user edits the database.
+addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
+            SpockState (ActionCtxT ctx m) ~ ServerState)
+        => Edit -> ActionCtxT ctx m ()
+addEdit ed = do
+  (time, mbIP, mbReferrer, mbUA) <- getDetails
+  unless (isVacuousEdit ed) $ do
     dbUpdate (RegisterEdit ed mbIP time)
+    dbUpdate (RegisterAction (Action'Edit ed) mbIP time mbReferrer mbUA)
 
 invalidateCacheForEdit
   :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
@@ -589,6 +601,7 @@ main = do
   let emptyState = GlobalState {
         _categories = [],
         _categoriesDeleted = [],
+        _actions = [],
         _pendingEdits = [],
         _editIdCounter = 0 }
   do args <- getArgs
@@ -664,9 +677,8 @@ main = do
       -- Admin page
       prehook adminHook $ do
         Spock.get "admin" $ do
-          edits <- view pendingEdits <$> dbQuery GetGlobalState
           s <- dbQuery GetGlobalState
-          lucidIO $ renderAdmin s edits
+          lucidIO $ renderAdmin s
         adminMethods
 
       -- Donation page
@@ -686,6 +698,11 @@ main = do
         Spock.get root $ do
           s <- dbQuery GetGlobalState
           q <- param "q"
+          (time, mbIP, mbReferrer, mbUA) <- getDetails
+          let act = case q of
+                Nothing -> Action'MainPageVisit
+                Just x  -> Action'Search x
+          dbUpdate (RegisterAction act mbIP time mbReferrer mbUA)
           lucidWithConfig $ renderHaskellRoot s q
         -- Category pages
         Spock.get var $ \path -> do
@@ -698,6 +715,9 @@ main = do
           case mbCategory of
             Nothing -> Spock.jumpNext
             Just category -> do
+              (time, mbIP, mbReferrer, mbUA) <- getDetails
+              dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
+                           mbIP time mbReferrer mbUA
               -- If the slug in the url is old (i.e. if it doesn't match the
               -- one we would've generated now), let's do a redirect
               when (categorySlug category /= path) $
@@ -727,3 +747,7 @@ adminHook = do
 
 -- TODO: is it indexable by Google? <given that we're hiding text and
 -- Googlebot can execute Javascript>
+
+-- TODO: add to Google Webmaster
+
+-- TODO: page titles in Google have “artyom.me” in them, that's bad
