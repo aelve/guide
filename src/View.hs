@@ -505,6 +505,9 @@ wrapPage pageTitle page = doctypehtml_ $ do
     title_ (toHtml pageTitle)
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
+    token <- _googleToken <$> lift ask
+    unless (T.null token) $
+      meta_ [name_ "google-site-verification", content_ token]
     -- Report all Javascript errors with alerts
     script_ [text|
       window.onerror = function (msg, url, lineNo, columnNo, error) {

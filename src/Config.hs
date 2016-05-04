@@ -35,29 +35,33 @@ import Utils
 
 
 data Config = Config {
-  _baseUrl         :: Url,
-  _adminPassword   :: Text,
-  _prerender       :: Bool }
+  _baseUrl       :: Url,
+  _googleToken   :: Text,
+  _adminPassword :: Text,
+  _prerender     :: Bool }
   deriving (Eq, Show)
 
 instance Default Config where
   def = Config {
-    _baseUrl         = "/",
-    _adminPassword   = "",
-    _prerender       = False }
+    _baseUrl       = "/",
+    _googleToken   = "",
+    _adminPassword = "",
+    _prerender     = False }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
-    _baseUrl         <- o .:? "base-url"         .!= _baseUrl def
-    _adminPassword   <- o .:? "admin-password"   .!= _adminPassword def
-    _prerender       <- o .:? "prerender"        .!= _prerender def
+    _baseUrl       <- o .:? "base-url"       .!= _baseUrl def
+    _googleToken   <- o .:? "google-token"   .!= _googleToken def
+    _adminPassword <- o .:? "admin-password" .!= _adminPassword def
+    _prerender     <- o .:? "prerender"      .!= _prerender def
     return Config{..}
 
 instance ToJSON Config where
   toJSON Config{..} = object [
-    "base-url"         .= _baseUrl,
-    "admin-password"   .= _adminPassword,
-    "prerender"        .= _prerender ]
+    "base-url"       .= _baseUrl,
+    "google-token"   .= _googleToken,
+    "admin-password" .= _adminPassword,
+    "prerender"      .= _prerender ]
 
 readConfig :: IO Config
 readConfig = do
