@@ -26,7 +26,7 @@ module View
   -- ** Categories
   renderCategoryList,
   renderCategory,
-  renderCategoryHeader,
+  renderCategoryInfo,
   renderCategoryNotes,
   -- ** Items
   renderItem,
@@ -354,6 +354,10 @@ renderEdit globalState edit = do
       "changed group of category " >> printCategory catId
       " from " >> quote (toHtml oldGroup)
       " to "   >> quote (toHtml newGroup)
+    Edit'SetCategoryStatus catId oldStatus newStatus -> p_ $ do
+      "changed status of category " >> printCategory catId
+      " from " >> quote (toHtml (show oldStatus))
+      " to "   >> quote (toHtml (show newStatus))
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ "changed notes of category " >> printCategory catId
       table_ $ tr_ $ do
@@ -588,9 +592,13 @@ renderCategoryList cats = cached CacheCategoryList $ do
     for_ (groupWith (view group_) cats) $ \gr ->
       div_ [class_ "category-group"] $ do
         h2_ $ toHtml (gr^?!_head.group_)
-        for gr $ \category -> do
+        for_ gr $ \category -> do
           -- TODO: this link shouldn't be absolute [absolute-links]
-          a_ [href_ ("/haskell/" <> categorySlug category)] $
+          let cl = case category^.status of
+                CategoryFinished -> "status-finished"
+                CategoryWIP      -> "status-wip"
+                CategoryStub     -> "status-stub"
+          a_ [class_ cl, href_ ("/haskell/" <> categorySlug category)] $
             toHtml (category^.title)
           br_ []
 
@@ -603,18 +611,18 @@ renderSearchResults cats = do
         toHtml (category^.title)
       br_ []
 
-renderCategoryHeader :: MonadIO m => Category -> HtmlT m ()
-renderCategoryHeader category = cached (CacheCategoryHeader (category^.uid)) $ do
-  let thisId = "category-title-" <> uidToText (category^.uid)
+renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
+renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
+  let thisId = "category-info-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  h2_ [id_ thisId, class_ "category-title"] $ do
-    -- TODO: this link shouldn't be absolute [absolute-links]
-    span_ [class_ "controls"] $
-      a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
-        img_ [src_ "/rss-alt.svg",
-              alt_ "category feed", title_ "category feed"]
+  div_ [id_ thisId, class_ "category-info"] $ do
 
-    sectionSpan "normal" [shown, noScriptShown] $ do
+    section "normal" [shown, noScriptShown] $ h2_ $ do
+      -- TODO: this link shouldn't be absolute [absolute-links]
+      span_ [class_ "controls"] $
+        a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
+          img_ [src_ "/rss-alt.svg",
+                alt_ "category feed", title_ "category feed"]
       -- TODO: this link shouldn't be absolute [absolute-links]
       a_ [href_ ("/haskell/" <> categorySlug category)] $
         toHtml (category^.title)
@@ -628,22 +636,37 @@ renderCategoryHeader category = cached (CacheCategoryHeader (category^.uid)) $ d
       textButton "delete" $
         JS.deleteCategoryAndRedirect [category^.uid]
 
-    sectionSpan "editing" [] $ do
-      textInput [
-        value_ (category^.title),
-        autocomplete_ "off",
-        onEnter $
-          JS.submitCategoryTitle (this, category^.uid, inputValue)]
-      emptySpan "0.5em"
-      textInput [
-        class_ "group",
-        value_ (category^.group_),
-        autocomplete_ "off",
-        onEnter $
-          JS.submitCategoryGroup (this, category^.uid, inputValue)]
-      emptySpan "1em"
-      textButton "cancel" $
-        JS.switchSection (this, "normal" :: Text)
+    section "editing" [] $ do
+      let formSubmitHandler formNode =
+            JS.submitCategoryInfo (this, category^.uid, formNode)
+      form_ [onFormSubmit formSubmitHandler] $ do
+        -- All inputs have "autocomplete = off" thanks to
+        -- <http://stackoverflow.com/q/8311455>
+        label_ $ do
+          "Title" >> br_ []
+          input_ [type_ "text", name_ "title",
+                  autocomplete_ "off",
+                  value_ (category^.title)]
+        br_ []
+        label_ $ do
+          "Group" >> br_ []
+          input_ [type_ "text", name_ "group",
+                  autocomplete_ "off",
+                  value_ (category^.group_)]
+        br_ []
+        label_ $ do
+          "Status" >> br_ []
+          select_ [name_ "status"] $ do
+            option_ [value_ "finished"] "Complete"
+              & selectedIf (category^.status == CategoryFinished)
+            option_ [value_ "wip"] "Work in progress"
+              & selectedIf (category^.status == CategoryWIP)
+            option_ [value_ "stub"] "Stub"
+              & selectedIf (category^.status == CategoryStub)
+        br_ []
+        input_ [type_ "submit", value_ "Save"]
+        button "Cancel" [] $
+          JS.switchSection (this, "normal" :: Text)
 
 renderCategoryNotes :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
 renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
@@ -673,7 +696,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
 renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
-    renderCategoryHeader category
+    renderCategoryInfo category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem category) (category^.items)
@@ -747,7 +770,6 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
         -- TODO: should check for Stackage automatically
 
     section "editing" [] $ do
-      let selectedIf p x = if p then with x [selected_ "selected"] else x
       -- When the info/header node changes its group (and is hence
       -- recolored), item's body has to be recolored too
       let bodyNode = JS.selectChildren (JS.selectParent this)
@@ -1115,6 +1137,9 @@ imgButton alt src attrs (JS handler) =
 
 mkLink :: Monad m => HtmlT m a -> Url -> HtmlT m a
 mkLink x src = a_ [href_ src] x
+
+selectedIf :: With w => Bool -> w -> w
+selectedIf p x = if p then with x [selected_ "selected"] else x
 
 markdownEditor
   :: MonadRandom m

@@ -32,8 +32,10 @@ module Types
   Hue(..),
     hueToDarkColor,
     hueToLightColor,
+  CategoryStatus(..),
   Category(..),
     title,
+    status,
     groups,
     items,
     itemsDeleted,
@@ -86,6 +88,7 @@ module Types
   SetCategoryTitle(..),
   SetCategoryGroup(..),
   SetCategoryNotes(..),
+  SetCategoryStatus(..),
   -- *** 'Item'
   SetItemName(..),
   SetItemLink(..),
@@ -375,19 +378,28 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 
 --
 
+data CategoryStatus
+  = CategoryStub
+  | CategoryWIP
+  | CategoryFinished
+  deriving (Eq, Show)
+
+deriveSafeCopySimple 0 'base ''CategoryStatus
+
 -- If you want to add a field here, see Note [extending types]
 data Category = Category {
   _categoryUid :: Uid Category,
   _categoryTitle :: Text,
   _categoryGroup_ :: Text,
   _categoryCreated :: UTCTime,
+  _categoryStatus :: CategoryStatus,
   _categoryNotes :: MarkdownBlock,
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
   deriving (Show)
 
-deriveSafeCopySimple 5 'extension ''Category
+deriveSafeCopySimple 6 'extension ''Category
 makeFields ''Category
 
 categorySlug :: Category -> Text
@@ -397,28 +409,32 @@ categorySlug category =
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v4 = Category_v4 {
-  _categoryUid_v4 :: Uid Category,
-  _categoryTitle_v4 :: Text,
-  _categoryCreated_v4 :: UTCTime,
-  _categoryNotes_v4 :: MarkdownBlock,
-  _categoryGroups_v4 :: Map Text Hue,
-  _categoryItems_v4 :: [Item],
-  _categoryItemsDeleted_v4 :: [Item] }
+data Category_v5 = Category_v5 {
+  _categoryUid_v5 :: Uid Category,
+  _categoryTitle_v5 :: Text,
+  _categoryGroup_v5 :: Text,
+  _categoryCreated_v5 :: UTCTime,
+  -- _categoryStatus_v5 :: CategoryStatus,
+  _categoryNotes_v5 :: MarkdownBlock,
+  _categoryGroups_v5 :: Map Text Hue,
+  _categoryItems_v5 :: [Item],
+  _categoryItemsDeleted_v5 :: [Item] }
 
-deriveSafeCopySimple 4 'base ''Category_v4
+deriveSafeCopySimple 5 'base ''Category_v5
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v4
-  migrate Category_v4{..} = Category {
-    _categoryUid = _categoryUid_v4,
-    _categoryTitle = _categoryTitle_v4,
-    _categoryGroup_ = "Miscellaneous",
-    _categoryCreated = _categoryCreated_v4,
-    _categoryNotes = _categoryNotes_v4,
-    _categoryGroups = _categoryGroups_v4,
-    _categoryItems = _categoryItems_v4,
-    _categoryItemsDeleted = _categoryItemsDeleted_v4 }
+  type MigrateFrom Category = Category_v5
+  migrate Category_v5{..} = Category {
+    _categoryUid = _categoryUid_v5,
+    _categoryTitle = _categoryTitle_v5,
+    _categoryGroup_ = _categoryGroup_v5,
+    _categoryCreated = _categoryCreated_v5,
+    -- _categoryStatus = _categoryStatus_v5,
+    _categoryStatus = CategoryFinished,
+    _categoryNotes = _categoryNotes_v5,
+    _categoryGroups = _categoryGroups_v5,
+    _categoryItems = _categoryItems_v5,
+    _categoryItemsDeleted = _categoryItemsDeleted_v5 }
 
 -- Edits
 
@@ -443,17 +459,21 @@ data Edit
 
   -- Change category properties
   | Edit'SetCategoryTitle {
-      editCategoryUid      :: Uid Category,
-      editCategoryTitle    :: Text,
-      editCategoryNewTitle :: Text }
+      editCategoryUid       :: Uid Category,
+      editCategoryTitle     :: Text,
+      editCategoryNewTitle  :: Text }
   | Edit'SetCategoryGroup {
-      editCategoryUid      :: Uid Category,
-      editCategoryGroup    :: Text,
-      editCategoryNewGroup :: Text }
+      editCategoryUid       :: Uid Category,
+      editCategoryGroup     :: Text,
+      editCategoryNewGroup  :: Text }
   | Edit'SetCategoryNotes {
-      editCategoryUid      :: Uid Category,
-      editCategoryNotes    :: Text,
-      editCategoryNewNotes :: Text }
+      editCategoryUid       :: Uid Category,
+      editCategoryNotes     :: Text,
+      editCategoryNewNotes  :: Text }
+  | Edit'SetCategoryStatus {
+      editCategoryUid       :: Uid Category,
+      editCategoryStatus    :: CategoryStatus,
+      editCategoryNewStatus :: CategoryStatus }
 
   -- Change item properties
   | Edit'SetItemName {
@@ -515,9 +535,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 3 'extension ''Edit
+deriveSafeCopySimple 4 'extension ''Edit
 
-genVer ''Edit 2 [
+genVer ''Edit 3 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -525,7 +545,9 @@ genVer ''Edit 2 [
   Copy 'Edit'AddCon,
   -- Change category properties
   Copy 'Edit'SetCategoryTitle,
+  Copy 'Edit'SetCategoryGroup,
   Copy 'Edit'SetCategoryNotes,
+  -- Copy 'Edit'SetCategoryStatus,
   -- Change item properties
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
@@ -544,18 +566,20 @@ genVer ''Edit 2 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 2 'base ''Edit_v2
+deriveSafeCopySimple 3 'base ''Edit_v3
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v2
-  migrate = $(migrateVer ''Edit 2 [
+  type MigrateFrom Edit = Edit_v3
+  migrate = $(migrateVer ''Edit 3 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
     CopyM 'Edit'AddCon,
     -- Change category properties
     CopyM 'Edit'SetCategoryTitle,
+    CopyM 'Edit'SetCategoryGroup,
     CopyM 'Edit'SetCategoryNotes,
+    -- CopyM 'Edit'SetCategoryStatus,
     -- Change item properties
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
@@ -584,6 +608,8 @@ isVacuousEdit Edit'SetCategoryGroup{..} =
   editCategoryGroup == editCategoryNewGroup
 isVacuousEdit Edit'SetCategoryNotes{..} =
   editCategoryNotes == editCategoryNewNotes
+isVacuousEdit Edit'SetCategoryStatus{..} =
+  editCategoryStatus == editCategoryNewStatus
 isVacuousEdit Edit'SetItemName{..} =
   editItemName == editItemNewName
 isVacuousEdit Edit'SetItemLink{..} =
@@ -757,6 +783,7 @@ addCategory catId title' created' = do
         _categoryTitle = title',
         _categoryGroup_ = "Miscellaneous",
         _categoryCreated = created',
+        _categoryStatus = CategoryStub,
         _categoryNotes = renderMarkdownBlock "",
         _categoryGroups = mempty,
         _categoryItems = [],
@@ -840,6 +867,12 @@ setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Categ
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . notes <<.= renderMarkdownBlock notes'
   let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdText) notes'
+  (edit,) <$> use (categoryById catId)
+
+setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (Edit, Category)
+setCategoryStatus catId status' = do
+  oldStatus <- categoryById catId . status <<.= status'
+  let edit = Edit'SetCategoryStatus catId oldStatus status'
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -1165,7 +1198,7 @@ makeAcidic ''GlobalState [
   'addPro, 'addCon,
   -- set
   'setGlobalState,
-  'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes,
+  'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,

@@ -67,7 +67,15 @@ body {
 #categories a {
   font-weight: bold;
   line-height: 140%;
-  font-size: 110%; }
+  font-size: 110%;
+  padding: 2px 1px; }
+
+#categories a.status-finished {
+  background-color: #fff; }
+#categories a.status-wip {
+  background-color: #fdd; }
+#categories a.status-stub {
+  background-color: #f89; }
 
 .category-group {
   min-width: 350px; }
@@ -88,15 +96,15 @@ body {
   opacity: 0.4;
   height: 23px; }
 
-.category-title .controls {
+.category-info .controls {
   margin-right: 0.5em;
   vertical-align: -1px; }
 
-.category-title .controls img {
+.category-info .controls img {
   opacity: 0.3;
   height: 20px; }
 
-.category-title .group {
+.category-info .group {
   font-size: 60%;
   font-weight: normal;
   color: gray; }

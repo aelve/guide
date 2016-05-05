@@ -42,9 +42,9 @@ cache = unsafePerformIO STMMap.newIO
 data CacheKey
   = CacheCategoryList
   -- categories
-  | CacheCategory       (Uid Category)
-  | CacheCategoryHeader (Uid Category)
-  | CacheCategoryNotes  (Uid Category)
+  | CacheCategory      (Uid Category)
+  | CacheCategoryInfo  (Uid Category)
+  | CacheCategoryNotes (Uid Category)
   -- items
   | CacheItem            (Uid Item)
   | CacheItemInfo        (Uid Item)
@@ -58,10 +58,10 @@ instance Hashable CacheKey
 
 cacheDepends :: GlobalState -> CacheKey -> [CacheKey]
 cacheDepends gs key = case key of
-  CacheCategoryList     -> [key]
-  CacheCategory _       -> [key, CacheCategoryList]
-  CacheCategoryHeader x -> [key, CacheCategory x, CacheCategoryList]
-  CacheCategoryNotes x  -> [key, CacheCategory x, CacheCategoryList]
+  CacheCategoryList    -> [key]
+  CacheCategory _      -> [key, CacheCategoryList]
+  CacheCategoryInfo x  -> [key, CacheCategory x, CacheCategoryList]
+  CacheCategoryNotes x -> [key, CacheCategory x, CacheCategoryList]
   -- If the item's group has been changed, it can influence how other items
   -- in the same category are rendered (specifically, their lists of groups
   -- in iteminfo will change)

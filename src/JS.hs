@@ -54,7 +54,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   addCategoryAndRedirect, addItem,
   addPro, addCon,
   -- Set methods
-  submitCategoryTitle, submitCategoryGroup, submitCategoryNotes,
+  submitCategoryInfo, submitCategoryNotes,
   submitItemDescription,
   submitItemInfo, submitItemNotes, submitItemEcosystem,
   submitTrait,
@@ -419,25 +419,14 @@ addItem =
      .done(appendData(node));
   |]
 
-{- |
-Finish category title editing (this happens when you submit the field).
-
-This turns the title with the editbox back into a simple text title.
--}
-submitCategoryTitle :: JSFunction a => a
-submitCategoryTitle =
-  makeJSFunction "submitCategoryTitle" ["node", "catId", "s"]
+submitCategoryInfo :: JSFunction a => a
+submitCategoryInfo =
+  makeJSFunction "submitCategoryInfo" ["infoNode", "catId", "form"]
   [text|
-    $.post("/haskell/set/category/"+catId+"/title", {content: s})
-     .done(replaceWithData(node));
-  |]
-
-submitCategoryGroup :: JSFunction a => a
-submitCategoryGroup =
-  makeJSFunction "submitCategoryGroup" ["node", "catId", "s"]
-  [text|
-    $.post("/haskell/set/category/"+catId+"/group", {content: s})
-     .done(replaceWithData(node));
+    $.post("/haskell/set/category/"+catId+"/info", $(form).serialize())
+     .done(function (data) {
+        $(infoNode).replaceWith(data);
+     });
   |]
 
 submitCategoryNotes :: JSFunction a => a

@@ -182,26 +182,31 @@ invalidateCacheForEdit ed = do
   gs <- dbQuery GetGlobalState
   mapM_ (invalidateCache gs) $ case ed of
     Edit'AddCategory catId _           -> [CacheCategory catId]
+    -- Normally invalidateCache should invalidate item's category
+    -- automatically, but in this case it's *maybe* possible that the item
+    -- has already been moved somewhere else and so we invalidate both just
+    -- in case.
     Edit'AddItem catId itemId _        -> [CacheCategory catId,
                                            CacheItem itemId]
-    Edit'AddPro itemId _ _             -> [CacheItem itemId]
-    Edit'AddCon itemId _ _             -> [CacheItem itemId]
-    Edit'SetCategoryTitle catId _ _    -> [CacheCategory catId]
-    Edit'SetCategoryGroup catId _ _    -> [CacheCategory catId]
-    Edit'SetCategoryNotes catId _ _    -> [CacheCategory catId]
-    Edit'SetItemName itemId _ _        -> [CacheItem itemId]
-    Edit'SetItemLink itemId _ _        -> [CacheItem itemId]
-    Edit'SetItemGroup itemId _ _       -> [CacheItem itemId]
-    Edit'SetItemKind itemId _ _        -> [CacheItem itemId]
-    Edit'SetItemDescription itemId _ _ -> [CacheItem itemId]
-    Edit'SetItemNotes itemId _ _       -> [CacheItem itemId]
-    Edit'SetItemEcosystem itemId _ _   -> [CacheItem itemId]
-    Edit'SetTraitContent itemId _ _ _  -> [CacheItem itemId]
+    Edit'AddPro itemId _ _             -> [CacheItemTraits itemId]
+    Edit'AddCon itemId _ _             -> [CacheItemTraits itemId]
+    Edit'SetCategoryTitle catId _ _    -> [CacheCategoryInfo catId]
+    Edit'SetCategoryGroup catId _ _    -> [CacheCategoryInfo catId]
+    Edit'SetCategoryStatus catId _ _   -> [CacheCategoryInfo catId]
+    Edit'SetCategoryNotes catId _ _    -> [CacheCategoryNotes catId]
+    Edit'SetItemName itemId _ _        -> [CacheItemInfo itemId]
+    Edit'SetItemLink itemId _ _        -> [CacheItemInfo itemId]
+    Edit'SetItemGroup itemId _ _       -> [CacheItemInfo itemId]
+    Edit'SetItemKind itemId _ _        -> [CacheItemInfo itemId]
+    Edit'SetItemDescription itemId _ _ -> [CacheItemDescription itemId]
+    Edit'SetItemNotes itemId _ _       -> [CacheItemNotes itemId]
+    Edit'SetItemEcosystem itemId _ _   -> [CacheItemEcosystem itemId]
+    Edit'SetTraitContent itemId _ _ _  -> [CacheItemTraits itemId]
     Edit'DeleteCategory catId _        -> [CacheCategory catId]
     Edit'DeleteItem itemId _           -> [CacheItem itemId]
-    Edit'DeleteTrait itemId _ _        -> [CacheItem itemId]
+    Edit'DeleteTrait itemId _ _        -> [CacheItemTraits itemId]
     Edit'MoveItem itemId _             -> [CacheItem itemId]
-    Edit'MoveTrait itemId _ _          -> [CacheItem itemId]
+    Edit'MoveTrait itemId _ _          -> [CacheItemTraits itemId]
 
 -- | Do an action that would undo an edit.
 --
@@ -234,6 +239,11 @@ undoEdit (Edit'SetCategoryGroup catId old new) = do
   if now /= new
     then return (Left "group has been changed further")
     else Right () <$ dbUpdate (SetCategoryGroup catId old)
+undoEdit (Edit'SetCategoryStatus catId old new) = do
+  now <- view status <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "status has been changed further")
+    else Right () <$ dbUpdate (SetCategoryStatus catId old)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
   now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
@@ -292,10 +302,6 @@ undoEdit (Edit'MoveTrait itemId traitId direction) = do
 
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
-  -- Header of a category
-  Spock.get (categoryVar <//> "header") $ \catId -> do
-    category <- dbQuery (GetCategory catId)
-    lucidIO $ renderCategoryHeader category
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
@@ -328,20 +334,32 @@ renderMethods = Spock.subcomponent "render" $ do
 
 setMethods :: SpockM () () ServerState ()
 setMethods = Spock.subcomponent "set" $ do
-  -- Title of a category
-  Spock.post (categoryVar <//> "title") $ \catId -> do
-    content' <- param' "content"
-    invalidateCache' (CacheCategoryHeader catId)
-    (edit, category) <- dbUpdate (SetCategoryTitle catId content')
-    addEdit edit
-    lucidIO $ renderCategoryHeader category
-  -- Group of a category
-  Spock.post (categoryVar <//> "group") $ \catId -> do
-    content' <- param' "content"
-    invalidateCache' (CacheCategoryHeader catId)
-    (edit, category) <- dbUpdate (SetCategoryGroup catId content')
-    addEdit edit
-    lucidIO $ renderCategoryHeader category
+  Spock.post (categoryVar <//> "info") $ \catId -> do
+    -- TODO: [easy] add a cross-link saying where the form is handled in the
+    -- code and other notes saying where stuff is rendered, etc
+    invalidateCache' (CacheCategoryInfo catId)
+    title' <- T.strip <$> param' "title"
+    group' <- T.strip <$> param' "group"
+    status' <- do
+      statusName :: Text <- param' "status"
+      return $ case statusName of
+        "finished" -> CategoryFinished
+        "wip"      -> CategoryWIP
+        "stub"     -> CategoryStub
+        other      -> error ("unknown category status: " ++ show other)
+    -- Modify the category
+    -- TODO: actually validate the form and report errors
+    unless (T.null title') $ do
+      (edit, _) <- dbUpdate (SetCategoryTitle catId title')
+      addEdit edit
+    unless (T.null group') $ do
+      (edit, _) <- dbUpdate (SetCategoryGroup catId group')
+      addEdit edit
+    do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
+       addEdit edit
+    -- After all these edits we can render the category header
+    category <- dbQuery (GetCategory catId)
+    lucidIO $ renderCategoryInfo category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
     content' <- param' "content"
