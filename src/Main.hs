@@ -703,13 +703,13 @@ main = do
       Spock.get "donate" $
         lucidWithConfig $ renderDonate
 
-      -- Unwritten rules
-      Spock.get "unwritten-rules" $ do
-        lucidWithConfig $ renderUnwrittenRules
-
-      -- Markdown help
-      Spock.get "markdown" $ do
-        lucidWithConfig $ renderMarkdownHelp
+      -- Static pages
+      Spock.get "unwritten-rules" $ lucidWithConfig $
+        renderStaticMd "Unwritten rules" "unwritten-rules.md"
+      Spock.get "markdown" $ lucidWithConfig $
+        renderStaticMd "Markdown" "markdown.md"
+      Spock.get "license" $ lucidWithConfig $
+        renderStaticMd "License" "license.md"
 
       -- Haskell
       Spock.subcomponent "haskell" $ do

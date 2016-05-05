@@ -18,8 +18,7 @@ module View
   renderHaskellRoot,
   renderDonate,
   renderCategoryPage,
-  renderUnwrittenRules,
-  renderMarkdownHelp,
+  renderStaticMd,
   renderSearchResults,
 
   -- * Methods
@@ -486,17 +485,11 @@ renderDonate
 renderDonate = wrapPage "Donate to Artyom" $ do
   toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
-renderUnwrittenRules
-  :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
-renderUnwrittenRules = wrapPage "Unwritten rules" $ do
-  toHtml . renderMarkdownBlock =<<
-    liftIO (T.readFile "static/unwritten-rules.md")
-
-renderMarkdownHelp
-  :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
-renderMarkdownHelp = wrapPage "Markdown" $ do
-  toHtml . renderMarkdownBlock =<<
-    liftIO (T.readFile "static/markdown.md")
+renderStaticMd
+  :: (MonadIO m, MonadRandom m, MonadReader Config m)
+  => Text -> String -> HtmlT m ()
+renderStaticMd t fn = wrapPage t $
+  toHtml . renderMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
 
 -- Include all the necessary things
 wrapPage
@@ -566,8 +559,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
         , do div_ (mkLink "donate" "/donate")
              div_ [class_ "unemployed"] "I don't have a job"
         , do "licensed under "
-             mkLink "CC BY-SA 3.0"
-                    "https://creativecommons.org/licenses/by-sa/3.0/"
+             mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
 -- TODO: allow archiving items if they are in every way worse than the rest,
