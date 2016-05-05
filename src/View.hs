@@ -562,12 +562,6 @@ wrapPage pageTitle page = doctypehtml_ $ do
              mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
--- TODO: allow archiving items if they are in every way worse than the rest,
--- or something (but searching should still be possible)
-
--- TODO: add a list for “interesting libraries, but too lazy to describe, so
--- somebody describe them for me”
-
 renderSearch :: Monad m => Maybe Text -> HtmlT m ()
 renderSearch mbSearchQuery = do
   form_ [action_ "/haskell"] $ do
@@ -758,8 +752,6 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
         emptySpan "0.5em"
         imgButton "delete item" "/x.svg" [] $
           JS.deleteItem (item^.uid, itemNode item)
-        -- TODO: link to Stackage too
-        -- TODO: should check for Stackage automatically
 
     section "editing" [] $ do
       -- When the info/header node changes its group (and is hence
@@ -829,9 +821,6 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
         input_ [type_ "submit", value_ "Save"]
         button "Cancel" [] $
           JS.switchSection (this, "normal" :: Text)
-
--- TODO: categories that don't directly compare libraries but just list all
--- libraries about something (e.g. Yesod plugins, or whatever)
 
 -- TODO: just make a synonym for “Html with IO and randomness”
 

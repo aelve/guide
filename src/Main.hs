@@ -763,9 +763,4 @@ adminHook = do
 
 -- TODO: a function to find all links to Hackage that have version in them
 
--- TODO: is it indexable by Google? <given that we're hiding text and
--- Googlebot can execute Javascript>
-
--- TODO: add to Google Webmaster
-
 -- TODO: page titles in Google have “artyom.me” in them, that's bad
