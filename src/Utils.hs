@@ -161,9 +161,9 @@ sanitiseUrl u
 makeSlug :: Text -> Text
 makeSlug =
   T.intercalate "-" . T.words .
-  T.map toLower .
   T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
-  T.map (\x -> if x == '_' then '-' else x)
+  T.toLower .
+  T.map (\x -> if x == '_' || x == '/' then '-' else x)
 
 deriveSafeCopySimple 0 'base ''IPv4
 deriveSafeCopySimple 0 'base ''IPv6
