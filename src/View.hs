@@ -581,11 +581,17 @@ renderCategoryList cats = cached CacheCategoryList $ do
         for_ gr $ \category -> do
           -- TODO: this link shouldn't be absolute [absolute-links]
           let cl = case category^.status of
-                CategoryFinished -> "status-finished"
-                CategoryWIP      -> "status-wip"
-                CategoryStub     -> "status-stub"
+                CategoryFinished   -> "status-finished"
+                CategoryMostlyDone -> "status-mostly-done"
+                CategoryWIP        -> "status-wip"
+                CategoryStub       -> "status-stub"
           a_ [class_ cl, href_ ("/haskell/" <> categorySlug category)] $
             toHtml (category^.title)
+          case category^.status of
+            CategoryFinished   -> return ()
+            CategoryMostlyDone -> span_ [class_ "status"] "mostly done"
+            CategoryWIP        -> span_ [class_ "status"] "work in progress"
+            CategoryStub       -> span_ [class_ "status"] "stub"
           br_ []
 
 renderSearchResults :: Monad m => [Category] -> HtmlT m ()
@@ -645,6 +651,8 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
           select_ [name_ "status"] $ do
             option_ [value_ "finished"] "Complete"
               & selectedIf (category^.status == CategoryFinished)
+            option_ [value_ "mostly-done"] "Mostly done/usable"
+              & selectedIf (category^.status == CategoryMostlyDone)
             option_ [value_ "wip"] "Work in progress"
               & selectedIf (category^.status == CategoryWIP)
             option_ [value_ "stub"] "Stub"

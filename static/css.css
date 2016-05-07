@@ -70,12 +70,18 @@ body {
   font-size: 110%;
   padding: 2px 1px; }
 
-#categories a.status-finished {
-  background-color: #fff; }
-#categories a.status-wip {
+#categories a.status-mostly-done {
   background-color: #fdd; }
+#categories a.status-wip {
+  background-color: #faa; }
 #categories a.status-stub {
-  background-color: #f89; }
+  background-color: #f78; }
+
+#categories .status {
+  margin-left: 5px;
+  color: gray;
+  font-weight: bold;
+  font-size: 70%; }
 
 .category-group {
   min-width: 350px; }
