@@ -67,6 +67,8 @@ import Data.Text (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
+-- Network
+import Data.IP
 -- Time
 import Data.Time
 import Data.Time.Format.Human
@@ -163,6 +165,7 @@ renderAdmin globalState = do
   head_ $ do
     includeJS "/js.js"
     includeJS "/jquery-2.2.0.min.js"
+    includeJS "/sorttable.js"
     includeCSS "/markup.css"
     includeCSS "/admin.css"
     includeCSS "/loader.css"
@@ -210,47 +213,74 @@ renderStats globalState acts = do
         where
           err = error ("renderStats: couldn't find category with uid = " ++
                        T.unpack (uidToText catId))
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $ do
+      th_ [class_ "sorttable_nosort"] "Category"
+      th_ "Visits"
+      th_ "Unique visitors"
+    tbody_ $ do
+      let rawVisits :: [(Uid Category, Maybe IP)]
+          rawVisits = [(catId, actionIP d) |
+                       (Action'CategoryVisit catId, d) <- acts']
+      let visits :: [(Uid Category, (Int, Int))]
+          visits = map (over _2 (length &&& length.ordNub)) .
+                   map (fst.head &&& map snd) .
+                   groupWith fst
+                     $ rawVisits
+      for_ (reverse $ sortWith (fst.snd) visits) $ \(catId, (n, u)) -> do
+        tr_ $ do
+          td_ (toHtml (findCategory catId ^. title))
+          td_ (toHtml (show n))
+          td_ (toHtml (show u))
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $ do
+      th_ [class_ "sorttable_nosort"] "Search"
+      th_ "Repetitions"
+    tbody_ $ do
+      let searches = map (head &&& length) . group $
+            [s | (Action'Search s, _) <- acts']
+      for_ (reverse $ sortWith snd searches) $ \(s, n) -> do
+        tr_ $ do
+          td_ (toHtml s)
+          td_ (toHtml (show n))
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $ do
+      th_ [class_ "sorttable_nosort"] "Referrer"
+      th_ "Visitors"
+      th_ "Unique visitors"
+    tbody_ $ do
+      let rawVisits :: [(Url, Maybe IP)]
+          rawVisits = [(r, actionIP d) |
+                       (_, d) <- acts',
+                       Just (ExternalReferrer r) <- [actionReferrer d]]
+      let visits :: [(Url, (Int, Int))]
+          visits = map (over _2 (length &&& length.ordNub)) .
+                   map (fst.head &&& map snd) .
+                   groupWith fst
+                     $ rawVisits
+      for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
+        tr_ $ do
+          td_ (toHtml r)
+          td_ (toHtml (show n))
+          td_ (toHtml (show u))
   table_ $ do
     thead_ $ tr_ $ do
-      td_ "Category"
-      td_ "Visits"
-    let catVisits = map (head &&& length) . group . sort $
-          [catId | (Action'CategoryVisit catId, _) <- acts']
-    for_ (reverse $ sortWith snd catVisits) $ \(catId, n) -> do
-      tr_ $ do
-        td_ (toHtml (findCategory catId ^. title))
-        td_ (toHtml (show n))
-  table_ $ do
-    thead_ $ tr_ $ do
-      td_ "Search"
-      td_ "Repetitions"
-    let searches = map (head &&& length) . group $
-          [s | (Action'Search s, _) <- acts']
-    for_ (reverse $ sortWith snd searches) $ \(s, n) -> do
-      tr_ $ do
-        td_ (toHtml s)
-        td_ (toHtml (show n))
-  table_ $ do
-    thead_ $ tr_ $ do
-      td_ "Action"
-      td_ "Date"
-      td_ "IP"
-      td_ "User agent"
-    -- acts, not acts' (what if there were less than 10 actions in the last
-    -- month?)
-    for_ (take 10 acts) $ \(a, d) -> tr_ $ do
-      td_ $ case a of
-        Action'Edit _          -> "Edit"
-        Action'MainPageVisit   -> "Main page visit"
-        Action'CategoryVisit _ -> "Category visit"
-        Action'Search _        -> "Search"
-      td_ $ toHtml =<< liftIO (humanReadableTime (actionDate d))
-      td_ $ case actionIP d of
-        Nothing -> "<unknown IP>"
-        Just ip -> toHtml (show ip)
-      td_ $ case actionUserAgent d of
-        Nothing -> "<unknown user agent>"
-        Just ua -> toHtml ua
+      th_ "Action"
+      th_ "Date"
+      th_ "IP"
+    tbody_ $ do
+      -- acts, not acts' (what if there were less than 10 actions in the last
+      -- month?)
+      for_ (take 10 acts) $ \(a, d) -> tr_ $ do
+        td_ $ case a of
+          Action'Edit _          -> "Edit"
+          Action'MainPageVisit   -> "Main page visit"
+          Action'CategoryVisit _ -> "Category visit"
+          Action'Search _        -> "Search"
+        td_ $ toHtml =<< liftIO (humanReadableTime (actionDate d))
+        td_ $ case actionIP d of
+          Nothing -> "<unknown IP>"
+          Just ip -> toHtml (show ip)
 
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves

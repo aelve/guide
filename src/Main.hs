@@ -173,7 +173,9 @@ addEdit ed = do
   (time, mbIP, mbReferrer, mbUA) <- getDetails
   unless (isVacuousEdit ed) $ do
     dbUpdate (RegisterEdit ed mbIP time)
-    dbUpdate (RegisterAction (Action'Edit ed) mbIP time mbReferrer mbUA)
+    baseUrl <- _baseUrl <$> getConfig
+    dbUpdate (RegisterAction (Action'Edit ed)
+                mbIP time baseUrl mbReferrer mbUA)
 
 invalidateCacheForEdit
   :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
@@ -721,7 +723,8 @@ main = do
           let act = case q of
                 Nothing -> Action'MainPageVisit
                 Just x  -> Action'Search x
-          dbUpdate (RegisterAction act mbIP time mbReferrer mbUA)
+          baseUrl <- _baseUrl <$> getConfig
+          dbUpdate (RegisterAction act mbIP time baseUrl mbReferrer mbUA)
           lucidWithConfig $ renderHaskellRoot s q
         -- Category pages
         Spock.get var $ \path -> do
@@ -735,8 +738,9 @@ main = do
             Nothing -> Spock.jumpNext
             Just category -> do
               (time, mbIP, mbReferrer, mbUA) <- getDetails
+              baseUrl <- _baseUrl <$> getConfig
               dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
-                           mbIP time mbReferrer mbUA
+                           mbIP time baseUrl mbReferrer mbUA
               -- If the slug in the url is old (i.e. if it doesn't match the
               -- one we would've generated now), let's do a redirect
               when (categorySlug category /= path) $

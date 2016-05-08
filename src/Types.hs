@@ -65,6 +65,7 @@ module Types
 
   -- * Actions
   Action(..),
+  Referrer(..),
   ActionDetails(..),
 
   -- * acid-state methods
@@ -674,14 +675,39 @@ data Action
 
 deriveSafeCopySimple 0 'base ''Action
 
+data Referrer = InternalReferrer Url | ExternalReferrer Url
+  deriving (Show, Eq)
+
+deriveSafeCopySimple 0 'base ''Referrer
+
 data ActionDetails = ActionDetails {
   actionIP        :: Maybe IP,
   actionDate      :: UTCTime,
-  actionReferrer  :: Maybe Url,
+  actionReferrer  :: Maybe Referrer,
   actionUserAgent :: Maybe Text }
   deriving (Show)
 
-deriveSafeCopySimple 0 'base ''ActionDetails
+deriveSafeCopySimple 1 'extension ''ActionDetails
+
+data ActionDetails_v0 = ActionDetails_v0 {
+  actionIP_v0        :: Maybe IP,
+  actionDate_v0      :: UTCTime,
+  actionReferrer_v0  :: Maybe Url,
+  actionUserAgent_v0 :: Maybe Text }
+
+deriveSafeCopySimple 0 'base ''ActionDetails_v0
+
+instance Migrate ActionDetails where
+  type MigrateFrom ActionDetails = ActionDetails_v0
+  migrate ActionDetails_v0{..} = ActionDetails {
+    actionIP = actionIP_v0,
+    actionDate = actionDate_v0,
+    actionReferrer =
+      case T.stripPrefix "https://guide.aelve.com/" <$> actionReferrer_v0 of
+        Nothing -> Nothing
+        Just Nothing -> ExternalReferrer <$> actionReferrer_v0
+        Just (Just s) -> Just (InternalReferrer s),
+    actionUserAgent = actionUserAgent_v0 }
 
 -- See Note [acid-state]
 
@@ -1187,14 +1213,18 @@ registerAction
   :: Action
   -> Maybe IP
   -> UTCTime
+  -> Url                          -- ^ Base URL
   -> Maybe Url                    -- ^ Referrer
   -> Maybe Text                   -- ^ User-agent
   -> Acid.Update GlobalState ()
-registerAction act ip date ref ua = do
+registerAction act ip date baseUrl ref ua = do
   let details = ActionDetails {
         actionIP        = ip,
         actionDate      = date,
-        actionReferrer  = ref,
+        actionReferrer  = case T.stripPrefix baseUrl <$> ref of
+                            Nothing       -> Nothing
+                            Just Nothing  -> ExternalReferrer <$> ref
+                            Just (Just s) -> Just (InternalReferrer s),
         actionUserAgent = ua }
   actions %= ((act, details) :)
 
