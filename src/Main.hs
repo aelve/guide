@@ -584,7 +584,7 @@ otherMethods = do
       -- in front of it, and if we used </> it'd just skip baseUrl
       let feedUrl = baseUrl ++ T.unpack (renderRoute route (category^.uid))
           feedTitle = Atom.TextString (T.unpack (category^.title) ++
-                                       " – Aelve Guide")
+                                       " – Haskell – Aelve Guide")
           feedLastUpdate = case sortedItems of
             (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
             _        -> ""

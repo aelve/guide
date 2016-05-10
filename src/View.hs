@@ -460,12 +460,12 @@ renderHaskellRoot
   :: (MonadIO m, MonadRandom m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
-  wrapPage "Aelve Guide" $ do
+  wrapPage "Aelve Guide: Haskell" $ do
     onPageLoad $ JS.expandHash ()
     case mbSearchQuery of
-      Nothing -> h1_ "The Haskeller's guide"
+      Nothing -> h1_ "Aelve Guide: Haskell"
       -- A search page isn't the main page, so we need a link to the main page
-      Just _  -> h1_ (mkLink "The Haskeller's guide" "/haskell")
+      Just _  -> h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
     renderNoScriptWarning
     renderSearch mbSearchQuery
     textInput [
@@ -493,10 +493,10 @@ renderCategoryPage
   :: (MonadIO m, MonadRandom m, MonadReader Config m)
   => Category -> HtmlT m ()
 renderCategoryPage category = do
-  wrapPage (category^.title <> " – Aelve Guide") $ do
+  wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
     -- TODO: another absolute link [absolute-links]
-    h1_ (mkLink "The Haskeller's guide" "/haskell")
+    h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
     renderNoScriptWarning
     renderSearch Nothing
     renderCategory category
