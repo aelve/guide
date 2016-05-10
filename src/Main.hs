@@ -580,7 +580,9 @@ otherMethods = do
       let sortedItems = reverse $ sortBy cmp (category^.items)
             where cmp = comparing (^.created) <> comparing (^.uid)
       let route = "feed" <//> categoryVar
-      let feedUrl = baseUrl </> T.unpack (renderRoute route (category^.uid))
+      -- We use ++ instead of </> because the rendered route already has ‘/’
+      -- in front of it, and if we used </> it'd just skip baseUrl
+      let feedUrl = baseUrl ++ T.unpack (renderRoute route (category^.uid))
           feedTitle = Atom.TextString (T.unpack (category^.title) ++
                                        " – Aelve Guide")
           feedLastUpdate = case sortedItems of
