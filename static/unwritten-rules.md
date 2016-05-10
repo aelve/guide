@@ -2,7 +2,7 @@
 
 If you disagree with any of these “rules”, ignore them! I don't think they are right, I just think they are better than what people would be doing otherwise if they didn't have any opinions on the matter.
 
-For custom Markdown features we have, see [here](/markdown).
+[Here](/markdown) is the description of custom Markdown features we support (and you're expected to use).
 
 ## What to include
 
