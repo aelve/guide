@@ -1184,14 +1184,6 @@ markdownEditor attr (view mdText -> s) submit cancel = do
     cancel
   emptySpan "6px"
   a_ [href_ "/markdown", target_ "_blank"] "Markdown"
-  emptySpan "6px"
-  -- TODO: this jumps around when there's a lot of text, need to somehow
-  -- prevent jumping (and in JS.makeItemNotesEditor too)
-  let checkHandler = fromJS $
-        JS.setMonospace (JS.selectUid textareaUid, JS "this.checked")
-  label_ $ do
-    input_ [type_ "checkbox", name_ "monospace", onchange_ checkHandler]
-    "monospace editor"
 
 smallMarkdownEditor
   :: MonadRandom m

@@ -16,7 +16,6 @@ body {
 .text-button::after  {content: "]";}
 
 textarea {
-  font-family: sans-serif;
   font-size: 100%; }
 
 input {

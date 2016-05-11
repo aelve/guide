@@ -41,7 +41,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   moveNodeUp, moveNodeDown,
   switchSection, switchSectionsEverywhere,
   fadeIn, fadeOutAndRemove,
-  setMonospace,
   -- Misc
   createAjaxIndicator,
   autosizeTextarea,
@@ -239,19 +238,6 @@ fadeOutAndRemove =
      $(node).fadeTo(400,0.2,function(){$(node).remove()});
   |]
 
-setMonospace :: JSFunction a => a
-setMonospace =
-  makeJSFunction "setMonospace" ["node", "p"]
-  [text|
-    if (p)
-      $(node).css("font-family", "monospace")
-    else
-      $(node).css("font-family", "");
-    // See Note [autosize]; the size of the textarea will definitely change
-    // after the font has been changed
-    autosize.update($(node));
-  |]
-
 createAjaxIndicator :: JSFunction a => a
 createAjaxIndicator =
   makeJSFunction "createAjaxIndicator" []
@@ -382,20 +368,12 @@ makeItemNotesEditor =
     cancelBtn.onclick = function () {
       $(sectionNode).html("");
       switchSection(notesNode, "expanded"); };
-    monospace = $("<input>", {
-      "name" : "monospace",
-      "type" : "checkbox" })[0];
-    monospace.onchange = function () {
-      setMonospace(area, monospace.checked); };
-    monospaceLabel = $("<label>")[0];
     markdown = $("<a>", {
       "href"   : "/markdown",
       "target" : "_blank",
       "text"   : "Markdown" })[0];
-    $(monospaceLabel).append(monospace, "monospace editor");
     $(sectionNode).append(
-      area, saveBtn, $(space), cancelBtn, $(space),
-      markdown, $(space), monospaceLabel);
+      area, saveBtn, $(space), cancelBtn, $(space), markdown);
   |]
 
 -- | Create a new category and redirect to it (or redirect to an old category
