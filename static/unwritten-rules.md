@@ -66,10 +66,3 @@ xToY :: X -> Y
 xToY X = Y
 ~~~
 ~~~~
-
-### “Ecosystem” fields
-
-  * When the field becomes long, use bullet points
-  * Don't forget to emphasise meaningful parts: “[**zlib**-lens](@hk)” instead of “[zlib-lens](@hk)”
-  * When it's hard to understand what the package does just by its name, clarify it in parens: “[lens-properties](@hk) (for Quickcheck)”
-  * When only a part of a package is relevant (e.g. one module), link to that module instead of the whole package
