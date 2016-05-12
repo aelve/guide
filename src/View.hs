@@ -883,7 +883,7 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
     section "editing" [] $ do
       strong_ "Summary"
       emptySpan "0.5em"
-      imgButton "undo editing summary" "/pencil.svg"
+      imgButton "quit editing summary" "/pencil.svg"
         [style_ "width:12px;opacity:0.5"] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
@@ -910,7 +910,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
     section "editing" [] $ do
       strong_ "Ecosystem"
       emptySpan "0.5em"
-      imgButton "undo editing ecosystem" "/pencil.svg"
+      imgButton "quit editing ecosystem" "/pencil.svg"
         [style_ "width:12px;opacity:0.5"] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
@@ -922,42 +922,58 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
 renderItemTraits :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
 renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
   div_ [class_ "item-traits"] $ do
-    this <- thisNode
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
         strong_ "Pros"
+        this <- thisNode
+        emptySpan "0.5em"
+        sectionSpan "normal" [shown, noScriptShown] $ do
+          imgButton "edit pros" "/pencil.svg"
+            [style_ "width:12px;opacity:0.5"] $
+            JS.switchSectionsEverywhere (this, "editable" :: Text)
+        sectionSpan "editable" [] $ do
+          imgButton "quit editing pros" "/pencil.svg"
+            [style_ "width:12px;opacity:0.5"] $
+            JS.switchSectionsEverywhere (this, "normal" :: Text)
         -- We can't use 'thisNode' inside <ul> because it creates a <span>
         -- and only <li> elements can be children of <ul>
         listUid <- randomLongUid
         ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.pros)
-        section "editable" [] $
+        section "editable" [] $ do
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add pro"]
             (renderMarkdownInline "")
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
+          textButton "edit off" $
+            JS.switchSectionsEverywhere(this, "normal" :: Text)
+
       div_ [class_ "traits-group"] $ do
         strong_ "Cons"
-        -- TODO: [easy] maybe add a line here?
+        this <- thisNode
+        emptySpan "0.5em"
+        sectionSpan "normal" [shown, noScriptShown] $ do
+          imgButton "edit cons" "/pencil.svg"
+            [style_ "width:12px;opacity:0.5"] $
+            JS.switchSectionsEverywhere (this, "editable" :: Text)
+        sectionSpan "editable" [] $ do
+          imgButton "quit editing cons" "/pencil.svg"
+            [style_ "width:12px;opacity:0.5"] $
+            JS.switchSectionsEverywhere (this, "normal" :: Text)
         listUid <- randomLongUid
         ul_ [uid_ listUid] $
           mapM_ (renderTrait (item^.uid)) (item^.cons)
-        section "editable" [] $
+        section "editable" [] $ do
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add con"]
             (renderMarkdownInline "")
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-    section "normal" [shown, noScriptShown] $ do
-      textButton "edit pros/cons" $
-        -- Switches sections in *all* traits
-        JS.switchSectionsEverywhere(this, "editable" :: Text)
-    section "editable" [] $ do
-      textButton "edit off" $
-        JS.switchSectionsEverywhere(this, "normal" :: Text)
+          textButton "edit off" $
+            JS.switchSectionsEverywhere(this, "normal" :: Text)
 
 renderTrait :: MonadRandom m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemId trait = do
