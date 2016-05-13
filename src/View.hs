@@ -982,27 +982,28 @@ renderTrait itemId trait = do
   editingSectionUid <- randomLongUid
   li_ [id_ thisId] $ do
 
-    sectionSpan "normal editable" [shown, noScriptShown] $ do
+    section "normal editable" [shown, noScriptShown] $ do
       toHtml (trait^.content)
 
-    sectionSpan "editable" [] $ do
-      br_ []
-      imgButton "move trait up" "/arrow-thick-top.svg" [width_ "12"] $
-        JS.moveTraitUp (itemId, trait^.uid, this)
-      imgButton "move trait down" "/arrow-thick-bottom.svg" [width_ "12"] $
-        JS.moveTraitDown (itemId, trait^.uid, this)
-      -- TODO: these 3 icons in a row don't look nice
-      imgButton "delete trait" "/x.svg" [width_ "12"] $
-        JS.deleteTrait (itemId, trait^.uid, this)
-      textareaUid <- randomLongUid
-      textButton "edit" $
-        -- See Note [dynamic interface]
-        JS.makeTraitEditor (this, JS.selectUid editingSectionUid,
-                            textareaUid,
-                            trait^.content.mdText,
-                            itemId, trait^.uid) <>
-        JS.switchSection (this, "editing" :: Text) <>
-        JS.autosizeTextarea [JS.selectUid textareaUid]
+    section "editable" [] $ do
+      div_ [class_ "trait-controls"] $ do
+        imgButton "move trait up" "/arrow-thick-top.svg" [] $
+          JS.moveTraitUp (itemId, trait^.uid, this)
+        imgButton "move trait down" "/arrow-thick-bottom.svg" [] $
+          JS.moveTraitDown (itemId, trait^.uid, this)
+        emptySpan "16px"
+        textareaUid <- randomLongUid
+        imgButton "edit trait" "/pencil.svg" [] $
+          -- See Note [dynamic interface]
+          JS.makeTraitEditor (this, JS.selectUid editingSectionUid,
+                              textareaUid,
+                              trait^.content.mdText,
+                              itemId, trait^.uid) <>
+          JS.switchSection (this, "editing" :: Text) <>
+          JS.autosizeTextarea [JS.selectUid textareaUid]
+        emptySpan "16px"
+        imgButton "delete trait" "/x.svg" [] $
+          JS.deleteTrait (itemId, trait^.uid, this)
 
     section "editing" [uid_ editingSectionUid] $ do
       return ()
