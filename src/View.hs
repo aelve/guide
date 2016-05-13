@@ -179,11 +179,9 @@ renderAdmin globalState = do
     buttonUid <- randomLongUid
     button "Create checkpoint" [uid_ buttonUid] $
       JS.createCheckpoint [JS.selectUid buttonUid]
-    div_ [id_ "stats"] $ do
-      h1_ "Statistics"
+    div_ [id_ "stats"] $
       renderStats globalState (globalState ^. actions)
-    div_ [id_ "edits"] $ do
-      h1_ "Pending edits"
+    div_ [id_ "edits"] $
       renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
 
 renderStats
@@ -192,6 +190,7 @@ renderStats
   -> [(Action, ActionDetails)]
   -> HtmlT m ()
 renderStats globalState acts = do
+  h1_ "Statistics"
   p_ "All information is for last 31 days."
   now <- liftIO getCurrentTime
   let thisMonth (_, d) = diffUTCTime now (actionDate d) <= 31*86400
@@ -292,7 +291,12 @@ renderEdits
   -> [((Edit, EditDetails), Maybe String)]
   -> HtmlT m ()
 renderEdits globalState edits = do
-  let editBlocks = groupBy (equating (editIP . snd . fst)) edits
+  let getIP = editIP . snd . fst
+  -- Unlike 'groupWith', “groupBy . equating” doesn't sort the input.
+  let editBlocks = groupBy (equating getIP) edits
+  let ipNum = length $ groupWith getIP edits
+  h1_ $ toHtml $
+    format "Pending edits (IPs: {}, blocks: {})" (ipNum, length editBlocks)
   for_ editBlocks $ \editBlock -> div_ $ do
     blockNode <- thisNode
     h2_ $ do
