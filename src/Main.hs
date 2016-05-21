@@ -647,12 +647,12 @@ main = do
         mapM_ killThread =<< readIORef ekgId
   bracket prepare finalise $ \db -> do
     hSetBuffering stdout NoBuffering
-    -- Create a checkpoint every hour. Note: if nothing was changed,
+    -- Create a checkpoint every six hours. Note: if nothing was changed,
     -- acid-state overwrites the previous checkpoint, which saves us some
     -- space.
     forkOS $ forever $ do
       createCheckpoint db
-      threadDelay (1000000 * 3600)
+      threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
     ekg <- EKG.forkServer "localhost" 5050
     writeIORef ekgId (Just (EKG.serverThreadId ekg))
