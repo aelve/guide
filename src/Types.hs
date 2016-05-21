@@ -120,6 +120,7 @@ module Types
   RestoreCategory(..),
   RestoreItem(..),
   RestoreTrait(..),
+  SetDirty(..), UnsetDirty(..),
   )
 where
 
@@ -698,28 +699,32 @@ data GlobalState = GlobalState {
   -- | Pending edits, newest first
   _pendingEdits :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
-  _editIdCounter :: Int }
+  _editIdCounter :: Int,
+  -- | The dirty bit (needed to choose whether to make a checkpoint or not)
+  _dirty :: Bool }
   deriving (Show)
 
-deriveSafeCopySimple 4 'extension ''GlobalState
+deriveSafeCopySimple 5 'extension ''GlobalState
 makeLenses ''GlobalState
 
-data GlobalState_v3 = GlobalState_v3 {
-  _categories_v3 :: [Category],
-  _categoriesDeleted_v3 :: [Category],
-  _pendingEdits_v3 :: [(Edit, EditDetails)],
-  _editIdCounter_v3 :: Int }
+data GlobalState_v4 = GlobalState_v4 {
+  _categories_v4 :: [Category],
+  _categoriesDeleted_v4 :: [Category],
+  _actions_v4 :: [(Action, ActionDetails)],
+  _pendingEdits_v4 :: [(Edit, EditDetails)],
+  _editIdCounter_v4 :: Int }
 
-deriveSafeCopySimple 3 'base ''GlobalState_v3
+deriveSafeCopySimple 4 'base ''GlobalState_v4
 
 instance Migrate GlobalState where
-  type MigrateFrom GlobalState = GlobalState_v3
-  migrate GlobalState_v3{..} = GlobalState {
-    _categories = _categories_v3,
-    _categoriesDeleted = _categoriesDeleted_v3,
-    _actions = [],
-    _pendingEdits = _pendingEdits_v3,
-    _editIdCounter = _editIdCounter_v3 }
+  type MigrateFrom GlobalState = GlobalState_v4
+  migrate GlobalState_v4{..} = GlobalState {
+    _categories = _categories_v4,
+    _categoriesDeleted = _categoriesDeleted_v4,
+    _actions = _actions_v4,
+    _pendingEdits = _pendingEdits_v4,
+    _editIdCounter = _editIdCounter_v4,
+    _dirty = True }
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
@@ -1208,6 +1213,12 @@ registerAction act ip date baseUrl ref ua = do
         actionUserAgent = ua }
   actions %= ((act, details) :)
 
+setDirty :: Acid.Update GlobalState ()
+setDirty = dirty .= True
+
+unsetDirty :: Acid.Update GlobalState Bool
+unsetDirty = dirty <<.= False
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -1238,5 +1249,6 @@ makeAcidic ''GlobalState [
   'registerAction,
   -- other
   'moveItem, 'moveTrait,
-  'restoreCategory, 'restoreItem, 'restoreTrait
+  'restoreCategory, 'restoreItem, 'restoreTrait,
+  'setDirty, 'unsetDirty
   ]
