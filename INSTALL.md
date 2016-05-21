@@ -105,6 +105,7 @@ You can set automatic backups of the database to your own repository.
 Create `.gitignore` in the `state/` folder:
 
 ~~~
+Archive/
 events*
 *.lock
 ~~~
