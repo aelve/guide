@@ -10,4 +10,4 @@ Installation instructions and the explanation of config variables (in `config.js
 ## Contributing
 
 If you want to contribute but don't know where to start, grep the source for
-`[very-easy]` and `[easy]`.
+`[very-easy]` and `[easy]`, or look at the [“your first pull request”](https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+first+pull+request%22) and [“your second pull request”](https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+second+pull+request%22) labels (the TODOs scattered around the code are more about small local tasks, while issues on the issue tracker are more broad). I'm very interested in having more people contribute to this project, so I'm willing to spend a couple of days explaining to you how to fix something, even if I could fix the issue by myself in an hour. So, if you want to experience the thrill of Fixing An Issue in an Open Source Project, write me!
