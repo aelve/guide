@@ -63,7 +63,7 @@ executable guide
                      , http-types
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
-                     , megaparsec
+                     , megaparsec == 4.4.*
                      , microlens-platform >= 0.2.3
                      , mmorph == 1.*
                      , mtl >= 2.1.1
