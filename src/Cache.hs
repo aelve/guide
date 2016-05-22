@@ -60,7 +60,13 @@ cacheDepends :: GlobalState -> CacheKey -> [CacheKey]
 cacheDepends gs key = case key of
   CacheCategoryList    -> [key]
   CacheCategory _      -> [key, CacheCategoryList]
-  CacheCategoryInfo x  -> [key, CacheCategory x, CacheCategoryList]
+  -- If the category's prosConsEnabled/ecosystemEnabled have changed, we'd
+  -- have to render *all* items differently (and CacheCategoryInfo includes
+  -- prosConsEnabled/ecosystemEnabled). See Note [enabled sections].
+  CacheCategoryInfo x  ->
+    [key, CacheCategory x, CacheCategoryList] ++
+    -- A convoluted way to say “find category with uid x”
+    map CacheItem (gs ^.. categories.each.filtered(hasUid x).items.each.uid)
   CacheCategoryNotes x -> [key, CacheCategory x, CacheCategoryList]
   -- If the item's group has been changed, it can influence how other items
   -- in the same category are rendered (specifically, their lists of groups

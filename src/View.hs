@@ -396,6 +396,14 @@ renderEdit globalState edit = do
       table_ $ tr_ $ do
         td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldNotes)
         td_ $ blockquote_ $ toHtml (renderMarkdownBlock newNotes)
+    Edit'SetCategoryProsConsEnabled catId _oldVal newVal -> do
+      if newVal == True
+        then p_ $ "enabled pros/cons for category " >> printCategory catId
+        else p_ $ "disabled pros/cons for category " >> printCategory catId
+    Edit'SetCategoryEcosystemEnabled catId _oldVal newVal -> do
+      if newVal == True
+        then p_ $ "enabled ecosystem for category " >> printCategory catId
+        else p_ $ "disabled ecosystem for category " >> printCategory catId
 
     -- Change item properties
     Edit'SetItemName _itemId oldName newName -> p_ $ do
@@ -683,7 +691,7 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         br_ []
         label_ $ do
           "Status" >> br_ []
-          select_ [name_ "status"] $ do
+          select_ [name_ "status", autocomplete_ "off"] $ do
             option_ [value_ "finished"] "Complete"
               & selectedIf (category^.status == CategoryFinished)
             option_ [value_ "mostly-done"] "Mostly done/usable"
@@ -692,6 +700,18 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
               & selectedIf (category^.status == CategoryWIP)
             option_ [value_ "stub"] "Stub"
               & selectedIf (category^.status == CategoryStub)
+        br_ []
+        label_ $ do
+          input_ [type_ "checkbox", name_ "pros-cons-enabled",
+                  autocomplete_ "off"]
+            & checkedIf (category^.prosConsEnabled)
+          "Pros/cons enabled"
+        br_ []
+        label_ $ do
+          input_ [type_ "checkbox", name_ "ecosystem-enabled",
+                  autocomplete_ "off"]
+            & checkedIf (category^.ecosystemEnabled)
+          "“Ecosystem” field enabled"
         br_ []
         input_ [type_ "submit", value_ "Save"]
         button "Cancel" [] $
@@ -741,6 +761,16 @@ getItemHue category item = case item^.group_ of
   Nothing -> NoHue
   Just s  -> M.findWithDefault NoHue s (category^.groups)
 
+{- Note [enabled sections]
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Categories have flags that enable/disable showing some sections of the items (currently pros/cons and ecosystem); this is done because for some items (like books, or people) “ecosystem” might not make any sense, and pros/cons don't make sense for categories that contain diverse items.
+
+When we change those flags (by editing category info), we want to update the way items are shown (without reloading the page). So, if the “show ecosystem” flag has been set and we unset it, we want to hide the ecosystem section in all items belonging to the category. This happens in 'JS.submitCategoryInfo'.
+
+If the category has showing pros/cons (or ecosystem, or both) disabled, we have to render traits and ecosystem as hidden (we can't just not render them at all, because then we wouldn't be able to un-hide them). How could we do it? If we do it in 'renderItemTraits' or 'renderItemEcosystem', this would mean that cached versions of traits/ecosystem would have to be rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead we do a somewhat inelegant thing: we wrap traits/ecosystem into yet another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates on those <div>s.
+-}
+
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
@@ -750,9 +780,14 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
     renderItemInfo category item
     let bg = hueToLightColor $ getItemHue category item
     div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
+      -- See Note [enabled sections]
       renderItemDescription item
-      renderItemTraits item
-      renderItemEcosystem item
+      hiddenIf (not (category^.prosConsEnabled)) $
+        div_ [class_ "pros-cons-wrapper"] $
+          renderItemTraits item
+      hiddenIf (not (category^.ecosystemEnabled)) $
+        div_ [class_ "ecosystem-wrapper"] $
+          renderItemEcosystem item
       renderItemNotes category item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
@@ -814,7 +849,7 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
         br_ []
         label_ $ do
           "Kind" >> br_ []
-          select_ [name_ "kind"] $ do
+          select_ [name_ "kind", autocomplete_ "off"] $ do
             option_ [value_ "library"] "Library"
               & selectedIf (case item^.kind of Library{} -> True; _ -> False)
             option_ [value_ "tool"] "Tool"
@@ -1109,18 +1144,20 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
 -- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
 -- selected becomes editable)
 
-renderItemForFeed :: Monad m => Item -> HtmlT m ()
-renderItemForFeed item = do
+renderItemForFeed :: Monad m => Category -> Item -> HtmlT m ()
+renderItemForFeed category item = do
   h1_ $ renderItemTitle item
   unless (markdownNull (item^.description)) $
     toHtml (item^.description)
-  h2_ "Pros"
-  ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
-  h2_ "Cons"
-  ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
-  unless (markdownNull (item^.ecosystem)) $ do
-    h2_ "Ecosystem"
-    toHtml (item^.ecosystem)
+  when (category^.prosConsEnabled) $ do
+    h2_ "Pros"
+    ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
+    h2_ "Cons"
+    ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
+  when (category^.ecosystemEnabled) $ do
+    unless (markdownNull (item^.ecosystem)) $ do
+      h2_ "Ecosystem"
+      toHtml (item^.ecosystem)
   -- TODO: include .notes-like style here? otherwise the headers are too big
   unless (markdownNull (item^.notes)) $ do
     h2_ "Notes"
@@ -1181,6 +1218,12 @@ mkLink x src = a_ [href_ src] x
 
 selectedIf :: With w => Bool -> w -> w
 selectedIf p x = if p then with x [selected_ "selected"] else x
+
+checkedIf :: With w => Bool -> w -> w
+checkedIf p x = if p then with x [checked_] else x
+
+hiddenIf :: With w => Bool -> w -> w
+hiddenIf p x = if p then with x [style_ "display:none;"] else x
 
 markdownEditor
   :: MonadRandom m

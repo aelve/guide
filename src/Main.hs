@@ -187,32 +187,56 @@ invalidateCacheForEdit
 invalidateCacheForEdit ed = do
   gs <- dbQuery GetGlobalState
   mapM_ (invalidateCache gs) $ case ed of
-    Edit'AddCategory catId _           -> [CacheCategory catId]
+    Edit'AddCategory catId _ ->
+        [CacheCategory catId]
     -- Normally invalidateCache should invalidate item's category
     -- automatically, but in this case it's *maybe* possible that the item
     -- has already been moved somewhere else and so we invalidate both just
     -- in case.
-    Edit'AddItem catId itemId _        -> [CacheCategory catId,
-                                           CacheItem itemId]
-    Edit'AddPro itemId _ _             -> [CacheItemTraits itemId]
-    Edit'AddCon itemId _ _             -> [CacheItemTraits itemId]
-    Edit'SetCategoryTitle catId _ _    -> [CacheCategoryInfo catId]
-    Edit'SetCategoryGroup catId _ _    -> [CacheCategoryInfo catId]
-    Edit'SetCategoryStatus catId _ _   -> [CacheCategoryInfo catId]
-    Edit'SetCategoryNotes catId _ _    -> [CacheCategoryNotes catId]
-    Edit'SetItemName itemId _ _        -> [CacheItemInfo itemId]
-    Edit'SetItemLink itemId _ _        -> [CacheItemInfo itemId]
-    Edit'SetItemGroup itemId _ _       -> [CacheItemInfo itemId]
-    Edit'SetItemKind itemId _ _        -> [CacheItemInfo itemId]
-    Edit'SetItemDescription itemId _ _ -> [CacheItemDescription itemId]
-    Edit'SetItemNotes itemId _ _       -> [CacheItemNotes itemId]
-    Edit'SetItemEcosystem itemId _ _   -> [CacheItemEcosystem itemId]
-    Edit'SetTraitContent itemId _ _ _  -> [CacheItemTraits itemId]
-    Edit'DeleteCategory catId _        -> [CacheCategory catId]
-    Edit'DeleteItem itemId _           -> [CacheItem itemId]
-    Edit'DeleteTrait itemId _ _        -> [CacheItemTraits itemId]
-    Edit'MoveItem itemId _             -> [CacheItem itemId]
-    Edit'MoveTrait itemId _ _          -> [CacheItemTraits itemId]
+    Edit'AddItem catId itemId _ ->
+        [CacheCategory catId, CacheItem itemId]
+    Edit'AddPro itemId _ _ ->
+        [CacheItemTraits itemId]
+    Edit'AddCon itemId _ _ ->
+        [CacheItemTraits itemId]
+    Edit'SetCategoryTitle catId _ _ ->
+        [CacheCategoryInfo catId]
+    Edit'SetCategoryGroup catId _ _ ->
+        [CacheCategoryInfo catId]
+    Edit'SetCategoryStatus catId _ _ ->
+        [CacheCategoryInfo catId]
+    Edit'SetCategoryProsConsEnabled catId _ _ ->
+        [CacheCategoryInfo catId]
+    Edit'SetCategoryEcosystemEnabled catId _ _ ->
+        [CacheCategoryInfo catId]
+    Edit'SetCategoryNotes catId _ _ ->
+        [CacheCategoryNotes catId]
+    Edit'SetItemName itemId _ _ ->
+        [CacheItemInfo itemId]
+    Edit'SetItemLink itemId _ _ ->
+        [CacheItemInfo itemId]
+    Edit'SetItemGroup itemId _ _ ->
+        [CacheItemInfo itemId]
+    Edit'SetItemKind itemId _ _ ->
+        [CacheItemInfo itemId]
+    Edit'SetItemDescription itemId _ _ ->
+        [CacheItemDescription itemId]
+    Edit'SetItemNotes itemId _ _ ->
+        [CacheItemNotes itemId]
+    Edit'SetItemEcosystem itemId _ _ ->
+        [CacheItemEcosystem itemId]
+    Edit'SetTraitContent itemId _ _ _ ->
+        [CacheItemTraits itemId]
+    Edit'DeleteCategory catId _ ->
+        [CacheCategory catId]
+    Edit'DeleteItem itemId _ ->
+        [CacheItem itemId]
+    Edit'DeleteTrait itemId _ _ ->
+        [CacheItemTraits itemId]
+    Edit'MoveItem itemId _ ->
+        [CacheItem itemId]
+    Edit'MoveTrait itemId _ _ ->
+        [CacheItemTraits itemId]
 
 -- | Do an action that would undo an edit.
 --
@@ -250,6 +274,16 @@ undoEdit (Edit'SetCategoryStatus catId old new) = do
   if now /= new
     then return (Left "status has been changed further")
     else Right () <$ dbUpdate (SetCategoryStatus catId old)
+undoEdit (Edit'SetCategoryProsConsEnabled catId old new) = do
+  now <- view prosConsEnabled <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "pros-cons-enabled has been changed further")
+    else Right () <$ dbUpdate (SetCategoryProsConsEnabled catId old)
+undoEdit (Edit'SetCategoryEcosystemEnabled catId old new) = do
+  now <- view ecosystemEnabled <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "ecosystem-enabled has been changed further")
+    else Right () <$ dbUpdate (SetCategoryEcosystemEnabled catId old)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
   now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
@@ -346,6 +380,8 @@ setMethods = Spock.subcomponent "set" $ do
     invalidateCache' (CacheCategoryInfo catId)
     title' <- T.strip <$> param' "title"
     group' <- T.strip <$> param' "group"
+    prosConsEnabled'  <- (Just ("on" :: Text) ==) <$> param "pros-cons-enabled"
+    ecosystemEnabled' <- (Just ("on" :: Text) ==) <$> param "ecosystem-enabled"
     status' <- do
       statusName :: Text <- param' "status"
       return $ case statusName of
@@ -363,6 +399,10 @@ setMethods = Spock.subcomponent "set" $ do
       (edit, _) <- dbUpdate (SetCategoryGroup catId group')
       addEdit edit
     do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
+       addEdit edit
+    do (edit, _) <- dbUpdate (SetCategoryProsConsEnabled catId prosConsEnabled')
+       addEdit edit
+    do (edit, _) <- dbUpdate (SetCategoryEcosystemEnabled catId ecosystemEnabled')
        addEdit edit
     -- After all these edits we can render the category header
     category <- dbQuery (GetCategory catId)
@@ -606,7 +646,7 @@ itemToFeedEntry baseUrl category item =
     entryLink = baseUrl </>
                 T.unpack (format "{}#item-{}"
                                  (categorySlug category, item^.uid))
-    entryContent = Lucid.renderText (renderItemForFeed item)
+    entryContent = Lucid.renderText (renderItemForFeed category item)
     entryBase = Atom.nullEntry
       (T.unpack (uidToText (item^.uid)))
       (Atom.TextString (T.unpack (item^.name)))

@@ -36,6 +36,8 @@ module Types
   Category(..),
     title,
     status,
+    prosConsEnabled,
+    ecosystemEnabled,
     groups,
     items,
     itemsDeleted,
@@ -90,6 +92,8 @@ module Types
   SetCategoryGroup(..),
   SetCategoryNotes(..),
   SetCategoryStatus(..),
+  SetCategoryProsConsEnabled(..),
+  SetCategoryEcosystemEnabled(..),
   -- *** 'Item'
   SetItemName(..),
   SetItemLink(..),
@@ -406,16 +410,30 @@ instance Migrate CategoryStatus where
 data Category = Category {
   _categoryUid :: Uid Category,
   _categoryTitle :: Text,
+  -- | The “grandcategory” of the category (“meta”, “basics”, “specialised
+  -- needs”, etc)
   _categoryGroup_ :: Text,
+  -- | Whether to show items' pros and cons. This would be 'False' for
+  -- e.g. lists of people, or lists of successful projects written in Haskell
+  _categoryProsConsEnabled :: Bool,
+  -- | Whether to show items' ecosystem fields. This would be 'False' for
+  -- lists of people, or for books
+  _categoryEcosystemEnabled :: Bool,
   _categoryCreated :: UTCTime,
   _categoryStatus :: CategoryStatus,
   _categoryNotes :: MarkdownBlock,
+  -- | All groups of items belonging to the category, as well as their
+  -- colors. We could assign colors to items when we render the category
+  -- (something like “if haven't seen this group yet, assign a new color to
+  -- it and render it with this color”, but this way is easier and also
+  -- allows us to keep the colors of all other groups the same when one item
+  -- has been deleted.
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
   deriving (Show)
 
-deriveSafeCopySimple 6 'extension ''Category
+deriveSafeCopySimple 7 'extension ''Category
 makeFields ''Category
 
 categorySlug :: Category -> Text
@@ -425,32 +443,35 @@ categorySlug category =
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
 -- template for future migrations.
-data Category_v5 = Category_v5 {
-  _categoryUid_v5 :: Uid Category,
-  _categoryTitle_v5 :: Text,
-  _categoryGroup_v5 :: Text,
-  _categoryCreated_v5 :: UTCTime,
-  -- _categoryStatus_v5 :: CategoryStatus,
-  _categoryNotes_v5 :: MarkdownBlock,
-  _categoryGroups_v5 :: Map Text Hue,
-  _categoryItems_v5 :: [Item],
-  _categoryItemsDeleted_v5 :: [Item] }
+data Category_v6 = Category_v6 {
+  _categoryUid_v6 :: Uid Category,
+  _categoryTitle_v6 :: Text,
+  _categoryGroup_v6 :: Text,
+  _categoryCreated_v6 :: UTCTime,
+  _categoryStatus_v6 :: CategoryStatus,
+  _categoryNotes_v6 :: MarkdownBlock,
+  _categoryGroups_v6 :: Map Text Hue,
+  _categoryItems_v6 :: [Item],
+  _categoryItemsDeleted_v6 :: [Item] }
 
-deriveSafeCopySimple 5 'base ''Category_v5
+deriveSafeCopySimple 6 'base ''Category_v6
 
 instance Migrate Category where
-  type MigrateFrom Category = Category_v5
-  migrate Category_v5{..} = Category {
-    _categoryUid = _categoryUid_v5,
-    _categoryTitle = _categoryTitle_v5,
-    _categoryGroup_ = _categoryGroup_v5,
-    _categoryCreated = _categoryCreated_v5,
-    -- _categoryStatus = _categoryStatus_v5,
-    _categoryStatus = CategoryFinished,
-    _categoryNotes = _categoryNotes_v5,
-    _categoryGroups = _categoryGroups_v5,
-    _categoryItems = _categoryItems_v5,
-    _categoryItemsDeleted = _categoryItemsDeleted_v5 }
+  type MigrateFrom Category = Category_v6
+  migrate Category_v6{..} = Category {
+    _categoryUid = _categoryUid_v6,
+    _categoryTitle = _categoryTitle_v6,
+    _categoryGroup_ = _categoryGroup_v6,
+    -- _categoryProsConsEnabled = _categoryProsConsEnabled_v6,
+    _categoryProsConsEnabled = True,
+    -- _categoryEcosystemEnabled = _categoryEcosystemEnabled_v6,
+    _categoryEcosystemEnabled = True,
+    _categoryCreated = _categoryCreated_v6,
+    _categoryStatus = _categoryStatus_v6,
+    _categoryNotes = _categoryNotes_v6,
+    _categoryGroups = _categoryGroups_v6,
+    _categoryItems = _categoryItems_v6,
+    _categoryItemsDeleted = _categoryItemsDeleted_v6 }
 
 -- Edits
 
@@ -490,6 +511,14 @@ data Edit
       editCategoryUid       :: Uid Category,
       editCategoryStatus    :: CategoryStatus,
       editCategoryNewStatus :: CategoryStatus }
+  | Edit'SetCategoryProsConsEnabled {
+      editCategoryUid                 :: Uid Category,
+      editCategoryProsConsEnabled     :: Bool,
+      editCategoryNewProsConsEnabled  :: Bool }
+  | Edit'SetCategoryEcosystemEnabled {
+      editCategoryUid                 :: Uid Category,
+      editCategoryEcosystemEnabled    :: Bool,
+      editCategoryNewEcosystemEnabled :: Bool }
 
   -- Change item properties
   | Edit'SetItemName {
@@ -551,9 +580,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 4 'extension ''Edit
+deriveSafeCopySimple 5 'extension ''Edit
 
-genVer ''Edit 3 [
+genVer ''Edit 4 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -563,7 +592,9 @@ genVer ''Edit 3 [
   Copy 'Edit'SetCategoryTitle,
   Copy 'Edit'SetCategoryGroup,
   Copy 'Edit'SetCategoryNotes,
-  -- Copy 'Edit'SetCategoryStatus,
+  Copy 'Edit'SetCategoryStatus,
+  -- Copy 'Edit'SetCategoryProsConsEnabled,
+  -- Copy 'Edit'SetCategoryEcosystemEnabled,
   -- Change item properties
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
@@ -582,11 +613,11 @@ genVer ''Edit 3 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 3 'base ''Edit_v3
+deriveSafeCopySimple 4 'base ''Edit_v4
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v3
-  migrate = $(migrateVer ''Edit 3 [
+  type MigrateFrom Edit = Edit_v4
+  migrate = $(migrateVer ''Edit 4 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -595,7 +626,9 @@ instance Migrate Edit where
     CopyM 'Edit'SetCategoryTitle,
     CopyM 'Edit'SetCategoryGroup,
     CopyM 'Edit'SetCategoryNotes,
-    -- CopyM 'Edit'SetCategoryStatus,
+    CopyM 'Edit'SetCategoryStatus,
+    -- CopyM 'Edit'SetCategoryProsConsEnabled
+    -- CopyM 'Edit'SetCategoryEcosystemEnabled
     -- Change item properties
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
@@ -626,6 +659,10 @@ isVacuousEdit Edit'SetCategoryNotes{..} =
   editCategoryNotes == editCategoryNewNotes
 isVacuousEdit Edit'SetCategoryStatus{..} =
   editCategoryStatus == editCategoryNewStatus
+isVacuousEdit Edit'SetCategoryProsConsEnabled {..} =
+  editCategoryProsConsEnabled == editCategoryNewProsConsEnabled
+isVacuousEdit Edit'SetCategoryEcosystemEnabled {..} =
+  editCategoryEcosystemEnabled == editCategoryNewEcosystemEnabled
 isVacuousEdit Edit'SetItemName{..} =
   editItemName == editItemNewName
 isVacuousEdit Edit'SetItemLink{..} =
@@ -807,6 +844,8 @@ addCategory catId title' created' = do
         _categoryUid = catId,
         _categoryTitle = title',
         _categoryGroup_ = "Miscellaneous",
+        _categoryProsConsEnabled = True,
+        _categoryEcosystemEnabled = True,
         _categoryCreated = created',
         _categoryStatus = CategoryStub,
         _categoryNotes = renderMarkdownBlock "",
@@ -898,6 +937,20 @@ setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (
 setCategoryStatus catId status' = do
   oldStatus <- categoryById catId . status <<.= status'
   let edit = Edit'SetCategoryStatus catId oldStatus status'
+  (edit,) <$> use (categoryById catId)
+
+setCategoryProsConsEnabled
+  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
+setCategoryProsConsEnabled catId val = do
+  oldVal <- categoryById catId . prosConsEnabled <<.= val
+  let edit = Edit'SetCategoryProsConsEnabled catId oldVal val
+  (edit,) <$> use (categoryById catId)
+
+setCategoryEcosystemEnabled
+  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
+setCategoryEcosystemEnabled catId val = do
+  oldVal <- categoryById catId . ecosystemEnabled <<.= val
+  let edit = Edit'SetCategoryEcosystemEnabled catId oldVal val
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -1234,6 +1287,7 @@ makeAcidic ''GlobalState [
   -- set
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
+    'setCategoryProsConsEnabled, 'setCategoryEcosystemEnabled,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
