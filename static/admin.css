@@ -31,6 +31,18 @@ textarea:focus {
   outline: 0px none;
   border: 1px solid #07C; }
 
+.edit {
+  padding: 0.3em 1em;
+  margin: 1em 0.5em;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+
+.edit-info {
+  color: gray;
+  opacity: 0.8; }
+
+#edits > * > h2 {
+  margin-top: 3em; }
+
 #edits table {
   width: 100%;
   border: none;

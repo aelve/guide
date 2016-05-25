@@ -313,10 +313,10 @@ renderEdits globalState edits = do
         JS.undoBlock (editId (editBlock ^?! _head._1._2),
                       editId (editBlock ^?! _last._1._2),
                       blockNode)
-    ul_ $ do
-      for_ editBlock $ \((edit, EditDetails{..}), mbErr) -> li_ $ do
+    for_ editBlock $ \((edit, EditDetails{..}), mbErr) ->
+      div_ [class_ "edit"] $ do
         editNode <- thisNode
-        p_ $ do
+        p_ [class_ "edit-info"] $ do
           toHtml =<< liftIO (humanReadableTime editDate)
           emptySpan "1em"
           textButton "accept" $
