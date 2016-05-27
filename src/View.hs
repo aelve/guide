@@ -164,7 +164,7 @@ renderAdmin
 renderAdmin globalState = do
   head_ $ do
     includeJS "/js.js"
-    includeJS "/jquery-2.2.0.js"
+    includeJS "/jquery.js"
     includeJS "/sorttable.js"
     includeCSS "/markup.css"
     includeCSS "/admin.css"
@@ -558,9 +558,9 @@ wrapPage pageTitle page = doctypehtml_ $ do
               "https://github.com/aelve/guide/issues");
         return false; };
       |]
-    includeJS "/jquery-2.2.0.js"
+    includeJS "/jquery.js"
     -- See Note [autosize]
-    includeJS "/autosize-3.0.15.js"
+    includeJS "/autosize.js"
     onPageLoad (JS "autosize($('textarea'));")
     -- The order is important – markup.css overrides some rules from
     -- highlight.css (e.g. div.sourceCode), css.css overrides the rule for
