@@ -20,6 +20,8 @@ data-files:
   static/*.css
   static/*.md
   static/*.html
+  static/*.js
+  static/*.ico
 cabal-version:       >=1.10
 
 source-repository head
