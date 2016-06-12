@@ -679,7 +679,15 @@ isVacuousEdit Edit'SetItemEcosystem{..} =
   editItemEcosystem == editItemNewEcosystem
 isVacuousEdit Edit'SetTraitContent{..} =
   editTraitContent == editTraitNewContent
-isVacuousEdit _ = False
+isVacuousEdit Edit'AddCategory{}    = False
+isVacuousEdit Edit'AddItem{}        = False
+isVacuousEdit Edit'AddPro{}         = False
+isVacuousEdit Edit'AddCon{}         = False
+isVacuousEdit Edit'DeleteCategory{} = False
+isVacuousEdit Edit'DeleteItem{}     = False
+isVacuousEdit Edit'DeleteTrait{}    = False
+isVacuousEdit Edit'MoveItem{}       = False
+isVacuousEdit Edit'MoveTrait{}      = False
 
 data EditDetails = EditDetails {
   editIP   :: Maybe IP,
