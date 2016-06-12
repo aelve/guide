@@ -139,9 +139,11 @@ import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 import Data.Map (Map)
+-- Lists
+import Data.List.Index
 -- Text
-import qualified Data.Text as T
-import Data.Text (Text)
+import qualified Data.Text.All as T
+import Data.Text.All (Text)
 -- Time
 import Data.Time
 -- Network
@@ -438,7 +440,7 @@ makeFields ''Category
 
 categorySlug :: Category -> Text
 categorySlug category =
-  format "{}-{}" (makeSlug (category^.title), category^.uid)
+  T.format "{}-{}" (makeSlug (category^.title), category^.uid)
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
@@ -1154,7 +1156,7 @@ restoreCategory catId pos = do
     Nothing -> return (Left "category not found in deleted categories")
     Just category -> do
       categoriesDeleted %= deleteFirst (hasUid catId)
-      categories        %= insertAt pos category
+      categories        %= insertAtGuaranteed pos category
       return (Right ())
 
 restoreItem :: Uid Item -> Int -> Acid.Update GlobalState (Either String ())
@@ -1167,7 +1169,7 @@ restoreItem itemId pos = do
       let item = fromJust (find (hasUid itemId) (category^.itemsDeleted))
       let category' = category
             & itemsDeleted %~ deleteFirst (hasUid itemId)
-            & items        %~ insertAt pos item
+            & items        %~ insertAtGuaranteed pos item
       categories        . each . filtered ourCategory .= category'
       categoriesDeleted . each . filtered ourCategory .= category'
       return (Right ())
@@ -1187,7 +1189,7 @@ restoreTrait itemId traitId pos = do
         (Just trait, _) -> do
           let item' = item
                 & prosDeleted %~ deleteFirst (hasUid traitId)
-                & pros        %~ insertAt pos trait
+                & pros        %~ insertAtGuaranteed pos trait
           let category' = category
                 & items        . each . filtered (hasUid itemId) .~ item'
                 & itemsDeleted . each . filtered (hasUid itemId) .~ item'
@@ -1197,7 +1199,7 @@ restoreTrait itemId traitId pos = do
         (_, Just trait) -> do
           let item' = item
                 & consDeleted %~ deleteFirst (hasUid traitId)
-                & cons        %~ insertAt pos trait
+                & cons        %~ insertAtGuaranteed pos trait
           let category' = category
                 & items        . each . filtered (hasUid itemId) .~ item'
                 & itemsDeleted . each . filtered (hasUid itemId) .~ item'

@@ -18,7 +18,7 @@ where
 -- General
 import BasePrelude
 -- Text
-import Data.Text (Text)
+import Data.Text.All (Text)
 -- JSON
 import Data.Aeson               as Aeson
 import Data.Aeson.Encode.Pretty as Aeson hiding (Config)

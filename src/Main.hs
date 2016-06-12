@@ -23,10 +23,9 @@ import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 -- Text
-import Data.Text (Text)
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy as TL
+import Data.Text.All (Text)
+import qualified Data.Text.All as T
+import qualified Data.Text.Lazy.All as TL
 -- Paths
 import System.FilePath ((</>))
 -- Network
@@ -644,8 +643,8 @@ itemToFeedEntry baseUrl category item =
     Atom.entryContent = Just (Atom.HTMLContent (TL.unpack entryContent)) }
   where
     entryLink = baseUrl </>
-                T.unpack (format "{}#item-{}"
-                                 (categorySlug category, item^.uid))
+                T.unpack (T.format "{}#item-{}"
+                                   (categorySlug category, item^.uid))
     entryContent = Lucid.renderText (renderItemForFeed category item)
     entryBase = Atom.nullEntry
       (T.unpack (uidToText (item^.uid)))

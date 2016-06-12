@@ -42,8 +42,8 @@ import Lens.Micro.Platform hiding ((&))
 import Control.Monad.Writer
 import Control.Monad.State
 -- Text
-import qualified Data.Text as T
-import Data.Text (Text)
+import qualified Data.Text.All as T
+import Data.Text.All (Text)
 -- ByteString
 import qualified Data.ByteString.Lazy as BSL
 -- Parsing

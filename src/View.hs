@@ -61,9 +61,8 @@ import Control.Monad.Random
 import qualified Data.Map as M
 import Data.Tree
 -- Text
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Data.Text (Text)
+import qualified Data.Text.All as T
+import Data.Text.All (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
@@ -296,7 +295,7 @@ renderEdits globalState edits = do
   let editBlocks = groupBy (equating getIP) edits
   let ipNum = length $ groupWith getIP edits
   h1_ $ toHtml $
-    format "Pending edits (IPs: {}, blocks: {})" (ipNum, length editBlocks)
+    T.format "Pending edits (IPs: {}, blocks: {})" (ipNum, length editBlocks)
   for_ editBlocks $ \editBlock -> div_ $ do
     blockNode <- thisNode
     h2_ $ do
@@ -1075,8 +1074,8 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
       this   = JS.selectId thisId
   editingSectionUid <- randomLongUid
   div_ [id_ thisId, class_ "item-notes"] $ do
-    let notesLink = format "/haskell/{}#{}"
-                           (categorySlug category, thisId)
+    let notesLink = T.format "/haskell/{}#{}"
+                             (categorySlug category, thisId)
     a_ [href_ notesLink] $
       strong_ "Notes"
 
@@ -1091,8 +1090,8 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
                 -- list of items). Well, actually it doesn't happen
                 -- yet (at the moment of writing), but it might start
                 -- happening and then it's better to be prepared.
-                fullLink = format "/haskell/{}#{}"
-                                  (categorySlug category, id')
+                fullLink = T.format "/haskell/{}#{}"
+                                    (categorySlug category, id')
             a_ [href_ fullLink, onclick_ handler] $
               renderInlines def is
             renderTree children
@@ -1166,7 +1165,7 @@ renderItemForFeed category item = do
 -- Utils
 
 onPageLoad :: Monad m => JS -> HtmlT m ()
-onPageLoad js = script_ $ format "$(document).ready(function(){{}});" [js]
+onPageLoad js = script_ $ T.format "$(document).ready(function(){{}});" [js]
 
 emptySpan :: Monad m => Text -> HtmlT m ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
@@ -1174,7 +1173,7 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 -- Use inputValue to get the value (works with input_ and textarea_)
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
-  format "if (event.keyCode == 13) {{} return false;}" [handler]
+  T.format "if (event.keyCode == 13) {{} return false;}" [handler]
 
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
@@ -1186,7 +1185,7 @@ clearInput :: JS
 clearInput = JS "this.value = '';"
 
 onFormSubmit :: (JS -> JS) -> Attribute
-onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
+onFormSubmit f = onsubmit_ $ T.format "{} return false;" [f (JS "this")]
 
 button :: Monad m => Text -> [Attribute] -> JS -> HtmlT m ()
 button value attrs handler =
@@ -1239,7 +1238,7 @@ markdownEditor attr (view mdText -> s) submit cancel = do
   textarea_ ([uid_ textareaUid, autocomplete_ "off", class_ "big fullwidth"]
              ++ attr) $
     toHtml s
-  let val = JS $ format "document.getElementById(\"{}\").value" [textareaUid]
+  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaUid]
   button "Save" [] $
     submit val
   emptySpan "6px"
@@ -1258,7 +1257,7 @@ smallMarkdownEditor
   -> HtmlT m ()
 smallMarkdownEditor attr (view mdText -> s) submit mbCancel = do
   textareaId <- randomLongUid
-  let val = JS $ format "document.getElementById(\"{}\").value" [textareaId]
+  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
               onEnter (submit val)] ++ attr) $
     toHtml s
@@ -1290,7 +1289,7 @@ categoryNodeId category = "category-" <> uidToText (category^.uid)
 
 itemLink :: Category -> Item -> Text
 itemLink category item =
-  format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
+  T.format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute

@@ -17,12 +17,9 @@ module JS where
 -- General
 import BasePrelude
 -- Text
-import qualified Data.Text as T
-import Data.Text (Text)
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Builder as B
--- Formatting and interpolation
-import qualified Data.Text.Buildable as Format
+import qualified Data.Text.All as T
+import Data.Text.All (Text)
+-- Interpolation
 import NeatInterpolation
 
 -- Local
@@ -31,7 +28,7 @@ import Utils
 
 -- | Javascript code.
 newtype JS = JS {fromJS :: Text}
-  deriving (Show, Format.Buildable, Monoid)
+  deriving (Show, T.Buildable, Monoid)
 
 -- | A concatenation of all Javascript functions defined in this module.
 allJSFunctions :: JS
@@ -77,9 +74,9 @@ instance ToJS JS where
 instance ToJS Text where
   toJS = JS . escapeJSString
 instance ToJS Integer where
-  toJS = JS . tshow
+  toJS = JS . T.show
 instance ToJS Int where
-  toJS = JS . tshow
+  toJS = JS . T.show
 instance ToJS (Uid a) where
   toJS = toJS . uidToText
 
@@ -121,20 +118,20 @@ class JSFunction a where
 -- This generates function definition
 instance JSFunction JS where
   makeJSFunction fName fParams fDef =
-    JS $ format "function {}({}) {\n{}}\n"
-                (fName, T.intercalate "," fParams, fDef)
+    JS $ T.format "function {}({}) {\n{}}\n"
+                  (fName, T.intercalate "," fParams, fDef)
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
 instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _fParams _fDef = \args ->
-    JS $ format "{}({});"
-                (fName, T.intercalate "," (map fromJS (jsParams args)))
+    JS $ T.format "{}({});"
+                  (fName, T.intercalate "," (map fromJS (jsParams args)))
 
 -- This isn't a standalone function and so it doesn't have to be listed in
 -- 'allJSFunctions'.
 assign :: ToJS x => JS -> x -> JS
-assign v x = JS $ format "{} = {};" (v, toJS x)
+assign v x = JS $ T.format "{} = {};" (v, toJS x)
 
 -- TODO: all links here shouldn't be absolute [absolute-links]
 
@@ -670,12 +667,12 @@ deleteItem =
 
 escapeJSString :: Text -> Text
 escapeJSString s =
-    TL.toStrict . B.toLazyText $
-    B.singleton '"' <> quote s <> B.singleton '"'
+    T.toStrict $
+    T.bsingleton '"' <> quote s <> T.bsingleton '"'
   where
     quote q = case T.uncons t of
-      Nothing       -> B.fromText h
-      Just (!c, t') -> B.fromText h <> escape c <> quote t'
+      Nothing       -> T.toBuilder h
+      Just (!c, t') -> T.toBuilder h <> escape c <> quote t'
       where
         (h, t) = T.break isEscape q
     -- 'isEscape' doesn't mention \n, \r and \t because they are handled by
@@ -691,26 +688,24 @@ escapeJSString s =
     escape '\t' = "\\t"
     escape c
       | c < '\x20' || c == '\x2028' || c == '\x2029' =
-          B.fromString $ "\\u" ++ replicate (4 - length h) '0' ++ h
+          "\\u" <> T.left 4 '0' (T.hex (fromEnum c))
       | otherwise =
-          B.singleton c
-      where
-        h = showHex (fromEnum c) ""
+          T.bsingleton c
 
 newtype JQuerySelector = JQuerySelector Text
-  deriving (ToJS, Format.Buildable)
+  deriving (ToJS, T.Buildable)
 
 selectId :: Text -> JQuerySelector
-selectId x = JQuerySelector $ format "#{}" [x]
+selectId x = JQuerySelector $ T.format "#{}" [x]
 
 selectUid :: Uid Node -> JQuerySelector
-selectUid x = JQuerySelector $ format "#{}" [x]
+selectUid x = JQuerySelector $ T.format "#{}" [x]
 
 selectClass :: Text -> JQuerySelector
-selectClass x = JQuerySelector $ format ".{}" [x]
+selectClass x = JQuerySelector $ T.format ".{}" [x]
 
 selectParent :: JQuerySelector -> JQuerySelector
-selectParent x = JQuerySelector $ format ":has(> {})" [x]
+selectParent x = JQuerySelector $ T.format ":has(> {})" [x]
 
 selectChildren :: JQuerySelector -> JQuerySelector -> JQuerySelector
-selectChildren a b = JQuerySelector $ format "{} > {}" (a, b)
+selectChildren a b = JQuerySelector $ T.format "{} > {}" (a, b)

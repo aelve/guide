@@ -64,6 +64,7 @@ executable guide
                      , hashable
                      , http-types
                      , iproute == 1.7.*
+                     , ilist
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 4.4.*
                      , microlens-platform >= 0.2.3
@@ -77,8 +78,7 @@ executable guide
                      , shortcut-links >= 0.4.2
                      , stm-containers == 0.2.10.*
                      , template-haskell
-                     , text
-                     , text-format
+                     , text-all == 0.3.*
                      , time >= 1.5
                      , transformers
                      , wai

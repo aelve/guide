@@ -15,16 +15,11 @@ NoImplicitPrelude
 
 module Utils
 (
-  -- * Text
-  format,
-  tshow,
-
   -- * Lists
   moveUp,
   moveDown,
   deleteFirst,
-  deleteAt,
-  insertAt,
+  insertAtGuaranteed,
   ordNub,
 
   -- * 'Eq'
@@ -77,15 +72,8 @@ import qualified Data.Set as S
 -- Hashable (needed for Uid)
 import Data.Hashable
 -- Text
-import Data.Text (Text)
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy as TL
--- Formatting
-import           Data.Text.Format hiding (format)
-import qualified Data.Text.Format        as Format
-import qualified Data.Text.Format.Params as Format
-import qualified Data.Text.Buildable     as Format
+import Data.Text.All (Text)
+import qualified Data.Text.All as T
 -- Network
 import qualified Network.Socket as Network
 import Data.IP
@@ -104,15 +92,6 @@ import Data.SafeCopy
 import Language.Haskell.TH
 
 
--- | Format a string (a bit like 'Text.Printf.printf' but with different
--- syntax). The version in "Data.Text.Format" returns lazy text, but we
--- use strict text everywhere.
-format :: Format.Params ps => Format -> ps -> Text
-format f ps = TL.toStrict (Format.format f ps)
-
-tshow :: Show a => a -> Text
-tshow = T.pack . show
-
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]
 moveUp p (x:y:xs) = if p y then (y:x:xs) else x : moveUp p (y:xs)
@@ -127,15 +106,10 @@ deleteFirst :: (a -> Bool) -> [a] -> [a]
 deleteFirst _   []   = []
 deleteFirst f (x:xs) = if f x then xs else x : deleteFirst f xs
 
-deleteAt :: Int -> [a] -> [a]
-deleteAt _   []   = []
-deleteAt 0 (_:xs) = xs
-deleteAt i (x:xs) = x : deleteAt (i-1) xs
-
-insertAt :: Int -> a -> [a] -> [a]
-insertAt _ a   []   = [a]
-insertAt 0 a   xs   = a:xs
-insertAt n a (x:xs) = x : insertAt (n-1) a xs
+insertAtGuaranteed :: Int -> a -> [a] -> [a]
+insertAtGuaranteed _ a   []   = [a]
+insertAtGuaranteed 0 a   xs   = a:xs
+insertAtGuaranteed n a (x:xs) = x : insertAtGuaranteed (n-1) a xs
 
 ordNub :: Ord a => [a] -> [a]
 ordNub = go mempty
@@ -176,7 +150,7 @@ sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Eq, Ord, Show, PathPiece, Format.Buildable, Hashable)
+  deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable)
 
 -- See Note [acid-state]
 deriveSafeCopySimple 2 'extension ''Uid
