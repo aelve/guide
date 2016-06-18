@@ -43,6 +43,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   autosizeTextarea,
   expandHash,
   expandItemNotes,
+  showDiffPopup,
   -- Creating parts of interface
   makeTraitEditor,
   makeItemNotesEditor,
@@ -289,6 +290,73 @@ expandItemNotes =
     switchSection("#item-notes-"+itemId, "expanded");
   |]
 
+showDiffPopup :: JSFunction a => a
+showDiffPopup =
+  makeJSFunction "showDiffPopup" ["ours", "modified", "merged", "send"]
+  [text|
+    dialog = $("<div>", {
+      "class" : "diff-popup"
+    })[0];
+    choices = $("<div>", {
+      "class" : "diff-choices"
+    })[0];
+
+    // our version
+    choiceOurs = $("<div>", {
+      "class" : "var-a" })[0];
+    textOurs = $("<div>", {
+      "class" : "text",
+      "text"  : ours })[0];
+    headerOurs = $("<strong>", {
+      "text" : "Your version" })[0];
+    buttonOurs = $("<button>", {
+      "text" : "Submit this version, disregard changes on the server" })[0];
+    $(buttonOurs).click(function() {
+      send(ours); });
+    $(choiceOurs).append(headerOurs, textOurs, buttonOurs);
+
+    // modified version
+    choiceMod = $("<div>", {
+      "class" : "var-b" })[0];
+    textMod = $("<div>", {
+      "class" : "text",
+      "text"  : modified })[0];
+    headerMod = $("<strong>", {
+      "text" : "Version on the server" })[0];
+    buttonMod = $("<button>", {
+      "text" : "Accept this version, disregard my changes" })[0];
+    $(buttonMod).click(function() {
+      send(modified); });
+    $(choiceMod).append(headerMod, textMod, buttonMod);
+
+    // building merged
+    choiceMerged = $("<div>", {
+      "class" : "var-merged" })[0];
+    areaMerged = $("<textarea>", {
+      "autocomplete" : "off",
+      "text"         : merged })[0];
+    headerMerged = $("<strong>", {
+      "text" : "Merged version (edit if needed)" })[0];
+    buttonMerged = $("<button>", {
+      "text" : "Submit the merged version" })[0];
+    $(buttonMerged).click(function () {
+      send(areaMerged.value); });
+    $(choiceMerged).append(headerMerged, areaMerged, buttonMerged);
+
+    $(choices).append(choiceOurs, choiceMod, choiceMerged);
+    $(dialog).append(choices);
+
+    $.magnificPopup.open({
+      modal: true,
+      items: {
+        src: dialog,
+        type: 'inline' }
+    });
+
+    autosizeTextarea(areaMerged);
+  |]
+
+
 {- Note [dynamic interface]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -305,7 +373,8 @@ See <https://github.com/aelve/guide/issues/24>.
 makeTraitEditor :: JSFunction a => a
 makeTraitEditor =
   makeJSFunction "makeTraitEditor"
-    ["traitNode", "sectionNode", "textareaUid", "content", "itemId", "traitId"]
+                 ["traitNode", "sectionNode", "textareaUid",
+                  "content", "itemId", "traitId"]
   [text|
     $(sectionNode).html("");
     area = $("<textarea>", {
@@ -316,7 +385,7 @@ makeTraitEditor =
       "text"         : content })[0];
     area.onkeydown = function (event) {
       if (event.keyCode == 13) {
-        submitTrait(traitNode, itemId, traitId, area.value);
+        submitTrait(traitNode, itemId, traitId, content, area.value);
         return false; } };
     br = $("<br>")[0];
     a = $("<a>", {
@@ -479,16 +548,28 @@ addCon =
 
 submitTrait :: JSFunction a => a
 submitTrait =
-  makeJSFunction "submitTrait" ["node", "itemId", "traitId", "s"]
+  makeJSFunction "submitTrait"
+                 ["node", "itemId", "traitId", "original", "ours"]
   [text|
-    $.post("/haskell/set/item/"+itemId+"/trait/"+traitId, {content: s})
-     .done(function (data) {
+    $.post({
+      url: "/haskell/set/item/"+itemId+"/trait/"+traitId,
+      data: {
+        original : original,
+        content  : ours },
+      success: function (data) {
+        $.magnificPopup.close();
         $(node).replaceWith(data);
-        switchSection(node, "editable");
+        // Switching has to be done here and not in 'Main.renderTrait'
+        // because $.post is asynchronous and will be done *after*
+        // switchSection has worked.
+        switchSection(node, "editable"); },
+      statusCode: {
+        409: function (xhr, st, err) {
+          modified = xhr.responseJSON["modified"];
+          merged   = xhr.responseJSON["merged"];
+          showDiffPopup(ours, modified, merged, function (x) {
+            submitTrait(node, itemId, traitId, modified, x) }); } }
       });
-    // Switching has to be done here and not in 'Main.renderTrait'
-    // because $.post is asynchronous and will be done *after*
-    // switchSection has worked.
   |]
 
 submitItemInfo :: JSFunction a => a

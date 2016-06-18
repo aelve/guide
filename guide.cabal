@@ -34,6 +34,7 @@ executable guide
     Config
     Types
     Utils
+    Merge
     Cache
     Markdown
     JS
@@ -63,8 +64,8 @@ executable guide
                      , friendly-time == 0.4.*
                      , hashable
                      , http-types
-                     , iproute == 1.7.*
                      , ilist
+                     , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 4.4.*
                      , microlens-platform >= 0.2.3
@@ -72,15 +73,18 @@ executable guide
                      , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*
                      , network
+                     , patches-vector
                      , path-pieces
                      , random >= 1.1
                      , safecopy
                      , shortcut-links >= 0.4.2
+                     , split
                      , stm-containers == 0.2.10.*
                      , template-haskell
                      , text-all == 0.3.*
                      , time >= 1.5
                      , transformers
+                     , vector
                      , wai
                      , wai-middleware-metrics
                      , wai-middleware-static

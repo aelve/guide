@@ -558,6 +558,9 @@ wrapPage pageTitle page = doctypehtml_ $ do
         return false; };
       |]
     includeJS "/jquery.js"
+    -- for modal dialogs
+    includeJS "/magnific-popup.js"
+    includeCSS "/magnific-popup.css"
     -- See Note [autosize]
     includeJS "/autosize.js"
     onPageLoad (JS "autosize($('textarea'));")

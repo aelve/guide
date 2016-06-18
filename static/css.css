@@ -22,6 +22,8 @@ h1 {
 
 /* Other CSS */
 
+/* TODO: move }s to new lines */
+
 #footer {
   display: flex;
   flex-flow: row wrap;
@@ -189,3 +191,46 @@ textarea.fullwidth {
 .notes-toc {
   background-color: rgba(10, 10, 10, 0.1);
   padding: 1px 0; }
+
+.diff-popup {
+  background: white;
+  padding: 20px 30px;
+  text-align: left;
+  margin: 40px auto;
+  position: relative;
+}
+
+.diff-choices {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  margin: 0px -10px;
+}
+
+.diff-choices > * {
+  flex: 1;
+  margin-top: 10px;
+  margin: 7px 5px;
+  min-width: 400px;
+  margin-top: 10px;
+}
+
+.diff-choices > * > .text {
+  border: 1px solid gray;
+  padding: 5px 10px;
+  margin: 5px 0px;
+  font-size: 80%;
+  word-wrap: break-word;
+}
+
+.diff-choices > .var-a > .text {
+  background-color: #fdd;
+}
+.diff-choices > .var-b > .text {
+  background-color: #cfc;
+}
+
+.diff-choices > .var-merged > textarea {
+  margin: 5px 0px;
+  width: 100%;
+}
