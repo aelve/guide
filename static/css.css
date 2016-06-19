@@ -216,6 +216,8 @@ textarea.fullwidth {
 }
 
 .diff-choices > * > .text {
+  white-space: pre-wrap;
+  font-family: monospace;
   border: 1px solid gray;
   padding: 5px 10px;
   margin: 5px 0px;

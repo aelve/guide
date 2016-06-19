@@ -810,6 +810,8 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
+  let bodyNode = JS.selectChildren (JS.selectParent this)
+                                   (JS.selectClass "item-body")
   div_ [id_ thisId, class_ "item-info",
         style_ ("background-color:" <> bg)] $ do
 
@@ -836,8 +838,6 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
     section "editing" [] $ do
       -- When the info/header node changes its group (and is hence
       -- recolored), item's body has to be recolored too
-      let bodyNode = JS.selectChildren (JS.selectParent this)
-                                       (JS.selectClass "item-body")
       let formSubmitHandler formNode =
             JS.submitItemInfo (this, bodyNode, item^.uid, formNode)
       form_ [onFormSubmit formSubmitHandler] $ do
@@ -1124,6 +1124,8 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
               JS.makeItemNotesEditor (
                    this, JS.selectUid editingSectionUid,
                    textareaUid,
+                   -- See Note [blurb diffing]
+                   markdownNull (item^.notes),
                    contents,
                    item^.uid) <>
               JS.switchSection (this, "editing" :: Text) <>

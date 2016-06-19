@@ -405,12 +405,28 @@ makeTraitEditor =
     $(sectionNode).append(area, br, cancelBtn, markdown);
   |]
 
--- | Dynamically creates a 'View.markdownEdito' (but specifically for item
+{- Note [blurb diffing]
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A note on why we need 'empty' in 'makeItemNotesEditor'.
+
+Assume that the notes are empty. The text in the area, therefore, will be some default blurb (“# Links, #Imports, #Usage”, etc). Suppose the user edits it. What will be sent to the server?
+
+  * original: blurb
+  * our version: modified blurb
+
+What will happen next? The server will compare it to the value currently at the server (i.e. an empty string), and think that the blurb *was* on the server but got deleted while the client was doing editing. This is wrong, and will result in a diff popup comparing an edited blurb to an empty string. To prevent this, we pass 'empty' to 'makeItemNotesEditor' – if we're using a blurb, we'll pass an empty string as the original.
+
+-}
+
+-- | Dynamically creates a 'View.markdownEditor' (but specifically for item
 -- notes). See Note [dynamic interface].
 makeItemNotesEditor :: JSFunction a => a
 makeItemNotesEditor =
+  -- See Note [blurb diffing]
   makeJSFunction "makeItemNotesEditor"
-    ["notesNode", "sectionNode", "textareaUid", "content", "itemId"]
+                 ["notesNode", "sectionNode", "textareaUid",
+                  "empty", "content", "itemId"]
   [text|
     $(sectionNode).html("");
     area = $("<textarea>", {
@@ -423,7 +439,7 @@ makeItemNotesEditor =
       "value" : "Save",
       "type"  : "button" })[0];
     saveBtn.onclick = function () {
-      submitItemNotes(notesNode, itemId, area.value); };
+      submitItemNotes(notesNode, itemId, empty ? "" : content, area.value); };
     // Can't use $()-generation here because then the <span> would have
     // to be cloned (since we're inserting it multiple times) and I don't
     // know how to do that.
@@ -508,16 +524,28 @@ submitItemEcosystem =
 
 submitItemNotes :: JSFunction a => a
 submitItemNotes =
-  makeJSFunction "submitItemNotes" ["node", "itemId", "s"]
+  makeJSFunction "submitItemNotes"
+                 ["node", "itemId", "original", "ours"]
   [text|
-    $.post("/haskell/set/item/"+itemId+"/notes", {content: s})
-     .done(function (data) {
+    $.post({
+      url: "/haskell/set/item/"+itemId+"/notes",
+      data: {
+        original: original,
+        content: ours },
+      success: function (data) {
+        $.magnificPopup.close();
         $(node).replaceWith(data);
-        switchSection(node, "expanded");
+        // Switching has to be done here and not in 'Main.renderItemNotes'
+        // because $.post is asynchronous and will be done *after*
+        // switchSection has worked.
+        switchSection(node, "expanded"); },
+      statusCode: {
+        409: function (xhr, st, err) {
+          modified = xhr.responseJSON["modified"];
+          merged   = xhr.responseJSON["merged"];
+          showDiffPopup(ours, modified, merged, function (x) {
+            submitItemNotes(node, itemId, modified, x) }); } }
       });
-    // Switching has to be done here and not in 'Main.renderItemNotes'
-    // because $.post is asynchronous and will be done *after*
-    // switchSection has worked.
   |]
 
 -- | Add a pro to some item.
@@ -554,8 +582,8 @@ submitTrait =
     $.post({
       url: "/haskell/set/item/"+itemId+"/trait/"+traitId,
       data: {
-        original : original,
-        content  : ours },
+        original: original,
+        content: ours },
       success: function (data) {
         $.magnificPopup.close();
         $(node).replaceWith(data);

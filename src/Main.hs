@@ -475,12 +475,21 @@ setMethods = Spock.subcomponent "set" $ do
     lucidIO $ renderItemEcosystem item
   -- Item notes
   Spock.post (itemVar <//> "notes") $ \itemId -> do
+    original <- param' "original"
     content' <- param' "content"
-    invalidateCache' (CacheItemNotes itemId)
-    (edit, item) <- dbUpdate (SetItemNotes itemId content')
-    addEdit edit
-    category <- dbQuery (GetCategoryByItem itemId)
-    lucidIO $ renderItemNotes category item
+    modified <- view (notes.mdText) <$> dbQuery (GetItem itemId)
+    if modified == original
+      then do
+        invalidateCache' (CacheItemNotes itemId)
+        (edit, item) <- dbUpdate (SetItemNotes itemId content')
+        addEdit edit
+        category <- dbQuery (GetCategoryByItem itemId)
+        lucidIO $ renderItemNotes category item
+      else do
+        setStatus HTTP.status409
+        json $ M.fromList [
+          ("modified" :: Text, modified),
+          ("merged" :: Text, merge original content' modified)]
   -- Trait
   Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
     original <- param' "original"
