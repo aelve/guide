@@ -10,4 +10,14 @@ Installation instructions and the explanation of config variables (in `config.js
 ## Contributing
 
 If you want to contribute but don't know where to start, grep the source for
-`[very-easy]` and `[easy]`, or look at the [“your first pull request”](https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+first+pull+request%22) and [“your second pull request”](https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+second+pull+request%22) labels (the TODOs scattered around the code are more about small local tasks, while issues on the issue tracker are more broad). I'm very interested in having more people contribute to this project, so I'm willing to spend a couple of days explaining to you how to fix something, even if I could fix the issue by myself in an hour. So, if you want to experience the thrill of Fixing An Issue in an Open Source Project, write me!
+`[very-easy]` and `[easy]`, or look at these issues:
+
+  * [“your first pull request”][first pr] – really easy things, with detailed “how to fix it” instructions
+  * [“your second pull request”][second pr] – less easy things, which assume that you already know where stuff happens in the code
+  * [“not-fleshed-out idea”][ideas] – discussion issues (“should we have users? what better ways are there to present pros and cons?”) which you can help with even if you don't know Haskell
+  * [“design”][design] – issues about design (which I'm not good at, and so help is wanted)
+
+[first pr]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+first+pull+request%22
+[second pr]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22your+second+pull+request%22
+[ideas]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22not-fleshed-out+idea%22
+[design]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22design%22
