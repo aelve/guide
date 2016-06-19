@@ -3,26 +3,28 @@
    100%+20px) */
 
 *, *:before, *:after {
-  box-sizing: border-box; }
+  box-sizing: border-box;
+}
 
 /* Making the footer stick to the bottom of the screen */
 
 body {
   display: flex;
   min-height: 100vh;
-  flex-direction: column; }
+  flex-direction: column;
+}
 
 #main {
-  flex: 1; }
+  flex: 1;
+}
 
 /* headers look bad when the width is small, so */
 
 h1 {
-  line-height: 100%; }
+  line-height: 100%;
+}
 
 /* Other CSS */
-
-/* TODO: move }s to new lines */
 
 #footer {
   display: flex;
@@ -31,16 +33,19 @@ h1 {
   padding: 1.5em 0 0em 0;
   margin: 0 -1em;
   margin-top: 2em;
-  border-top: 1px solid black; }
+  border-top: 1px solid black;
+}
 
 .footer-item {
   margin: 0 1em;
   min-height: 40px;
-  text-align: center; }
+  text-align: center;
+}
 
 .unemployed {
   font-size: 50%;
-  margin-top: -0.3em; }
+  margin-top: -0.3em;
+}
 
 body {
   padding: 0px 15px;
@@ -48,36 +53,44 @@ body {
   margin: auto;
   max-width: 800px;
   font-family: sans-serif;
-  line-height: 120%; }
+  line-height: 120%;
+}
 
 #noscript-message {
   padding: 1px 1em;
-  background-color: #FFEBEE; }
+  background-color: #FFEBEE;
+}
 
 #search {
   font-size: 200%;
   border: 1px solid #d0d0d0;
   padding: 3px 10px;
-  width: 100%; }
+  width: 100%;
+}
 
 #categories {
   display: flex;
   flex-flow: row wrap;
   justify-content: space-between;
-  margin-top: 1em; }
+  margin-top: 1em;
+}
 
 #categories a {
   font-weight: bold;
   line-height: 140%;
   font-size: 110%;
-  padding: 2px 1px; }
+  padding: 2px 1px;
+}
 
 #categories a.status-mostly-done {
-  background-color: #fdd; }
+  background-color: #fdd;
+}
 #categories a.status-wip {
-  background-color: #faa; }
+  background-color: #faa;
+}
 #categories a.status-stub {
-  background-color: #f78; }
+  background-color: #f78;
+}
 
 #categories .status {
   margin-left: 5px;
@@ -89,108 +102,138 @@ body {
   min-width: 350px; }
 
 .category {
-  margin-top: 3em; }
+  margin-top: 3em;
+}
 
 .item {
-  margin-top: 20px; }
+  margin-top: 20px;
+}
 
 .item-info {
-  padding: 10px 15px; }
+  padding: 10px 15px;
+}
 
 .item-info .controls {
-  float: right; }
+  float: right;
+}
 
 .item-info .controls img {
   opacity: 0.4;
-  height: 23px; }
+  height: 23px;
+}
 
 .category-info .controls {
   margin-right: 0.5em;
-  vertical-align: -1px; }
+  vertical-align: -1px;
+}
 
 .category-info .controls img {
   opacity: 0.3;
-  height: 20px; }
+  height: 20px;
+}
 
 .category-info .group {
   font-size: 60%;
   font-weight: normal;
-  color: gray; }
+  color: gray;
+}
 
 .trait-controls img {
   opacity: 0.5;
-  width: 12px; }
+  width: 12px;
+}
 
 /* increase the clickable area */
 .trait-controls a {
   display: inline-block;
-  padding: 5px; }
+  padding: 5px;
+}
 
 .trait-controls {
-  margin-left: -7px; }
+  margin-left: -7px;
+}
 
-.item-traits, .item-notes, .item-description, .item-ecosystem {
-  padding: 10px 15px 20px 15px; }
+.item-traits,
+.item-notes,
+.item-description,
+.item-ecosystem {
+  padding: 10px 15px 20px 15px;
+}
 
 .traits-groups-container {
   display: flex;
   flex-wrap: wrap;
-  margin: 0px -15px; }
+  margin: 0px -15px;
+}
 
 .traits-group {
   flex: 1;
   min-width: 300px;
-  padding: 0px 15px; }
+  padding: 0px 15px;
+}
 
 .traits-group > ul {
-  padding-left: 1em; }
+  padding-left: 1em;
+}
 
 .traits-group > ul li {
-  margin: 10px 0px; }
+  margin: 10px 0px;
+}
 
 .text-button {
   font-size: 10pt;
-  font-weight: normal; }
+  font-weight: normal;
+}
 
 .text-button::before {content: "[";}
 .text-button::after  {content: "]";}
 
 textarea {
-  font-size: 100%; }
+  font-size: 100%;
+}
 
 input {
-  font-size: 100%; }
+  font-size: 100%;
+}
 
 .text-button > a:visited {color: #008ACE;}
 h1           > a:visited {color: #008ACE;}  /* for header in category pages */
 
 a.anchor {
   margin-right: 0.5em;
-  color: gray; }
+  color: gray;
+}
 
 form {
-  margin: 0; }
+  margin: 0;
+}
 
 textarea {
   border: 1px solid #ccc;
-  padding: 5px 7px; }
+  padding: 5px 7px;
+}
 
 textarea:focus {
   outline: 0px none;
-  border: 1px solid #07C; }
+  border: 1px solid #07C;
+}
 
 textarea.big {
-  padding: 10px; }
+  padding: 10px;
+}
 
 .fullwidth {
-  width: 100%; }
+  width: 100%;
+}
 
 textarea.fullwidth {
-  resize: vertical; }
+  resize: vertical;
+}
 
 .notes-toc {
   background-color: rgba(10, 10, 10, 0.1);
-  padding: 1px 0; }
+  padding: 1px 0;
+}
 
 .diff-popup {
   background: white;
