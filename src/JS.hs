@@ -508,10 +508,24 @@ submitCategoryNotes =
 
 submitItemDescription :: JSFunction a => a
 submitItemDescription =
-  makeJSFunction "submitItemDescription" ["node", "itemId", "s"]
+  makeJSFunction "submitItemDescription"
+                 ["node", "itemId", "original", "ours"]
   [text|
-    $.post("/haskell/set/item/"+itemId+"/description", {content: s})
-     .done(replaceWithData(node));
+    $.post({
+      url: "/haskell/set/item/"+itemId+"/description",
+      data: {
+        original: original,
+        content: ours },
+      success: function (data) {
+        $.magnificPopup.close();
+        $(node).replaceWith(data); },
+      statusCode: {
+        409: function (xhr, st, err) {
+          modified = xhr.responseJSON["modified"];
+          merged   = xhr.responseJSON["merged"];
+          showDiffPopup(ours, modified, merged, function (x) {
+            submitItemDescription(node, itemId, modified, x) }); } }
+      });
   |]
 
 submitItemEcosystem :: JSFunction a => a

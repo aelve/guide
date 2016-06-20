@@ -930,7 +930,8 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
       markdownEditor
         [rows_ "10"]
         (item^.description)
-        (\val -> JS.submitItemDescription (this, item^.uid, val))
+        (\val -> JS.submitItemDescription
+                   (this, item^.uid, item^.description.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
 
 renderItemEcosystem :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()

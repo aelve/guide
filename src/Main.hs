@@ -461,11 +461,20 @@ setMethods = Spock.subcomponent "set" $ do
     lucidIO $ renderItemInfo category item
   -- Item description
   Spock.post (itemVar <//> "description") $ \itemId -> do
+    original <- param' "original"
     content' <- param' "content"
-    invalidateCache' (CacheItemDescription itemId)
-    (edit, item) <- dbUpdate (SetItemDescription itemId content')
-    addEdit edit
-    lucidIO $ renderItemDescription item
+    modified <- view (description.mdText) <$> dbQuery (GetItem itemId)
+    if modified == original
+      then do
+        invalidateCache' (CacheItemDescription itemId)
+        (edit, item) <- dbUpdate (SetItemDescription itemId content')
+        addEdit edit
+        lucidIO $ renderItemDescription item
+      else do
+        setStatus HTTP.status409
+        json $ M.fromList [
+          ("modified" :: Text, modified),
+          ("merged" :: Text, merge original content' modified)]
   -- Item ecosystem
   Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
     original <- param' "original"
