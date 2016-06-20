@@ -741,7 +741,8 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
       markdownEditor
         [rows_ "10"]
         contents
-        (\val -> JS.submitCategoryNotes (this, category^.uid, val))
+        (\val -> JS.submitCategoryNotes
+                   (this, category^.uid, category^.notes.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
 
 renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()

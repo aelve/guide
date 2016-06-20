@@ -410,11 +410,20 @@ setMethods = Spock.subcomponent "set" $ do
     lucidIO $ renderCategoryInfo category
   -- Notes for a category
   Spock.post (categoryVar <//> "notes") $ \catId -> do
+    original <- param' "original"
     content' <- param' "content"
-    invalidateCache' (CacheCategoryNotes catId)
-    (edit, category) <- dbUpdate (SetCategoryNotes catId content')
-    addEdit edit
-    lucidIO $ renderCategoryNotes category
+    modified <- view (notes.mdText) <$> dbQuery (GetCategory catId)
+    if modified == original
+      then do
+        invalidateCache' (CacheCategoryNotes catId)
+        (edit, category) <- dbUpdate (SetCategoryNotes catId content')
+        addEdit edit
+        lucidIO $ renderCategoryNotes category
+      else do
+        setStatus HTTP.status409
+        json $ M.fromList [
+          ("modified" :: Text, modified),
+          ("merged" :: Text, merge original content' modified)]
   -- Item info
   Spock.post (itemVar <//> "info") $ \itemId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the

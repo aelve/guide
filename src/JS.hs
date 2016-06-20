@@ -500,10 +500,24 @@ submitCategoryInfo =
 
 submitCategoryNotes :: JSFunction a => a
 submitCategoryNotes =
-  makeJSFunction "submitCategoryNotes" ["node", "catId", "s"]
+  makeJSFunction "submitCategoryNotes"
+                 ["node", "catId", "original, ours"]
   [text|
-    $.post("/haskell/set/category/"+catId+"/notes", {content: s})
-     .done(replaceWithData(node));
+    $.post({
+      url: "/haskell/set/category/"+catId+"/notes",
+      data: {
+        original: original,
+        content: ours },
+      success: function (data) {
+        $.magnificPopup.close();
+        $(node).replaceWith(data); },
+      statusCode: {
+        409: function (xhr, st, err) {
+          modified = xhr.responseJSON["modified"];
+          merged   = xhr.responseJSON["merged"];
+          showDiffPopup(ours, modified, merged, function (x) {
+            submitCategoryNotes(node, catId, modified, x) }); } }
+      });
   |]
 
 submitItemDescription :: JSFunction a => a
