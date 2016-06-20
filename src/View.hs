@@ -957,7 +957,8 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
       markdownEditor
         [rows_ "3"]
         (item^.ecosystem)
-        (\val -> JS.submitItemEcosystem (this, item^.uid, val))
+        (\val -> JS.submitItemEcosystem
+                   (this, item^.uid, item^.ecosystem.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
 
 renderItemTraits :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()

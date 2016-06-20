@@ -516,10 +516,24 @@ submitItemDescription =
 
 submitItemEcosystem :: JSFunction a => a
 submitItemEcosystem =
-  makeJSFunction "submitItemEcosystem" ["node", "itemId", "s"]
+  makeJSFunction "submitItemEcosystem"
+                 ["node", "itemId", "original", "ours"]
   [text|
-    $.post("/haskell/set/item/"+itemId+"/ecosystem", {content: s})
-     .done(replaceWithData(node));
+    $.post({
+      url: "/haskell/set/item/"+itemId+"/ecosystem",
+      data: {
+        original: original,
+        content: ours },
+      success: function (data) {
+        $.magnificPopup.close();
+        $(node).replaceWith(data); },
+      statusCode: {
+        409: function (xhr, st, err) {
+          modified = xhr.responseJSON["modified"];
+          merged   = xhr.responseJSON["merged"];
+          showDiffPopup(ours, modified, merged, function (x) {
+            submitItemEcosystem(node, itemId, modified, x) }); } }
+      });
   |]
 
 submitItemNotes :: JSFunction a => a
