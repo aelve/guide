@@ -68,7 +68,7 @@ executable guide
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 4.4.*
-                     , microlens-platform >= 0.2.3
+                     , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*

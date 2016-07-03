@@ -836,12 +836,6 @@ getItem uid' = view (itemById uid')
 getTrait :: Uid Item -> Uid Trait -> Acid.Query GlobalState Trait
 getTrait itemId traitId = view (itemById itemId . traitById traitId)
 
--- | A useful lens operator that modifies something and returns the old value.
-(<<.=) :: MonadState s m => LensLike ((,) a) s s a b -> b -> m a
-(<<.=) l b = state (l (,b))
-{-# INLINE (<<.=) #-}
-infix 4 <<.=
-
 -- add
 
 addCategory
