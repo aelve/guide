@@ -359,10 +359,12 @@ renderEdit globalState edit = do
 
   let printCategory catId = do
         let category = findCategory catId
-        quote $ toHtml (category ^. title)
+        quote $ a_ [href_ (categoryLink category)] $
+          toHtml (category ^. title)
   let printItem itemId = do
-        let (_, item) = findItem itemId
-        quote $ toHtml (item ^. name)
+        let (category, item) = findItem itemId
+        quote $ a_ [href_ (itemLink category item)] $
+          toHtml (item ^. name)
 
   case edit of
     -- Add
@@ -630,7 +632,7 @@ renderCategoryList cats = cached CacheCategoryList $ do
                 CategoryMostlyDone -> "status-mostly-done"
                 CategoryWIP        -> "status-wip"
                 CategoryStub       -> "status-stub"
-          a_ [class_ cl, href_ ("/haskell/" <> categorySlug category)] $
+          a_ [class_ cl, href_ (categoryLink category)] $
             toHtml (category^.title)
           case category^.status of
             CategoryFinished   -> return ()
@@ -643,8 +645,7 @@ renderSearchResults :: Monad m => [Category] -> HtmlT m ()
 renderSearchResults cats = do
   div_ [id_ "categories"] $
     for_ cats $ \category -> do
-      -- TODO: this link shouldn't be absolute [absolute-links]
-      a_ [href_ ("/haskell/" <> categorySlug category)] $
+      a_ [href_ (categoryLink category)] $
         toHtml (category^.title)
       br_ []
 
@@ -660,8 +661,7 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
           img_ [src_ "/rss-alt.svg",
                 alt_ "category feed", title_ "category feed"]
-      -- TODO: this link shouldn't be absolute [absolute-links]
-      a_ [href_ ("/haskell/" <> categorySlug category)] $
+      a_ [href_ (categoryLink category)] $
         toHtml (category^.title)
       emptySpan "1em"
       span_ [class_ "group"] $
@@ -1080,8 +1080,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
       this   = JS.selectId thisId
   editingSectionUid <- randomLongUid
   div_ [id_ thisId, class_ "item-notes"] $ do
-    let notesLink = T.format "/haskell/{}#{}"
-                             (categorySlug category, thisId)
+    let notesLink = categoryLink category <> "#" <> thisId
     a_ [href_ notesLink] $
       strong_ "Notes"
 
@@ -1096,8 +1095,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
                 -- list of items). Well, actually it doesn't happen
                 -- yet (at the moment of writing), but it might start
                 -- happening and then it's better to be prepared.
-                fullLink = T.format "/haskell/{}#{}"
-                                    (categorySlug category, id')
+                fullLink = categoryLink category <> "#" <> id'
             a_ [href_ fullLink, onclick_ handler] $
               renderInlines def is
             renderTree children
@@ -1295,7 +1293,11 @@ itemNode = JS.selectId . itemNodeId
 categoryNodeId :: Category -> Text
 categoryNodeId category = "category-" <> uidToText (category^.uid)
 
-itemLink :: Category -> Item -> Text
+-- TODO: another absolute link to get rid of [absolute-links]
+categoryLink :: Category -> Url
+categoryLink category = "/haskell/" <> categorySlug category
+
+itemLink :: Category -> Item -> Url
 itemLink category item =
   T.format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
 
