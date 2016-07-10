@@ -18,6 +18,16 @@ body {
   flex: 1;
 }
 
+#main > h1 {
+  margin-bottom: 0px;
+}
+
+.subtitle {
+  font-weight: bold;
+  color: #e03;
+  margin-bottom: 2em;
+}
+
 /* headers look bad when the width is small, so */
 
 h1 {

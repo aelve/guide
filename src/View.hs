@@ -150,10 +150,16 @@ After that switching sections is simply done by adding/removing the “shown” 
 
 -}
 
+renderSubtitle :: Monad m => HtmlT m ()
+renderSubtitle =
+  div_ [class_ "subtitle"] $
+    "alpha version • very much incomplete • leave feedback"
+
 renderRoot :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
 renderRoot = do
   wrapPage "Aelve Guide" $ do
     h1_ "Aelve Guide"
+    renderSubtitle
     h2_ (mkLink "Haskell" "/haskell")
 
 -- TODO: show a “category not found” page
@@ -479,6 +485,7 @@ renderHaskellRoot globalState mbSearchQuery =
       Nothing -> h1_ "Aelve Guide: Haskell"
       -- A search page isn't the main page, so we need a link to the main page
       Just _  -> h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
+    renderSubtitle
     renderNoScriptWarning
     renderSearch mbSearchQuery
     textInput [
@@ -510,6 +517,7 @@ renderCategoryPage category = do
     onPageLoad $ JS.expandHash ()
     -- TODO: another absolute link [absolute-links]
     h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
+    renderSubtitle
     renderNoScriptWarning
     renderSearch Nothing
     renderCategory category
