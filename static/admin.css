@@ -89,6 +89,10 @@ textarea:focus {
   text-align: left;
 }
 
+#stats td {
+  word-break: break-all;
+}
+
 #stats th, #stats td {
   padding: 0.5em 1em;
 }
