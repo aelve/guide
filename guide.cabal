@@ -66,6 +66,7 @@ executable guide
                      , http-types
                      , ilist
                      , iproute == 1.7.*
+                     , list-t
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 4.4.*
                      , microlens-platform >= 0.3.2

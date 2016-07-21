@@ -719,6 +719,10 @@ createCheckpoint' db = liftIO $ do
 
 main :: IO ()
 main = do
+  -- Emptying the cache is needed because during development (i.e. in REPL)
+  -- 'main' can be started many times and if the cache isn't cleared changes
+  -- won't be visible
+  emptyCache
   config <- readConfig
   let emptyState = GlobalState {
         _categories = [],
