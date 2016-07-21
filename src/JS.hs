@@ -412,14 +412,14 @@ makeTraitEditor =
 {- Note [blurb diffing]
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-A note on why we need 'empty' in 'makeItemNotesEditor'.
+A note on why we need the 'wasEmpty' parameter in 'makeItemNotesEditor'.
 
 Assume that the notes are empty. The text in the area, therefore, will be some default blurb (“# Links, #Imports, #Usage”, etc). Suppose the user edits it. What will be sent to the server?
 
   * original: blurb
   * our version: modified blurb
 
-What will happen next? The server will compare it to the value currently at the server (i.e. an empty string), and think that the blurb *was* on the server but got deleted while the client was doing editing. This is wrong, and will result in a diff popup comparing an edited blurb to an empty string. To prevent this, we pass 'empty' to 'makeItemNotesEditor' – if we're using a blurb, we'll pass an empty string as the original.
+What will happen next? The server will compare it to the value currently at the server (i.e. an empty string), and think that the blurb *was* on the server but got deleted while the client was doing editing. This is wrong, and will result in a diff popup comparing an edited blurb to an empty string. To prevent this, we pass 'wasEmpty' to 'makeItemNotesEditor' – if we're using a blurb, we'll pass an empty string as the original.
 
 -}
 
@@ -430,7 +430,7 @@ makeItemNotesEditor =
   -- See Note [blurb diffing]
   makeJSFunction "makeItemNotesEditor"
                  ["notesNode", "sectionNode", "textareaUid",
-                  "empty", "content", "itemId"]
+                  "wasEmpty", "content", "itemId"]
   [text|
     $(sectionNode).html("");
     area = $("<textarea>", {
@@ -443,7 +443,10 @@ makeItemNotesEditor =
       "value" : "Save",
       "type"  : "button" })[0];
     saveBtn.onclick = function () {
-      submitItemNotes(notesNode, itemId, empty ? "" : content, area.value); };
+      submitItemNotes(notesNode,
+                      itemId,
+                      wasEmpty ? "" : content,
+                      area.value); };
     // Can't use $()-generation here because then the <span> would have
     // to be cloned (since we're inserting it multiple times) and I don't
     // know how to do that.
