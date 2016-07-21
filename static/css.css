@@ -206,6 +206,13 @@ input {
   font-size: 100%;
 }
 
+.edit-field-instruction {
+  margin-right: 3.5em;
+  font-size: 75%;
+  vertical-align: 1px;
+  color: #666;
+}
+
 .text-button > a:visited {color: #008ACE;}
 h1           > a:visited {color: #008ACE;}  /* for header in category pages */
 

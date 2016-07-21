@@ -396,13 +396,17 @@ makeTraitEditor =
       switchSection(traitNode, "editable");
       return false; };
     cancelBtn = $("<span>", {"class":"text-button"})[0];
+    info = $("<span>", {"style":"float:right"})[0];
+    enter = $("<span>", {
+      "class": "edit-field-instruction",
+      "text" : "press Enter to save" })[0];
     markdown = $("<a>", {
       "href"   : "/markdown",
       "target" : "_blank",
-      "style"  : "float:right",
       "text"   : "Markdown" })[0];
+    $(info).append(enter, markdown);
     $(cancelBtn).append(a);
-    $(sectionNode).append(area, br, cancelBtn, markdown);
+    $(sectionNode).append(area, br, cancelBtn, info);
   |]
 
 {- Note [blurb diffing]

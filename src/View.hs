@@ -996,6 +996,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
+            (Just "press Enter to add")
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1021,6 +1022,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
+            (Just "press Enter to add")
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1265,21 +1267,23 @@ smallMarkdownEditor
   -> MarkdownInline -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
+  -> Maybe Text     -- ^ Instruction (e.g. “press Enter to add”)
   -> HtmlT m ()
-smallMarkdownEditor attr (view mdText -> s) submit mbCancel = do
+smallMarkdownEditor attr (view mdText -> s) submit mbCancel mbInstr = do
   textareaId <- randomLongUid
   let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
               onEnter (submit val)] ++ attr) $
     toHtml s
-  case mbCancel of
-    Nothing -> return ()
-    Just cancel -> do
-      br_ []
-      textButton "cancel" $
-        JS.assign val s <>
-        cancel
-  a_ [href_ "/markdown", target_ "_blank", style_ "float:right"] "Markdown"
+  br_ []
+  for_ mbCancel $ \cancel -> do
+    textButton "cancel" $
+      JS.assign val s <>
+      cancel
+  span_ [style_ "float:right"] $ do
+    for_ mbInstr $ \instr ->
+      span_ [class_ "edit-field-instruction"] (toHtml instr)
+    a_ [href_ "/markdown", target_ "_blank"] "Markdown"
 
 thisNode :: MonadRandom m => HtmlT m JQuerySelector
 thisNode = do
