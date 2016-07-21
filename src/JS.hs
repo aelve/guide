@@ -384,7 +384,7 @@ makeTraitEditor =
       "class"        : "fullwidth",
       "text"         : content })[0];
     area.onkeydown = function (event) {
-      if (event.keyCode == 13) {
+      if (event.keyCode == 13 || event.keyCode == 10) {
         submitTrait(traitNode, itemId, traitId, content, area.value);
         return false; } };
     br = $("<br>")[0];
@@ -399,7 +399,7 @@ makeTraitEditor =
     info = $("<span>", {"style":"float:right"})[0];
     enter = $("<span>", {
       "class": "edit-field-instruction",
-      "text" : "press Enter to save" })[0];
+      "text" : "press Ctrl+Enter or Enter to save" })[0];
     markdown = $("<a>", {
       "href"   : "/markdown",
       "target" : "_blank",

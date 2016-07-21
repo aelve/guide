@@ -999,7 +999,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-            "press Enter to add"
+            "press Ctrl+Enter or Enter to add"
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1025,7 +1025,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-            "press Enter to add"
+            "press Ctrl+Enter or Enter to add"
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1189,7 +1189,8 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 -- Use inputValue to get the value (works with input_ and textarea_)
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
-  T.format "if (event.keyCode == 13) {{} return false;}" [handler]
+  T.format "if (event.keyCode==13 || event.keyCode==10)\
+           \ {{} return false;}" [handler]
 
 onCtrlEnter :: JS -> Attribute
 onCtrlEnter handler = onkeydown_ $
