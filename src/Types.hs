@@ -1,14 +1,8 @@
 {-# LANGUAGE
-TemplateHaskell,
-MultiParamTypeClasses,
-FunctionalDependencies,
 FlexibleContexts,
 FlexibleInstances,
-RecordWildCards,
 TypeFamilies,
 OverloadedStrings,
-RankNTypes,
-TupleSections,
 NoImplicitPrelude
   #-}
 

@@ -3,7 +3,6 @@ OverloadedStrings,
 ScopedTypeVariables,
 TypeFamilies,
 DataKinds,
-MultiWayIf,
 FlexibleContexts,
 NoImplicitPrelude
   #-}

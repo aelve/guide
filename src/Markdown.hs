@@ -1,8 +1,5 @@
 {-# LANGUAGE
 OverloadedStrings,
-TemplateHaskell,
-MultiParamTypeClasses,
-FunctionalDependencies,
 FlexibleInstances,
 FlexibleContexts,
 NoImplicitPrelude

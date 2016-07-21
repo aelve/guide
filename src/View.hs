@@ -2,9 +2,6 @@
 QuasiQuotes,
 OverloadedStrings,
 FlexibleContexts,
-ViewPatterns,
-RecordWildCards,
-TupleSections,
 NoImplicitPrelude
   #-}
 

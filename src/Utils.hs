@@ -1,11 +1,9 @@
 {-# LANGUAGE
 OverloadedStrings,
-TemplateHaskell,
 GeneralizedNewtypeDeriving,
 FlexibleContexts,
 FlexibleInstances,
 TypeFamilies,
-RecordWildCards,
 NoImplicitPrelude
   #-}
 
