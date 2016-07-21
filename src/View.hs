@@ -749,6 +749,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
         (\val -> JS.submitCategoryNotes
                    (this, category^.uid, category^.notes.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
+        "or press Ctrl+Enter to save"
 
 renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
@@ -939,6 +940,7 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
         (\val -> JS.submitItemDescription
                    (this, item^.uid, item^.description.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
+        "or press Ctrl+Enter to save"
 
 renderItemEcosystem :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
 renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
@@ -967,6 +969,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         (\val -> JS.submitItemEcosystem
                    (this, item^.uid, item^.ecosystem.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
+        "or press Ctrl+Enter to save"
 
 renderItemTraits :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
 renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
@@ -996,7 +999,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-            (Just "press Enter to add")
+            "press Enter to add"
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1022,7 +1025,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
-            (Just "press Enter to add")
+            "press Enter to add"
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -1188,6 +1191,11 @@ onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
   T.format "if (event.keyCode == 13) {{} return false;}" [handler]
 
+onCtrlEnter :: JS -> Attribute
+onCtrlEnter handler = onkeydown_ $
+  T.format "if ((event.keyCode==13 || event.keyCode==10) && event.ctrlKey)\
+           \ {{} return false;}" [handler]
+
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
 
@@ -1243,15 +1251,19 @@ markdownEditor
   -> MarkdownBlock  -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> JS             -- ^ “Cancel” handler
+  -> Text           -- ^ Instruction (e.g. “press Ctrl+Enter to save”)
   -> HtmlT m ()
-markdownEditor attr (view mdText -> s) submit cancel = do
+markdownEditor attr (view mdText -> s) submit cancel instr = do
   textareaUid <- randomLongUid
+  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaUid]
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
-  textarea_ ([uid_ textareaUid, autocomplete_ "off", class_ "big fullwidth"]
+  textarea_ ([uid_ textareaUid,
+              autocomplete_ "off",
+              class_ "big fullwidth",
+              onCtrlEnter (submit val) ]
              ++ attr) $
     toHtml s
-  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaUid]
   button "Save" [] $
     submit val
   emptySpan "6px"
@@ -1259,6 +1271,7 @@ markdownEditor attr (view mdText -> s) submit cancel = do
     JS.assign val s <>
     cancel
   emptySpan "6px"
+  span_ [class_ "edit-field-instruction"] (toHtml instr)
   a_ [href_ "/markdown", target_ "_blank"] "Markdown"
 
 smallMarkdownEditor
@@ -1267,9 +1280,9 @@ smallMarkdownEditor
   -> MarkdownInline -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
-  -> Maybe Text     -- ^ Instruction (e.g. “press Enter to add”)
+  -> Text           -- ^ Instruction (e.g. “press Enter to add”)
   -> HtmlT m ()
-smallMarkdownEditor attr (view mdText -> s) submit mbCancel mbInstr = do
+smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
   let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaId]
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
@@ -1281,8 +1294,7 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel mbInstr = do
       JS.assign val s <>
       cancel
   span_ [style_ "float:right"] $ do
-    for_ mbInstr $ \instr ->
-      span_ [class_ "edit-field-instruction"] (toHtml instr)
+    span_ [class_ "edit-field-instruction"] (toHtml instr)
     a_ [href_ "/markdown", target_ "_blank"] "Markdown"
 
 thisNode :: MonadRandom m => HtmlT m JQuerySelector

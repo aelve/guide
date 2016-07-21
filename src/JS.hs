@@ -442,11 +442,16 @@ makeItemNotesEditor =
     saveBtn = $("<input>", {
       "value" : "Save",
       "type"  : "button" })[0];
-    saveBtn.onclick = function () {
+    save = function () {
       submitItemNotes(notesNode,
                       itemId,
                       wasEmpty ? "" : content,
                       area.value); };
+    saveBtn.onclick = save;
+    area.onkeydown = function (event) {
+      if ((event.keyCode == 13 || event.keyCode == 10) && event.ctrlKey) {
+        save();
+        return false; } };
     // Can't use $()-generation here because then the <span> would have
     // to be cloned (since we're inserting it multiple times) and I don't
     // know how to do that.
@@ -457,12 +462,15 @@ makeItemNotesEditor =
     cancelBtn.onclick = function () {
       $(sectionNode).html("");
       switchSection(notesNode, "expanded"); };
+    enter = $("<span>", {
+      "class": "edit-field-instruction",
+      "text" : "or press Ctrl+Enter to save" })[0];
     markdown = $("<a>", {
       "href"   : "/markdown",
       "target" : "_blank",
       "text"   : "Markdown" })[0];
     $(sectionNode).append(
-      area, saveBtn, $(space), cancelBtn, $(space), markdown);
+      area, saveBtn, $(space), cancelBtn, $(space), enter, markdown);
   |]
 
 -- | Create a new category and redirect to it (or redirect to an old category
