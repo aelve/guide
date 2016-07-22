@@ -449,7 +449,8 @@ makeItemNotesEditor =
                       area.value); };
     saveBtn.onclick = save;
     area.onkeydown = function (event) {
-      if ((event.keyCode == 13 || event.keyCode == 10) && event.ctrlKey) {
+      if ((event.keyCode == 13 || event.keyCode == 10) &&
+          (event.metaKey || event.ctrlKey)) {
         save();
         return false; } };
     // Can't use $()-generation here because then the <span> would have
