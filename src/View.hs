@@ -46,8 +46,6 @@ where
 
 -- General
 import BasePrelude hiding (Category)
--- Default
-import Data.Default
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
@@ -69,8 +67,7 @@ import Data.IP
 import Data.Time
 import Data.Time.Format.Human
 -- Markdown
-import Cheapskate.Lucid
-import Cheapskate.Types
+import qualified CMark as MD
 
 -- Local
 import Config
@@ -378,10 +375,10 @@ renderEdit globalState edit = do
       " to category " >> printCategory catId
     Edit'AddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (renderMarkdownInline content')
+      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
     Edit'AddCon itemId _traitId content' -> do
       p_ $ "added con to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (renderMarkdownInline content')
+      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
 
     -- Change category properties
     Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
@@ -398,8 +395,8 @@ renderEdit globalState edit = do
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ "changed notes of category " >> printCategory catId
       table_ $ tr_ $ do
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newNotes)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
     Edit'SetCategoryProsConsEnabled catId _oldVal newVal -> do
       if newVal == True
         then p_ $ "enabled pros/cons for category " >> printCategory catId
@@ -428,25 +425,25 @@ renderEdit globalState edit = do
     Edit'SetItemDescription itemId oldDescr newDescr -> do
       p_ $ "changed description of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldDescr)
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newDescr)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock oldDescr)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock newDescr)
     Edit'SetItemNotes itemId oldNotes newNotes -> do
       p_ $ "changed notes of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newNotes)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
       p_ $ "changed ecosystem of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock oldEcosystem)
-        td_ $ blockquote_ $ toHtml (renderMarkdownBlock newEcosystem)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock oldEcosystem)
+        td_ $ blockquote_ $ toHtml (toMarkdownBlock newEcosystem)
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ "changed trait of item " >> printItem itemId
       table_ $ tr_ $ do
-        td_ $ blockquote_ $ p_ (toHtml (renderMarkdownInline oldContent))
-        td_ $ blockquote_ $ p_ (toHtml (renderMarkdownInline newContent))
+        td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline oldContent))
+        td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline newContent))
 
     -- Delete
     Edit'DeleteCategory catId _pos -> p_ $ do
@@ -522,7 +519,7 @@ renderCategoryPage category = do
 renderNoScriptWarning :: MonadRandom m => HtmlT m ()
 renderNoScriptWarning =
   noscript_ $ div_ [id_ "noscript-message"] $
-    toHtml $ renderMarkdownBlock [text|
+    toHtml $ toMarkdownBlock [text|
       You have Javascript disabled! This site works fine without
       Javascript, but since all editing needs Javascript to work,
       you won't be able to edit anything.
@@ -537,7 +534,7 @@ renderStaticMd
   :: (MonadIO m, MonadRandom m, MonadReader Config m)
   => Text -> String -> HtmlT m ()
 renderStaticMd t fn = wrapPage t $
-  toHtml . renderMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
+  toHtml . toMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
 
 -- Include all the necessary things
 wrapPage
@@ -740,7 +737,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
 
     section "editing" [] $ do
       contents <- if markdownNull (category^.notes)
-        then liftIO $ renderMarkdownBlock <$>
+        then liftIO $ toMarkdownBlock <$>
                T.readFile "static/category-notes-template.md"
         else return (category^.notes)
       markdownEditor
@@ -995,7 +992,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
         section "editable" [] $ do
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add pro"]
-            (renderMarkdownInline "")
+            (toMarkdownInline "")
             (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
@@ -1021,7 +1018,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
         section "editable" [] $ do
           smallMarkdownEditor
             [rows_ "3", placeholder_ "add con"]
-            (renderMarkdownInline "")
+            (toMarkdownInline "")
             (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
                      JS.assign val ("" :: Text))
             Nothing
@@ -1094,20 +1091,23 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
     a_ [href_ notesLink] $
       strong_ "Notes"
 
-    let renderTree :: Monad m => Forest (Inlines, Text) -> HtmlT m ()
+    let renderTree :: Monad m => Forest ([MD.Node], Text) -> HtmlT m ()
         renderTree [] = return ()
         renderTree xs = ul_ $ do
           for_ xs $ \(Node (is, id') children) -> li_ $ do
             let handler = fromJS (JS.expandItemNotes [item^.uid])
-                -- The link has to be full because sometimes we are
-                -- looking at items from pages different from the
-                -- proper category pages (e.g. if a search returned a
-                -- list of items). Well, actually it doesn't happen
-                -- yet (at the moment of writing), but it might start
-                -- happening and then it's better to be prepared.
+                -- The link has to be absolute because sometimes we are
+                -- looking at items from pages different from the proper
+                -- category pages (e.g. if a search from the main page
+                -- returned several items from different categories, and the
+                -- user is looking at those items' notes without leaving the
+                -- search page). Well, actually it doesn't happen yet because
+                -- there's no search (or rather, there is search but it
+                -- doesn't return items, only categories); however, it might
+                -- start happening and then it's better to be prepared.
                 fullLink = categoryLink category <> "#" <> id'
             a_ [href_ fullLink, onclick_ handler] $
-              renderInlines def is
+              toHtmlRaw (renderMD is)
             renderTree children
     let renderTOC = do
           let toc = item^.notes.mdTOC

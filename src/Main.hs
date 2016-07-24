@@ -42,7 +42,7 @@ import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
 import qualified Text.Atom.Feed  as Atom
 -- Highlighting
-import Cheapskate.Highlight
+import CMark.Highlight (styleToCss, pygments)
 -- Monitoring
 import qualified System.Remote.Monitoring as EKG
 import qualified Network.Wai.Metrics      as EKG

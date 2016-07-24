@@ -48,11 +48,10 @@ executable guide
                      , aeson-pretty == 0.7.*
                      , base >=4.8 && <4.9
                      , base-prelude
-                     , blaze-builder
                      , bytestring
-                     , cheapskate
-                     , cheapskate-highlight == 0.1.*
-                     , cheapskate-lucid == 0.1.*
+                     , cmark == 0.5.*
+                     , cmark-highlight == 0.2.*
+                     , cmark-sections == 0.1.*
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0

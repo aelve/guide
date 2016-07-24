@@ -321,7 +321,7 @@ instance Migrate Item where
     _itemEcosystem = _itemEcosystem_v8,
     _itemNotes = let pref = "item-notes-" <> uidToText _itemUid_v8 <> "-"
                      md   = _itemNotes_v8 ^. mdText
-                 in renderMarkdownBlockWithTOC pref md,
+                 in toMarkdownBlockWithTOC pref md,
     _itemLink = _itemLink_v8,
     _itemKind = _itemKind_v8 }
 
@@ -846,7 +846,7 @@ addCategory catId title' created' = do
         _categoryEcosystemEnabled = True,
         _categoryCreated = created',
         _categoryStatus = CategoryStub,
-        _categoryNotes = renderMarkdownBlock "",
+        _categoryNotes = toMarkdownBlock "",
         _categoryGroups = mempty,
         _categoryItems = [],
         _categoryItemsDeleted = [] }
@@ -867,14 +867,14 @@ addItem catId itemId name' created' kind' = do
         _itemName        = name',
         _itemCreated     = created',
         _itemGroup_      = Nothing,
-        _itemDescription = renderMarkdownBlock "",
+        _itemDescription = toMarkdownBlock "",
         _itemPros        = [],
         _itemProsDeleted = [],
         _itemCons        = [],
         _itemConsDeleted = [],
-        _itemEcosystem   = renderMarkdownBlock "",
+        _itemEcosystem   = toMarkdownBlock "",
         _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
-                           in  renderMarkdownBlockWithTOC pref "",
+                           in  toMarkdownBlockWithTOC pref "",
         _itemLink        = Nothing,
         _itemKind        = kind' }
   categoryById catId . items %= (++ [newItem])
@@ -887,7 +887,7 @@ addPro
   -> Text
   -> Acid.Update GlobalState (Edit, Trait)
 addPro itemId traitId text' = do
-  let newTrait = Trait traitId (renderMarkdownInline text')
+  let newTrait = Trait traitId (toMarkdownInline text')
   itemById itemId . pros %= (++ [newTrait])
   let edit = Edit'AddPro itemId traitId text'
   return (edit, newTrait)
@@ -898,7 +898,7 @@ addCon
   -> Text
   -> Acid.Update GlobalState (Edit, Trait)
 addCon itemId traitId text' = do
-  let newTrait = Trait traitId (renderMarkdownInline text')
+  let newTrait = Trait traitId (toMarkdownInline text')
   itemById itemId . cons %= (++ [newTrait])
   let edit = Edit'AddCon itemId traitId text'
   return (edit, newTrait)
@@ -927,7 +927,7 @@ setCategoryGroup catId group' = do
 
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
-  oldNotes <- categoryById catId . notes <<.= renderMarkdownBlock notes'
+  oldNotes <- categoryById catId . notes <<.= toMarkdownBlock notes'
   let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdText) notes'
   (edit,) <$> use (categoryById catId)
 
@@ -1005,7 +1005,7 @@ setItemKind itemId kind' = do
 setItemDescription :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemDescription itemId description' = do
   oldDescr <- itemById itemId . description <<.=
-                renderMarkdownBlock description'
+                toMarkdownBlock description'
   let edit = Edit'SetItemDescription itemId
                (oldDescr ^. mdText) description'
   (edit,) <$> use (itemById itemId)
@@ -1014,14 +1014,14 @@ setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
   oldNotes <- itemById itemId . notes <<.=
-                renderMarkdownBlockWithTOC pref notes'
+                toMarkdownBlockWithTOC pref notes'
   let edit = Edit'SetItemNotes itemId (oldNotes ^. mdText) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
   oldEcosystem <- itemById itemId . ecosystem <<.=
-                    renderMarkdownBlock ecosystem'
+                    toMarkdownBlock ecosystem'
   let edit = Edit'SetItemEcosystem itemId
                (oldEcosystem ^. mdText) ecosystem'
   (edit,) <$> use (itemById itemId)
@@ -1029,7 +1029,7 @@ setItemEcosystem itemId ecosystem' = do
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
 setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . content <<.=
-                  renderMarkdownInline content'
+                  toMarkdownInline content'
   let edit = Edit'SetTraitContent itemId traitId
                (oldContent ^. mdText) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
