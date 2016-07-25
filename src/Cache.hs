@@ -24,6 +24,7 @@ import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as BSL
 -- Concurrent map
 import qualified STMContainers.Map as STMMap
+import qualified Focus
 import Data.Hashable
 -- Lucid
 import Lucid.Base
@@ -33,7 +34,9 @@ import Types
 import Utils
 
 
-type Cache = STMMap.Map CacheKey BSL.ByteString
+-- Left = someone started rendering but haven't finished yet
+-- Right = result of the render
+type Cache = STMMap.Map CacheKey (Either Unique BSL.ByteString)
 
 cache :: Cache
 {-# NOINLINE cache #-}
@@ -113,25 +116,44 @@ emptyCache = liftIO $ atomically $ STMMap.deleteAll cache
 
 cached :: MonadIO m => CacheKey -> HtmlT IO () -> HtmlT m ()
 cached key gen = do
-  mbRes <- liftIO . atomically $ STMMap.lookup key cache
+  -- If the item isn't in the cache, we'll have to render it, so we insert a
+  -- unique mark if the item wasn't found, and we do it in the same STM
+  -- transaction (so that nobody would be able to interfere)
+  uniq <- liftIO newUnique
+  mbRes <- liftSTM $ do
+    r <- STMMap.lookup key cache
+    when (isNothing r) $
+      STMMap.insert (Left uniq) key cache
+    return r
+  -- Okay, so. What's the result?
   case mbRes of
-    Just res -> toHtmlRaw res
-    Nothing  -> do
-      bs <- liftIO $ renderBST gen
-      -- TODO: this bad situation is *maybe* possible:
-      --
-      --   item is changed in request A
-      --   request A invalidates cache
-      --   request A starts re-rendering the item
-      --   'cached' started by A sees that the cache is empty
-      --       item is changed in request B
-      --       request B starts re-rendering the item
-      --       request B fills the cache
-      --   'cached' started by A finishes rendering
-      --   'cached' started by A fills the cache with an outdated render
-      --
-      -- It's unlikely, but still probably possible. Ideally we'd like to run
-      -- lookup *and* insert inside the same transaction, but I don't know
-      -- how to do it.
-      liftIO . atomically $ STMMap.insert bs key cache
+    -- The item was in the cache, so we just return it
+    Just (Right res) -> toHtmlRaw res
+    -- Someone else is already rendering this; we'll use their result when
+    -- it's ready
+    Just (Left _) -> do
+      liftIO (threadDelay 1000)
+      cached key gen
+    -- The item isn't in the cache, so we'll take on rendering it
+    Nothing -> do
+      -- If rendering doesn't succeed, we delete the mark so that someone
+      -- else would be able to render it
+      bs <- liftIO $ renderBST gen `onException`
+                       liftSTM (deleteIfEq key (Left uniq) cache)
+      -- If rendering has succeeded, we write the rendered result
+      liftSTM (replaceIfEq key (Left uniq) (Right bs) cache)
       toHtmlRaw bs
+
+-- The *IfEq functions are used for extra safety (we'll never replace a newer
+-- render with an older render accidentally)
+
+deleteIfEq :: Eq v => STMMap.Key k => k -> v -> STMMap.Map k v -> STM ()
+deleteIfEq k v m = STMMap.focus (Focus.updateM upd) k m
+  where upd a = return (if a == v then Nothing else Just a)
+
+replaceIfEq :: Eq v => STMMap.Key k => k -> v -> v -> STMMap.Map k v -> STM ()
+replaceIfEq k v v' m = STMMap.focus (Focus.adjustM upd) k m
+  where upd a = return (if a == v then v' else a)
+
+liftSTM :: MonadIO m => STM a -> m a
+liftSTM = liftIO . atomically

@@ -59,6 +59,7 @@ executable guide
                      , ekg-core
                      , feed >= 0.3.11 && < 0.4
                      , filepath
+                     , focus
                      , friendly-time == 0.4.*
                      , hashable
                      , http-types
