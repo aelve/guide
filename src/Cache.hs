@@ -26,7 +26,6 @@ import qualified Data.ByteString.Lazy as BSL
 -- Concurrent map
 import qualified STMContainers.Map as STMMap
 import Data.Hashable
-import qualified ListT
 -- Lucid
 import Lucid.Base
 
@@ -110,11 +109,8 @@ invalidateCache gs key = liftIO $ atomically $ do
   for_ (cacheDepends gs key) $ \k ->
     STMMap.delete k cache
 
--- TODO: Should be easier once
--- https://github.com/nikita-volkov/stm-containers/issues/6 is closed.
 emptyCache :: MonadIO m => m ()
-emptyCache = liftIO $ atomically $
-  ListT.traverse_ (\(k,_) -> STMMap.delete k cache) (STMMap.stream cache)
+emptyCache = liftIO $ atomically $ STMMap.deleteAll cache
 
 cached :: MonadIO m => CacheKey -> HtmlT m () -> HtmlT m ()
 cached key gen = do
