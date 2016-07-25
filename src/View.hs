@@ -51,7 +51,6 @@ import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-import Control.Monad.Random
 -- Containers
 import qualified Data.Map as M
 import Data.Tree
@@ -149,7 +148,7 @@ renderSubtitle =
   div_ [class_ "subtitle"] $
     "alpha version • very much incomplete • leave feedback"
 
-renderRoot :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
+renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderRoot = do
   wrapPage "Aelve Guide" $ do
     h1_ "Aelve Guide"
@@ -158,8 +157,7 @@ renderRoot = do
 
 -- TODO: show a “category not found” page
 
-renderAdmin
-  :: (MonadIO m, MonadRandom m) => GlobalState -> HtmlT m ()
+renderAdmin :: (MonadIO m) => GlobalState -> HtmlT m ()
 renderAdmin globalState = do
   head_ $ do
     includeJS "/js.js"
@@ -285,7 +283,7 @@ renderStats globalState acts = do
 
 -- | Group edits by IP and render them
 renderEdits
-  :: (MonadIO m, MonadRandom m)
+  :: (MonadIO m)
   => GlobalState
   -> [((Edit, EditDetails), Maybe String)]
   -> HtmlT m ()
@@ -470,7 +468,7 @@ renderEdit globalState edit = do
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 renderHaskellRoot
-  :: (MonadIO m, MonadRandom m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide: Haskell" $ do
@@ -504,7 +502,7 @@ renderHaskellRoot globalState mbSearchQuery =
     -- unfinished”
 
 renderCategoryPage
-  :: (MonadIO m, MonadRandom m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => Category -> HtmlT m ()
 renderCategoryPage category = do
   wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
@@ -516,7 +514,7 @@ renderCategoryPage category = do
     renderSearch Nothing
     renderCategory category
 
-renderNoScriptWarning :: MonadRandom m => HtmlT m ()
+renderNoScriptWarning :: Monad m => HtmlT m ()
 renderNoScriptWarning =
   noscript_ $ div_ [id_ "noscript-message"] $
     toHtml $ toMarkdownBlock [text|
@@ -526,19 +524,19 @@ renderNoScriptWarning =
       |]
 
 renderDonate
-  :: (MonadIO m, MonadRandom m, MonadReader Config m) => HtmlT m ()
+  :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderDonate = wrapPage "Donate to Artyom" $ do
   toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
 renderStaticMd
-  :: (MonadIO m, MonadRandom m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => Text -> String -> HtmlT m ()
 renderStaticMd t fn = wrapPage t $
   toHtml . toMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
 
 -- Include all the necessary things
 wrapPage
-  :: (MonadIO m, MonadRandom m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => Text                              -- ^ Page title
   -> HtmlT m ()
   -> HtmlT m ()
@@ -621,7 +619,7 @@ renderSearch mbSearchQuery = do
 -- lists of items in categories, or their counts, or something), you might
 -- have to start invalidating 'CacheCategoryList' in more things in
 -- 'Cache.invalidateCache'.
-renderCategoryList :: (MonadIO m, MonadRandom m) => [Category] -> HtmlT m ()
+renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
 renderCategoryList cats = cached CacheCategoryList $ do
   div_ [id_ "categories"] $
     for_ (groupWith (view group_) cats) $ \gr ->
@@ -721,7 +719,7 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         button "Cancel" [] $
           JS.switchSection (this, "normal" :: Text)
 
-renderCategoryNotes :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
+renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
 renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
   let thisId = "category-notes-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
@@ -748,7 +746,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
-renderCategory :: (MonadIO m, MonadRandom m) => Category -> HtmlT m ()
+renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryInfo category
@@ -779,7 +777,7 @@ If the category has showing pros/cons (or ecosystem, or both) disabled, we have 
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
-renderItem :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
+renderItem :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItem category item = cached (CacheItem (item^.uid)) $ do
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ (itemNodeId item), class_ "item"] $ do
@@ -809,7 +807,7 @@ renderItemTitle item = do
     Nothing -> return ()
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: (MonadIO m, MonadRandom m) => Category -> Item -> HtmlT m ()
+renderItemInfo :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
   let bg = hueToDarkColor $ getItemHue cat item
   let thisId = "item-info-" <> uidToText (item^.uid)
@@ -906,9 +904,7 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
         button "Cancel" [] $
           JS.switchSection (this, "normal" :: Text)
 
--- TODO: just make a synonym for “Html with IO and randomness”
-
-renderItemDescription :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemDescription :: MonadIO m => Item -> HtmlT m ()
 renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
   let thisId = "item-description-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -939,7 +935,7 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
-renderItemEcosystem :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
 renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
@@ -968,7 +964,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
-renderItemTraits :: (MonadIO m, MonadRandom m) => Item -> HtmlT m ()
+renderItemTraits :: MonadIO m => Item -> HtmlT m ()
 renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
   div_ [class_ "item-traits"] $ do
     div_ [class_ "traits-groups-container"] $ do
@@ -1026,7 +1022,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
-renderTrait :: MonadRandom m => Uid Item -> Trait -> HtmlT m ()
+renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemId trait = do
   let thisId = "trait-" <> uidToText (trait^.uid)
       this   = JS.selectId thisId
@@ -1078,9 +1074,7 @@ renderTrait itemId trait = do
 
 -- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
 -- .focus() on it)
-renderItemNotes
-  :: (MonadIO m, MonadRandom m)
-  => Category -> Item -> HtmlT m ()
+renderItemNotes :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
   let thisId = "item-notes-" <> uidToText (item^.uid)
@@ -1248,7 +1242,7 @@ hiddenIf :: With w => Bool -> w -> w
 hiddenIf p x = if p then with x [style_ "display:none;"] else x
 
 markdownEditor
-  :: MonadRandom m
+  :: MonadIO m
   => [Attribute]
   -> MarkdownBlock  -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
@@ -1277,7 +1271,7 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
   a_ [href_ "/markdown", target_ "_blank"] "Markdown"
 
 smallMarkdownEditor
-  :: MonadRandom m
+  :: MonadIO m
   => [Attribute]
   -> MarkdownInline -- ^ Default text
   -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
@@ -1299,7 +1293,7 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
     span_ [class_ "edit-field-instruction"] (toHtml instr)
     a_ [href_ "/markdown", target_ "_blank"] "Markdown"
 
-thisNode :: MonadRandom m => HtmlT m JQuerySelector
+thisNode :: MonadIO m => HtmlT m JQuerySelector
 thisNode = do
   uid' <- randomLongUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and

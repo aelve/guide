@@ -50,10 +50,6 @@ module Utils
   genVer,
   MigrateConstructor(..),
   migrateVer,
-
-  -- * Instances
-  -- ** 'MonadRandom' for 'HtmlT'
-  -- ** 'MonadRandom' for 'ActionCtxT'
 )
 where
 
@@ -64,11 +60,12 @@ import BasePrelude
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.Trans
-import Control.Monad.Random
 -- Containers
 import qualified Data.Set as S
 -- Hashable (needed for Uid)
 import Data.Hashable
+-- Randomness
+import System.Random
 -- Text
 import Data.Text.All (Text)
 import qualified Data.Text.All as T
@@ -166,25 +163,25 @@ instance SafeCopy a => Migrate (Uid a) where
 instance IsString (Uid a) where
   fromString = Uid . T.pack
 
-randomText :: MonadRandom m => Int -> m Text
-randomText n = do
+randomText :: MonadIO m => Int -> m Text
+randomText n = liftIO $ do
   -- We don't want the 1st char to be a digit. Just in case (I don't really
   -- have a good reason). Maybe to prevent Javascript from doing automatic
   -- conversions or something (tho it should never happen).
-  x <- getRandomR ('a', 'z')
+  x <- randomRIO ('a', 'z')
   let randomChar = do
-        i <- getRandomR (0, 35)
+        i <- randomRIO (0, 35)
         return $ if i < 10 then toEnum (fromEnum '0' + i)
                            else toEnum (fromEnum 'a' + i - 10)
   xs <- replicateM (n-1) randomChar
   return (T.pack (x:xs))
 
-randomLongUid :: MonadRandom m => m (Uid a)
+randomLongUid :: MonadIO m => m (Uid a)
 randomLongUid = Uid <$> randomText 12
 
 -- These are only used for items and categories (because their uids can occur
 -- in links and so they should look a bit nicer).
-randomShortUid :: MonadRandom m => m (Uid a)
+randomShortUid :: MonadIO m => m (Uid a)
 randomShortUid = Uid <$> randomText 8
 
 -- | A marker for Uids that would be used with HTML nodes
@@ -290,15 +287,3 @@ migrateVer tyName ver constructors = do
       CustomM conName res -> customConstructor conName res
 
   lam1E (varP arg) (caseE (varE arg) (map return branches'))
-
-instance MonadRandom m => MonadRandom (HtmlT m) where
-  getRandom = lift getRandom
-  getRandoms = lift getRandoms
-  getRandomR = lift . getRandomR
-  getRandomRs = lift . getRandomRs
-
-instance MonadRandom (ActionCtxT a (WebStateM b c d)) where
-  getRandom = liftIO getRandom
-  getRandoms = liftIO getRandoms
-  getRandomR = liftIO . getRandomR
-  getRandomRs = liftIO . getRandomRs

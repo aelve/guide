@@ -20,7 +20,6 @@ import BasePrelude hiding (Category)
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
-import Control.Monad.Trans
 -- ByteString
 import qualified Data.ByteString.Lazy as BSL
 -- Concurrent map
@@ -112,13 +111,13 @@ invalidateCache gs key = liftIO $ atomically $ do
 emptyCache :: MonadIO m => m ()
 emptyCache = liftIO $ atomically $ STMMap.deleteAll cache
 
-cached :: MonadIO m => CacheKey -> HtmlT m () -> HtmlT m ()
+cached :: MonadIO m => CacheKey -> HtmlT IO () -> HtmlT m ()
 cached key gen = do
   mbRes <- liftIO . atomically $ STMMap.lookup key cache
   case mbRes of
     Just res -> toHtmlRaw res
     Nothing  -> do
-      bs <- lift $ renderBST gen
+      bs <- liftIO $ renderBST gen
       -- TODO: this bad situation is *maybe* possible:
       --
       --   item is changed in request A

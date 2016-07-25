@@ -40,8 +40,7 @@ executable guide
     JS
     View
   -- other-extensions:    
-  build-depends:       MonadRandom == 0.4.*
-                     , Spock
+  build-depends:       Spock
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
                      , aeson == 0.11.*
