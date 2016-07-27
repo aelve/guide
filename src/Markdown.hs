@@ -48,6 +48,7 @@ import qualified Data.ByteString as BS
 import Data.ByteString (ByteString)
 -- Parsing
 import Text.Megaparsec hiding (State)
+import Text.Megaparsec.Text
 -- HTML
 import Lucid
 import Text.HTML.SanitizeXSS
@@ -212,8 +213,9 @@ parseLink :: Text -> Either String (Text, Maybe Text, Maybe Text)
 parseLink = either (Left . show) Right . parse p ""
   where
     shortcut = some (alphaNumChar <|> char '-')
-    opt      = char '(' *> some (noneOf ")") <* char ')'
+    opt      = char '(' *> some (noneOf [')']) <* char ')'
     text     = char ':' *> some anyChar
+    p :: Parser (Text, Maybe Text, Maybe Text)
     p = do
       char '@'
       (,,) <$> T.pack <$> shortcut

@@ -1159,9 +1159,6 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
     section "editing" [uid_ editingSectionUid] $
       return ()
 
--- TODO: a shortcut for editing (when you press Ctrl-something, whatever was
--- selected becomes editable)
-
 renderItemForFeed :: Monad m => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item

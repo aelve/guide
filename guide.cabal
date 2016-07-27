@@ -66,7 +66,7 @@ executable guide
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
-                     , megaparsec == 4.4.*
+                     , megaparsec == 5.0.*
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
