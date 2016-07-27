@@ -383,17 +383,23 @@ makeTraitEditor =
       "id"           : textareaUid,
       "class"        : "fullwidth",
       "text"         : content })[0];
+    cancel = function () {
+      $(sectionNode).html("");
+      switchSection(traitNode, "editable"); }
     area.onkeydown = function (event) {
       if (event.keyCode == 13 || event.keyCode == 10) {
         submitTrait(traitNode, itemId, traitId, content, area.value);
-        return false; } };
+        return false; }
+      if (event.keyCode == 27) {
+        cancel();
+        return false; }
+      };
     br = $("<br>")[0];
     a = $("<a>", {
       "href"    : "#",
       "text"    : "cancel" })[0];
     a.onclick = function () {
-      $(sectionNode).html("");
-      switchSection(traitNode, "editable");
+      cancel();
       return false; };
     cancelBtn = $("<span>", {"class":"text-button"})[0];
     info = $("<span>", {"style":"float:right"})[0];
@@ -448,21 +454,26 @@ makeItemNotesEditor =
                       wasEmpty ? "" : content,
                       area.value); };
     saveBtn.onclick = save;
+    cancelBtn = $("<input>", {
+      "value" : "Cancel",
+      "type"  : "button" })[0];
+    cancel = function () {
+      $(sectionNode).html("");
+      switchSection(notesNode, "expanded"); };
+    cancelBtn.onclick = cancel;
     area.onkeydown = function (event) {
       if ((event.keyCode == 13 || event.keyCode == 10) &&
           (event.metaKey || event.ctrlKey)) {
         save();
-        return false; } };
+        return false; }
+      if (event.keyCode == 27) {
+        cancel();
+        return false; }
+      };
     // Can't use $()-generation here because then the <span> would have
     // to be cloned (since we're inserting it multiple times) and I don't
     // know how to do that.
     space = "<span style='margin-left:6px'></span>";
-    cancelBtn = $("<input>", {
-      "value" : "Cancel",
-      "type"  : "button" })[0];
-    cancelBtn.onclick = function () {
-      $(sectionNode).html("");
-      switchSection(notesNode, "expanded"); };
     enter = $("<span>", {
       "class": "edit-field-instruction",
       "text" : "or press Ctrl+Enter to save" })[0];

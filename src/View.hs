@@ -1184,13 +1184,18 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
   T.format "if (event.keyCode == 13 || event.keyCode == 10)\
-           \ {{} return false;}" [handler]
+           \ {{} return false;}\n" [handler]
 
 onCtrlEnter :: JS -> Attribute
 onCtrlEnter handler = onkeydown_ $
   T.format "if ((event.keyCode == 13 || event.keyCode == 10) &&\
            \    (event.metaKey || event.ctrlKey))\
-           \ {{} return false;}" [handler]
+           \ {{} return false;}\n" [handler]
+
+onEscape :: JS -> Attribute
+onEscape handler = onkeydown_ $
+  T.format "if (event.keyCode == 27)\
+           \ {{} return false;}\n" [handler]
 
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
@@ -1257,7 +1262,8 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
   textarea_ ([uid_ textareaUid,
               autocomplete_ "off",
               class_ "big fullwidth",
-              onCtrlEnter (submit val) ]
+              onCtrlEnter (submit val),
+              onEscape (JS.assign val s <> cancel) ]
              ++ attr) $
     toHtml s
   button "Save" [] $
@@ -1281,8 +1287,10 @@ smallMarkdownEditor
 smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
   let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaId]
-  textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off",
-              onEnter (submit val)] ++ attr) $
+  textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
+             [onEnter (submit val)] ++
+             [onEscape cancel | Just cancel <- [mbCancel]] ++
+             attr) $
     toHtml s
   br_ []
   for_ mbCancel $ \cancel -> do
