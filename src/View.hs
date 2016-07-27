@@ -731,7 +731,10 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
           then p_ "write something here!"
           else toHtml (category^.notes)
       textButton "edit description" $
-        JS.switchSection (this, "editing" :: Text)
+        JS.switchSection (this, "editing" :: Text) <>
+        JS.focusOn [(this `JS.selectSection` "editing")
+                    `JS.selectChildren`
+                    JS.selectClass "editor"]
 
     section "editing" [] $ do
       contents <- if markdownNull (category^.notes)
@@ -739,7 +742,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
                T.readFile "static/category-notes-template.md"
         else return (category^.notes)
       markdownEditor
-        [rows_ "10"]
+        [rows_ "10", class_ " editor "]
         contents
         (\val -> JS.submitCategoryNotes
                    (this, category^.uid, category^.notes.mdText, val))
@@ -915,7 +918,10 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
       emptySpan "0.5em"
       imgButton "edit summary" "/pencil.svg"
         [style_ "width:12px;opacity:0.5"] $
-        JS.switchSection (this, "editing" :: Text)
+        JS.switchSection (this, "editing" :: Text) <>
+        JS.focusOn [(this `JS.selectSection` "editing")
+                    `JS.selectChildren`
+                    JS.selectClass "editor"]
       div_ [class_ "notes-like"] $ do
         if markdownNull (item^.description)
           then p_ "write something here!"
@@ -928,7 +934,7 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
         [style_ "width:12px;opacity:0.5"] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
-        [rows_ "10"]
+        [rows_ "10", class_ " editor "]
         (item^.description)
         (\val -> JS.submitItemDescription
                    (this, item^.uid, item^.description.mdText, val))
@@ -946,7 +952,10 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
       emptySpan "0.5em"
       imgButton "edit ecosystem" "/pencil.svg"
         [style_ "width:12px;opacity:0.5"] $
-        JS.switchSection (this, "editing" :: Text)
+        JS.switchSection (this, "editing" :: Text) <>
+        JS.focusOn [(this `JS.selectSection` "editing")
+                    `JS.selectChildren`
+                    JS.selectClass "editor"]
       unless (markdownNull (item^.ecosystem)) $
         toHtml (item^.ecosystem)
 
@@ -957,7 +966,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         [style_ "width:12px;opacity:0.5"] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
-        [rows_ "3"]
+        [rows_ "3", class_ " editor "]
         (item^.ecosystem)
         (\val -> JS.submitItemEcosystem
                    (this, item^.uid, item^.ecosystem.mdText, val))
@@ -1047,7 +1056,8 @@ renderTrait itemId trait = do
                               trait^.content.mdText,
                               itemId, trait^.uid) <>
           JS.switchSection (this, "editing" :: Text) <>
-          JS.autosizeTextarea [JS.selectUid textareaUid]
+          JS.autosizeTextarea [JS.selectUid textareaUid] <>
+          JS.focusOn [JS.selectUid textareaUid]
         emptySpan "16px"
         imgButton "delete trait" "/x.svg" [] $
           JS.deleteTrait (itemId, trait^.uid, this)
@@ -1072,8 +1082,6 @@ renderTrait itemId trait = do
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
 
--- TODO: [very-easy] focus the notes textarea on edit (can use jQuery's
--- .focus() on it)
 renderItemNotes :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
@@ -1134,7 +1142,8 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
                    contents,
                    item^.uid) <>
               JS.switchSection (this, "editing" :: Text) <>
-              JS.autosizeTextarea [JS.selectUid textareaUid]
+              JS.autosizeTextarea [JS.selectUid textareaUid] <>
+              JS.focusOn [JS.selectUid textareaUid]
       buttons
       renderTOC
       div_ [class_ "notes-like"] $ do

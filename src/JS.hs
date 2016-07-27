@@ -38,6 +38,7 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   moveNodeUp, moveNodeDown,
   switchSection, switchSectionsEverywhere,
   fadeIn, fadeOutAndRemove,
+  focusOn,
   -- Misc
   createAjaxIndicator,
   autosizeTextarea,
@@ -234,6 +235,13 @@ fadeOutAndRemove =
   makeJSFunction "fadeOutAndRemove" ["node"]
   [text|
      $(node).fadeTo(400,0.2,function(){$(node).remove()});
+  |]
+
+focusOn :: JSFunction a => a
+focusOn =
+  makeJSFunction "focusOn" ["node"]
+  [text|
+     $(node).focus();
   |]
 
 createAjaxIndicator :: JSFunction a => a
@@ -887,3 +895,6 @@ selectParent x = JQuerySelector $ T.format ":has(> {})" [x]
 
 selectChildren :: JQuerySelector -> JQuerySelector -> JQuerySelector
 selectChildren a b = JQuerySelector $ T.format "{} > {}" (a, b)
+
+selectSection :: JQuerySelector -> Text -> JQuerySelector
+selectSection a b = JQuerySelector $ T.format "{} > .section.{}" (a, b)
