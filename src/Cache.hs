@@ -1,5 +1,4 @@
 {-# LANGUAGE
-DeriveGeneric,
 NoImplicitPrelude
   #-}
 

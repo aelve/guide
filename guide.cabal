@@ -102,4 +102,6 @@ executable guide
                      , MultiParamTypeClasses
                      , FunctionalDependencies
                      , TemplateHaskell
-
+                     , DeriveFunctor
+                     , DeriveTraversable
+                     , DeriveGeneric
