@@ -44,7 +44,6 @@ module View
 where
 
 
--- General
 import BasePrelude hiding (Category)
 -- Lenses
 import Lens.Micro.Platform hiding ((&))

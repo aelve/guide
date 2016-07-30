@@ -14,7 +14,6 @@ NoImplicitPrelude
 module JS where
 
 
--- General
 import BasePrelude
 -- Text
 import qualified Data.Text.All as T

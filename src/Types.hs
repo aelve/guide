@@ -123,7 +123,6 @@ module Types
 where
 
 
--- General
 import BasePrelude hiding (Category)
 -- Monads and monad transformers
 import Control.Monad.State

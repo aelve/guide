@@ -33,7 +33,6 @@ module Markdown
 where
 
 
--- General
 import BasePrelude hiding (Space)
 -- Lenses
 import Lens.Micro.Platform hiding ((&))

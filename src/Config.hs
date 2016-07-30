@@ -14,7 +14,6 @@ module Config
 where
 
 
--- General
 import BasePrelude
 -- Text
 import Data.Text.All (Text)

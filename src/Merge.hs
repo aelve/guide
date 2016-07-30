@@ -11,9 +11,6 @@ module Merge
 where
 
 
--- TODO: get rid of “-- General” everywhere (and in Emacs snippet too)
-
--- General
 import BasePrelude
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
