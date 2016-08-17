@@ -179,7 +179,6 @@ renderAdmin globalState = do
     includeJS "/js.js"
     includeJS "/jquery.js"
     includeJS "/sorttable.js"
-    includeJS "/mustache.js"
     includeCSS "/markup.css"
     includeCSS "/admin.css"
     includeCSS "/loader.css"
@@ -584,7 +583,6 @@ wrapPage pageTitle page = doctypehtml_ $ do
     -- See Note [autosize]
     includeJS "/autosize.js"
     onPageLoad (JS "autosize($('textarea'));")
-    includeJS "/mustache.js"
     -- The order is important – markup.css overrides some rules from
     -- highlight.css (e.g. div.sourceCode), css.css overrides the rule for
     -- a.anchor from markup.css.

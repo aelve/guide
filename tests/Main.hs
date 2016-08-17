@@ -43,6 +43,8 @@ main = run $ do
   categoryTests
   -- TODO: noscript tests
   -- TODO: test on mobile
+  -- TODO: test that there are no repetitive searches on the admin page
+  -- TODO: test that admin CSS hasn't creeped into main CSS and vice-versa
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using Firefox $ do
