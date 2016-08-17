@@ -37,5 +37,3 @@ before_script:
 
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
- - stack $ARGS --no-terminal test
- - stack $ARGS --no-terminal sdist
