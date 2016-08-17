@@ -48,6 +48,8 @@ import Data.ByteString (ByteString)
 -- Parsing
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Text
+-- JSON
+import qualified Data.Aeson as A
 -- HTML
 import Lucid
 import Text.HTML.SanitizeXSS
@@ -286,6 +288,18 @@ instance Show MarkdownBlock where
   show = show . view mdText
 instance Show MarkdownBlockWithTOC where
   show = show . view mdText
+
+instance A.ToJSON MarkdownInline where
+  toJSON md = A.object [
+    "text" A..= (md^.mdText),
+    "html" A..= T.decodeUtf8 (md^.mdHtml) ]
+instance A.ToJSON MarkdownBlock where
+  toJSON md = A.object [
+    "text" A..= (md^.mdText),
+    "html" A..= T.decodeUtf8 (md^.mdHtml) ]
+instance A.ToJSON MarkdownBlockWithTOC where
+  toJSON md = A.object [
+    "text" A..= (md^.mdText) ]
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml

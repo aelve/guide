@@ -1,0 +1,30 @@
+Description
+============================================================
+
+The search bar that is shown on the top of all pages.
+
+
+HTML
+============================================================
+
+<form action="/haskell">
+
+<input
+  type="text"
+  name="q"
+  id="search"
+  placeholder="search"
+  value="{{query}}">
+
+</form>
+
+
+CSS
+============================================================
+
+#search {
+  font-size: 200%;
+  border: 1px solid #d0d0d0;
+  padding: 3px 10px;
+  width: 100%;
+}

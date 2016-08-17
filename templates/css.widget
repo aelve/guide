@@ -1,3 +1,6 @@
+CSS
+============================================================
+
 /* Making textboxes and other text inputs behave normally (i.e. now an input
    with “width:100%;padding:10px” is going to take 100% of width, not
    100%+20px) */
@@ -47,7 +50,7 @@ h1 {
 }
 
 .footer-item {
-  margin: 0 1em;
+  margin: 0 0.75em;
   min-height: 40px;
   text-align: center;
 }
@@ -69,13 +72,6 @@ body {
 #noscript-message {
   padding: 1px 1em;
   background-color: #FFEBEE;
-}
-
-#search {
-  font-size: 200%;
-  border: 1px solid #d0d0d0;
-  padding: 3px 10px;
-  width: 100%;
 }
 
 #categories {
@@ -146,21 +142,6 @@ body {
   font-size: 60%;
   font-weight: normal;
   color: gray;
-}
-
-.trait-controls img {
-  opacity: 0.5;
-  width: 12px;
-}
-
-/* increase the clickable area */
-.trait-controls a {
-  display: inline-block;
-  padding: 5px;
-}
-
-.trait-controls {
-  margin-left: -7px;
 }
 
 .item-traits,

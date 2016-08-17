@@ -1,0 +1,13 @@
+Description
+============================================================
+
+This is a <span> that has a certain width:
+
+  * {{> space px=30}} creates 30 pixels of space
+  * {{> space em=10}} creates 10 ems of space
+
+
+HTML
+============================================================
+
+<span style="margin-left:{{#px}}{{.}}px{{/px}}{{#em}}{{.}}em{{/em}}"></span>

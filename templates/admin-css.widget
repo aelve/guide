@@ -1,0 +1,109 @@
+CSS
+============================================================
+
+/* Making textboxes and other text inputs behave normally (i.e. now an input
+   with “width:100%;padding:10px” is going to take 100% of width, not
+   100%+20px) */
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+.text-button {
+  font-size: 10pt;
+  font-weight: normal;
+}
+
+.text-button::before {content: "[";}
+.text-button::after  {content: "]";}
+
+textarea {
+  font-size: 100%;
+}
+
+input {
+  font-size: 100%;
+}
+
+.text-button > a:visited {color: #008ACE;}
+
+textarea {
+  border: 1px solid #ccc;
+  padding: 5px 7px;
+}
+
+textarea:focus {
+  outline: 0px none;
+  border: 1px solid #07C;
+}
+
+.edit {
+  padding: 0.3em 1em;
+  margin: 1em 0.5em;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.edit-info {
+  color: gray;
+  opacity: 0.8;
+}
+
+#edits > * > h2 {
+  margin-top: 3em;
+}
+
+#edits table {
+  width: 100%;
+  border: none;
+  table-layout: fixed;
+}
+
+#edits td {
+  width: 100%;
+  vertical-align: top;
+  padding: 0.5em 0.5em;
+}
+
+#edits td:first-child {
+  padding-left: 0;
+}
+
+#edits td:last-child {
+  padding-right: 0;
+}
+
+#stats table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  empty-cells: show;
+  border: 1px solid gray;
+  margin-bottom: 1em;
+}
+
+#stats thead {
+  background-color: #e0e0e0;
+}
+
+#stats th {
+  text-align: left;
+}
+
+#stats td {
+  word-break: break-all;
+}
+
+#stats th, #stats td {
+  padding: 0.5em 1em;
+}
+
+table.sortable th {
+  cursor: pointer;
+}
+
+table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
+  content: " \25B4\25BE";
+}

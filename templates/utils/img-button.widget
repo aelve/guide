@@ -1,0 +1,15 @@
+Description
+============================================================
+
+This is an “image button” (an image that is a link). 
+
+It takes the following arguments:
+
+  * src    – link to the image
+  * title  – title text
+  * action – the JS action to execute on click, must end with a ';'
+
+
+HTML
+============================================================
+<a href="#" onclick="{{action}} return false;"><img src="{{src}}" alt="{{title}}" title="{{title}}"></a>

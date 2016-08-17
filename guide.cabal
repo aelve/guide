@@ -15,13 +15,18 @@ tested-with:         GHC == 7.10.3
 build-type:          Simple
 extra-source-files:
   CHANGELOG.md
-data-files:
-  static/*.svg
-  static/*.css
-  static/*.md
-  static/*.html
-  static/*.js
-  static/*.ico
+-- Whatever, this won't ever be installed from a .tar package anyway so I
+-- won't bother updating this section every time I add a new directory.
+--
+-- data-files:
+--   static/*.svg
+--   static/*.css
+--   static/*.md
+--   static/*.html
+--   static/*.js
+--   static/*.ico
+--   templates/*.widget
+--   templates/utils/*.widget
 cabal-version:       >=1.10
 
 source-repository head
@@ -30,7 +35,16 @@ source-repository head
 
 executable guide
   main-is:             Main.hs
-  other-modules:
+  build-depends:       base
+                     , guide
+  ghc-options:         -Wall -fno-warn-unused-do-bind
+                       -threaded "-with-rtsopts=-T -N"
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+library
+  exposed-modules:
+    Guide
     Config
     Types
     Utils
@@ -39,7 +53,6 @@ executable guide
     Markdown
     JS
     View
-  -- other-extensions:    
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
@@ -57,10 +70,13 @@ executable guide
                      , directory >= 1.2
                      , ekg
                      , ekg-core
+                     , exceptions
                      , feed >= 0.3.11 && < 0.4
+                     , filemanip == 0.3.6.*
                      , filepath
                      , focus
                      , friendly-time == 0.4.*
+                     , fsnotify == 0.2.*
                      , hashable
                      , http-types
                      , ilist
@@ -76,8 +92,11 @@ executable guide
                      , path-pieces
                      , random >= 1.1
                      , safecopy
+                     , semigroups
                      , shortcut-links >= 0.4.2
+                     , slave-thread
                      , split
+                     , stache-plus == 0.1.*
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
                      , text-all == 0.3.*
@@ -90,8 +109,7 @@ executable guide
                      , xml
                      , xss-sanitize
   ghc-options:         -Wall -fno-warn-unused-do-bind
-                       -threaded "-with-rtsopts=-T -N"
-  hs-source-dirs:      src
+  hs-source-dirs:      lib
   default-language:    Haskell2010
   default-extensions:  MultiWayIf
                      , ViewPatterns
@@ -105,3 +123,23 @@ executable guide
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
+
+test-suite tests
+  main-is:             Main.hs
+  type:                exitcode-stdio-1.0
+  build-depends:       base < 5
+                     , base-prelude
+                     , directory
+                     , exceptions
+                     , guide
+                     , hspec < 3
+                     , hspec-expectations
+                     , hspec-webdriver < 1.2
+                     , network-uri
+                     , slave-thread
+                     , text
+                     , transformers
+                     , webdriver
+  hs-source-dirs:      tests
+  default-language:    Haskell2010
+  ghc-options:         -Wall -fno-warn-unused-do-bind

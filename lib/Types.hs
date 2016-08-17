@@ -137,6 +137,9 @@ import Data.List.Index
 -- Text
 import qualified Data.Text.All as T
 import Data.Text.All (Text)
+-- JSON
+import qualified Data.Aeson as A
+import qualified Data.Aeson.Types as A
 -- Time
 import Data.Time
 -- Network
@@ -209,11 +212,15 @@ Main.hs
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
-  deriving (Show)
+  deriving (Show, Generic)
 
 -- See Note [acid-state]
 deriveSafeCopySimple 2 'extension ''Trait
 makeFields ''Trait
+
+instance A.ToJSON Trait where
+  toJSON = A.genericToJSON A.defaultOptions {
+    A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
@@ -239,10 +246,14 @@ data ItemKind
   = Library {_itemKindHackageName :: Maybe Text}
   | Tool {_itemKindHackageName :: Maybe Text}
   | Other
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 deriveSafeCopySimple 3 'extension ''ItemKind
 makeFields ''ItemKind
+
+instance A.ToJSON ItemKind where
+  toJSON = A.genericToJSON A.defaultOptions {
+    A.fieldLabelModifier = over _head toLower . drop (T.length "_itemKind") }
 
 data ItemKind_v2
   = Library_v2 {_itemKindHackageName_v2 :: Maybe Text}
@@ -280,10 +291,14 @@ data Item = Item {
   _itemNotes       :: MarkdownBlockWithTOC,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
-  deriving (Show)
+  deriving (Show, Generic)
 
 deriveSafeCopySimple 9 'extension ''Item
 makeFields ''Item
+
+instance A.ToJSON Item where
+  toJSON = A.genericToJSON A.defaultOptions {
+    A.fieldLabelModifier = over _head toLower . drop (T.length "_item") }
 
 -- Old version, needed for safe migration. It can most likely be already
 -- deleted (if a checkpoint has been created), but it's been left here as a
@@ -330,6 +345,10 @@ data Hue = NoHue | Hue Int
   deriving (Eq, Ord)
 
 deriveSafeCopySimple 1 'extension ''Hue
+
+instance A.ToJSON Hue where
+  toJSON NoHue = A.toJSON (0 :: Int)
+  toJSON (Hue n) = A.toJSON n
 
 data Hue_v0 = NoHue_v0 | Hue_v0 Int
 
@@ -384,9 +403,12 @@ data CategoryStatus
   | CategoryWIP
   | CategoryMostlyDone
   | CategoryFinished
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 deriveSafeCopySimple 1 'extension ''CategoryStatus
+
+instance A.ToJSON CategoryStatus where
+  toJSON = A.genericToJSON A.defaultOptions
 
 data CategoryStatus_v0
   = CategoryStub_v0
@@ -426,10 +448,14 @@ data Category = Category {
   _categoryGroups :: Map Text Hue,
   _categoryItems :: [Item],
   _categoryItemsDeleted :: [Item] }
-  deriving (Show)
+  deriving (Show, Generic)
 
 deriveSafeCopySimple 7 'extension ''Category
 makeFields ''Category
+
+instance A.ToJSON Category where
+  toJSON = A.genericToJSON A.defaultOptions {
+    A.fieldLabelModifier = over _head toLower . drop (T.length "_category") }
 
 categorySlug :: Category -> Text
 categorySlug category =

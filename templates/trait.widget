@@ -1,0 +1,180 @@
+Description
+============================================================
+
+A list item containing a trait (pro/con), together with some JS that lets the user edit the trait.
+
+Required context:
+
+  * item.uid
+
+  * trait.uid
+    trait.content.html
+    trait.content.text
+
+
+HTML
+============================================================
+
+<li id="trait-{{trait.uid}}">
+
+  <div class="section normal editable shown noscript-shown">
+    {{{trait.content.html}}}
+  </div>
+
+  <div class="section editable">
+    <div class="trait-controls">
+      {{> img-button
+            src    = "/arrow-thick-top.svg"
+            title  = "move trait up"
+            action = [| moveTrait("up","{{item.uid}}","{{trait.uid}}"); |] }}
+      {{> img-button
+            src    = "/arrow-thick-bottom.svg"
+            title  = "move trait down"
+            action = [| moveTrait("down","{{item.uid}}","{{trait.uid}}"); |] }}
+      {{> space px=16}}
+      {{> img-button
+            src    = "/pencil.svg"
+            title  = "edit trait"
+            action = [| editTrait("{{item.uid}}", "{{trait.uid}}",
+                                  "{{trait.content.text}}"); |] }}
+      {{> space px=16}}
+      {{> img-button
+            src    = "/x.svg"
+            title  = "delete trait"
+            action = [| deleteTrait("{{item.uid}}","{{trait.uid}}"); |] }}
+    </div>
+  </div>
+
+  <div class="section editing">
+    {{! a placeholder for the editing interface created by 'editTrait' }}
+  </div>
+
+</li>
+
+
+CSS
+============================================================
+
+.trait-controls {
+  margin-left: -7px;
+}
+
+.trait-controls img {
+  opacity: 0.5;
+  width: 12px;
+}
+
+/* increase the clickable area */
+.trait-controls a {
+  display: inline-block;
+  padding: 5px;
+}
+
+
+JS
+============================================================
+
+function moveTrait(dir, itemUid, traitUid) {
+  var url = "/haskell/move/item/" + itemUid + "/trait/" + traitUid;
+      traitNode = '#trait-' + traitUid;
+  $.post(url, {direction: dir})
+   .done(function () {
+      if (dir == "up") moveNodeUp(traitNode); else moveNodeDown(traitNode);
+      fadeIn(traitNode);
+   });
+}
+
+function deleteTrait(itemUid, traitUid) {
+  var url = "/haskell/delete/item/" + itemUid + "/trait/" + traitUid;
+      traitNode = '#trait-' + traitUid;
+  if (confirm("Confirm deletion?")) {
+    $.post(url)
+     .done(function () {
+        fadeOutAndRemove(traitNode);
+     });
+  }
+}
+
+function submitTrait(itemUid, traitUid, original, ours) {
+  var traitNode = '#trait-' + traitUid;
+  $.post({
+    url: "/haskell/set/item/" + itemUid + "/trait/" + traitUid,
+    data: {
+      original: original,
+      content: ours },
+    success: function (data) {
+      $.magnificPopup.close();
+      $(traitNode).replaceWith(data);
+      switchSection(traitNode, "editable"); },
+    statusCode: {
+      409: function (xhr, st, err) {
+        modified = xhr.responseJSON["modified"];
+        merged   = xhr.responseJSON["merged"];
+        showDiffPopup(ours, modified, merged, function (x) {
+          submitTrait(itemUid, traitUid, modified, x) }); } }
+    });
+}
+
+
+Note [dynamic interface]
+============================================================
+
+'makeTraitEditor' creates a textbox that appears when you try to edit a pro/con; 'makeItemNotesEditor' creates a textbox that appears when you try to edit item's notes. (Both also create some buttons/etc.)
+
+This is rather inelegant, rather hacky, and in most places we try *not* to create any HTML dynamically, instead relying on sections (see Note [show-hide]). However, in this case we have to – Firefox has a bug that makes loading pages with lots of <textarea>s slow, and so we have to reduce the number of <textarea>s contained on each page.
+
+See <https://github.com/aelve/guide/issues/24>.
+
+
+JS
+============================================================
+
+function editTrait(itemUid, traitUid, traitMarkdown) {
+  var traitNode = '#trait-' + traitUid;
+  makeTraitEditor(itemUid, traitUid, traitMarkdown);
+  switchSection(traitNode, "editing");
+  autosizeTextarea(traitNode + " .editor-area");
+  $(traitNode + " .editor-area").focus();
+}
+
+// Dynamically creates a 'View.smallMarkdownEditor'
+// (but specifically for a trait).
+
+function makeTraitEditor(itemUid, traitUid, content) {
+  var traitNode = '#trait-' + traitUid;
+      sectionNode = traitNode + " .section.editing";
+
+  var template =
+        '<textarea class="fullwidth editor-area" \
+                   autocomplete="off" rows="5"> \
+         </textarea> \
+         <br> \
+         <span class="text-button cancel-button"> \
+           <a href="#">cancel</a> \
+         </span> \
+         <span style="float:right"> \
+           <span class="edit-field-instruction"> \
+             press Ctrl+Enter or Enter to save \
+           </span> \
+           <a href="/markdown" target="_blank">Markdown</a> \
+         </span>';
+
+  $(sectionNode).html(template);
+  $(sectionNode + " .editor-area").text(content);
+  var cancel = function () {
+    $(sectionNode).html("");
+    switchSection(traitNode, "editable");
+  };
+  $(sectionNode + " .cancel-button")[0].onclick = function () {
+    cancel();
+    return false;
+  };
+  $(sectionNode + " .editor-area")[0].onkeydown = function (event) {
+    if (event.keyCode == 13 || event.keyCode == 10) {
+      submitTrait(itemUid, traitUid, content, this.value);
+      return false; }
+    if (event.keyCode == 27) {
+      cancel();
+      return false; }
+  };
+}

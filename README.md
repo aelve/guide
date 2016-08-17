@@ -26,8 +26,11 @@ If you want to contribute but don't know where to start, grep the source for
 
 ### Folder structure
 
-  * `src` – actual code
+  * `lib` – actual code (as a library)
+  * `src` – just a dumb `Main.hs` file to compile an executable
+  * `tests` – tests
   * `static` – icons, CSS, Markdown pages, HTML pages, and some JS libraries
+  * `templates` – HTML templates for pages and elements of pages
   * `scripts` – some scripts used by automatic testing
   * `favicon` – code used to generate a favicon
 
@@ -39,13 +42,13 @@ When you see something like
 -- See Note [acid-state]
 ~~~
 
-it means that there's an extensive comment somewhere else in the code, which you can find by grepping for `{- Note [acid-state]`. This convention was stolen from GHC. If you know some plugin for Emacs that would help with jumping to comments (even if those comments would have to be formatted differently), let me know.
+it means that there's an extensive comment somewhere else in the code, which you can find by grepping for `Note [acid-state]`. This convention was stolen from GHC. If you know some plugin for Emacs that would help with jumping to comments (even if those comments would have to be formatted differently), let me know.
 
 ### Main modules
 
-There are 4 main modules – `Main.hs`, `JS.hs`, `View.hs`, and `Types.hs`.
+There are 4 main modules – `Guide.hs`, `JS.hs`, `View.hs`, and `Types.hs`.
 
-`Main.hs` contains:
+`Guide.hs` contains:
 
   * handlers for GET/POST requests (`renderMethods`, `setMethods`, etc)
   * feed generation (`itemToFeedEntry`)

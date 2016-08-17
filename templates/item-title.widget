@@ -1,0 +1,26 @@
+Description
+============================================================
+
+Item title; used when rendering an item in HTML or for the feed. (Includes the Hackage link and so on.)
+
+Required context:
+
+  * item.link
+    item.name
+    item.kind.hackageName (optional)
+
+
+HTML
+============================================================
+
+{{# item.link }}
+  <a href="{{item.link}}">{{item.name}}</a>
+{{/ item.link }}
+{{^ item.link }}
+  {{item.name}}
+{{/ item.link }}
+
+{{! if the item is on Hackage, let's provide a link }}
+{{# item.kind.hackageName }}
+  (<a href="https://hackage.haskell.org/package/{{.}}">Hackage</a>)
+{{/ item.kind.hackageName }}

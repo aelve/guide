@@ -8,6 +8,9 @@ NoImplicitPrelude
 
 module View
 (
+  getJS,
+  getCSS,
+
   -- * Pages
   renderRoot,
   renderAdmin,
@@ -39,7 +42,6 @@ module View
 
   -- * Miscellaneous
   getItemHue,
-  newGroupValue,
 )
 where
 
@@ -49,7 +51,10 @@ import BasePrelude hiding (Category)
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
+import Control.Monad.Catch
 import Control.Monad.Reader
+-- Lists
+import Data.List.Split
 -- Containers
 import qualified Data.Map as M
 import Data.Tree
@@ -59,6 +64,9 @@ import Data.Text.All (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
+-- Files
+import System.FilePath
+import qualified System.FilePath.Find as F
 -- Network
 import Data.IP
 -- Time
@@ -66,6 +74,15 @@ import Data.Time
 import Data.Time.Format.Human
 -- Markdown
 import qualified CMark as MD
+-- Mustache (templates)
+import Text.Mustache.Plus
+import qualified Data.Aeson as A
+import qualified Data.Aeson.Encode.Pretty as A
+import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.Semigroup as Semigroup
+import qualified Data.List.NonEmpty as NonEmpty
+import Text.Megaparsec
+import Text.Megaparsec.Text
 
 -- Local
 import Config
@@ -162,6 +179,7 @@ renderAdmin globalState = do
     includeJS "/js.js"
     includeJS "/jquery.js"
     includeJS "/sorttable.js"
+    includeJS "/mustache.js"
     includeCSS "/markup.css"
     includeCSS "/admin.css"
     includeCSS "/loader.css"
@@ -467,7 +485,7 @@ renderEdit globalState edit = do
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 renderHaskellRoot
-  :: (MonadIO m, MonadReader Config m)
+  :: (MonadIO m, MonadThrow m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide: Haskell" $ do
@@ -481,6 +499,7 @@ renderHaskellRoot globalState mbSearchQuery =
     renderSearch mbSearchQuery
     textInput [
       placeholder_ "add a category",
+      class_ "add-category",
       autocomplete_ "off",
       onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
@@ -501,7 +520,7 @@ renderHaskellRoot globalState mbSearchQuery =
     -- unfinished”
 
 renderCategoryPage
-  :: (MonadIO m, MonadReader Config m)
+  :: (MonadIO m, MonadThrow m, MonadReader Config m)
   => Category -> HtmlT m ()
 renderCategoryPage category = do
   wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
@@ -545,9 +564,9 @@ wrapPage pageTitle page = doctypehtml_ $ do
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
     link_ [rel_ "icon", href_ "/favicon.ico"]
-    token <- _googleToken <$> lift ask
-    unless (T.null token) $
-      meta_ [name_ "google-site-verification", content_ token]
+    googleToken <- _googleToken <$> lift ask
+    unless (T.null googleToken) $
+      meta_ [name_ "google-site-verification", content_ googleToken]
     -- Report all Javascript errors with alerts
     script_ [text|
       window.onerror = function (msg, url, lineNo, columnNo, error) {
@@ -565,6 +584,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
     -- See Note [autosize]
     includeJS "/autosize.js"
     onPageLoad (JS "autosize($('textarea'));")
+    includeJS "/mustache.js"
     -- The order is important – markup.css overrides some rules from
     -- highlight.css (e.g. div.sourceCode), css.css overrides the rule for
     -- a.anchor from markup.css.
@@ -608,11 +628,10 @@ wrapPage pageTitle page = doctypehtml_ $ do
              mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
-renderSearch :: Monad m => Maybe Text -> HtmlT m ()
-renderSearch mbSearchQuery = do
-  form_ [action_ "/haskell"] $ do
-    input_ [type_ "text", name_ "q", id_ "search", placeholder_ "search",
-            value_ (fromMaybe "" mbSearchQuery)]
+renderSearch :: (MonadIO m, MonadThrow m) => Maybe Text -> HtmlT m ()
+renderSearch mbSearchQuery =
+  mustache "search" $ A.object [
+    "query" A..= mbSearchQuery ]
 
 -- If the presentation of the category list ever changes (e.g. to include
 -- lists of items in categories, or their counts, or something), you might
@@ -798,113 +817,33 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
-renderItemTitle :: Monad m => Item -> HtmlT m ()
-renderItemTitle item = do
-  case item^.link of
-    Just l  -> a_ [href_ l] (toHtml (item^.name))
-    Nothing -> toHtml (item^.name)
-  let hackageLink x = "https://hackage.haskell.org/package/" <> x
-  case item ^. kind.hackageName of
-    Just x  -> " (" >> a_ [href_ (hackageLink x)] "Hackage" >> ")"
-    Nothing -> return ()
+renderItemTitle :: (MonadIO m, MonadThrow m) => Item -> HtmlT m ()
+renderItemTitle item =
+  mustache "item-title" $ A.object [
+    "item" A..= item ]
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: MonadIO m => Category -> Item -> HtmlT m ()
+renderItemInfo :: (MonadIO m, MonadThrow m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
-  let bg = hueToDarkColor $ getItemHue cat item
-  let thisId = "item-info-" <> uidToText (item^.uid)
-      this   = JS.selectId thisId
-  let bodyNode = JS.selectChildren (JS.selectParent this)
-                                   (JS.selectClass "item-body")
-  div_ [id_ thisId, class_ "item-info",
-        style_ ("background-color:" <> bg)] $ do
-
-    section "normal" [shown, noScriptShown] $ do
-      -- TODO: [very-easy] move this style_ into css.css
-      span_ [style_ "font-size:150%"] $ do
-        -- TODO: absolute links again [absolute-links]
-        a_ [class_ "anchor", href_ (itemLink cat item)] "#"
-        renderItemTitle item
-      emptySpan "2em"
-      toHtml (fromMaybe "other" (item^.group_))
-      span_ [class_ "controls"] $ do
-        imgButton "move item up" "/arrow-thick-top.svg" [] $
-          JS.moveItemUp (item^.uid, itemNode item)
-        imgButton "move item down" "/arrow-thick-bottom.svg" [] $
-          JS.moveItemDown (item^.uid, itemNode item)
-        emptySpan "1.5em"
-        imgButton "edit item info" "/pencil.svg" [] $
-          JS.switchSection (this, "editing" :: Text)
-        emptySpan "0.5em"
-        imgButton "delete item" "/x.svg" [] $
-          JS.deleteItem (item^.uid, itemNode item)
-
-    section "editing" [] $ do
-      -- When the info/header node changes its group (and is hence
-      -- recolored), item's body has to be recolored too
-      let formSubmitHandler formNode =
-            JS.submitItemInfo (this, bodyNode, item^.uid, formNode)
-      form_ [onFormSubmit formSubmitHandler] $ do
-        -- All inputs have "autocomplete = off" thanks to
-        -- <http://stackoverflow.com/q/8311455>
-        label_ $ do
-          "Name" >> br_ []
-          input_ [type_ "text", name_ "name",
-                  autocomplete_ "off",
-                  value_ (item^.name)]
-        br_ []
-        label_ $ do
-          "Kind" >> br_ []
-          select_ [name_ "kind", autocomplete_ "off"] $ do
-            option_ [value_ "library"] "Library"
-              & selectedIf (case item^.kind of Library{} -> True; _ -> False)
-            option_ [value_ "tool"] "Tool"
-              & selectedIf (case item^.kind of Tool{} -> True; _ -> False)
-            option_ [value_ "other"] "Other"
-              & selectedIf (case item^.kind of Other{} -> True; _ -> False)
-        br_ []
-        label_ $ do
-          "Name on Hackage" >> br_ []
-          input_ [type_ "text", name_ "hackage-name", autocomplete_ "off",
-                  value_ (fromMaybe "" (item^?kind.hackageName._Just))]
-        br_ []
-        label_ $ do
-          "Site (optional)" >> br_ []
-          input_ [type_ "text", name_ "link", autocomplete_ "off",
-                  value_ (fromMaybe "" (item^.link))]
-        br_ []
-        newGroupInputId <- randomLongUid
-        label_ $ do
-          "Group" >> br_ []
-          -- When “new group” is selected in the list, we show a field for
-          -- entering new group's name
-          let selectHandler = [text|
-                  if (this.value == "$newGroupValue") {
-                    $("#$idText").show();
-                    $("#$idText").focus(); }
-                  else $("#$idText").hide(); |]
-                where idText = uidToText newGroupInputId
-          select_ [name_ "group", autocomplete_ "off",
-                   onchange_ selectHandler] $ do
-            let gs = Nothing : map Just (M.keys (cat^.groups))
-            for_ gs $ \group' -> do
-              -- Text that will be shown in the list (“-” stands for “no
-              -- group”)
-              let txt = fromMaybe "-" group'
-              -- If the element corresponds to the current group of the
-              -- item (or the element is “-”, i.e. Nothing, and the group
-              -- is Nothing too), mark it as selected, thus making it the
-              -- element that will be chosen by default when the form is
-              -- rendered
-              option_ [value_ txt] (toHtml txt)
-                & selectedIf (group' == item^.group_)
-            option_ [value_ newGroupValue] "New group..."
-        input_ [uid_ newGroupInputId, type_ "text", autocomplete_ "off",
-                name_ "custom-group", hidden_ "hidden"]
-        br_ []
-        input_ [type_ "submit", value_ "Save"]
-        button "Cancel" [] $
-          JS.switchSection (this, "normal" :: Text)
+  let itemkindname :: Text
+      itemkindname = case item^.kind of
+        Library{} -> "library"
+        Tool{} -> "tool"
+        Other{} -> "other"
+  mustache "item-info" $ A.object [
+    "category" A..= cat,
+    "item" A..= item,
+    "link_to_item" A..= itemLink cat item,
+    "possible_kinds" A..= do
+        kindname <- ["library", "tool", "other"]
+        return $ A.object [
+          "name" A..= kindname,
+          "caption" A..= over _head toUpper kindname,
+          "selected" A..= (itemkindname == kindname) ],
+    "item_no_group" A..= isNothing (item^.group_),
+    "item_color" A..= A.object [
+      "dark"  A..= hueToDarkColor (getItemHue cat item),
+      "light" A..= hueToLightColor (getItemHue cat item) ] ]
 
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
 renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
@@ -1031,38 +970,11 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
 renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
-renderTrait itemId trait = do
-  let thisId = "trait-" <> uidToText (trait^.uid)
-      this   = JS.selectId thisId
-  editingSectionUid <- randomLongUid
-  li_ [id_ thisId] $ do
-
-    section "normal editable" [shown, noScriptShown] $ do
-      toHtml (trait^.content)
-
-    section "editable" [] $ do
-      div_ [class_ "trait-controls"] $ do
-        imgButton "move trait up" "/arrow-thick-top.svg" [] $
-          JS.moveTraitUp (itemId, trait^.uid, this)
-        imgButton "move trait down" "/arrow-thick-bottom.svg" [] $
-          JS.moveTraitDown (itemId, trait^.uid, this)
-        emptySpan "16px"
-        textareaUid <- randomLongUid
-        imgButton "edit trait" "/pencil.svg" [] $
-          -- See Note [dynamic interface]
-          JS.makeTraitEditor (this, JS.selectUid editingSectionUid,
-                              textareaUid,
-                              trait^.content.mdText,
-                              itemId, trait^.uid) <>
-          JS.switchSection (this, "editing" :: Text) <>
-          JS.autosizeTextarea [JS.selectUid textareaUid] <>
-          JS.focusOn [JS.selectUid textareaUid]
-        emptySpan "16px"
-        imgButton "delete trait" "/x.svg" [] $
-          JS.deleteTrait (itemId, trait^.uid, this)
-
-    section "editing" [uid_ editingSectionUid] $ do
-      return ()
+renderTrait itemUid trait =
+  mustache "trait" $ A.object [
+    "item"  A..= A.object [
+        "uid" A..= itemUid ],
+    "trait" A..= trait ]
 
 -- TODO: automatically provide links to modules in Markdown (and have a
 -- database of modules or something)
@@ -1158,7 +1070,9 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
     section "editing" [uid_ editingSectionUid] $
       return ()
 
-renderItemForFeed :: Monad m => Category -> Item -> HtmlT m ()
+renderItemForFeed
+  :: (MonadIO m, MonadThrow m)
+  => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item
   unless (markdownNull (item^.description)) $
@@ -1317,9 +1231,6 @@ thisNode = do
 itemNodeId :: Item -> Text
 itemNodeId item = "item-" <> uidToText (item^.uid)
 
-itemNode :: Item -> JQuerySelector
-itemNode = JS.selectId . itemNodeId
-
 categoryNodeId :: Category -> Text
 categoryNodeId category = "category-" <> uidToText (category^.uid)
 
@@ -1354,5 +1265,88 @@ sectionSpan
   -> HtmlT m ()
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
-newGroupValue :: Text
-newGroupValue = "-new-group-"
+mustache :: MonadIO m => PName -> A.Value -> HtmlT m ()
+mustache f v = do
+  let functions = M.fromList [
+        ("selectIf", \[x] -> if x == A.Bool True
+            then return (A.String "selected")
+            else return A.Null),
+        ("trace", \xs -> do
+            mapM_ (BS.putStrLn . A.encodePretty) xs
+            return A.Null) ]
+  widgets <- readWidgets
+  let templates = [(tname, t) | (HTML_ tname, t) <- widgets]
+  when (null templates) $
+    error "View.mustache: no HTML templates found in templates/"
+  parsed <- for templates $ \(tname, t) -> do
+    let pname = fromString (T.unpack tname)
+    case compileMustacheText pname (T.toLazy t) of
+      Left e -> error $ printf "View.mustache: when parsing %s: %s"
+                               tname (parseErrorPretty e)
+      Right template -> return template
+  let combined = (Semigroup.sconcat (NonEmpty.fromList parsed)) {
+                   templateActual = f }
+  (rendered, warnings) <- liftIO $ renderMustacheM functions combined v
+  when (not (null warnings)) $
+    error $ printf "View.mustache: warnings when rendering %s:\n%s"
+                   (unPName f) (unlines warnings)
+  toHtmlRaw rendered
+
+data SectionType
+  = HTML_ Text | JS_ | CSS_ | Description_ | Note_ Text
+
+-- | Used to turn collected section lines back into a section.
+--
+-- * Trims surrounding blank lines
+-- * Doesn't append a newline when there's only one line
+--   (useful for inline partials)
+unlinesSection :: [Text] -> Text
+unlinesSection = unlines' . dropWhile T.null . dropWhileEnd T.null
+  where
+    unlines' []  = ""
+    unlines' [x] = x
+    unlines' xs  = T.unlines xs
+
+readWidget :: MonadIO m => FilePath -> m [(SectionType, Text)]
+readWidget fp = liftIO $ do
+  s <- T.readFile fp
+  let isDivide line = (T.all (== '=') line || T.all (== '-') line) &&
+                      T.length line >= 20
+  let go (x:y:[]) = [(T.strip (last x), unlinesSection y)]
+      go (x:y:xs) = (T.strip (last x), unlinesSection (init y)) : go (y : xs)
+      go _ = error $ "View.readWidget: couldn't read " ++ fp
+  let sections = go (splitWhen isDivide (T.lines s))
+  let sectionTypeP :: Parser SectionType
+      sectionTypeP = choice [
+        do string "HTML"
+           HTML_ <$> choice [
+             string ": " >> (T.pack <$> some anyChar),
+             return (T.pack (takeBaseName fp)) ],
+        string "JS" $> JS_,
+        string "CSS" $> CSS_,
+        string "Description" $> Description_,
+        do string "Note ["
+           Note_ . T.pack <$> someTill anyChar (char ']') ]
+  let parseSectionType t = case parse (sectionTypeP <* eof) fp t of
+        Right x -> x
+        Left e -> error $ printf "invalid section name: '%s'\n%s"
+                          t (parseErrorPretty e)
+  return $ over (each._1) parseSectionType sections
+
+readWidgets :: MonadIO m => m [(SectionType, Text)]
+readWidgets = liftIO $ do
+  let isWidget = F.extension F.==? ".widget"
+  files <- F.find F.always isWidget "templates/"
+  concat <$> mapM readWidget files
+
+getJS :: MonadIO m => m Text
+getJS = do
+  widgets <- readWidgets
+  let js = [t | (JS_, t) <- widgets]
+  return (T.concat js)
+
+getCSS :: MonadIO m => m Text
+getCSS = do
+  widgets <- readWidgets
+  let css = [t | (CSS_, t) <- widgets]
+  return (T.concat css)

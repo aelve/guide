@@ -50,6 +50,9 @@ module Utils
   genVer,
   MigrateConstructor(..),
   migrateVer,
+
+  -- * Instances
+  -- ** 'MonadThrow' for 'HtmlT'
 )
 where
 
@@ -59,6 +62,7 @@ import BasePrelude
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.Trans
+import Control.Monad.Catch
 -- Containers
 import qualified Data.Set as S
 -- Hashable (needed for Uid)
@@ -68,6 +72,8 @@ import System.Random
 -- Text
 import Data.Text.All (Text)
 import qualified Data.Text.All as T
+-- JSON
+import qualified Data.Aeson as A
 -- Network
 import qualified Network.Socket as Network
 import Data.IP
@@ -144,7 +150,7 @@ sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable)
+  deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable, A.ToJSON)
 
 -- See Note [acid-state]
 deriveSafeCopySimple 2 'extension ''Uid
@@ -286,3 +292,6 @@ migrateVer tyName ver constructors = do
       CustomM conName res -> customConstructor conName res
 
   lam1E (varP arg) (caseE (varE arg) (map return branches'))
+
+instance MonadThrow m => MonadThrow (HtmlT m) where
+  throwM e = lift $ throwM e

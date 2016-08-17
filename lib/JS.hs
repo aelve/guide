@@ -45,7 +45,6 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   expandItemNotes,
   showDiffPopup,
   -- Creating parts of interface
-  makeTraitEditor,
   makeItemNotesEditor,
   -- Add methods
   addCategoryAndRedirect, addItem,
@@ -53,12 +52,9 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Set methods
   submitCategoryInfo, submitCategoryNotes,
   submitItemDescription,
-  submitItemInfo, submitItemNotes, submitItemEcosystem,
-  submitTrait,
+  submitItemNotes, submitItemEcosystem,
   -- Other things
   deleteCategoryAndRedirect,
-  moveTraitUp, moveTraitDown, deleteTrait,
-  moveItemUp, moveItemDown, deleteItem,
   -- Admin things
   acceptEdit, undoEdit,
   acceptBlock, undoBlock,
@@ -364,64 +360,6 @@ showDiffPopup =
   |]
 
 
-{- Note [dynamic interface]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-'makeTraitEditor' creates a textbox that appears when you try to edit a pro/con; 'makeItemNotesEditor' creates a textbox that appears when you try to edit item's notes. (Both also create some buttons/etc.)
-
-This is rather inelegant, rather hacky, and in most places we try *not* to create any HTML dynamically, instead relying on sections (see Note [show-hide]). However, in this case we have to – Firefox has a bug that makes loading pages with lots of <textarea>s slow, and so we have to reduce the number of <textarea>s contained on each page.
-
-See <https://github.com/aelve/guide/issues/24>.
-
--}
-
--- | Dynamically creates a 'View.smallMarkdownEditor' (but specifically for a
--- trait). See Note [dynamic interface].
-makeTraitEditor :: JSFunction a => a
-makeTraitEditor =
-  makeJSFunction "makeTraitEditor"
-                 ["traitNode", "sectionNode", "textareaUid",
-                  "content", "itemId", "traitId"]
-  [text|
-    $(sectionNode).html("");
-    area = $("<textarea>", {
-      "autocomplete" : "off",
-      "rows"         : "5",
-      "id"           : textareaUid,
-      "class"        : "fullwidth",
-      "text"         : content })[0];
-    cancel = function () {
-      $(sectionNode).html("");
-      switchSection(traitNode, "editable"); }
-    area.onkeydown = function (event) {
-      if (event.keyCode == 13 || event.keyCode == 10) {
-        submitTrait(traitNode, itemId, traitId, content, area.value);
-        return false; }
-      if (event.keyCode == 27) {
-        cancel();
-        return false; }
-      };
-    br = $("<br>")[0];
-    a = $("<a>", {
-      "href"    : "#",
-      "text"    : "cancel" })[0];
-    a.onclick = function () {
-      cancel();
-      return false; };
-    cancelBtn = $("<span>", {"class":"text-button"})[0];
-    info = $("<span>", {"style":"float:right"})[0];
-    enter = $("<span>", {
-      "class": "edit-field-instruction",
-      "text" : "press Ctrl+Enter or Enter to save" })[0];
-    markdown = $("<a>", {
-      "href"   : "/markdown",
-      "target" : "_blank",
-      "text"   : "Markdown" })[0];
-    $(info).append(enter, markdown);
-    $(cancelBtn).append(a);
-    $(sectionNode).append(area, br, cancelBtn, info);
-  |]
-
 {- Note [blurb diffing]
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -650,68 +588,6 @@ addCon =
       });
   |]
 
-submitTrait :: JSFunction a => a
-submitTrait =
-  makeJSFunction "submitTrait"
-                 ["node", "itemId", "traitId", "original", "ours"]
-  [text|
-    $.post({
-      url: "/haskell/set/item/"+itemId+"/trait/"+traitId,
-      data: {
-        original: original,
-        content: ours },
-      success: function (data) {
-        $.magnificPopup.close();
-        $(node).replaceWith(data);
-        // Switching has to be done here and not in 'Main.renderTrait'
-        // because $.post is asynchronous and will be done *after*
-        // switchSection has worked.
-        switchSection(node, "editable"); },
-      statusCode: {
-        409: function (xhr, st, err) {
-          modified = xhr.responseJSON["modified"];
-          merged   = xhr.responseJSON["merged"];
-          showDiffPopup(ours, modified, merged, function (x) {
-            submitTrait(node, itemId, traitId, modified, x) }); } }
-      });
-  |]
-
-submitItemInfo :: JSFunction a => a
-submitItemInfo =
-  makeJSFunction "submitItemInfo" ["infoNode", "bodyNode", "itemId", "form"]
-  [text|
-    custom = $(form)[0].elements["custom-group"].value;
-    items = $(form).closest(".items").find(".item");
-    // If the group was changed, we need to recolor the whole item,
-    // but we don't want to rerender the item on the server because
-    // it would lose the item's state (e.g. what if the traits were
-    // being edited? etc). So, instead we query colors from the server
-    // and change the color of the item's body manually.
-    $.post("/haskell/set/item/"+itemId+"/info", $(form).serialize())
-     .done(function (data) {
-        // Note the order – first we change the color, then we replace
-        // the info node. The reason is that otherwise the bodyNode
-        // selector might become invalid (if it depends on the infoNode
-        // selector).
-        $.get("/haskell/render/item/"+itemId+"/colors")
-         .done(function (colors) {
-            $(bodyNode).css("background-color", colors.light);
-            $(infoNode).replaceWith(data);
-         });
-        // And now, if a custom group was created, we should add it to other
-        // items' lists.
-        if (custom != "") {
-          items.each(function (i, item) {
-            groups = $(item).find("select[name=group]")[0];
-            isOurOption = function (opt) {return opt.text == custom};
-            alreadyExists = $.grep(groups.options, isOurOption).length > 0;
-            if (!alreadyExists) {
-              groups.add(new Option(custom, custom), 1); }
-          });
-        }
-     });
-  |]
-
 deleteCategoryAndRedirect :: JSFunction a => a
 deleteCategoryAndRedirect =
   makeJSFunction "deleteCategoryAndRedirect" ["catId"]
@@ -722,62 +598,6 @@ deleteCategoryAndRedirect =
           window.location.href = "/haskell";
        });
     }
-  |]
-
-moveTraitUp :: JSFunction a => a
-moveTraitUp =
-  makeJSFunction "moveTraitUp" ["itemId", "traitId", "traitNode"]
-  [text|
-    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "up"})
-     .done(function () {
-        moveNodeUp(traitNode);
-        fadeIn(traitNode);
-     });
-  |]
-
-moveTraitDown :: JSFunction a => a
-moveTraitDown =
-  makeJSFunction "moveTraitDown" ["itemId", "traitId", "traitNode"]
-  [text|
-    $.post("/haskell/move/item/"+itemId+"/trait/"+traitId, {direction: "down"})
-     .done(function () {
-        moveNodeDown(traitNode);
-        fadeIn(traitNode);
-     });
-  |]
-
-deleteTrait :: JSFunction a => a
-deleteTrait =
-  makeJSFunction "deleteTrait" ["itemId", "traitId", "traitNode"]
-  [text|
-    if (confirm("Confirm deletion?")) {
-      $.post("/haskell/delete/item/"+itemId+"/trait/"+traitId)
-       .done(function () {
-          fadeOutAndRemove(traitNode);
-       });
-    }
-  |]
-
-moveItemUp :: JSFunction a => a
-moveItemUp =
-  makeJSFunction "moveItemUp" ["itemId", "itemNode"]
-  [text|
-    $.post("/haskell/move/item/"+itemId, {direction: "up"})
-     .done(function () {
-        moveNodeUp(itemNode);
-        fadeIn(itemNode);
-     });
-  |]
-
-moveItemDown :: JSFunction a => a
-moveItemDown =
-  makeJSFunction "moveItemDown" ["itemId", "itemNode"]
-  [text|
-    $.post("/haskell/move/item/"+itemId, {direction: "down"})
-     .done(function () {
-        moveNodeDown(itemNode);
-        fadeIn(itemNode);
-     });
   |]
 
 acceptEdit :: JSFunction a => a
@@ -834,18 +654,6 @@ createCheckpoint =
      .done(function () {
         fadeIn(buttonNode);
      });
-  |]
-
-deleteItem :: JSFunction a => a
-deleteItem =
-  makeJSFunction "deleteItem" ["itemId", "itemNode"]
-  [text|
-    if (confirm("Confirm deletion?")) {
-      $.post("/haskell/delete/item/"+itemId)
-       .done(function () {
-          fadeOutAndRemove(itemNode);
-       });
-    }
   |]
 
 -- When adding a function, don't forget to add it to 'allJSFunctions'!

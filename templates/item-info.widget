@@ -1,0 +1,207 @@
+Description
+============================================================
+
+A header of an item (a dark bar with the title and edit buttons). It consists of a title (item-info-title), controls (item-info-controls), and a form for editing item info (item-info-edit-form).
+
+Required context:
+
+  * item
+  * category
+
+  * item_color.light
+    item_color.dark
+
+  * link_to_item = e.g. /haskell/lenses-pt3tvnwt#item-e4t2tv2n
+
+  * possible_kinds = e.g.
+      [ {"name": "library", "caption": "Library", "selected": false}
+      , {"name": "tool", ...
+      ... ]
+
+  * category_groups = e.g.
+      [ {"name": "POSIX", "selected": false}
+      , {"name": "PCRE", "selected": true}
+      ... ]
+
+  * item_no_group = true if the item's group is Nothing
+
+
+HTML
+============================================================
+<div class="item-info" style="background-color:{{item_color.dark}}">
+  <div class="section normal shown noscript-shown">
+    {{> item-info-title }}
+    {{> item-info-controls }}
+  </div>
+  <div class="section editing">
+    {{> item-info-edit-form }}
+  </div>
+</div>
+
+
+HTML: item-info-title
+------------------------------------------------------------
+<span style="font-size:150%">
+  <a class="anchor" href="{{link_to_item}}">#</a>
+  {{> item-title}}
+</span>
+{{> space em=2 }}
+{{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
+
+
+HTML: item-info-controls
+------------------------------------------------------------
+<span class="controls">
+  {{> img-button
+        src    = "/arrow-thick-top.svg"
+        title  = "move item up"
+        action = [| moveItem("up", "{{item.uid}}"); |] }}
+  {{> img-button
+        src    = "/arrow-thick-bottom.svg"
+        title  = "move item down"
+        action = [| moveItem("down", "{{item.uid}}"); |] }}
+  {{> space em=1.5 }}
+  {{> img-button
+        src    = "/pencil.svg"
+        title  = "edit item info"
+        action = [| editItemInfo("{{item.uid}}"); |] }}
+  {{> space em=0.5 }}
+  {{> img-button
+        src    = "/x.svg"
+        title  = "delete item"
+        action = [| deleteItem("{{item.uid}}"); |] }}
+</span>
+
+JS
+------------------------------------------------------------
+function moveItem(dir, itemUid) {
+  var url = "/haskell/move/item/" + itemUid;
+      itemNode = '#item-' + itemUid;
+  $.post(url, {direction: dir})
+   .done(function () {
+      if (dir == "up") moveNodeUp(itemNode); else moveNodeDown(itemNode);
+      fadeIn(itemNode);
+   });
+}
+
+function deleteItem(itemUid) {
+  var itemNode = '#item-' + itemUid;
+  if (confirm("Confirm deletion?")) {
+    $.post("/haskell/delete/item/" + itemUid)
+     .done(function () {
+        fadeOutAndRemove(itemNode);
+     });
+  }
+}
+
+function editItemInfo(itemUid) {
+  switchSection("#item-" + itemUid + " .item-info", "editing");
+}
+
+
+HTML: item-info-edit-form
+------------------------------------------------------------
+{{! "autocomplete=off" everywhere: http://stackoverflow.com/q/8311455 }}
+<form onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
+  <label>
+    Name<br>
+    <input name="name" value="{{item.name}}"
+           type="text" autocomplete="off">
+  </label>
+  <br>
+
+  <label>
+    Kind<br>
+    <select name="kind" autocomplete="off">
+      {{! possible_kinds would have stuff like “library”, “tool”, “other” }}
+      {{#possible_kinds}}
+        <option value="{{name}}" {{%selectIf selected}}>{{caption}}</option>
+      {{/possible_kinds}}
+    </select>
+  </label>
+  <br>
+
+  <label>
+    Name on Hackage<br>
+    <input name="hackage-name" value="{{#item.kind.hackageName}}{{.}}{{/item.kind.hackageName}}"
+           type="text" autocomplete="off">
+  </label>
+  <br>
+
+  <label>
+    Site (optional)<br>
+    <input name="link" value="{{item.link}}"
+           type="text" autocomplete="off">
+  </label>
+  <br>
+
+  <label>
+    Group<br>
+    {{! When “new group” is selected in the list, we show a field for
+        entering new group's name }}
+    <select name="group" onchange="itemGroupSelectHandler"
+            autocomplete="off">
+      <option value="-" {{%selectIf item_no_group}}>-</option>
+      {{# category_groups }}
+        <option value="{{name}}" {{%selectIf selected}}>{{name}}</option>
+      {{/ category_groups }}
+      <option value="">New group...</option>
+    </select>
+  </label>
+
+  <input hidden class="custom-group-input", name="custom-group" 
+         type="text" autocomplete="off">
+  <br>
+
+  <input value="Save" type="submit">
+  <input value="Cancel" type="button" 
+         onclick="itemInfoCancelEdit('{{item.uid}}');">
+</form>
+
+
+JS
+------------------------------------------------------------
+
+function itemInfoCancelEdit(itemUid) {
+  switchSection("#item-" + itemUid + " > .item-info", "normal");
+}
+
+function itemGroupSelectHandler() {
+  var customInput = $(this).closest("form").find(".custom-group-input");
+  if (this.value == "") {
+    customInput.show();
+    customInput.focus();
+  } else {
+    customInput.hide();
+  }
+}
+
+function submitItemInfo(itemUid, form) {
+  custom = $(form)[0].elements["custom-group"].value;
+  // If the group was changed, we need to recolor the whole item,
+  // but we don't want to rerender the item on the server because
+  // it would lose the item's state (e.g. what if the traits were
+  // being edited? etc). So, instead we query colors from the server
+  // and change the color of the item's body manually.
+  var url = "/haskell/set/item/" + itemUid + "/info";
+      itemNode = '#item-' + itemUid;
+  $.post(url, $(form).serialize())
+   .done(function (data) {
+      $.get("/haskell/render/item/"+itemUid+"/colors")
+       .done(function (colors) {
+          $(itemNode + " .item-body").css("background-color", colors.light);
+          $(itemNode + " .item-info").replaceWith(data);
+       });
+      // And now, if a custom group was created, we should add it to other
+      // items' lists.
+      if (custom != "") {
+        $(".item").each(function (i, item) {
+          groups = $(item).find("select[name=group]")[0];
+          isOurOption = function (opt) {return opt.text == custom};
+          alreadyExists = $.grep(groups.options, isOurOption).length > 0;
+          if (!alreadyExists) {
+            groups.add(new Option(custom, custom), 1); }
+        });
+      }
+   });
+}
