@@ -166,7 +166,7 @@ HTML: item-info-edit-form
     </select>
   </label>
 
-  <input hidden class="custom-group-input", name="custom-group" 
+  <input hidden class="custom-group-input" name="custom-group"
          type="text" autocomplete="off">
   <br>
 
