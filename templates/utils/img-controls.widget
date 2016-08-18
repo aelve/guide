@@ -1,0 +1,31 @@
+Description
+============================================================
+
+Various controls:
+
+  * img-button – an image that is a link
+  * small-control – one of small image buttons used for traits and so on
+
+Both take the following arguments:
+
+  * src    – link to the image
+  * title  – title text
+  * action – the JS action to execute on click, must end with a ';'
+
+img-button also takes an optional "class" argument.
+
+
+HTML: img-button
+============================================================
+<a href="#" {{# class}}class="{{.}}"{{/ class}} onclick="{{action}} return false;"><img src="{{src}}" alt="{{title}}" title="{{title}}"></a>
+
+HTML: small-control
+============================================================
+{{> img-button class="small-control" }}
+
+CSS
+============================================================
+.small-control img {
+  opacity: 0.5;
+  width: 12px;
+}

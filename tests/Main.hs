@@ -41,10 +41,14 @@ main :: IO ()
 main = run $ do
   mainPageTests
   categoryTests
-  -- TODO: noscript tests
-  -- TODO: test on mobile
-  -- TODO: test that there are no repetitive searches on the admin page
-  -- TODO: test that admin CSS hasn't creeped into main CSS and vice-versa
+  {- TODO
+  * noscript tests
+  * test on mobile
+  * test that there are no repetitive searches on the admin page
+  * test that admin CSS hasn't creeped into main CSS and vice-versa
+  * test that the server is throwing no errors whatsoever during the
+    execution of tests
+  -}
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using Firefox $ do

@@ -38,6 +38,13 @@ HTML
   </div>
 </div>
 
+CSS
+------------------------------------------------------------
+.item-info {
+  padding: 10px 15px;
+}
+
+
 
 HTML: item-info-title
 ------------------------------------------------------------
@@ -71,6 +78,16 @@ HTML: item-info-controls
         title  = "delete item"
         action = [| deleteItem("{{item.uid}}"); |] }}
 </span>
+
+CSS
+------------------------------------------------------------
+.item-info .controls {
+  float: right;
+}
+.item-info .controls img {
+  opacity: 0.4;
+  height: 23px;
+}
 
 JS
 ------------------------------------------------------------
