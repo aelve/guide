@@ -26,22 +26,22 @@ HTML
       {{> small-control
             src    = "/arrow-thick-top.svg"
             title  = "move trait up"
-            action = [| moveTrait("up","{{item.uid}}","{{trait.uid}}"); |] }}
+            action = [| moveTrait("up",{{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
       {{> small-control
             src    = "/arrow-thick-bottom.svg"
             title  = "move trait down"
-            action = [| moveTrait("down","{{item.uid}}","{{trait.uid}}"); |] }}
+            action = [| moveTrait("down",{{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
       {{> space px=16}}
       {{> small-control
             src    = "/pencil.svg"
             title  = "edit trait"
-            action = [| editTrait("{{item.uid}}", "{{trait.uid}}",
-                                  "{{trait.content.text}}"); |] }}
+            action = [| editTrait({{{%js item.uid}}}, {{{%js trait.uid}}},
+                                  {{{%js trait.content.text}}}); |] }}
       {{> space px=16}}
       {{> small-control
             src    = "/x.svg"
             title  = "delete trait"
-            action = [| deleteTrait("{{item.uid}}","{{trait.uid}}"); |] }}
+            action = [| deleteTrait({{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
     </div>
   </div>
 

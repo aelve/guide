@@ -36,7 +36,7 @@ HTML
     {{> small-control
           src    = "/pencil.svg"
           title  = "quit editing summary"
-          action = [| stopEditingItemDescription("{{item.uid}}"); |] }}
+          action = [| stopEditingItemDescription({{{%js item.uid}}}); |] }}
     <div class="editor"></div>
   </div>
 </div>
