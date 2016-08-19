@@ -48,6 +48,13 @@ main = run $ do
   * test that admin CSS hasn't creeped into main CSS and vice-versa
   * test that the server is throwing no errors whatsoever during the
     execution of tests
+  * changes to item description must not persist when doing Cancel and
+    then Edit again
+  * test that pages are indeed cached
+  * test that changing some pages doesn't invalidate the entire cache
+  * Markdown tests (e.g. Markdown doesn't work in category names)
+  * test that nothing is messed up by things starting and ending with newlines
+    (the %js bug, see description of 'mustache')
   -}
 
 mainPageTests :: Spec
@@ -103,9 +110,6 @@ categoryTests = session "categories" $ using Firefox $ do
     wd "doesn't have an add-category field" $ do
       es <- selectAll ".add-category"
       es `shouldBe` []
-
--- markdown tests
--- • markdown doesn't work in category names
 
 -----------------------------------------------------------------------------
 -- Utilities

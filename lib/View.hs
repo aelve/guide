@@ -60,6 +60,7 @@ import qualified Data.Map as M
 import Data.Tree
 -- Text
 import qualified Data.Text.All as T
+import qualified Data.Text.Lazy.All as TL
 import Data.Text.All (Text)
 import NeatInterpolation
 -- Web
@@ -844,38 +845,9 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
       "light" A..= hueToLightColor (getItemHue cat item) ] ]
 
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
-renderItemDescription item = cached (CacheItemDescription (item^.uid)) $ do
-  let thisId = "item-description-" <> uidToText (item^.uid)
-      this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-description"] $ do
-
-    section "normal" [shown, noScriptShown] $ do
-      strong_ "Summary"
-      emptySpan "0.5em"
-      imgButton "edit summary" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5"] $
-        JS.switchSection (this, "editing" :: Text) <>
-        JS.focusOn [(this `JS.selectSection` "editing")
-                    `JS.selectChildren`
-                    JS.selectClass "editor"]
-      div_ [class_ "notes-like"] $ do
-        if markdownNull (item^.description)
-          then p_ "write something here!"
-          else toHtml (item^.description)
-
-    section "editing" [] $ do
-      strong_ "Summary"
-      emptySpan "0.5em"
-      imgButton "quit editing summary" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5"] $
-        JS.switchSection (this, "normal" :: Text)
-      markdownEditor
-        [rows_ "10", class_ " editor "]
-        (item^.description)
-        (\val -> JS.submitItemDescription
-                   (this, item^.uid, item^.description.mdText, val))
-        (JS.switchSection (this, "normal" :: Text))
-        "or press Ctrl+Enter to save"
+renderItemDescription item = cached (CacheItemDescription (item^.uid)) $
+  mustache "item-description" $ A.object [
+    "item" A..= item ]
 
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
 renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
@@ -1263,12 +1235,17 @@ sectionSpan
   -> HtmlT m ()
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
+{-
+TODO: warn about how one shouldn't write @foo("{{bar}}")@ in templates, because a newline in 'bar' directly after the quote will mess things up. Write @foo({{{%js bar}}})@ instead.
+-}
 mustache :: MonadIO m => PName -> A.Value -> HtmlT m ()
 mustache f v = do
   let functions = M.fromList [
         ("selectIf", \[x] -> if x == A.Bool True
             then return (A.String "selected")
             else return A.Null),
+        ("js", \[x] -> return $
+            A.String . T.toStrict . TL.decodeUtf8 . A.encode $ x),
         ("trace", \xs -> do
             mapM_ (BS.putStrLn . A.encodePretty) xs
             return A.Null) ]

@@ -1,0 +1,54 @@
+Description
+============================================================
+
+Javascript functions for creating editing widgets.
+
+The “settings” object must have the following fields:
+
+  * rows – number of rows the text field must have by default
+  * text – initial text in the text field
+  * hint – the instruction below the editor (like “press Ctrl+Enter to save”)
+  * saveAction(text) – a function to be executed on Save or Ctrl+Enter
+  * cancelAction – a function to be executed on Cancel or Escape
+
+
+JS
+============================================================
+
+// Returns a list of elements.
+function bigEditor(settings) {
+  var template =
+        '<textarea class="big fullwidth editor-area"\
+                   autocomplete="off">\
+         </textarea>\
+         <input type="button" value="Save" style="right-margin:6px">\
+         <input type="button" value="Cancel" style="right-margin:6px">\
+         <span class="edit-field-instruction"></span>\
+         <a href="/markdown" target="_blank">Markdown</a>';
+
+  var editor = $('<div>').html(template);
+
+  var editorArea = $(editor).find(".editor-area")[0];
+  $(editorArea).attr("rows", settings.rows);
+  editorArea.value = settings.text;
+  editorArea.onkeydown = function (event) {
+    // Ctrl+Enter
+    if ((event.keyCode == 13 || event.keyCode == 10) &&
+        (event.metaKey || event.ctrlKey)) {
+      settings.saveAction(editorArea.value);
+      return false; }
+    // Escape
+    if (event.keyCode == 27) {
+      settings.cancelAction();
+      return false; }
+  };
+
+  $(editor).find("[type=button]")[0].onclick = function () {
+    settings.saveAction(editorArea.value); };
+  $(editor).find("[type=button]")[1].onclick = function () {
+    settings.cancelAction(); };
+
+  $(editor).find(".edit-field-instruction").text(settings.hint);
+
+  return editor.contents();
+}
