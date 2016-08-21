@@ -31,9 +31,9 @@ import qualified WebSpec
 
 main :: IO ()
 main = do
-  WebSpec.tests
   hspec $ do
     markdownTests
+  WebSpec.tests
 
 {- TODO
   * noscript tests
