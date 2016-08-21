@@ -126,18 +126,26 @@ library
 
 test-suite tests
   main-is:             Main.hs
+  other-modules:       WebSpec
   type:                exitcode-stdio-1.0
   build-depends:       base < 5
                      , base-prelude
+                     , cmark
+                     , cmark-sections
+                     , containers
                      , directory
                      , exceptions
                      , guide
                      , hspec < 3
                      , hspec-expectations
                      , hspec-webdriver < 1.2
+                     , lucid < 3
+                     , microlens-platform < 0.4
                      , network-uri
                      , slave-thread
+                     , tagsoup < 0.14
                      , text
+                     , text-all < 0.4
                      , transformers
                      , webdriver
   hs-source-dirs:      tests

@@ -2,46 +2,40 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Main
-(
-  main,
-)
-where
+module Main (main) where
 
 
-import BasePrelude hiding (catch, bracket)
--- Monads
-import Control.Monad.IO.Class
--- Concurrency
-import qualified SlaveThread as Slave
+import BasePrelude
+-- Lenses
+import Lens.Micro.Platform
 -- Text
-import Data.Text (Text)
--- Files
-import System.Directory
+import qualified Data.Text.All as T
+import Data.Text.All (Text)
+-- HTML
+import Text.HTML.TagSoup hiding (sections)
+import Lucid (ToHtml, toHtml, renderText)
+-- Markdown
+import CMark hiding (Node)
+import qualified CMark as MD (Node(..))
+import CMark.Sections
+import Data.Tree
 -- Testing
-import Test.Hspec.WebDriver
-import Test.WebDriver.Commands.Wait
-import Test.WebDriver.Exceptions  
-import qualified Test.Hspec.Expectations as Hspec
--- URLs
-import Network.URI
--- Exceptions
-import Control.Monad.Catch
+import Test.Hspec
 
--- Site
-import qualified Guide
-import Config (Config(..))
+-- Local
+import Markdown
 
-
------------------------------------------------------------------------------
 -- Tests
------------------------------------------------------------------------------
+import qualified WebSpec
+
 
 main :: IO ()
-main = run $ do
-  mainPageTests
-  categoryTests
-  {- TODO
+main = do
+  WebSpec.tests
+  hspec $ do
+    markdownTests
+
+{- TODO
   * noscript tests
   * test on mobile
   * test that there are no repetitive searches on the admin page
@@ -57,192 +51,164 @@ main = run $ do
     (the %js bug, see description of 'mustache')
   -}
 
-mainPageTests :: Spec
-mainPageTests = session "main page" $ using Firefox $ do
-  openGuide "/"
-  wd "is initially empty" $ do
-    void $ select "#categories"
-    es <- selectAll "#categories > *"
-    length es `shouldBe` 0
-  wd "has a google-token" $ do
-    e <- select "meta[name=google-site-verification]"
-    e `shouldHaveAttr` ("content", "some-google-token")
-  wd "has a title" $ do
-    e <- select "h1"
-    e `shouldHaveText` "Aelve Guide: Haskell"
-  wd "has a subtitle" $ do
-    select ".subtitle"
-  describe "the footer" $ do
-    wd "is present" $ do
-      select "#footer"
-    wd "isn't overflowing" $ do
-      setWindowSize (900, 500)  -- the footer is about 800px wide
-      e <- select "#footer"
-      (width, height) <- elemSize e
-      width  `shouldSatisfy` ("be <850", (<850))
-      height `shouldSatisfy` ("be <70", (<70))
-      -- and now it shall be overflowing
-      setWindowSize (700, 500)
-      (_, height2) <- elemSize e
-      height2 `shouldSatisfy` ("be >70", (>70))
+markdownTests :: Spec
+markdownTests = describe "Markdown" $ do
+  allMarkdowns $ \convert -> do
+    it "has mdText filled accurately" $ do
+      for_ mdBlockExamples $ \s ->
+        s `shouldBe` fst (convert s)
+    it "only has allowed tags" $ do
+      for_ mdBlockExamples $ \s -> do
+        let html = snd (convert s)
+        let badTags = getTags html \\ (inlineTags ++ blockTags)
+        unless (null badTags) $ expectationFailure $
+          printf "%s got rendered as %s, but some tags (%s) are disallowed"
+                 (show s) (show html) (T.intercalate "," badTags)
+    it "doesn't pass bad HTML through" $ do
+      let s = "<script>alert('foo');</script>"
+      let html = snd (convert s)
+      when ("script" `elem` getTags html) $ expectationFailure $
+        printf "%s got rendered as %s, but the <script> tag is bad"
+               (show s) (show html)
+    it "Hackage links" $ do
+      let s = "[text](@hk)"
+      let html = snd (convert s)
+      let l = "<a href=\"https://hackage.haskell.org/package/text\">text</a>"
+      html `shouldSatisfy` (`elem` [l, "<p>"<>l<>"</p>\n"])
 
-categoryTests :: Spec
-categoryTests = session "categories" $ using Firefox $ do
-  openGuide "/"
-  wd "add a new category" $ do
-    sendKeys ("Some category" <> _enter) =<< select ".add-category"
-    selectWait ".category"
-    url <- getCurrentRelativeURL
-    uriPath url `shouldSatisfy`
-      ("start with /haskell/some-category-",
-       isPrefixOf "/haskell/some-category-")
-  describe "created category" $ do
-    wd "has a link to the main page" $ do
-      e <- select "h1 > a"
-      e `shouldHaveText` "Aelve Guide: Haskell"
-      click e
-      url <- getCurrentRelativeURL
-      uriPath url `shouldBe` "/haskell"
-      back
-      selectWait ".category"
-    wd "has a subtitle" $ do
-      select ".subtitle"
-    wd "doesn't have an add-category field" $ do
-      es <- selectAll ".add-category"
-      es `shouldBe` []
+  describe "inline Markdown" $ do
+    it "works" $ do
+      let s = "a*b* `c`"
+      htmlToText (toMarkdownInline s) `shouldBe`
+        "a<em>b</em> <code>c</code>"
+    it "doesn't pass block-level HTML tags" $ do
+      let s = "<div>foo</div>"
+      htmlToText (toMarkdownInline s) `shouldBe`
+        "<code>&lt;div&gt;foo&lt;/div&gt;\n</code>"
+    it "is never converted to a paragraph or a block-level element" $ do
+      for_ mdBlockExamples $ \s -> do
+        let html = htmlToText (toMarkdownInline s)
+        let badTags = getTags html \\ inlineTags
+        unless (null badTags) $ expectationFailure $
+          printf "%s got rendered as %s, but some tags (%s) are disallowed"
+                 (show s) (show html) (T.intercalate "," badTags)
 
------------------------------------------------------------------------------
--- Utilities
------------------------------------------------------------------------------
+  blockMarkdowns $ \convert -> do
+    it "works" $ do
+      let s = "a*b*\n\n* test"
+      snd (convert s) `shouldBe`
+        "<p>a<em>b</em></p>\n<ul>\n<li>test</li>\n</ul>\n"
+    describe "features" $ do
+      let highlighted =
+            "<code class=\"sourceCode\">\
+            \<span class=\"kw\">module</span> \
+            \<span class=\"dt\">M</span> \
+            \<span class=\"kw\">where</span></code>"
+      it "code highlighting" $ do
+        let s = "~~~ haskell\nmodule M where\n~~~\n"
+        snd (convert s) `shouldBe`
+          "<div class=\"sourceCode\"><pre class=\"sourceCode\">" <>
+          highlighted <> "</pre></div>\n"
+      it "code classes" $ do
+        let s = "~~~ haskell repl\nmodule M where\n~~~\n"
+        snd (convert s) `shouldBe`
+          "<div class=\"sourceCode\"><pre class=\"sourceCode repl\">" <>
+          highlighted <> "</pre></div>\n"
+    it "is always converted to a paragraph or a block-level element" $ do
+      for_ mdBlockExamples $ \s -> do
+        let html = snd (convert s)
+        case parseTags html of
+          [] -> return ()
+          (TagOpen t _ : _) | t `elem` blockTags -> return ()
+          (t:_) -> expectationFailure $
+            printf "%s got rendered as %s, and %s isn't a block tag"
+            (show s) (show html) (show t)
 
-_TODO :: MonadIO m => m ()
-_TODO = error "test not implemented"
+  describe "block+toc Markdown" $ do
+    it "renders correctly" $ do
+      let s = "x\n\n# foo\n\n## foo\n\ny"
+      htmlToText (toMarkdownBlockWithTOC "i" s) `shouldBe`
+        "<p>x</p>\n\
+        \<h1><span id=\"ifoo\"></span>foo</h1>\
+        \<h2><span id=\"ifoo_\"></span>foo</h2>\
+          \<p>y</p>\n"
+    it "parses into a tree" $ do
+      let s = "x\n\n# foo\n\n## foo\n\ny"
+      let prefaceMD = MD.Node (Just (PosInfo 1 1 1 1)) PARAGRAPH
+                              [MD.Node Nothing (TEXT "x") []]
+          headingMD = MD.Node Nothing (TEXT "foo") []
+          foo2MD    = MD.Node (Just (PosInfo 7 1 7 1)) PARAGRAPH
+                              [MD.Node Nothing (TEXT "y") []]
+      (toMarkdownBlockWithTOC "i" s ^. mdTree) `shouldBe` Document {
+        prefaceAnn = "<p>x</p>\n",
+        preface    = Ann "x\n\n" [prefaceMD],
+        sections   = [
+          Node {rootLabel = Section {
+                   level      = 1,
+                   heading    = Ann "# foo\n\n" [headingMD],
+                   headingAnn = "ifoo",
+                   content    = Ann "" [],
+                   contentAnn = ""},
+                subForest = [
+                   Node {rootLabel = Section {
+                            level      = 2,
+                            heading    = Ann "## foo\n\n" [headingMD],
+                            headingAnn = "ifoo_",
+                            content    = Ann "y\n" [foo2MD],
+                            contentAnn = "<p>y</p>\n"},
+                         subForest = [] }]}]}          
+    it "has a correct TOC" $ do
+      let s = "x\n\n# foo\n\n## foo\n\ny"
+      let headingMD = MD.Node Nothing (TEXT "foo") []
+      (toMarkdownBlockWithTOC "i" s ^. mdTOC) `shouldBe` [
+        Node {rootLabel = ([headingMD],"ifoo"),
+              subForest = [
+                 Node {rootLabel = ([headingMD],"ifoo_"),
+                       subForest = [] }]}]
 
-wd :: String -> WD a -> SpecWith (WdTestSession ())
-wd x act = it x (runWD (void act))
+getTags :: Text -> [Text]
+getTags html = nub [t | TagOpen t _ <- parseTags html]
 
-_pause :: MonadIO m => m ()
-_pause = liftIO $ void $ do
-  putStr "press Enter to continue testing: "
-  getLine
+htmlToText :: ToHtml a => a -> Text
+htmlToText = T.toStrict . renderText . toHtml
 
-select :: Text -> WD Element
-select = findElem . ByCSS
+allMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
+allMarkdowns f = do
+  describe "inline MD" $
+    f ((view mdText &&& htmlToText) . toMarkdownInline)
+  blockMarkdowns f
 
-selectAll :: Text -> WD [Element]
-selectAll = findElems . ByCSS
+blockMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
+blockMarkdowns f = do
+  describe "block MD" $
+    f ((view mdText &&& htmlToText) . toMarkdownBlock)
+  describe "block+toc MD" $
+    f ((view mdText &&& htmlToText) . toMarkdownBlockWithTOC "")
 
-selectWait :: Text -> WD Element
-selectWait css = waitUntil 2 (select css)
-  `catch` \e@(FailedCommand ty _) ->
-     if ty == Timeout
-       then error (printf "Waiting for “%s” timed out" css)
-       else throwM e
+mdInlineExamples :: [Text]
+mdInlineExamples = [
+  "", "\n", "\n\n",
+  "x", "x*y*",
+  "x\n", "\nx", "\nx\n", "\n\n x\n\n",
+  "x\ny", "x\ny\n",
+  "<http://x.com>",
+  "`foo` `bar`"
+  ]
 
-getCurrentRelativeURL :: WD URI
-getCurrentRelativeURL = do
-  url <- getCurrentURL
-  case parseURI url of
-    Nothing -> error ("couldn't parse as URL: " ++ url)
-    Just u  -> do
-      maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
-      return u
+mdBlockExamples :: [Text]
+mdBlockExamples = mdInlineExamples ++ [
+  "x\n\ny", "x\n\ny\n", "x\n\ny\n\n",
+  "* x", "* x\n* y\n",
+  "> blah",
+  "[foo]: http://x.com", "foo\n\n[foo]: http://x.com",
+  "# foo", "## foo",
+  "<p>blah</p>",
+  "---",
+  "~~~ haskell\nfoo\n~~~"
+  ]
 
-run :: Spec -> IO ()
-run ts = do
-  let prepare = do
-        exold <- doesDirectoryExist "state-old"
-        when exold $ error "state-old exists"
-        ex <- doesDirectoryExist "state"
-        when ex $ renameDirectory "state" "state-old"
-        -- Start the server
-        --
-        -- Using 'Slave.fork' in 'Guide.mainWith' ensures that threads started
-        -- inside of 'mainWith' will be killed too when the thread dies.
-        tid <- Slave.fork $ Guide.mainWith Config {
-          _baseUrl       = "/",
-          _googleToken   = "some-google-token",
-          _adminPassword = "123",
-          _prerender     = False }
-        -- Using a delay so that “Spock is running on port 8080” would be
-        -- printed before the first test.
-        threadDelay 100000
-        return tid
-  let finalise tid = do
-        killThread tid
-        ex <- doesDirectoryExist "state"
-        when ex $ removeDirectoryRecursive "state"
-        exold <- doesDirectoryExist "state-old"
-        when exold $ renameDirectory "state-old" "state"
-  bracket prepare finalise $ \_ -> do
-    hspec ts
+inlineTags :: [Text]
+inlineTags = T.words "a strong em code span"
 
-openGuide :: String -> SpecWith (WdTestSession ())
-openGuide s = specify ("load " ++ s) $ runWD $
-  openPage ("http://localhost:8080/haskell" ++ s)
-
-expectationFailure :: MonadIO m => String -> m ()
-expectationFailure = liftIO . Hspec.expectationFailure
-
-shouldSatisfy :: (Show a, MonadIO m) => a -> (String, a -> Bool) -> m ()
-shouldSatisfy a (s, p) = unless (p a) $
-  expectationFailure (printf "expected %s to %s" (show a) s)
-
-_backspace, _enter, _esc :: Text
-(_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")
-_shift, _ctrl, _alt, _command :: Text
-(_shift, _ctrl, _alt, _command) = ("\xE008", "\xE009", "\xE00A", "\xE03D")
-
-{-
-NULL            \uE000
-CANCEL          \uE001
-HELP            \uE002
-TAB             \uE004
-CLEAR           \uE005
-RETURN          \uE006
-PAUSE           \uE00B
-SPACE           \uE00D
-PAGE_UP         \uE00E
-PAGE_DOWN       \uE00F
-END             \uE010
-HOME            \uE011
-ARROW_LEFT      \uE012
-ARROW_UP        \uE013
-ARROW_RIGHT     \uE014
-ARROW_DOWN      \uE015
-INSERT          \uE016
-DELETE          \uE017
-F1              \uE031
-F2              \uE032
-F3              \uE033
-F4              \uE034
-F5              \uE035
-F6              \uE036
-F7              \uE037
-F8              \uE038
-F9              \uE039
-F10             \uE03A
-F11             \uE03B
-F12             \uE03C
-META            \uE03D
-ZENKAKU_HANKAKU \uE040
-
-SEMICOLON       \uE018
-EQUALS          \uE019
-NUMPAD0         \uE01A
-NUMPAD1         \uE01B
-NUMPAD2         \uE01C
-NUMPAD3         \uE01D
-NUMPAD4         \uE01E
-NUMPAD5         \uE01F
-NUMPAD6         \uE020
-NUMPAD7         \uE021
-NUMPAD8         \uE022
-NUMPAD9         \uE023
-MULTIPLY        \uE024
-ADD             \uE025
-SEPARATOR       \uE026
-SUBTRACT        \uE027
-DECIMAL         \uE028
-DIVIDE          \uE029
--}
+blockTags :: [Text]
+blockTags = T.words "p ul li blockquote h1 h2 h3 h4 h5 h6 hr div pre"
