@@ -127,6 +127,7 @@ library
 test-suite tests
   main-is:             Main.hs
   other-modules:       WebSpec
+                       MarkdownSpec
   type:                exitcode-stdio-1.0
   build-depends:       base < 5
                      , base-prelude
@@ -144,7 +145,6 @@ test-suite tests
                      , network-uri
                      , slave-thread
                      , tagsoup < 0.14
-                     , text
                      , text-all < 0.4
                      , transformers
                      , webdriver

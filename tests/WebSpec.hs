@@ -11,7 +11,7 @@ import Control.Monad.IO.Class
 -- Concurrency
 import qualified SlaveThread as Slave
 -- Text
-import Data.Text (Text)
+import Data.Text.All (Text)
 -- Files
 import System.Directory
 -- Testing
