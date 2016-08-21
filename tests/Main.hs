@@ -127,10 +127,10 @@ markdownTests = describe "Markdown" $ do
   describe "block+toc Markdown" $ do
     it "renders correctly" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
-      htmlToText (toMarkdownBlockWithTOC "i" s) `shouldBe`
+      htmlToText (toMarkdownBlockWithTOC "i-" s) `shouldBe`
         "<p>x</p>\n\
-        \<h1><span id=\"ifoo\"></span>foo</h1>\
-        \<h2><span id=\"ifoo_\"></span>foo</h2>\
+        \<h1><span id=\"i-foo\"></span>foo</h1>\
+        \<h2><span id=\"i-foo_\"></span>foo</h2>\
           \<p>y</p>\n"
     it "parses into a tree" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
@@ -139,31 +139,31 @@ markdownTests = describe "Markdown" $ do
           headingMD = MD.Node Nothing (TEXT "foo") []
           foo2MD    = MD.Node (Just (PosInfo 7 1 7 1)) PARAGRAPH
                               [MD.Node Nothing (TEXT "y") []]
-      (toMarkdownBlockWithTOC "i" s ^. mdTree) `shouldBe` Document {
+      (toMarkdownBlockWithTOC "i-" s ^. mdTree) `shouldBe` Document {
         prefaceAnn = "<p>x</p>\n",
         preface    = Ann "x\n\n" [prefaceMD],
         sections   = [
           Node {rootLabel = Section {
                    level      = 1,
                    heading    = Ann "# foo\n\n" [headingMD],
-                   headingAnn = "ifoo",
+                   headingAnn = "i-foo",
                    content    = Ann "" [],
                    contentAnn = ""},
                 subForest = [
                    Node {rootLabel = Section {
                             level      = 2,
                             heading    = Ann "## foo\n\n" [headingMD],
-                            headingAnn = "ifoo_",
+                            headingAnn = "i-foo_",
                             content    = Ann "y\n" [foo2MD],
                             contentAnn = "<p>y</p>\n"},
                          subForest = [] }]}]}          
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
       let headingMD = MD.Node Nothing (TEXT "foo") []
-      (toMarkdownBlockWithTOC "i" s ^. mdTOC) `shouldBe` [
-        Node {rootLabel = ([headingMD],"ifoo"),
+      (toMarkdownBlockWithTOC "i-" s ^. mdTOC) `shouldBe` [
+        Node {rootLabel = ([headingMD],"i-foo"),
               subForest = [
-                 Node {rootLabel = ([headingMD],"ifoo_"),
+                 Node {rootLabel = ([headingMD],"i-foo_"),
                        subForest = [] }]}]
 
 getTags :: Text -> [Text]
