@@ -128,8 +128,10 @@ test-suite tests
   main-is:             Main.hs
   other-modules:       WebSpec
                        MarkdownSpec
+                       MergeSpec
   type:                exitcode-stdio-1.0
-  build-depends:       base < 5
+  build-depends:       QuickCheck < 2.9
+                     , base < 5
                      , base-prelude
                      , cmark
                      , cmark-sections
@@ -143,6 +145,7 @@ test-suite tests
                      , lucid < 3
                      , microlens-platform < 0.4
                      , network-uri
+                     , quickcheck-text < 0.2
                      , slave-thread
                      , tagsoup < 0.14
                      , text-all < 0.4

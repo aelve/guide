@@ -12,12 +12,14 @@ import Test.Hspec
 -- Tests
 import qualified WebSpec
 import qualified MarkdownSpec
+import qualified MergeSpec
 
 
 main :: IO ()
 main = do
   hspec $ do
     MarkdownSpec.tests
+    MergeSpec.tests
   -- TODO: it'd be nice if we could us WebSpec.tests in hspec as well,
   -- but I don't know how to achieve the following:
   --   * before WebSpec tests, the server is started
