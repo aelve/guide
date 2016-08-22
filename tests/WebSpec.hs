@@ -71,8 +71,7 @@ categoryTests :: Spec
 categoryTests = session "categories" $ using Firefox $ do
   openGuide "/"
   wd "add a new category" $ do
-    changesURL $
-      sendKeys ("Some category" <> _enter) =<< select ".add-category"
+    createCategory "Some category"
     checkPresent ".category"
     url <- getCurrentRelativeURL
     uriPath url `shouldSatisfy`
@@ -96,8 +95,7 @@ markdownTests = session "markdown" $ using Firefox $ do
   openGuide "/"
   describe "Markdown isn't allowed in category names" $ do
     wd "when creating a category" $ do
-      changesURL $
-        sendKeys ("*foo*" <> _enter) =<< select ".add-category"
+      createCategory "*foo*"
       e <- select ".category-title"
       e `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
@@ -112,7 +110,20 @@ markdownTests = session "markdown" $ using Firefox $ do
       e `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
--- Utilities
+-- Helpers dealing with guide specifically
+-----------------------------------------------------------------------------
+
+openGuide :: String -> SpecWith (WdTestSession ())
+openGuide s = specify ("load " ++ s) $ runWD $
+  openPage ("http://localhost:8080/haskell" ++ s)
+
+-- Assumes that the main page is open
+createCategory :: Text -> WD ()
+createCategory t =
+  changesURL $ sendKeys (t <> _enter) =<< select ".add-category"
+
+-----------------------------------------------------------------------------
+-- Utilities for webdriver
 -----------------------------------------------------------------------------
 
 changesURL :: WD a -> WD a
@@ -204,10 +215,6 @@ run ts = do
         when exold $ renameDirectory "state-old" "state"
   bracket prepare finalise $ \_ -> do
     hspec ts
-
-openGuide :: String -> SpecWith (WdTestSession ())
-openGuide s = specify ("load " ++ s) $ runWD $
-  openPage ("http://localhost:8080/haskell" ++ s)
 
 expectationFailure :: MonadIO m => String -> m ()
 expectationFailure = liftIO . Hspec.expectationFailure
