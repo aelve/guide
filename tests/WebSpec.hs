@@ -42,9 +42,8 @@ mainPageTests :: Spec
 mainPageTests = session "main page" $ using Firefox $ do
   openGuide "/"
   wd "is initially empty" $ do
-    void $ select "#categories"
-    es <- selectAll "#categories > *"
-    length es `shouldBe` 0
+    checkPresent "#categories"
+    checkNotPresent "#categories > *"
   wd "has a google-token" $ do
     e <- select "meta[name=google-site-verification]"
     e `shouldHaveAttr` ("content", "some-google-token")
@@ -52,10 +51,10 @@ mainPageTests = session "main page" $ using Firefox $ do
     e <- select "h1"
     e `shouldHaveText` "Aelve Guide: Haskell"
   wd "has a subtitle" $ do
-    select ".subtitle"
+    checkPresent ".subtitle"
   describe "the footer" $ do
     wd "is present" $ do
-      select "#footer"
+      checkPresent "#footer"
     wd "isn't overflowing" $ do
       setWindowSize (900, 500)  -- the footer is about 800px wide
       e <- select "#footer"
@@ -71,8 +70,9 @@ categoryTests :: Spec
 categoryTests = session "categories" $ using Firefox $ do
   openGuide "/"
   wd "add a new category" $ do
-    sendKeys ("Some category" <> _enter) =<< select ".add-category"
-    selectWait ".category"
+    changesURL $
+      sendKeys ("Some category" <> _enter) =<< select ".add-category"
+    checkPresent ".category"
     url <- getCurrentRelativeURL
     uriPath url `shouldSatisfy`
       ("start with /haskell/some-category-",
@@ -81,20 +81,33 @@ categoryTests = session "categories" $ using Firefox $ do
     wd "has a link to the main page" $ do
       e <- select "h1 > a"
       e `shouldHaveText` "Aelve Guide: Haskell"
-      click e
-      url <- getCurrentRelativeURL
-      uriPath url `shouldBe` "/haskell"
-      back
-      selectWait ".category"
+      getBackAfterwards $ do
+        changesURL $ click e
+        url <- getCurrentRelativeURL
+        uriPath url `shouldBe` "/haskell"
     wd "has a subtitle" $ do
-      select ".subtitle"
+      checkPresent ".subtitle"
     wd "doesn't have an add-category field" $ do
-      es <- selectAll ".add-category"
-      es `shouldBe` []
+      checkNotPresent ".add-category"
+
 
 -----------------------------------------------------------------------------
 -- Utilities
 -----------------------------------------------------------------------------
+
+changesURL :: WD a -> WD a
+changesURL x = do
+  url <- getCurrentURL
+  a <- x
+  waitUntil 2 ((/= url) <$> getCurrentURL)
+  return a
+
+getBackAfterwards :: WD a -> WD a
+getBackAfterwards x = do
+  url <- getCurrentURL
+  a <- x
+  openPage url
+  return a
 
 _TODO :: MonadIO m => m ()
 _TODO = error "test not implemented"
@@ -106,6 +119,18 @@ _pause :: MonadIO m => m ()
 _pause = liftIO $ void $ do
   putStr "press Enter to continue testing: "
   getLine
+
+checkPresent :: Text -> WD ()
+checkPresent x = do
+  es <- selectAll x
+  when (null es) $ expectationFailure $
+    printf "expected %s to be present on the page" (show x)
+
+checkNotPresent :: Text -> WD ()
+checkNotPresent x = do
+  es <- selectAll x
+  when (not (null es)) $ expectationFailure $
+    printf "expected %s not to be present on the page" (show x)
 
 select :: Text -> WD Element
 select = findElem . ByCSS
