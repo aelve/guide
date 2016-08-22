@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE IncoherentInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -65,7 +68,8 @@ mainPageTests = session "main page" $ using Firefox $ do
       -- and now it shall be overflowing
       setWindowSize (700, 500)
       (_, height2) <- elemSize e
-      height2 `shouldSatisfy` ("be >70", (>70))
+      waitUntil 2 $
+        height2 `shouldSatisfy` ("be >70", (>70))
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using Firefox $ do
@@ -96,17 +100,15 @@ markdownTests = session "markdown" $ using Firefox $ do
   describe "Markdown isn't allowed in category names" $ do
     wd "when creating a category" $ do
       createCategory "*foo*"
-      e <- select ".category-title"
+      e <- select categoryTitle
       e `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
-      header <- select ".category h2"
-      editButton <- findElemFrom header (ByLinkText "edit")
-      click editButton
-      do inp <- select ".category form input[name=title]"
+      form <- openCategoryEditForm
+      do inp <- select (form, "input[name=title]" :: String)
          clearInput inp
          sendKeys ("foo `bar`" <> _enter) inp
          waitWhile 2 (expectNotStale inp)
-      e <- select ".category-title"
+      e <- select categoryTitle
       e `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
@@ -122,9 +124,51 @@ createCategory :: Text -> WD ()
 createCategory t =
   changesURL $ sendKeys (t <> _enter) =<< select ".add-category"
 
+categoryTitle :: Selector
+categoryTitle = ByCSS ".category-title"
+
+openCategoryEditForm :: WD Element
+openCategoryEditForm = do
+  click =<< select (".category h2", ByLinkText "edit")
+  select ".category form"
+
+categoryEditForm :: Selector
+categoryEditForm = ByCSS ".category form"
+
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
+
+class Show a => IsSelector a where
+  selectAll :: a -> WD [Element]
+instance IsSelector Element where
+  selectAll e = return [e]
+instance IsSelector Selector where
+  selectAll s = findElems s
+instance (IsSelector a) => IsSelector (a, Selector) where
+  selectAll (a, b) = do
+    es <- selectAll a
+    nub . concat <$> for es (\e -> findElemsFrom e b)
+instance (IsSelector a) => IsSelector (a, String) where
+  selectAll (a, b) = do
+    es <- selectAll a
+    nub . concat <$> for es (\e -> findElemsFrom e (ByCSS (fromString b)))
+instance (a ~ String) => IsSelector a where
+  selectAll t = findElems (ByCSS (fromString t))
+
+select :: IsSelector a => a -> WD Element
+select x = do
+  es <- selectAll x
+  when (null es) $ expectationFailure $
+    printf "%s wasn't found on the page" (show x)
+  return (head es)
+
+selectWait :: IsSelector a => a -> WD Element
+selectWait s = waitUntil 2 (select s)
+  `catch` \e@(FailedCommand ty _) ->
+     if ty == Timeout
+       then error (printf "Waiting for %s timed out" (show s))
+       else throwM e
 
 changesURL :: WD a -> WD a
 changesURL x = do
@@ -153,30 +197,17 @@ _pause = do
   when (x == "q") $
     expectationFailure "quit"
 
-checkPresent :: Text -> WD ()
+checkPresent :: IsSelector a => a -> WD ()
 checkPresent x = do
   es <- selectAll x
   when (null es) $ expectationFailure $
     printf "expected %s to be present on the page" (show x)
 
-checkNotPresent :: Text -> WD ()
+checkNotPresent :: IsSelector a => a -> WD ()
 checkNotPresent x = do
   es <- selectAll x
   when (not (null es)) $ expectationFailure $
     printf "expected %s not to be present on the page" (show x)
-
-select :: Text -> WD Element
-select = findElem . ByCSS
-
-selectAll :: Text -> WD [Element]
-selectAll = findElems . ByCSS
-
-selectWait :: Text -> WD Element
-selectWait css = waitUntil 2 (select css)
-  `catch` \e@(FailedCommand ty _) ->
-     if ty == Timeout
-       then error (printf "Waiting for “%s” timed out" css)
-       else throwM e
 
 getCurrentRelativeURL :: WD URI
 getCurrentRelativeURL = do
