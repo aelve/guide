@@ -678,7 +678,7 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
           img_ [src_ "/rss-alt.svg",
                 alt_ "category feed", title_ "category feed"]
-      a_ [href_ (categoryLink category)] $
+      a_ [href_ (categoryLink category), class_ "category-title"] $
         toHtml (category^.title)
       emptySpan "1em"
       span_ [class_ "group"] $

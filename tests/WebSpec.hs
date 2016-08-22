@@ -37,6 +37,7 @@ tests :: IO ()
 tests = run $ do
   mainPageTests
   categoryTests
+  markdownTests
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using Firefox $ do
@@ -90,6 +91,25 @@ categoryTests = session "categories" $ using Firefox $ do
     wd "doesn't have an add-category field" $ do
       checkNotPresent ".add-category"
 
+markdownTests :: Spec
+markdownTests = session "markdown" $ using Firefox $ do
+  openGuide "/"
+  describe "Markdown isn't allowed in category names" $ do
+    wd "when creating a category" $ do
+      changesURL $
+        sendKeys ("*foo*" <> _enter) =<< select ".add-category"
+      e <- select ".category-title"
+      e `shouldHaveText` "*foo*"
+    wd "when changing existing category's name" $ do
+      header <- select ".category h2"
+      editButton <- findElemFrom header (ByLinkText "edit")
+      click editButton
+      do inp <- select ".category form input[name=title]"
+         clearInput inp
+         sendKeys ("foo `bar`" <> _enter) inp
+         waitWhile 2 (expectNotStale inp)
+      e <- select ".category-title"
+      e `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
 -- Utilities
@@ -115,10 +135,12 @@ _TODO = error "test not implemented"
 wd :: String -> WD a -> SpecWith (WdTestSession ())
 wd x act = it x (runWD (void act))
 
-_pause :: MonadIO m => m ()
-_pause = liftIO $ void $ do
-  putStr "press Enter to continue testing: "
-  getLine
+_pause :: WD ()
+_pause = do
+  liftIO $ putStr "press Enter to continue testing, or “q” to quit: "
+  x <- liftIO $ getLine
+  when (x == "q") $
+    expectationFailure "quit"
 
 checkPresent :: Text -> WD ()
 checkPresent x = do
