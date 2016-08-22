@@ -93,6 +93,33 @@ categoryTests = session "categories" $ using Firefox $ do
       checkPresent ".subtitle"
     wd "doesn't have an add-category field" $ do
       checkNotPresent ".add-category"
+  -- TODO: test that the feed button is present and that the feed is
+  -- generated properly
+  describe "category properties" $ do
+    describe "title" $ do
+      wd "is present" $ do
+        e <- select categoryTitle
+        e `shouldHaveText` "Some category"
+      wd "can be changed" $ do
+        form <- openCategoryEditForm
+        do inp <- select (form, "input[name=title]" :: String)
+           clearInput inp
+           sendKeys ("Another category" <> _enter) inp
+           waitWhile 2 (expectNotStale inp)
+        e <- select categoryTitle
+        e `shouldHaveText` "Another category"
+    describe "group" $ do
+      wd "is present" $ do
+        e <- select ".category .group"
+        e `shouldHaveText` "Miscellaneous"
+      wd "can be changed" $ do
+        form <- openCategoryEditForm
+        do inp <- select (form, "input[name=group]" :: String)
+           clearInput inp
+           sendKeys ("Basics" <> _enter) inp
+           waitWhile 2 (expectNotStale inp)
+        e <- select ".category .group"
+        e `shouldHaveText` "Basics"
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
