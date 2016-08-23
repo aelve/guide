@@ -15,6 +15,7 @@ import Control.Monad.IO.Class
 import qualified SlaveThread as Slave
 -- Text
 import Data.Text.All (Text)
+import qualified Data.Text.All as T
 -- Files
 import System.Directory
 -- Testing
@@ -55,7 +56,9 @@ mainPageTests = session "main page" $ using Firefox $ do
     e <- select "h1"
     e `shouldHaveText` "Aelve Guide: Haskell"
   wd "has a subtitle" $ do
-    checkPresent ".subtitle"
+    e <- select ".subtitle"
+    fs <- fontSize e
+    fs `shouldBeInRange` (15,17)
   describe "the footer" $ do
     wd "is present" $ do
       checkPresent "#footer"
@@ -63,13 +66,13 @@ mainPageTests = session "main page" $ using Firefox $ do
       setWindowSize (900, 500)  -- the footer is about 800px wide
       e <- select "#footer"
       (width, height) <- elemSize e
-      width  `shouldSatisfy` ("be <850", (<850))
-      height `shouldSatisfy` ("be <70", (<70))
+      width `shouldBeInRange` (750, 850)
+      height `shouldBeInRange` (60, 70)
       -- and now it shall be overflowing
       setWindowSize (700, 500)
       (_, height2) <- elemSize e
       waitUntil 2 $
-        height2 `shouldSatisfy` ("be >70", (>70))
+        height2 `shouldBeInRange` (90, 140)
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using Firefox $ do
@@ -100,6 +103,8 @@ categoryTests = session "categories" $ using Firefox $ do
       wd "is present" $ do
         e <- select categoryTitle
         e `shouldHaveText` "Some category"
+        fs <- fontSize e
+        fs `shouldBeInRange` (20, 26)
       wd "can be changed" $ do
         form <- openCategoryEditForm
         do inp <- select (form, "input[name=title]" :: String)
@@ -110,15 +115,17 @@ categoryTests = session "categories" $ using Firefox $ do
         e `shouldHaveText` "Another category"
     describe "group" $ do
       wd "is present" $ do
-        e <- select ".category .group"
+        e <- select categoryGroup
         e `shouldHaveText` "Miscellaneous"
+        fs <- fontSize e
+        fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
         do inp <- select (form, "input[name=group]" :: String)
            clearInput inp
            sendKeys ("Basics" <> _enter) inp
            waitWhile 2 (expectNotStale inp)
-        e <- select ".category .group"
+        e <- select categoryGroup
         e `shouldHaveText` "Basics"
 
 markdownTests :: Spec
@@ -153,6 +160,9 @@ createCategory t =
 
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"
+
+categoryGroup :: Selector
+categoryGroup = ByCSS ".category .group"
 
 openCategoryEditForm :: WD Element
 openCategoryEditForm = do
@@ -196,6 +206,20 @@ selectWait s = waitUntil 2 (select s)
      if ty == Timeout
        then error (printf "Waiting for %s timed out" (show s))
        else throwM e
+
+-- | @font-size@ of an element, in pixels
+fontSize :: Element -> WD Double
+fontSize e = do
+  mbProp <- cssProp e "font-size"
+  case mbProp of
+    Nothing -> expectationFailure
+                 (printf "expected %s to have font-size" (show e))
+               >> undefined
+    Just fs -> case reads (T.toString fs) of
+      [(d, "px")] -> return d
+      _ -> expectationFailure
+             (printf "couldn't parse font-size of %s: %s" (show e) (show fs))
+           >> undefined
 
 changesURL :: WD a -> WD a
 changesURL x = do
@@ -280,6 +304,17 @@ expectationFailure = liftIO . Hspec.expectationFailure
 shouldSatisfy :: (Show a, MonadIO m) => a -> (String, a -> Bool) -> m ()
 shouldSatisfy a (s, p) = unless (p a) $
   expectationFailure (printf "expected %s to %s" (show a) s)
+
+shouldBeInRange :: (Show a, Ord a, MonadIO m) => a -> (a, a) -> m ()
+shouldBeInRange a (x, y) =
+  shouldSatisfy a ("be in range " ++ show (x,y), \n -> n >= x && n <= y)
+
+shouldHaveProp :: Element -> (Text, Text) -> WD ()
+e `shouldHaveProp` (a, txt) = do
+  t <- cssProp e a
+  unless (Just txt == t) $ expectationFailure $
+    printf "expected property %s of %s to be %s, got %s"
+           a (show e) (show txt) (show t)
 
 _backspace, _enter, _esc :: Text
 (_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")
