@@ -53,12 +53,10 @@ mainPageTests = session "main page" $ using Firefox $ do
     e <- select "meta[name=google-site-verification]"
     e `shouldHaveAttr` ("content", "some-google-token")
   wd "has a title" $ do
-    e <- select "h1"
-    e `shouldHaveText` "Aelve Guide: Haskell"
+    e <- select "h1"; e `shouldHaveText` "Aelve Guide: Haskell"
   wd "has a subtitle" $ do
     e <- select ".subtitle"
-    fs <- fontSize e
-    fs `shouldBeInRange` (15,17)
+    fs <- fontSize e; fs `shouldBeInRange` (15,17)
   describe "the footer" $ do
     wd "is present" $ do
       checkPresent "#footer"
@@ -86,8 +84,7 @@ categoryTests = session "categories" $ using Firefox $ do
        isPrefixOf "/haskell/some-category-")
   describe "created category" $ do
     wd "has a link to the main page" $ do
-      e <- select "h1 > a"
-      e `shouldHaveText` "Aelve Guide: Haskell"
+      e <- select "h1 > a"; e `shouldHaveText` "Aelve Guide: Haskell"
       getBackAfterwards $ do
         changesURL $ click e
         url <- getCurrentRelativeURL
@@ -101,24 +98,19 @@ categoryTests = session "categories" $ using Firefox $ do
   describe "category properties" $ do
     describe "title" $ do
       wd "is present" $ do
-        e <- select categoryTitle
-        e `shouldHaveText` "Some category"
-        fs <- fontSize e
-        fs `shouldBeInRange` (20, 26)
+        e <- select categoryTitle; e `shouldHaveText` "Some category"
+        fs <- fontSize e; fs `shouldBeInRange` (20, 26)
       wd "can be changed" $ do
         form <- openCategoryEditForm
         do inp <- select (form, "input[name=title]" :: String)
            clearInput inp
            sendKeys ("Another category" <> _enter) inp
            waitWhile 2 (expectNotStale inp)
-        e <- select categoryTitle
-        e `shouldHaveText` "Another category"
+        e <- select categoryTitle; e `shouldHaveText` "Another category"
     describe "group" $ do
       wd "is present" $ do
-        e <- select categoryGroup
-        e `shouldHaveText` "Miscellaneous"
-        fs <- fontSize e
-        fs `shouldBeInRange` (12, 15)
+        e <- select categoryGroup; e `shouldHaveText` "Miscellaneous"
+        fs <- fontSize e; fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
         do inp <- select (form, "input[name=group]" :: String)
@@ -134,16 +126,14 @@ markdownTests = session "markdown" $ using Firefox $ do
   describe "Markdown isn't allowed in category names" $ do
     wd "when creating a category" $ do
       createCategory "*foo*"
-      e <- select categoryTitle
-      e `shouldHaveText` "*foo*"
+      e <- select categoryTitle; e `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
       form <- openCategoryEditForm
       do inp <- select (form, "input[name=title]" :: String)
          clearInput inp
          sendKeys ("foo `bar`" <> _enter) inp
          waitWhile 2 (expectNotStale inp)
-      e <- select categoryTitle
-      e `shouldHaveText` "foo `bar`"
+      e <- select categoryTitle; e `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
 -- Helpers dealing with guide specifically
