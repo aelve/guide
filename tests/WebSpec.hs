@@ -84,9 +84,8 @@ categoryTests = session "categories" $ using Firefox $ do
     createCategory "Some category"
     checkPresent ".category"
     url <- getCurrentRelativeURL
-    uriPath url `shouldSatisfy`
-      ("start with /haskell/some-category-",
-       isPrefixOf "/haskell/some-category-")
+    (slug, _) <- parseCategoryURL (uriPath url)
+    slug `shouldBe` "some-category"
   describe "created category" $ do
     wd "has a link to the main page" $ do
       e <- select "h1 > a"; e `shouldHaveText` "Aelve Guide: Haskell"
@@ -98,6 +97,13 @@ categoryTests = session "categories" $ using Firefox $ do
       checkPresent ".subtitle"
     wd "doesn't have an add-category field" $ do
       checkNotPresent ".add-category"
+    wd "is present on the main page" $ do
+      catURL <- getCurrentURL
+      openGuidePage "/"
+      e <- select (ByLinkText "Some category")
+      changesURL $ click e
+      do u <- getCurrentURL
+         u `shouldBe` catURL
   -- TODO: test that the feed button is present and that the feed is
   -- generated properly
   describe "category properties" $ do
@@ -109,9 +115,30 @@ categoryTests = session "categories" $ using Firefox $ do
         form <- openCategoryEditForm
         do inp <- select (form :// "input[name=title]")
            clearInput inp
-           sendKeys ("Another category" <> _enter) inp
+           sendKeys ("Cat 1" <> _enter) inp
            waitWhile 2 (expectNotStale inp)
-        e <- select categoryTitle; e `shouldHaveText` "Another category"
+        e <- select categoryTitle; e `shouldHaveText` "Cat 1"
+      wd "changes page slug when changed" $ do
+        changesURL $ refresh
+        do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
+           slug `shouldBe` "cat-1"
+        form <- openCategoryEditForm
+        do inp <- select (form :// "input[name=title]")
+           clearInput inp
+           sendKeys ("Cat 2" <> _enter) inp
+           waitWhile 2 (expectNotStale inp)
+        changesURL $ refresh
+        do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
+           slug `shouldBe` "cat-2"
+      wd "is changed on the front page too" $ do
+        (_, id1) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
+        openGuidePage "/"
+        checkNotPresent (ByLinkText "Some category")
+        checkNotPresent (ByLinkText "Cat 1")
+        e <- select (ByLinkText "Cat 2")
+        changesURL $ click e
+        (slug2, id2) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
+        id1 `shouldBe` id2; slug2 `shouldBe` "cat-2"
     describe "group" $ do
       wd "is present" $ do
         e <- select categoryGroup; e `shouldHaveText` "Miscellaneous"
@@ -124,6 +151,12 @@ categoryTests = session "categories" $ using Firefox $ do
            waitWhile 2 (expectNotStale inp)
         e <- select categoryGroup
         e `shouldHaveText` "Basics"
+      wd "is changed on the front page too" $ do
+        getBackAfterwards $ do
+          openGuidePage "/"
+          catLink <- select (ByLinkText "Cat 2")
+          groupHeader <- select ((".category-group" :<// catLink) :// "h2")
+          groupHeader `shouldHaveText` "Basics"
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -144,11 +177,22 @@ markdownTests = session "markdown" $ using Firefox $ do
 -- Helpers dealing with guide specifically
 -----------------------------------------------------------------------------
 
+parseCategoryURL :: String -> WD (String, String)
+parseCategoryURL url = do
+  case T.stripPrefix "/haskell/" (T.toStrict url) of
+    Nothing -> expectationFailure $
+                 printf "%s doesn't start with /haskell/" (show url)
+    Just u -> do
+      let (slug, catId) = T.breakOnEnd "-" u
+      slug `shouldSatisfy` ("not null", not . T.null)
+      T.last slug `shouldBe` '-'
+      return (T.toString (T.init slug), T.toString catId)
+
 openGuide :: String -> SpecWith (WdTestSession ())
 openGuide s = wd ("load " ++ s) (openGuidePage s)
 
 openGuidePage :: String -> WD ()
-openGuidePage s = openPage ("http://localhost:8080/haskell" ++ s)
+openGuidePage s = changesURL $ openPage ("http://localhost:8080/haskell" ++ s)
 
 -- Assumes that the main page is open
 createCategory :: Text -> WD ()
@@ -263,11 +307,9 @@ select x = do
   case es of
     [] -> expectationFailure
             (printf "%s wasn't found on the page" (show x))
-          >> undefined
     [e] -> return e
     _ -> expectationFailure
            (printf "%s isn't unique on the page" (show x))
-         >> undefined
 
 -- | Select one of the elements matching the selector.
 selectSome :: CanSelect a => a -> WD Element
@@ -289,14 +331,12 @@ fontSize :: Element -> WD Double
 fontSize e = do
   mbProp <- cssProp e "font-size"
   case mbProp of
-    Nothing -> expectationFailure
-                 (printf "expected %s to have font-size" (show e))
-               >> undefined
+    Nothing -> expectationFailure $
+                 printf "expected %s to have font-size" (show e)
     Just fs -> case reads (T.toString fs) of
       [(d, "px")] -> return d
-      _ -> expectationFailure
-             (printf "couldn't parse font-size of %s: %s" (show e) (show fs))
-           >> undefined
+      _ -> expectationFailure $
+             printf "couldn't parse font-size of %s: %s" (show e) (show fs)
 
 changesURL :: WD a -> WD a
 changesURL x = do
@@ -326,10 +366,10 @@ _pause = do
     expectationFailure "quit"
 
 checkPresent :: CanSelect a => a -> WD ()
-checkPresent x = do
-  es <- selectAll x
-  when (null es) $ expectationFailure $
-    printf "expected %s to be present on the page" (show x)
+checkPresent x = void (select x)
+
+checkPresentSome :: CanSelect a => a -> WD ()
+checkPresentSome x = void (selectSome x)
 
 checkNotPresent :: CanSelect a => a -> WD ()
 checkNotPresent x = do
@@ -375,8 +415,10 @@ run ts = do
   bracket prepare finalise $ \_ -> do
     hspec ts
 
-expectationFailure :: MonadIO m => String -> m ()
-expectationFailure = liftIO . Hspec.expectationFailure
+expectationFailure :: MonadIO m => String -> m a
+expectationFailure s = do
+  liftIO (Hspec.expectationFailure s)
+  undefined
 
 shouldSatisfy :: (Show a, MonadIO m) => a -> (String, a -> Bool) -> m ()
 shouldSatisfy a (s, p) = unless (p a) $
