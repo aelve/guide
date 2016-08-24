@@ -256,8 +256,22 @@ instance ToSelector Selector where
 instance ToSelector Text where
   toSelector = ByCSS
 
+-- | Ensure that the element is the only element matching the selector.
 select :: CanSelect a => a -> WD Element
 select x = do
+  es <- selectAll x
+  case es of
+    [] -> expectationFailure
+            (printf "%s wasn't found on the page" (show x))
+          >> undefined
+    [e] -> return e
+    _ -> expectationFailure
+           (printf "%s isn't unique on the page" (show x))
+         >> undefined
+
+-- | Select one of the elements matching the selector.
+selectSome :: CanSelect a => a -> WD Element
+selectSome x = do
   es <- selectAll x
   when (null es) $ expectationFailure $
     printf "%s wasn't found on the page" (show x)
