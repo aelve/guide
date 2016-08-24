@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -11,8 +12,11 @@ module WebSpec (tests) where
 import BasePrelude hiding (catch, bracket)
 -- Monads
 import Control.Monad.IO.Class
+import Control.Monad.Loops
 -- Concurrency
 import qualified SlaveThread as Slave
+-- Containers
+import qualified Data.Set as Set
 -- Text
 import Data.Text.All (Text)
 import qualified Data.Text.All as T
@@ -31,6 +35,7 @@ import Control.Monad.Catch
 -- Site
 import qualified Guide
 import Config (Config(..))
+import Utils (ordNub)
 
 
 -----------------------------------------------------------------------------
@@ -102,7 +107,7 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize e; fs `shouldBeInRange` (20, 26)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        do inp <- select (form, "input[name=title]" :: String)
+        do inp <- select (form :// "input[name=title]")
            clearInput inp
            sendKeys ("Another category" <> _enter) inp
            waitWhile 2 (expectNotStale inp)
@@ -113,7 +118,7 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize e; fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        do inp <- select (form, "input[name=group]" :: String)
+        do inp <- select (form :// "input[name=group]")
            clearInput inp
            sendKeys ("Basics" <> _enter) inp
            waitWhile 2 (expectNotStale inp)
@@ -129,7 +134,7 @@ markdownTests = session "markdown" $ using Firefox $ do
       e <- select categoryTitle; e `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
       form <- openCategoryEditForm
-      do inp <- select (form, "input[name=title]" :: String)
+      do inp <- select (form :// "input[name=title]")
          clearInput inp
          sendKeys ("foo `bar`" <> _enter) inp
          waitWhile 2 (expectNotStale inp)
@@ -140,8 +145,10 @@ markdownTests = session "markdown" $ using Firefox $ do
 -----------------------------------------------------------------------------
 
 openGuide :: String -> SpecWith (WdTestSession ())
-openGuide s = specify ("load " ++ s) $ runWD $
-  openPage ("http://localhost:8080/haskell" ++ s)
+openGuide s = wd ("load " ++ s) (openGuidePage s)
+
+openGuidePage :: String -> WD ()
+openGuidePage s = openPage ("http://localhost:8080/haskell" ++ s)
 
 -- Assumes that the main page is open
 createCategory :: Text -> WD ()
@@ -156,7 +163,7 @@ categoryGroup = ByCSS ".category .group"
 
 openCategoryEditForm :: WD Element
 openCategoryEditForm = do
-  click =<< select (".category h2", ByLinkText "edit")
+  click =<< select (".category h2" :// ByLinkText "edit")
   select ".category form"
 
 categoryEditForm :: Selector
@@ -166,31 +173,97 @@ categoryEditForm = ByCSS ".category form"
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
 
-class Show a => IsSelector a where
-  selectAll :: a -> WD [Element]
-instance IsSelector Element where
-  selectAll e = return [e]
-instance IsSelector Selector where
-  selectAll s = findElems s
-instance (IsSelector a) => IsSelector (a, Selector) where
-  selectAll (a, b) = do
-    es <- selectAll a
-    nub . concat <$> for es (\e -> findElemsFrom e b)
-instance (IsSelector a) => IsSelector (a, String) where
-  selectAll (a, b) = do
-    es <- selectAll a
-    nub . concat <$> for es (\e -> findElemsFrom e (ByCSS (fromString b)))
-instance (a ~ String) => IsSelector a where
-  selectAll t = findElems (ByCSS (fromString t))
+getDescendants :: Element -> WD [Element]
+getDescendants e = findElemsFrom e (ByXPath ".//*")
 
-select :: IsSelector a => a -> WD Element
+getChildren :: Element -> WD [Element]
+getChildren e = findElemsFrom e (ByXPath "./*")
+
+data ComplexSelector where
+  -- | Descendants
+  (://) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Children
+  (:/) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Parents
+  (:<//) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Direct parents
+  (:</) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | And
+  (:&) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Or
+  (:|) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Elements with specified text content
+  WithText :: Text -> ComplexSelector
+
+deriving instance Show ComplexSelector
+
+defSelectAll :: CanSelect a => a -> WD [Element]
+defSelectAll s = filterElems s =<< findElems (ByXPath "//")
+
+defFilterElems :: CanSelect a => a -> [Element] -> WD [Element]
+defFilterElems s es = do
+  ss <- Set.fromList <$> selectAll s
+  return (filter (`Set.member` ss) es)
+
+defAnyElem :: CanSelect a => a -> [Element] -> WD Bool
+defAnyElem s es = do
+  ss <- Set.fromList <$> selectAll s
+  return (any (`Set.member` ss) es)
+
+class Show a => CanSelect a where
+  selectAll :: a -> WD [Element]
+  selectAll = defSelectAll
+  filterElems :: a -> [Element] -> WD [Element]
+  filterElems = defFilterElems
+  anyElem :: a -> [Element] -> WD Bool
+  anyElem = defAnyElem
+instance CanSelect Element where
+  selectAll e = return [e]
+  filterElems s es = return (filter (== s) es)
+  anyElem s es = return (s `elem` es)
+instance CanSelect Selector where
+  selectAll s = findElems s
+instance (a ~ Text) => CanSelect a where
+  selectAll t = findElems (ByCSS t)
+instance CanSelect ComplexSelector where
+  selectAll s = case s of
+      (a :// b) -> do
+        as <- selectAll a
+        ordNub.concat <$> mapM (filterElems b <=< getDescendants) as
+      (a :/ b) -> do
+        as <- selectAll a
+        ordNub.concat <$> mapM (filterElems b <=< getChildren) as
+      (a :<// b) -> filterM (anyElem b <=< getDescendants) =<< selectAll a
+      (a :</  b) -> filterM (anyElem b <=< getChildren) =<< selectAll a
+      (a :& b) -> do
+        filterElems b =<< selectAll a
+      (a :| b) -> do
+        as <- Set.fromList <$> selectAll a
+        bs <- Set.fromList <$> selectAll b
+        return (Set.toList (as `Set.union` bs))
+      WithText t -> defSelectAll (WithText t)
+  filterElems s es = case s of
+      WithText t -> filterM (fmap (== t) . getText) es
+      _ -> defFilterElems s es
+  anyElem s es = case s of
+      WithText t -> anyM (fmap (== t) . getText) es
+      _ -> defAnyElem s es  
+
+class ToSelector a where
+  toSelector :: a -> Selector
+instance ToSelector Selector where
+  toSelector = id
+instance ToSelector Text where
+  toSelector = ByCSS
+
+select :: CanSelect a => a -> WD Element
 select x = do
   es <- selectAll x
   when (null es) $ expectationFailure $
     printf "%s wasn't found on the page" (show x)
   return (head es)
 
-selectWait :: IsSelector a => a -> WD Element
+selectWait :: CanSelect a => a -> WD Element
 selectWait s = waitUntil 2 (select s)
   `catch` \e@(FailedCommand ty _) ->
      if ty == Timeout
@@ -238,13 +311,13 @@ _pause = do
   when (x == "q") $
     expectationFailure "quit"
 
-checkPresent :: IsSelector a => a -> WD ()
+checkPresent :: CanSelect a => a -> WD ()
 checkPresent x = do
   es <- selectAll x
   when (null es) $ expectationFailure $
     printf "expected %s to be present on the page" (show x)
 
-checkNotPresent :: IsSelector a => a -> WD ()
+checkNotPresent :: CanSelect a => a -> WD ()
 checkNotPresent x = do
   es <- selectAll x
   when (not (null es)) $ expectationFailure $

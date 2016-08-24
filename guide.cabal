@@ -144,6 +144,7 @@ test-suite tests
                      , hspec-webdriver < 1.2
                      , lucid < 3
                      , microlens-platform < 0.4
+                     , monad-loops < 0.5
                      , network-uri
                      , quickcheck-text < 0.2
                      , slave-thread
