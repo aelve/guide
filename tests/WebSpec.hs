@@ -236,8 +236,12 @@ data ComplexSelector where
   (:&) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
   -- | Or
   (:|) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
-  -- | Elements with specified text content
+  -- | Elements with specific text
   WithText :: Text -> ComplexSelector
+  -- | Elements that contain specific text
+  ContainsText :: Text -> ComplexSelector
+  -- | Only pick the first N selected elements
+  Take :: CanSelect a => Int -> a -> ComplexSelector
 
 deriving instance Show ComplexSelector
 
@@ -285,9 +289,12 @@ instance CanSelect ComplexSelector where
         as <- Set.fromList <$> selectAll a
         bs <- Set.fromList <$> selectAll b
         return (Set.toList (as `Set.union` bs))
-      WithText t -> defSelectAll (WithText t)
+      Take n a -> take n <$> selectAll a
+      WithText     t -> defSelectAll (WithText t)
+      ContainsText t -> defSelectAll (ContainsText t)
   filterElems s es = case s of
-      WithText t -> filterM (fmap (== t) . getText) es
+      WithText     t -> filterM (fmap (== t) . getText) es
+      ContainsText t -> filterM (fmap (t `T.isInfixOf`) . getText) es
       _ -> defFilterElems s es
   anyElem s es = case s of
       WithText t -> anyM (fmap (== t) . getText) es
