@@ -160,10 +160,13 @@ After that switching sections is simply done by adding/removing the “shown” 
 
 -}
 
-renderSubtitle :: Monad m => HtmlT m ()
+renderSubtitle :: (Monad m, MonadReader Config m) => HtmlT m ()
 renderSubtitle =
-  div_ [class_ "subtitle"] $
-    "alpha version • very much incomplete • leave feedback"
+  div_ [class_ "subtitle"] $ do
+    "alpha version • don't post on Reddit yet"
+    lift (asks _discussLink) >>= \case
+      Nothing -> return ()
+      Just l  -> " • " >> mkLink "discuss the site" l
 
 renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderRoot = do

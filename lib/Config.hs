@@ -36,7 +36,8 @@ data Config = Config {
   _baseUrl       :: Url,
   _googleToken   :: Text,
   _adminPassword :: Text,
-  _prerender     :: Bool }
+  _prerender     :: Bool,
+  _discussLink   :: Maybe Url }
   deriving (Eq, Show)
 
 instance Default Config where
@@ -44,7 +45,8 @@ instance Default Config where
     _baseUrl       = "/",
     _googleToken   = "",
     _adminPassword = "",
-    _prerender     = False }
+    _prerender     = False,
+    _discussLink   = Nothing }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
@@ -52,6 +54,7 @@ instance FromJSON Config where
     _googleToken   <- o .:? "google-token"   .!= _googleToken def
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
+    _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
     return Config{..}
 
 instance ToJSON Config where
@@ -59,7 +62,8 @@ instance ToJSON Config where
     "base-url"       .= _baseUrl,
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
-    "prerender"      .= _prerender ]
+    "prerender"      .= _prerender,
+    "discuss-link"   .= _discussLink ]
 
 readConfig :: IO Config
 readConfig = do

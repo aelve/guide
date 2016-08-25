@@ -30,6 +30,14 @@ body {
   color: #e03;
   margin-bottom: 2em;
 }
+.subtitle a {
+  color: inherit;
+  border-bottom: 1.5px solid;
+  text-decoration: none;
+}
+.subtitle a:hover {
+  color: #f35;
+}
 
 /* headers look bad when the width is small, so */
 

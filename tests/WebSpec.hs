@@ -59,10 +59,13 @@ mainPageTests = session "main page" $ using Firefox $ do
     e `shouldHaveAttr` ("content", "some-google-token")
   wd "has a title" $ do
     e <- select "h1"; e `shouldHaveText` "Aelve Guide: Haskell"
-  wd "has a subtitle" $ do
-    e <- select ".subtitle"
-    fs <- fontSize e; fs `shouldBeInRange` (15,17)
-  describe "the footer" $ do
+  describe "subtitle" $ do
+    wd "is present" $ do
+      e <- select ".subtitle"
+      fs <- fontSize e; fs `shouldBeInRange` (15,17)
+    wd "has a discuss link" $ do
+      checkPresent ".subtitle a[href='http://discuss.link']"
+  describe "footer" $ do
     wd "is present" $ do
       checkPresent "#footer"
     wd "isn't overflowing" $ do
@@ -408,7 +411,8 @@ run ts = do
           _baseUrl       = "/",
           _googleToken   = "some-google-token",
           _adminPassword = "123",
-          _prerender     = False }
+          _prerender     = False,
+          _discussLink   = Just "http://discuss.link" }
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
         threadDelay 100000
