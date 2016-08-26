@@ -107,8 +107,9 @@ categoryTests = session "categories" $ using Firefox $ do
       changesURL $ click e
       do u <- getCurrentURL
          u `shouldBe` catURL
-  -- TODO: test that the feed button is present and that the feed is
-  -- generated properly
+    wd "is initially empty" $ do
+      checkPresent ".items"
+      checkNotPresent (".items" :// Not ".dummy")
   describe "category properties" $ do
     describe "title" $ do
       wd "is present" $ do
@@ -160,6 +161,14 @@ categoryTests = session "categories" $ using Firefox $ do
           catLink <- select (ByLinkText "Cat 2")
           groupHeader <- select ((".category-group" :<// catLink) :// "h2")
           groupHeader `shouldHaveText` "Basics"
+    -- Status
+    -- Pros/cons enabled
+    -- Ecosystem enabled
+    -- Save works
+    -- Cancel works
+  -- Deleting a category works
+  -- Feed button works
+  -- Description editing works
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -213,9 +222,6 @@ openCategoryEditForm = do
   click =<< select (".category h2" :// ByLinkText "edit")
   select ".category form"
 
-categoryEditForm :: Selector
-categoryEditForm = ByCSS ".category form"
-
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
@@ -239,6 +245,8 @@ data ComplexSelector where
   (:&) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
   -- | Or
   (:|) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
+  -- | Not
+  Not :: CanSelect a => a -> ComplexSelector
   -- | Elements with specific text
   WithText :: Text -> ComplexSelector
   -- | Elements that contain specific text
@@ -293,14 +301,19 @@ instance CanSelect ComplexSelector where
         bs <- Set.fromList <$> selectAll b
         return (Set.toList (as `Set.union` bs))
       Take n a -> take n <$> selectAll a
+      --
+      Not a          -> defSelectAll (Not a)
       WithText     t -> defSelectAll (WithText t)
       ContainsText t -> defSelectAll (ContainsText t)
   filterElems s es = case s of
+      Not a -> (es \\) <$> filterElems a es
       WithText     t -> filterM (fmap (== t) . getText) es
       ContainsText t -> filterM (fmap (t `T.isInfixOf`) . getText) es
       _ -> defFilterElems s es
   anyElem s es = case s of
-      WithText t -> anyM (fmap (== t) . getText) es
+      Not a -> (== length es) . length <$> filterElems a es
+      WithText     t -> anyM (fmap (== t) . getText) es
+      ContainsText t -> anyM (fmap (t `T.isInfixOf`) . getText) es
       _ -> defAnyElem s es  
 
 class ToSelector a where
@@ -425,6 +438,13 @@ run ts = do
         when exold $ renameDirectory "state-old" "state"
   bracket prepare finalise $ \_ -> do
     hspec ts
+
+_site :: IO ()
+_site = run $ do
+  session "_" $ using Firefox $ do
+    wd "_" $ do
+      openGuidePage "/"
+      _pause
 
 expectationFailure :: MonadIO m => String -> m a
 expectationFailure s = do
