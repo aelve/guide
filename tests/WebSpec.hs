@@ -156,12 +156,27 @@ categoryTests = session "categories" $ using Firefox $ do
         e <- select categoryGroup
         e `shouldHaveText` "Basics"
       wd "is changed on the front page too" $ do
-        getBackAfterwards $ do
-          openGuidePage "/"
+        onAnotherPage "/" $ do
           catLink <- select (ByLinkText "Cat 2")
           groupHeader <- select ((".category-group" :<// catLink) :// "h2")
           groupHeader `shouldHaveText` "Basics"
-    -- Status
+    describe "status" $ do
+      wd "is “stub” by default" $ do
+        form <- openCategoryEditForm
+        chosen <- select (form :// "select[name=status] option:checked")
+        chosen `shouldHaveText` "Stub"
+        onAnotherPage "/" $ do
+          catLink <- select (ByLinkText "Cat 2")
+          catLink `shouldHaveAttr` ("class", "status-stub")
+      wd "can be changed" $ do
+        form <- openCategoryEditForm
+        sel <- select (form :// "select[name=status]")
+        opt <- select (sel :// HasText "Complete")
+        selectDropdown sel opt
+        click =<< select (form :// "[type=submit]")
+        onAnotherPage "/" $ do
+          catLink <- select (ByLinkText "Cat 2")
+          catLink `shouldHaveAttr` ("class", "status-finished")
     -- Pros/cons enabled
     -- Ecosystem enabled
     -- Save works
@@ -206,6 +221,11 @@ openGuide s = wd ("load " ++ s) (openGuidePage s)
 openGuidePage :: String -> WD ()
 openGuidePage s = changesURL $ openPage ("http://localhost:8080/haskell" ++ s)
 
+onAnotherPage :: String -> WD a -> WD a
+onAnotherPage s x = getBackAfterwards $ do
+  openGuidePage s
+  x
+
 -- Assumes that the main page is open
 createCategory :: Text -> WD ()
 createCategory t =
@@ -225,6 +245,17 @@ openCategoryEditForm = do
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
+
+selectDropdown
+  :: Element   -- ^ Dropdown
+  -> Element   -- ^ Option to select
+  -> WD ()
+selectDropdown sel opt = void
+  (executeJS [JSArg sel, JSArg opt]
+     "sel=arguments[0];opt=arguments[1];\
+     \for (var i=0;i<sel.options.length;i++)\
+     \{if (sel.options[i]==opt)\
+     \{sel.selectedIndex=i;break;}}" :: WD (Maybe ()))
 
 getDescendants :: Element -> WD [Element]
 getDescendants e = findElemsFrom e (ByXPath ".//*")
@@ -248,7 +279,7 @@ data ComplexSelector where
   -- | Not
   Not :: CanSelect a => a -> ComplexSelector
   -- | Elements with specific text
-  WithText :: Text -> ComplexSelector
+  HasText :: Text -> ComplexSelector
   -- | Elements that contain specific text
   ContainsText :: Text -> ComplexSelector
   -- | Only pick the first N selected elements
@@ -303,16 +334,16 @@ instance CanSelect ComplexSelector where
       Take n a -> take n <$> selectAll a
       --
       Not a          -> defSelectAll (Not a)
-      WithText     t -> defSelectAll (WithText t)
+      HasText      t -> defSelectAll (HasText t)
       ContainsText t -> defSelectAll (ContainsText t)
   filterElems s es = case s of
       Not a -> (es \\) <$> filterElems a es
-      WithText     t -> filterM (fmap (== t) . getText) es
+      HasText      t -> filterM (fmap (== t) . getText) es
       ContainsText t -> filterM (fmap (t `T.isInfixOf`) . getText) es
       _ -> defFilterElems s es
   anyElem s es = case s of
       Not a -> (== length es) . length <$> filterElems a es
-      WithText     t -> anyM (fmap (== t) . getText) es
+      HasText      t -> anyM (fmap (== t) . getText) es
       ContainsText t -> anyM (fmap (t `T.isInfixOf`) . getText) es
       _ -> defAnyElem s es  
 
