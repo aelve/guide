@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE IncoherentInstances #-}
@@ -76,9 +77,10 @@ mainPageTests = session "main page" $ using Firefox $ do
       height `shouldBeInRange` (60, 70)
       -- and now it shall be overflowing
       setWindowSize (700, 500)
-      (_, height2) <- elemSize e
-      waitUntil 2 $
-        height2 `shouldBeInRange` (90, 140)
+      waitUntil 2 (expect . inRange (90, 140) . snd =<< elemSize e)
+        `catch` \(_::ExpectFailed) -> return ()
+      height2 <- snd <$> elemSize e
+      height2 `shouldBeInRange` (90, 140)
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using Firefox $ do
@@ -396,7 +398,7 @@ changesURL :: WD a -> WD a
 changesURL x = do
   url <- getCurrentURL
   a <- x
-  waitUntil 2 ((/= url) <$> getCurrentURL)
+  waitUntil 2 (expect =<< ((/= url) <$> getCurrentURL))
   return a
 
 getBackAfterwards :: WD a -> WD a
