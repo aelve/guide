@@ -175,11 +175,29 @@ categoryTests = session "categories" $ using Firefox $ do
         sel <- select (form :// "select[name=status]")
         opt <- select (sel :// HasText "Complete")
         selectDropdown sel opt
-        click =<< select (form :// "[type=submit]")
+        click =<< select (form :// ".save")
         onAnotherPage "/" $ do
           catLink <- select (ByLinkText "Cat 2")
           catLink `shouldHaveAttr` ("class", "status-finished")
-    -- Pros/cons enabled
+    describe "pros/cons enabled" $ do
+      wd "checkbox enabled by default" $ do
+        form <- openCategoryEditForm
+        check <- select (form :// HasText "Pros/cons enabled" :// "input")
+        shouldBeSelected check
+        click =<< select (form :// ".cancel")
+      wd "section is shown in an item" $ do
+        createItem "some item"
+        shouldBeDisplayed =<< select ".item-traits"
+      wd "section isn't shown after unchecking the checkbox" $ do
+        form <- openCategoryEditForm
+        click =<< select (form :// HasText "Pros/cons enabled" :// "input")
+        click =<< select (form :// ".save")
+        waitUntil 2 (expect . not =<< isDisplayed =<< select ".item-traits")
+      wd "section is shown again after checking the checkbox" $ do
+        form <- openCategoryEditForm
+        click =<< select (form :// HasText "Pros/cons enabled" :// "input")
+        click =<< select (form :// ".save")
+        waitUntil 2 (expect =<< isDisplayed =<< select ".item-traits")
     -- Ecosystem enabled
     -- Save works
     -- Cancel works
@@ -233,6 +251,19 @@ createCategory :: Text -> WD ()
 createCategory t =
   changesURL $ sendKeys (t <> _enter) =<< select ".add-category"
 
+-- Assumes that the category page is open
+createItem :: Text -> WD Element
+createItem t = do
+  let selectItems = selectAll ".item"
+  items <- selectItems
+  sendKeys (t <> _enter) =<< select ".add-item"
+  waitUntil 2 (expect . (\xs -> length xs > length items) =<< selectItems)
+  items2 <- selectItems
+  case items2 \\ items of
+    [] -> expectationFailure "an item wasn't created"
+    [x] -> return x
+    _ -> expectationFailure "more than one item was created"
+
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"
 
@@ -242,11 +273,18 @@ categoryGroup = ByCSS ".category .group"
 openCategoryEditForm :: WD Element
 openCategoryEditForm = do
   click =<< select (".category h2" :// ByLinkText "edit")
-  select ".category form"
+  selectWait ".category-info form"
 
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
+
+highlight :: Element -> WD ()
+highlight e = do
+  html <- executeJS [JSArg e]
+    "arguments[0].style.border='thick solid #FF0000';\
+    \return arguments[0].outerHTML;"
+  liftIO $ putStrLn html
 
 selectDropdown
   :: Element   -- ^ Dropdown
@@ -266,7 +304,7 @@ getChildren :: Element -> WD [Element]
 getChildren e = findElemsFrom e (ByXPath "./*")
 
 data ComplexSelector where
-  -- | Descendants
+  -- | Descendants (not including the element itself)
   (://) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
   -- | Children
   (:/) :: (CanSelect a, CanSelect b) => a -> b -> ComplexSelector
@@ -286,6 +324,8 @@ data ComplexSelector where
   ContainsText :: Text -> ComplexSelector
   -- | Only pick the first N selected elements
   Take :: CanSelect a => Int -> a -> ComplexSelector
+  -- | Displayed element
+  Displayed :: ComplexSelector
 
 deriving instance Show ComplexSelector
 
@@ -338,15 +378,18 @@ instance CanSelect ComplexSelector where
       Not a          -> defSelectAll (Not a)
       HasText      t -> defSelectAll (HasText t)
       ContainsText t -> defSelectAll (ContainsText t)
+      Displayed      -> defSelectAll Displayed
   filterElems s es = case s of
       Not a -> (es \\) <$> filterElems a es
       HasText      t -> filterM (fmap (== t) . getText) es
       ContainsText t -> filterM (fmap (t `T.isInfixOf`) . getText) es
+      Displayed -> filterM isDisplayed es
       _ -> defFilterElems s es
   anyElem s es = case s of
       Not a -> (== length es) . length <$> filterElems a es
       HasText      t -> anyM (fmap (== t) . getText) es
       ContainsText t -> anyM (fmap (t `T.isInfixOf`) . getText) es
+      Displayed -> anyM isDisplayed es
       _ -> defAnyElem s es  
 
 class ToSelector a where
@@ -498,6 +541,21 @@ e `shouldHaveProp` (a, txt) = do
   unless (Just txt == t) $ expectationFailure $
     printf "expected property %s of %s to be %s, got %s"
            a (show e) (show txt) (show t)
+
+shouldBeSelected :: Element -> WD ()
+shouldBeSelected a = do
+  x <- isSelected a
+  a `shouldSatisfy` ("be checked/selected", const x)
+
+shouldBeDisplayed :: Element -> WD ()
+shouldBeDisplayed a = do
+  x <- isDisplayed a
+  a `shouldSatisfy` ("be displayed", const x)
+
+shouldBeHidden :: Element -> WD ()
+shouldBeHidden a = do
+  x <- isDisplayed a
+  a `shouldSatisfy` ("be hidden", const (not x))
 
 _backspace, _enter, _esc :: Text
 (_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")

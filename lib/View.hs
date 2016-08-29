@@ -735,8 +735,8 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
             & checkedIf (category^.ecosystemEnabled)
           "“Ecosystem” field enabled"
         br_ []
-        input_ [type_ "submit", value_ "Save"]
-        button "Cancel" [] $
+        input_ [type_ "submit", value_ "Save", class_ "save"]
+        button "Cancel" [class_ "cancel"] $
           JS.switchSection (this, "normal" :: Text)
 
 renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
@@ -778,6 +778,7 @@ renderCategory category = cached (CacheCategory (category^.uid)) $ do
       mapM_ (renderItem category) (category^.items)
       thisNode
     textInput [
+      class_ " add-item ",
       placeholder_ "add an item",
       autocomplete_ "off",
       onEnter $ JS.addItem (itemsNode, category^.uid, inputValue) <>
