@@ -197,7 +197,7 @@ View.hs
   3. Add a branch for the constructor you made in Types.hs/#3 to 'renderEdit'.
 
 
-Main.hs
+Guide.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
   1. Add a case to 'invalidateCacheForEdit'.
