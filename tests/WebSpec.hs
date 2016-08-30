@@ -222,9 +222,27 @@ categoryTests = session "categories" $ using Firefox $ do
         click =<< select (form :// ".save")
         waitUntil 2 $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
-    -- Save works
-    -- Cancel works
-  -- Deleting a category works
+    describe "deleting a category" $ do
+      wd "dismissing the alert doesn't do anything" $ do
+        click =<< select (".category h2" :// ByLinkText "delete")
+        dismissAlert
+        catURL <- getCurrentURL
+        openGuidePage "/"
+        e <- select (ByLinkText "Cat 2")
+        changesURL $ click e
+        do u <- getCurrentURL
+           u `shouldBe` catURL
+      wd "accepting the alert deletes the category" $ do
+        catURL <- getCurrentURL
+        changesURL $ do
+          click =<< select (".category h2" :// ByLinkText "delete")
+          acceptAlert
+        url <- getCurrentRelativeURL
+        uriPath url `shouldBe` "/haskell"
+        checkNotPresent (ByLinkText "Cat 2")
+        openPage catURL
+        body <- select "body"
+        body `shouldHaveText` "Something went wrong"
   -- Feed button works
   -- Description editing works
 
