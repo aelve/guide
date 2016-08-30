@@ -179,29 +179,49 @@ categoryTests = session "categories" $ using Firefox $ do
         onAnotherPage "/" $ do
           catLink <- select (ByLinkText "Cat 2")
           catLink `shouldHaveAttr` ("class", "status-finished")
+    wd "create two items for further tests" $ do
+      createItem "some item"
+      createItem "another item"
     describe "pros/cons enabled" $ do
       wd "checkbox enabled by default" $ do
         form <- openCategoryEditForm
-        check <- select (form :// HasText "Pros/cons enabled" :// "input")
+        check <- select (form :// "[name=pros-cons-enabled]")
         shouldBeSelected check
         click =<< select (form :// ".cancel")
       wd "section is shown in an item" $ do
-        createItem "some item"
-        createItem "another item"
         mapM_ shouldBeDisplayed =<< selectAll ".item-traits"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// HasText "Pros/cons enabled" :// "input")
+        click =<< select (form :// "[name=pros-cons-enabled]")
         click =<< select (form :// ".save")
         waitUntil 2 $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// HasText "Pros/cons enabled" :// "input")
+        click =<< select (form :// "[name=pros-cons-enabled]")
         click =<< select (form :// ".save")
         waitUntil 2 $
           expect =<< allM isDisplayed =<< selectAll ".item-traits"
-    -- Ecosystem enabled
+    describe "ecosystem enabled" $ do
+      wd "checkbox enabled by default" $ do
+        form <- openCategoryEditForm
+        check <- select (form :// "[name=ecosystem-enabled]")
+        shouldBeSelected check
+        click =<< select (form :// ".cancel")
+      wd "section is shown in an item" $ do
+        mapM_ shouldBeDisplayed =<< selectAll ".item-ecosystem"
+      wd "section isn't shown after unchecking the checkbox" $ do
+        form <- openCategoryEditForm
+        click =<< select (form :// "[name=ecosystem-enabled]")
+        click =<< select (form :// ".save")
+        waitUntil 2 $
+          expect . not =<< anyM isDisplayed =<< selectAll ".item-ecosystem"
+      wd "section is shown again after checking the checkbox" $ do
+        form <- openCategoryEditForm
+        click =<< select (form :// "[name=ecosystem-enabled]")
+        click =<< select (form :// ".save")
+        waitUntil 2 $
+          expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
     -- Save works
     -- Cancel works
   -- Deleting a category works
