@@ -187,17 +187,20 @@ categoryTests = session "categories" $ using Firefox $ do
         click =<< select (form :// ".cancel")
       wd "section is shown in an item" $ do
         createItem "some item"
-        shouldBeDisplayed =<< select ".item-traits"
+        createItem "another item"
+        mapM_ shouldBeDisplayed =<< selectAll ".item-traits"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
         click =<< select (form :// HasText "Pros/cons enabled" :// "input")
         click =<< select (form :// ".save")
-        waitUntil 2 (expect . not =<< isDisplayed =<< select ".item-traits")
+        waitUntil 2 $
+          expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
         click =<< select (form :// HasText "Pros/cons enabled" :// "input")
         click =<< select (form :// ".save")
-        waitUntil 2 (expect =<< isDisplayed =<< select ".item-traits")
+        waitUntil 2 $
+          expect =<< allM isDisplayed =<< selectAll ".item-traits"
     -- Ecosystem enabled
     -- Save works
     -- Cancel works
