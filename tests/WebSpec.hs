@@ -317,20 +317,31 @@ openCategoryEditForm = do
 -----------------------------------------------------------------------------
 
 isAlive :: Element -> WD Bool
-isAlive e = do
-  let handler ex@(FailedCommand t _)
-        | t `elem` [NoSuchElement, StaleElementReference] = return False
-        | otherwise = throw ex
-  (isEnabled e >> return True) `catch` handler
+isAlive e = (isEnabled e >> return True) `onDead` return False
 
+onDead :: WD a -> WD a -> WD a
+onDead x h = do
+  let handler ex@(FailedCommand t _)
+        | t `elem` [NoSuchElement, StaleElementReference] = h
+        | otherwise = throw ex
+  x `catch` handler
+
+tryDead :: WD a -> WD (Maybe a)
+tryDead x = (Just <$> x) `onDead` return Nothing
+
+-- TODO: can fail if the element becomes stale between 'select' and 'click'
 click :: CanSelect a => a -> WD ()
 click s = WD.click =<< select s
 
+-- TODO: can fail if the element becomes stale between 'select' and
+-- 'shouldHaveAttr'
 shouldHaveAttr :: CanSelect a => a -> (Text, Text) -> WD ()
 s `shouldHaveAttr` (a, txt) = do
   e <- select s
   e `WD.shouldHaveAttr` (a, txt)
 
+-- TODO: can fail if the element becomes stale between 'select' and
+-- 'shouldHaveText'
 shouldHaveText :: CanSelect a => a -> Text -> WD ()
 s `shouldHaveText` txt = do
   e <- select s
@@ -399,6 +410,12 @@ defAnyElem s es = do
   ss <- Set.fromList <$> selectAll s
   return (any (`Set.member` ss) es)
 
+{- NOTE [staleness]
+~~~~~~~~~~~~~~~
+
+We want to avoid “stale element” errors at all costs, instead preferring “element not found” and so on. This means that whenever we select an element with 'select' or 'selectAll' and then do something with it, we have to catch and handle possible staleness.
+-}
+
 class Show a => CanSelect a where
   selectAll :: a -> WD [Element]
   selectAll = defSelectAll
@@ -407,7 +424,6 @@ class Show a => CanSelect a where
   anyElem :: a -> [Element] -> WD Bool
   anyElem = defAnyElem
 instance CanSelect Element where
-  -- We take care not to select an element if it's stale.
   selectAll e = filterM isAlive [e]
   filterElems s es = do
     alive <- isAlive s
@@ -420,15 +436,18 @@ instance CanSelect Selector where
 instance (a ~ Text) => CanSelect a where
   selectAll t = findElems (ByCSS t)
 instance CanSelect ComplexSelector where
-  selectAll s = case s of
+  selectAll s = do
+    let getDescendants' e = getDescendants e `onDead` return []
+        getChildren' e = getChildren e `onDead` return []
+    case s of
       (a :// b) -> do
         as <- selectAll a
-        ordNub.concat <$> mapM (filterElems b <=< getDescendants) as
+        ordNub.concat <$> mapM (filterElems b <=< getDescendants') as
       (a :/ b) -> do
         as <- selectAll a
-        ordNub.concat <$> mapM (filterElems b <=< getChildren) as
-      (a :<// b) -> filterM (anyElem b <=< getDescendants) =<< selectAll a
-      (a :</  b) -> filterM (anyElem b <=< getChildren) =<< selectAll a
+        ordNub.concat <$> mapM (filterElems b <=< getChildren') as
+      (a :<// b) -> filterM (anyElem b <=< getDescendants') =<< selectAll a
+      (a :</  b) -> filterM (anyElem b <=< getChildren') =<< selectAll a
       (a :& b) -> do
         filterElems b =<< selectAll a
       (a :| b) -> do
@@ -441,17 +460,23 @@ instance CanSelect ComplexSelector where
       HasText      t -> defSelectAll (HasText t)
       ContainsText t -> defSelectAll (ContainsText t)
       Displayed      -> defSelectAll Displayed
-  filterElems s es = case s of
+  filterElems s es = do
+    let andNotDead = fmap (== Just True) . tryDead
+    case s of
       Not a -> (es \\) <$> filterElems a es
-      HasText      t -> filterM (fmap (== t) . getText) es
-      ContainsText t -> filterM (fmap (t `T.isInfixOf`) . getText) es
-      Displayed -> filterM isDisplayed es
+      HasText      t -> filterM (andNotDead . fmap (== t) . getText) es
+      ContainsText t -> filterM (andNotDead .
+                                 fmap (t `T.isInfixOf`) . getText) es
+      Displayed -> filterM (andNotDead . isDisplayed) es
       _ -> defFilterElems s es
-  anyElem s es = case s of
+  anyElem s es = do
+    let andNotDead = fmap (== Just True) . tryDead
+    case s of
       Not a -> (== length es) . length <$> filterElems a es
-      HasText      t -> anyM (fmap (== t) . getText) es
-      ContainsText t -> anyM (fmap (t `T.isInfixOf`) . getText) es
-      Displayed -> anyM isDisplayed es
+      HasText      t -> anyM (andNotDead . fmap (== t) . getText) es
+      ContainsText t -> anyM (andNotDead .
+                              fmap (t `T.isInfixOf`) . getText) es
+      Displayed -> anyM (andNotDead . isDisplayed) es
       _ -> defAnyElem s es  
 
 class ToSelector a where
@@ -494,6 +519,7 @@ selectSome x = do
 
 -- | @font-size@ of an element, in pixels
 fontSize :: CanSelect a => a -> WD Double
+-- TODO: can fail (NOTE [staleness])
 fontSize s = do
   e <- select s
   mbProp <- cssProp e "font-size"
@@ -604,6 +630,7 @@ shouldBeInRange a (x, y) =
   shouldSatisfy a ("be in range " ++ show (x,y), \n -> n >= x && n <= y)
 
 shouldHaveProp :: CanSelect a => a -> (Text, Text) -> WD ()
+-- TODO: can fail (NOTE [staleness])
 s `shouldHaveProp` (a, txt) = do
   e <- select s
   t <- cssProp e a
@@ -612,18 +639,21 @@ s `shouldHaveProp` (a, txt) = do
            a (show e) (show txt) (show t)
 
 shouldBeSelected :: CanSelect a => a -> WD ()
+-- TODO: can fail (NOTE [staleness])
 shouldBeSelected s = do
   e <- select s
   x <- isSelected e
   e `shouldSatisfy` ("be checked/selected", const x)
 
 shouldBeDisplayed :: CanSelect a => a -> WD ()
+-- TODO: can fail (NOTE [staleness])
 shouldBeDisplayed s = do
   e <- select s
   x <- isDisplayed e
   e `shouldSatisfy` ("be displayed", const x)
 
 shouldBeHidden :: CanSelect a => a -> WD ()
+-- TODO: can fail (NOTE [staleness])
 shouldBeHidden s = do
   e <- select s
   x <- isDisplayed e
