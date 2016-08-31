@@ -24,7 +24,8 @@ import qualified Data.Text.All as T
 -- Files
 import System.Directory
 -- Testing
-import Test.Hspec.WebDriver
+import Test.Hspec.WebDriver hiding (shouldHaveAttr, shouldHaveText, click)
+import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
 import qualified Test.Hspec.Expectations as Hspec
@@ -56,14 +57,14 @@ mainPageTests = session "main page" $ using Firefox $ do
     checkPresent "#categories"
     checkNotPresent "#categories > *"
   wd "has a google-token" $ do
-    e <- select "meta[name=google-site-verification]"
-    e `shouldHaveAttr` ("content", "some-google-token")
+    "meta[name=google-site-verification]" `shouldHaveAttr`
+      ("content", "some-google-token")
   wd "has a title" $ do
-    e <- select "h1"; e `shouldHaveText` "Aelve Guide: Haskell"
+    "h1" `shouldHaveText` "Aelve Guide: Haskell"
   describe "subtitle" $ do
     wd "is present" $ do
-      e <- select ".subtitle"
-      fs <- fontSize e; fs `shouldBeInRange` (15,17)
+      sub <- select ".subtitle"
+      fs <- fontSize sub; fs `shouldBeInRange` (15,17)
     wd "has a discuss link" $ do
       checkPresent ".subtitle a[href='http://discuss.link']"
   describe "footer" $ do
@@ -71,15 +72,15 @@ mainPageTests = session "main page" $ using Firefox $ do
       checkPresent "#footer"
     wd "isn't overflowing" $ do
       setWindowSize (900, 500)  -- the footer is about 800px wide
-      e <- select "#footer"
-      (width, height) <- elemSize e
+      footer <- select "#footer"
+      (width, height) <- elemSize footer
       width `shouldBeInRange` (750, 850)
       height `shouldBeInRange` (60, 70)
       -- and now it shall be overflowing
       setWindowSize (700, 500)
-      waitUntil 2 (expect . inRange (90, 140) . snd =<< elemSize e)
+      waitUntil 2 (expect . inRange (90, 140) . snd =<< elemSize footer)
         `catch` \(_::ExpectFailed) -> return ()
-      height2 <- snd <$> elemSize e
+      height2 <- snd <$> elemSize footer
       height2 `shouldBeInRange` (90, 140)
 
 categoryTests :: Spec
@@ -93,9 +94,10 @@ categoryTests = session "categories" $ using Firefox $ do
     slug `shouldBe` "some-category"
   describe "created category" $ do
     wd "has a link to the main page" $ do
-      e <- select "h1 > a"; e `shouldHaveText` "Aelve Guide: Haskell"
+      titleLink <- select "h1 > a"
+      titleLink `shouldHaveText` "Aelve Guide: Haskell"
       getBackAfterwards $ do
-        changesURL $ click e
+        changesURL $ click titleLink
         url <- getCurrentRelativeURL
         uriPath url `shouldBe` "/haskell"
     wd "has a subtitle" $ do
@@ -105,8 +107,7 @@ categoryTests = session "categories" $ using Firefox $ do
     wd "is present on the main page" $ do
       catURL <- getCurrentURL
       openGuidePage "/"
-      e <- select (ByLinkText "Some category")
-      changesURL $ click e
+      changesURL $ click (ByLinkText "Some category")
       do u <- getCurrentURL
          u `shouldBe` catURL
     wd "is initially empty" $ do
@@ -122,8 +123,8 @@ categoryTests = session "categories" $ using Firefox $ do
         do inp <- select (form :// "input[name=title]")
            clearInput inp
            sendKeys ("Cat 1" <> _enter) inp
-           waitWhile 2 (expectNotStale inp)
-        e <- select categoryTitle; e `shouldHaveText` "Cat 1"
+           checkNotPresent (form :& Displayed)
+        categoryTitle `shouldHaveText` "Cat 1"
       wd "changes page slug when changed" $ do
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
@@ -132,7 +133,7 @@ categoryTests = session "categories" $ using Firefox $ do
         do inp <- select (form :// "input[name=title]")
            clearInput inp
            sendKeys ("Cat 2" <> _enter) inp
-           waitWhile 2 (expectNotStale inp)
+           checkNotPresent (form :& Displayed)
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
            slug `shouldBe` "cat-2"
@@ -141,22 +142,21 @@ categoryTests = session "categories" $ using Firefox $ do
         openGuidePage "/"
         checkNotPresent (ByLinkText "Some category")
         checkNotPresent (ByLinkText "Cat 1")
-        e <- select (ByLinkText "Cat 2")
-        changesURL $ click e
+        changesURL $ click (ByLinkText "Cat 2")
         (slug2, id2) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
         id1 `shouldBe` id2; slug2 `shouldBe` "cat-2"
     describe "group" $ do
       wd "is present" $ do
-        e <- select categoryGroup; e `shouldHaveText` "Miscellaneous"
-        fs <- fontSize e; fs `shouldBeInRange` (12, 15)
+        group_ <- select categoryGroup
+        group_ `shouldHaveText` "Miscellaneous"
+        fs <- fontSize group_; fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
         do inp <- select (form :// "input[name=group]")
            clearInput inp
            sendKeys ("Basics" <> _enter) inp
-           waitWhile 2 (expectNotStale inp)
-        e <- select categoryGroup
-        e `shouldHaveText` "Basics"
+           checkNotPresent (form :& Displayed)
+        categoryGroup `shouldHaveText` "Basics"
       wd "is changed on the front page too" $ do
         onAnotherPage "/" $ do
           catLink <- select (ByLinkText "Cat 2")
@@ -165,84 +165,80 @@ categoryTests = session "categories" $ using Firefox $ do
     describe "status" $ do
       wd "is “stub” by default" $ do
         form <- openCategoryEditForm
-        chosen <- select (form :// "select[name=status] option:checked")
-        chosen `shouldHaveText` "Stub"
+        chosenOption <- select (form :// "select[name=status] option:checked")
+        chosenOption `shouldHaveText` "Stub"
         onAnotherPage "/" $ do
-          catLink <- select (ByLinkText "Cat 2")
-          catLink `shouldHaveAttr` ("class", "status-stub")
+          ByLinkText "Cat 2" `shouldHaveAttr` ("class", "status-stub")
       wd "can be changed" $ do
         form <- openCategoryEditForm
         sel <- select (form :// "select[name=status]")
         opt <- select (sel :// HasText "Complete")
         selectDropdown sel opt
-        click =<< select (form :// ".save")
+        click (form :// ".save")
         onAnotherPage "/" $ do
-          catLink <- select (ByLinkText "Cat 2")
-          catLink `shouldHaveAttr` ("class", "status-finished")
+          ByLinkText "Cat 2" `shouldHaveAttr` ("class", "status-finished")
     wd "create two items for further tests" $ do
       createItem "some item"
       createItem "another item"
     describe "pros/cons enabled" $ do
       wd "checkbox enabled by default" $ do
         form <- openCategoryEditForm
-        check <- select (form :// "[name=pros-cons-enabled]")
-        shouldBeSelected check
-        click =<< select (form :// ".cancel")
+        checkbox <- select (form :// "[name=pros-cons-enabled]")
+        shouldBeSelected checkbox
+        click (form :// ".cancel")
       wd "section is shown in an item" $ do
         mapM_ shouldBeDisplayed =<< selectAll ".item-traits"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// "[name=pros-cons-enabled]")
-        click =<< select (form :// ".save")
+        click (form :// "[name=pros-cons-enabled]")
+        click (form :// ".save")
         waitUntil 2 $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// "[name=pros-cons-enabled]")
-        click =<< select (form :// ".save")
+        click (form :// "[name=pros-cons-enabled]")
+        click (form :// ".save")
         waitUntil 2 $
           expect =<< allM isDisplayed =<< selectAll ".item-traits"
     describe "ecosystem enabled" $ do
       wd "checkbox enabled by default" $ do
         form <- openCategoryEditForm
-        check <- select (form :// "[name=ecosystem-enabled]")
-        shouldBeSelected check
-        click =<< select (form :// ".cancel")
+        checkbox <- select (form :// "[name=ecosystem-enabled]")
+        shouldBeSelected checkbox
+        click (form :// ".cancel")
       wd "section is shown in an item" $ do
         mapM_ shouldBeDisplayed =<< selectAll ".item-ecosystem"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// "[name=ecosystem-enabled]")
-        click =<< select (form :// ".save")
+        click (form :// "[name=ecosystem-enabled]")
+        click (form :// ".save")
         waitUntil 2 $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-ecosystem"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
-        click =<< select (form :// "[name=ecosystem-enabled]")
-        click =<< select (form :// ".save")
+        click (form :// "[name=ecosystem-enabled]")
+        click (form :// ".save")
         waitUntil 2 $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
     describe "deleting a category" $ do
       wd "dismissing the alert doesn't do anything" $ do
-        click =<< select (".category h2" :// ByLinkText "delete")
+        click (".category h2" :// ByLinkText "delete")
         dismissAlert
         catURL <- getCurrentURL
         openGuidePage "/"
-        e <- select (ByLinkText "Cat 2")
-        changesURL $ click e
+        changesURL $ click (ByLinkText "Cat 2")
         do u <- getCurrentURL
            u `shouldBe` catURL
       wd "accepting the alert deletes the category" $ do
         catURL <- getCurrentURL
         changesURL $ do
-          click =<< select (".category h2" :// ByLinkText "delete")
+          click (".category h2" :// ByLinkText "delete")
           acceptAlert
         url <- getCurrentRelativeURL
         uriPath url `shouldBe` "/haskell"
         checkNotPresent (ByLinkText "Cat 2")
         openPage catURL
-        body <- select "body"
-        body `shouldHaveText` "Something went wrong"
+        "body" `shouldHaveText` "Something went wrong"
   -- Feed button works
   -- Description editing works
 
@@ -252,14 +248,14 @@ markdownTests = session "markdown" $ using Firefox $ do
   describe "Markdown isn't allowed in category names" $ do
     wd "when creating a category" $ do
       createCategory "*foo*"
-      e <- select categoryTitle; e `shouldHaveText` "*foo*"
+      categoryTitle `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
       form <- openCategoryEditForm
       do inp <- select (form :// "input[name=title]")
          clearInput inp
          sendKeys ("foo `bar`" <> _enter) inp
-         waitWhile 2 (expectNotStale inp)
-      e <- select categoryTitle; e `shouldHaveText` "foo `bar`"
+         checkNotPresent (form :& Displayed)
+      categoryTitle `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
 -- Helpers dealing with guide specifically
@@ -313,12 +309,32 @@ categoryGroup = ByCSS ".category .group"
 
 openCategoryEditForm :: WD Element
 openCategoryEditForm = do
-  click =<< select (".category h2" :// ByLinkText "edit")
-  selectWait ".category-info form"
+  click (".category h2" :// ByLinkText "edit")
+  select ".category-info form"
 
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
+
+isAlive :: Element -> WD Bool
+isAlive e = do
+  let handler ex@(FailedCommand t _)
+        | t `elem` [NoSuchElement, StaleElementReference] = return False
+        | otherwise = throw ex
+  (isEnabled e >> return True) `catch` handler
+
+click :: CanSelect a => a -> WD ()
+click s = WD.click =<< select s
+
+shouldHaveAttr :: CanSelect a => a -> (Text, Text) -> WD ()
+s `shouldHaveAttr` (a, txt) = do
+  e <- select s
+  e `WD.shouldHaveAttr` (a, txt)
+
+shouldHaveText :: CanSelect a => a -> Text -> WD ()
+s `shouldHaveText` txt = do
+  e <- select s
+  e `WD.shouldHaveText` txt
 
 highlight :: Element -> WD ()
 highlight e = do
@@ -391,9 +407,14 @@ class Show a => CanSelect a where
   anyElem :: a -> [Element] -> WD Bool
   anyElem = defAnyElem
 instance CanSelect Element where
-  selectAll e = return [e]
-  filterElems s es = return (filter (== s) es)
-  anyElem s es = return (s `elem` es)
+  -- We take care not to select an element if it's stale.
+  selectAll e = filterM isAlive [e]
+  filterElems s es = do
+    alive <- isAlive s
+    return $ if alive then filter (s ==) es else []
+  anyElem s es = do
+    alive <- isAlive s
+    return $ if alive then any (s ==) es else False
 instance CanSelect Selector where
   selectAll s = findElems s
 instance (a ~ Text) => CanSelect a where
@@ -443,13 +464,25 @@ instance ToSelector Text where
 -- | Ensure that the element is the only element matching the selector.
 select :: CanSelect a => a -> WD Element
 select x = do
-  es <- selectAll x
-  case es of
-    [] -> expectationFailure
-            (printf "%s wasn't found on the page" (show x))
-    [e] -> return e
-    _ -> expectationFailure
-           (printf "%s isn't unique on the page" (show x))
+  -- True  = found more than one element
+  -- False = found no elements
+  v <- liftIO $ newIORef False
+  let findOne = do
+        es <- selectAll x
+        case es of
+          [e] -> return e
+          []  -> do liftIO $ writeIORef v False
+                    unexpected "select: no elements"
+          _   -> do liftIO $ writeIORef v True
+                    unexpected "select: more than one element"
+  let handler = do
+        moreThanOne <- liftIO $ readIORef v
+        if moreThanOne
+          then expectationFailure $
+               printf "%s isn't unique on the page" (show x)
+          else expectationFailure $
+               printf "%s wasn't found on the page" (show x)
+  waitUntil 2 findOne `onTimeout` handler
 
 -- | Select one of the elements matching the selector.
 selectSome :: CanSelect a => a -> WD Element
@@ -459,16 +492,10 @@ selectSome x = do
     printf "%s wasn't found on the page" (show x)
   return (head es)
 
-selectWait :: CanSelect a => a -> WD Element
-selectWait s = waitUntil 2 (select s)
-  `catch` \e@(FailedCommand ty _) ->
-     if ty == Timeout
-       then error (printf "Waiting for %s timed out" (show s))
-       else throwM e
-
 -- | @font-size@ of an element, in pixels
-fontSize :: Element -> WD Double
-fontSize e = do
+fontSize :: CanSelect a => a -> WD Double
+fontSize s = do
+  e <- select s
   mbProp <- cssProp e "font-size"
   case mbProp of
     Nothing -> expectationFailure $
@@ -512,9 +539,9 @@ checkPresentSome :: CanSelect a => a -> WD ()
 checkPresentSome x = void (selectSome x)
 
 checkNotPresent :: CanSelect a => a -> WD ()
-checkNotPresent x = do
+checkNotPresent x = waitUntil 2 $ do
   es <- selectAll x
-  when (not (null es)) $ expectationFailure $
+  when (not (null es)) $ unexpected $
     printf "expected %s not to be present on the page" (show x)
 
 getCurrentRelativeURL :: WD URI
@@ -576,27 +603,31 @@ shouldBeInRange :: (Show a, Ord a, MonadIO m) => a -> (a, a) -> m ()
 shouldBeInRange a (x, y) =
   shouldSatisfy a ("be in range " ++ show (x,y), \n -> n >= x && n <= y)
 
-shouldHaveProp :: Element -> (Text, Text) -> WD ()
-e `shouldHaveProp` (a, txt) = do
+shouldHaveProp :: CanSelect a => a -> (Text, Text) -> WD ()
+s `shouldHaveProp` (a, txt) = do
+  e <- select s
   t <- cssProp e a
   unless (Just txt == t) $ expectationFailure $
     printf "expected property %s of %s to be %s, got %s"
            a (show e) (show txt) (show t)
 
-shouldBeSelected :: Element -> WD ()
-shouldBeSelected a = do
-  x <- isSelected a
-  a `shouldSatisfy` ("be checked/selected", const x)
+shouldBeSelected :: CanSelect a => a -> WD ()
+shouldBeSelected s = do
+  e <- select s
+  x <- isSelected e
+  e `shouldSatisfy` ("be checked/selected", const x)
 
-shouldBeDisplayed :: Element -> WD ()
-shouldBeDisplayed a = do
-  x <- isDisplayed a
-  a `shouldSatisfy` ("be displayed", const x)
+shouldBeDisplayed :: CanSelect a => a -> WD ()
+shouldBeDisplayed s = do
+  e <- select s
+  x <- isDisplayed e
+  e `shouldSatisfy` ("be displayed", const x)
 
-shouldBeHidden :: Element -> WD ()
-shouldBeHidden a = do
-  x <- isDisplayed a
-  a `shouldSatisfy` ("be hidden", const (not x))
+shouldBeHidden :: CanSelect a => a -> WD ()
+shouldBeHidden s = do
+  e <- select s
+  x <- isDisplayed e
+  e `shouldSatisfy` ("be hidden", const (not x))
 
 _backspace, _enter, _esc :: Text
 (_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")
