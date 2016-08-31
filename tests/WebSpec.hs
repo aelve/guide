@@ -78,7 +78,7 @@ mainPageTests = session "main page" $ using Firefox $ do
       height `shouldBeInRange` (60, 70)
       -- and now it shall be overflowing
       setWindowSize (700, 500)
-      waitUntil 2 (expect . inRange (90, 140) . snd =<< elemSize footer)
+      waitUntil wait_delay (expect . inRange (90, 140) . snd =<< elemSize footer)
         `catch` \(_::ExpectFailed) -> return ()
       height2 <- snd <$> elemSize footer
       height2 `shouldBeInRange` (90, 140)
@@ -192,13 +192,13 @@ categoryTests = session "categories" $ using Firefox $ do
         form <- openCategoryEditForm
         click (form :// "[name=pros-cons-enabled]")
         click (form :// ".save")
-        waitUntil 2 $
+        waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// "[name=pros-cons-enabled]")
         click (form :// ".save")
-        waitUntil 2 $
+        waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-traits"
     describe "ecosystem enabled" $ do
       wd "checkbox enabled by default" $ do
@@ -212,13 +212,13 @@ categoryTests = session "categories" $ using Firefox $ do
         form <- openCategoryEditForm
         click (form :// "[name=ecosystem-enabled]")
         click (form :// ".save")
-        waitUntil 2 $
+        waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-ecosystem"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// "[name=ecosystem-enabled]")
         click (form :// ".save")
-        waitUntil 2 $
+        waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
     describe "deleting a category" $ do
       wd "dismissing the alert doesn't do anything" $ do
@@ -294,7 +294,7 @@ createItem t = do
   let selectItems = selectAll ".item"
   items <- selectItems
   sendKeys (t <> _enter) =<< select ".add-item"
-  waitUntil 2 (expect . (\xs -> length xs > length items) =<< selectItems)
+  waitUntil wait_delay (expect . (\xs -> length xs > length items) =<< selectItems)
   items2 <- selectItems
   case items2 \\ items of
     [] -> expectationFailure "an item wasn't created"
@@ -507,7 +507,7 @@ select x = do
                printf "%s isn't unique on the page" (show x)
           else expectationFailure $
                printf "%s wasn't found on the page" (show x)
-  waitUntil 2 findOne `onTimeout` handler
+  waitUntil wait_delay findOne `onTimeout` handler
 
 -- | Select one of the elements matching the selector.
 selectSome :: CanSelect a => a -> WD Element
@@ -535,7 +535,7 @@ changesURL :: WD a -> WD a
 changesURL x = do
   url <- getCurrentURL
   a <- x
-  waitUntil 2 (expect =<< ((/= url) <$> getCurrentURL))
+  waitUntil wait_delay (expect =<< ((/= url) <$> getCurrentURL))
   return a
 
 getBackAfterwards :: WD a -> WD a
@@ -565,7 +565,7 @@ checkPresentSome :: CanSelect a => a -> WD ()
 checkPresentSome x = void (selectSome x)
 
 checkNotPresent :: CanSelect a => a -> WD ()
-checkNotPresent x = waitUntil 2 $ do
+checkNotPresent x = waitUntil wait_delay $ do
   es <- selectAll x
   when (not (null es)) $ unexpected $
     printf "expected %s not to be present on the page" (show x)
@@ -663,6 +663,8 @@ _backspace, _enter, _esc :: Text
 (_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")
 _shift, _ctrl, _alt, _command :: Text
 (_shift, _ctrl, _alt, _command) = ("\xE008", "\xE009", "\xE00A", "\xE03D")
+
+wait_delay = 5
 
 {-
 NULL            \uE000
