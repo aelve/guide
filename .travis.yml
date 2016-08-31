@@ -29,10 +29,10 @@ before_install:
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 before_script:
-- "sh -e /etc/init.d/xvfb start"
-- "export DISPLAY=:99.0"
-- "wget http://selenium-release.storage.googleapis.com/2.43/selenium-server-standalone-2.43.1.jar"
-- "java -jar selenium-server-standalone-2.43.1.jar 2> /dev/null &"
+- sh -e /etc/init.d/xvfb start
+- export DISPLAY=:99.0
+- travis_retry wget http://selenium-release.storage.googleapis.com/2.43/selenium-server-standalone-2.43.1.jar
+- java -jar selenium-server-standalone-2.43.1.jar 2> /dev/null &
 - sleep 5
 
 script:
