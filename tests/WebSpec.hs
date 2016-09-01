@@ -48,6 +48,7 @@ tests :: IO ()
 tests = run $ do
   mainPageTests
   categoryTests
+  itemTests
   markdownTests
 
 mainPageTests :: Spec
@@ -241,6 +242,23 @@ categoryTests = session "categories" $ using Firefox $ do
         "body" `shouldHaveText` "Something went wrong"
   -- Feed button works
   -- Description editing works
+
+itemTests :: Spec
+itemTests = session "items" $ using Firefox $ do
+  openGuide "/"
+  wd "create a test category" $ do
+    createCategory "Item test category"
+  wd "add a new item" $ do
+    createItem "An item"
+  describe "item properties" $ do
+    describe "title" $ do
+      wd "is present" $ do
+        ".item-name" `shouldHaveText` "An item"
+      wd "isn't a link" $ do
+        urlBefore <- getCurrentURL
+        click ".item-name"
+        urlAfter <- getCurrentURL
+        urlAfter `shouldBe` urlBefore
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -664,6 +682,7 @@ _backspace, _enter, _esc :: Text
 _shift, _ctrl, _alt, _command :: Text
 (_shift, _ctrl, _alt, _command) = ("\xE008", "\xE009", "\xE00A", "\xE03D")
 
+wait_delay :: Double
 wait_delay = 5
 
 {-

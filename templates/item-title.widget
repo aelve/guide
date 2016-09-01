@@ -14,10 +14,10 @@ HTML
 ============================================================
 
 {{# item.link }}
-  <a href="{{item.link}}">{{item.name}}</a>
+  <a href="{{item.link}}" class="item-name">{{item.name}}</a>
 {{/ item.link }}
 {{^ item.link }}
-  {{item.name}}
+  <span class="item-name">{{item.name}}</a>
 {{/ item.link }}
 
 {{! if the item is on Hackage, let's provide a link }}
