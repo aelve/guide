@@ -62,20 +62,24 @@ HTML: item-info-controls
   {{> img-button
         src    = "/arrow-thick-top.svg"
         title  = "move item up"
+        class  = "move-item-up"
         action = [| moveItem("up", {{{%js item.uid}}}); |] }}
   {{> img-button
         src    = "/arrow-thick-bottom.svg"
         title  = "move item down"
+        class  = "move-item-down"
         action = [| moveItem("down", {{{%js item.uid}}}); |] }}
   {{> space em=1.5 }}
   {{> img-button
         src    = "/pencil.svg"
         title  = "edit item info"
+        class  = "edit-item-info"
         action = [| editItemInfo({{{%js item.uid}}}); |] }}
   {{> space em=0.5 }}
   {{> img-button
         src    = "/x.svg"
         title  = "delete item"
+        class  = "delete-item"
         action = [| deleteItem({{{%js item.uid}}}); |] }}
 </span>
 

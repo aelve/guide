@@ -121,20 +121,14 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize e; fs `shouldBeInRange` (20, 26)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        do inp <- select (form :// "input[name=title]")
-           clearInput inp
-           sendKeys ("Cat 1" <> _enter) inp
-           checkNotPresent (form :& Displayed)
+        enterInput "Cat 1" (form :// "input[name=title]")
         categoryTitle `shouldHaveText` "Cat 1"
       wd "changes page slug when changed" $ do
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
            slug `shouldBe` "cat-1"
         form <- openCategoryEditForm
-        do inp <- select (form :// "input[name=title]")
-           clearInput inp
-           sendKeys ("Cat 2" <> _enter) inp
-           checkNotPresent (form :& Displayed)
+        enterInput "Cat 2" (form :// "input[name=title]")
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
            slug `shouldBe` "cat-2"
@@ -153,10 +147,7 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize group_; fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        do inp <- select (form :// "input[name=group]")
-           clearInput inp
-           sendKeys ("Basics" <> _enter) inp
-           checkNotPresent (form :& Displayed)
+        enterInput "Basics" (form :// "input[name=group]")
         categoryGroup `shouldHaveText` "Basics"
       wd "is changed on the front page too" $ do
         onAnotherPage "/" $ do
@@ -251,14 +242,20 @@ itemTests = session "items" $ using Firefox $ do
   wd "add a new item" $ do
     createItem "An item"
   describe "item properties" $ do
-    describe "title" $ do
+    describe "name" $ do
       wd "is present" $ do
-        ".item-name" `shouldHaveText` "An item"
+        name <- select ".item-name"
+        name `shouldHaveText` "An item"
+        fs <- fontSize name; fs `shouldBeInRange` (20,26)
       wd "isn't a link" $ do
         urlBefore <- getCurrentURL
         click ".item-name"
         urlAfter <- getCurrentURL
         urlAfter `shouldBe` urlBefore
+      wd "can be changed" $ do
+        form <- openItemEditForm ".item"
+        enterInput "New title" (form :// "[name='name']")
+        ".item-name" `shouldHaveText` "New title"
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -269,10 +266,7 @@ markdownTests = session "markdown" $ using Firefox $ do
       categoryTitle `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
       form <- openCategoryEditForm
-      do inp <- select (form :// "input[name=title]")
-         clearInput inp
-         sendKeys ("foo `bar`" <> _enter) inp
-         checkNotPresent (form :& Displayed)
+      enterInput "foo `bar`" (form :// "input[name=title]")
       categoryTitle `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
@@ -330,9 +324,21 @@ openCategoryEditForm = do
   click (".category h2" :// ByLinkText "edit")
   select ".category-info form"
 
+openItemEditForm :: CanSelect s => s -> WD Element
+openItemEditForm item = do
+  click (item :// ".edit-item-info")
+  select (item :// ".item-info form")
+
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
+
+enterInput :: CanSelect s => Text -> s -> WD ()
+enterInput x s = do
+  input <- select s
+  clearInput input
+  sendKeys (x <> _enter) input
+  checkNotPresent input
 
 isAlive :: Element -> WD Bool
 isAlive e = (isEnabled e >> return True) `onDead` return False

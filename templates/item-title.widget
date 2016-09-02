@@ -17,7 +17,7 @@ HTML
   <a href="{{item.link}}" class="item-name">{{item.name}}</a>
 {{/ item.link }}
 {{^ item.link }}
-  <span class="item-name">{{item.name}}</a>
+  <span class="item-name">{{item.name}}</span>
 {{/ item.link }}
 
 {{! if the item is on Hackage, let's provide a link }}
