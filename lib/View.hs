@@ -843,6 +843,11 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
           "name" A..= kindname,
           "caption" A..= over _head toUpper kindname,
           "selected" A..= (itemkindname == kindname) ],
+    "category_groups" A..= do
+        gr <- M.keys (cat^.groups)
+        return $ A.object [
+          "name" A..= gr,
+          "selected" A..= (Just gr == item^.group_) ],
     "item_no_group" A..= isNothing (item^.group_),
     "item_color" A..= A.object [
       "dark"  A..= hueToDarkColor (getItemHue cat item),

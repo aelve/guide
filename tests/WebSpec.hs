@@ -97,20 +97,16 @@ categoryTests = session "categories" $ using Firefox $ do
     wd "has a link to the main page" $ do
       titleLink <- select "h1 > a"
       titleLink `shouldHaveText` "Aelve Guide: Haskell"
-      getBackAfterwards $ do
-        changesURL $ click titleLink
-        url <- getCurrentRelativeURL
-        uriPath url `shouldBe` "/haskell"
+      titleLink `shouldLinkToRelative` "/haskell"
     wd "has a subtitle" $ do
       checkPresent ".subtitle"
     wd "doesn't have an add-category field" $ do
       checkNotPresent ".add-category"
     wd "is present on the main page" $ do
-      catURL <- getCurrentURL
-      openGuidePage "/"
-      changesURL $ click (ByLinkText "Some category")
-      do u <- getCurrentURL
-         u `shouldBe` catURL
+      getBackAfterwards $ do
+        catURL <- getCurrentURL
+        openGuidePage "/"
+        ByLinkText "Some category" `shouldLinkTo` catURL
     wd "is initially empty" $ do
       checkPresent ".items"
       checkNotPresent (".items" :// Not ".dummy")
@@ -216,11 +212,10 @@ categoryTests = session "categories" $ using Firefox $ do
       wd "dismissing the alert doesn't do anything" $ do
         click (".category h2" :// ByLinkText "delete")
         dismissAlert
-        catURL <- getCurrentURL
-        openGuidePage "/"
-        changesURL $ click (ByLinkText "Cat 2")
-        do u <- getCurrentURL
-           u `shouldBe` catURL
+        getBackAfterwards $ do
+          catURL <- getCurrentURL
+          openGuidePage "/"
+          ByLinkText "Cat 2" `shouldLinkTo` catURL
       wd "accepting the alert deletes the category" $ do
         catURL <- getCurrentURL
         changesURL $ do
@@ -231,8 +226,8 @@ categoryTests = session "categories" $ using Firefox $ do
         checkNotPresent (ByLinkText "Cat 2")
         openPage catURL
         "body" `shouldHaveText` "Something went wrong"
-  -- Feed button works
-  -- Description editing works
+  -- TODO: Feed button works
+  -- TODO: Description editing works
 
 itemTests :: Spec
 itemTests = session "items" $ using Firefox $ do
@@ -242,20 +237,58 @@ itemTests = session "items" $ using Firefox $ do
   wd "add a new item" $ do
     createItem "An item"
   describe "item properties" $ do
+    let item1 = Take 1 ".item"
     describe "name" $ do
       wd "is present" $ do
-        name <- select ".item-name"
+        name <- select (item1 :// ".item-name")
         name `shouldHaveText` "An item"
         fs <- fontSize name; fs `shouldBeInRange` (20,26)
-      wd "isn't a link" $ do
-        urlBefore <- getCurrentURL
-        click ".item-name"
-        urlAfter <- getCurrentURL
-        urlAfter `shouldBe` urlBefore
+      wd "doesn't link to Hackage" $ do
+        doesNotChangeURL $
+          click (item1 :// ".item-name")
+        -- TODO: find a better test for this (maybe by checking all hrefs)
+        checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "can be changed" $ do
-        form <- openItemEditForm ".item"
+        form <- openItemEditForm item1
         enterInput "New title" (form :// "[name='name']")
-        ".item-name" `shouldHaveText` "New title"
+        (item1 :// ".item-name") `shouldHaveText` "New title"
+      wd "doesn't link to Hackage if changed to something without spaces" $ do
+        form <- openItemEditForm item1
+        enterInput "bytestring" (form :// "[name='name']")
+        (item1 :// ".item-name") `shouldHaveText` "bytestring"
+        doesNotChangeURL $
+          click (item1 :// ".item-name")
+        checkNotPresent (item1 :// ByLinkText "Hackage")
+      wd "links to Hackage if the name is originally a package name" $ do
+        item2 <- createItem "foo-bar-2"
+        (item2 :// ".item-name") `shouldHaveText` "foo-bar-2"
+        (item2 :// ByLinkText "Hackage")
+          `shouldLinkTo` "https://hackage.haskell.org/package/foo-bar-2"
+    -- TODO check that elements with the same name can be present
+    describe "group" $ do
+      wd "is present and “other” by default" $ do
+        group_ <- select (item1 :// ".item-group")
+        group_ `shouldHaveText` "other"
+        fs <- fontSize group_; fs `shouldBeInRange` (15,17)
+      wd "can be changed" $ do
+        form <- openItemEditForm item1
+        sel <- select (form :// "[name=group]")
+        opt <- select (sel :// ContainsText "New group")
+        shouldBeHidden (form :// "[name=custom-group]")
+        -- TODO: check that it's “-” by default
+        selectDropdown sel opt
+        shouldBeDisplayed (form :// "[name=custom-group]")
+        enterInput "some group" (form :// "[name=custom-group]")
+        (item1 :// ".item-group") `shouldHaveText` "some group"
+      -- TODO: check that it works with 2 groups etc
+      -- TODO: check that it's present in all items' choosers
+      wd "is present in the chooser after a refresh" $ do
+        refresh
+        form <- openItemEditForm item1
+        sel <- select (form :// "[name=group]")
+        checkPresent (sel :// HasText "some group")
+        -- TODO: check that it's “some group” by default
+        -- TODO: check for all 
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -333,6 +366,19 @@ openItemEditForm item = do
 -- Utilities for webdriver
 -----------------------------------------------------------------------------
 
+getLink :: CanSelect s => s -> WD String
+getLink s = do
+  e <- select s
+  -- Select all links including the root element itself
+  linkElems <- selectAll ((e :& "a") :| (e :// "a"))
+  links <- nub . catMaybes <$> mapM (flip attr "href") linkElems
+  case links of
+    [x] -> return (T.toString x)
+    []  -> expectationFailure $
+             printf "expected %s to contain a link" (show s)
+    _   -> expectationFailure $
+             printf "expected %s to contain only one link" (show s)
+
 enterInput :: CanSelect s => Text -> s -> WD ()
 enterInput x s = do
   input <- select s
@@ -371,6 +417,21 @@ s `shouldHaveText` txt = do
   e <- select s
   e `WD.shouldHaveText` txt
 
+shouldLinkTo :: CanSelect a => a -> String -> WD ()
+s `shouldLinkTo` url2 = do
+  url <- getLink s
+  url `shouldBe` url2
+
+shouldLinkToRelative :: CanSelect a => a -> String -> WD ()
+s `shouldLinkToRelative` url2 = do
+  -- TODO: would be nice if it checked relative to the current page
+  url <- getLink s
+  case parseURI url of
+    Nothing -> error ("couldn't parse as URL: " ++ url)
+    Just u  -> do
+      maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
+      uriPath u `shouldBe` url2
+
 highlight :: Element -> WD ()
 highlight e = do
   html <- executeJS [JSArg e]
@@ -387,7 +448,7 @@ selectDropdown sel opt = void
      "sel=arguments[0];opt=arguments[1];\
      \for (var i=0;i<sel.options.length;i++)\
      \{if (sel.options[i]==opt)\
-     \{sel.selectedIndex=i;break;}}" :: WD (Maybe ()))
+     \{sel.selectedIndex=i;sel.onchange();break;}}" :: WD (Maybe ()))
 
 getDescendants :: Element -> WD [Element]
 getDescendants e = findElemsFrom e (ByXPath ".//*")
@@ -562,6 +623,15 @@ changesURL x = do
   waitUntil wait_delay (expect =<< ((/= url) <$> getCurrentURL))
   return a
 
+doesNotChangeURL :: WD a -> WD a
+doesNotChangeURL x = do
+  url <- getCurrentURL
+  a <- x
+  -- TODO: somehow check that the browser isn't even trying to change the URL
+  url2 <- getCurrentURL
+  url2 `shouldBe` url
+  return a
+
 getBackAfterwards :: WD a -> WD a
 getBackAfterwards x = do
   url <- getCurrentURL
@@ -667,21 +737,21 @@ shouldBeSelected :: CanSelect a => a -> WD ()
 shouldBeSelected s = do
   e <- select s
   x <- isSelected e
-  e `shouldSatisfy` ("be checked/selected", const x)
+  s `shouldSatisfy` ("be checked/selected", const x)
 
 shouldBeDisplayed :: CanSelect a => a -> WD ()
 -- TODO: can fail (NOTE [staleness])
 shouldBeDisplayed s = do
   e <- select s
   x <- isDisplayed e
-  e `shouldSatisfy` ("be displayed", const x)
+  s `shouldSatisfy` ("be displayed", const x)
 
 shouldBeHidden :: CanSelect a => a -> WD ()
 -- TODO: can fail (NOTE [staleness])
 shouldBeHidden s = do
   e <- select s
   x <- isDisplayed e
-  e `shouldSatisfy` ("be hidden", const (not x))
+  s `shouldSatisfy` ("be hidden", const (not x))
 
 _backspace, _enter, _esc :: Text
 (_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")

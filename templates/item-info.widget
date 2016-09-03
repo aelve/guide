@@ -53,7 +53,9 @@ HTML: item-info-title
   {{> item-title}}
 </span>
 {{> space em=2 }}
-{{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
+<span class="item-group">
+  {{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
+</span>
 
 
 HTML: item-info-controls
@@ -160,7 +162,7 @@ HTML: item-info-edit-form
     Group<br>
     {{! When “new group” is selected in the list, we show a field for
         entering new group's name }}
-    <select name="group" onchange="itemGroupSelectHandler"
+    <select name="group" onchange="itemGroupSelectHandler(this);"
             autocomplete="off">
       <option value="-" {{%selectIf item_no_group}}>-</option>
       {{# category_groups }}
@@ -187,9 +189,9 @@ function itemInfoCancelEdit(itemUid) {
   switchSection("#item-" + itemUid + " > .item-info", "normal");
 }
 
-function itemGroupSelectHandler() {
-  var customInput = $(this).closest("form").find(".custom-group-input");
-  if (this.value == "") {
+function itemGroupSelectHandler(select) {
+  var customInput = $(select).closest("form").find(".custom-group-input");
+  if ($(select)[0].value == "") {
     customInput.show();
     customInput.focus();
   } else {

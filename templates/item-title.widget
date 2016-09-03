@@ -22,5 +22,6 @@ HTML
 
 {{! if the item is on Hackage, let's provide a link }}
 {{# item.kind.hackageName }}
-  (<a href="https://hackage.haskell.org/package/{{.}}">Hackage</a>)
+  {{ hackageLink = [|https://hackage.haskell.org/package/{{.}}|] }}
+  (<a href="{{hackageLink}}">Hackage</a>)
 {{/ item.kind.hackageName }}
