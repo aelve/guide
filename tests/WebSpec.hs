@@ -446,9 +446,12 @@ selectDropdown
 selectDropdown sel opt = void
   (executeJS [JSArg sel, JSArg opt]
      "sel=arguments[0];opt=arguments[1];\
-     \for (var i=0;i<sel.options.length;i++)\
-     \{if (sel.options[i]==opt)\
-     \{sel.selectedIndex=i;sel.onchange();break;}}" :: WD (Maybe ()))
+     \for (var i=0;i<sel.options.length;i++) {\
+     \  if (sel.options[i]==opt) {\
+     \    sel.selectedIndex=i;\
+     \    sel.onchange && sel.onchange();\
+     \    break; }}"
+   :: WD (Maybe ()))
 
 getDescendants :: Element -> WD [Element]
 getDescendants e = findElemsFrom e (ByXPath ".//*")
