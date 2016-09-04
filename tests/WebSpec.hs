@@ -11,6 +11,8 @@ module WebSpec (tests) where
 
 
 import BasePrelude hiding (catch, bracket)
+-- Lenses
+import Lens.Micro.Platform
 -- Monads
 import Control.Monad.IO.Class
 import Control.Monad.Loops
@@ -236,8 +238,8 @@ itemTests = session "items" $ using Firefox $ do
     createCategory "Item test category"
   wd "add a new item" $ do
     createItem "An item"
+  let item1 = Index 0 ".item"
   describe "item properties" $ do
-    let item1 = Take 1 ".item"
     describe "name" $ do
       wd "is present" $ do
         name <- select (item1 :// ".item-name")
@@ -250,12 +252,12 @@ itemTests = session "items" $ using Firefox $ do
         checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "can be changed" $ do
         form <- openItemEditForm item1
-        enterInput "New title" (form :// "[name='name']")
-        (item1 :// ".item-name") `shouldHaveText` "New title"
+        enterInput "New item" (form :// "[name='name']")
+        (item1 :// ".item-name") `shouldHaveText` "New item"
       wd "doesn't link to Hackage if changed to something without spaces" $ do
         form <- openItemEditForm item1
-        enterInput "bytestring" (form :// "[name='name']")
-        (item1 :// ".item-name") `shouldHaveText` "bytestring"
+        enterInput "item1" (form :// "[name='name']")
+        (item1 :// ".item-name") `shouldHaveText` "item1"
         doesNotChangeURL $
           click (item1 :// ".item-name")
         checkNotPresent (item1 :// ByLinkText "Hackage")
@@ -264,7 +266,6 @@ itemTests = session "items" $ using Firefox $ do
         (item2 :// ".item-name") `shouldHaveText` "foo-bar-2"
         (item2 :// ByLinkText "Hackage")
           `shouldLinkTo` "https://hackage.haskell.org/package/foo-bar-2"
-    -- TODO check that elements with the same name can be present
     describe "group" $ do
       wd "is present and “other” by default" $ do
         group_ <- select (item1 :// ".item-group")
@@ -287,8 +288,22 @@ itemTests = session "items" $ using Firefox $ do
         form <- openItemEditForm item1
         sel <- select (form :// "[name=group]")
         checkPresent (sel :// HasText "some group")
+        click (form :// ".cancel")
         -- TODO: check that it's “some group” by default
-        -- TODO: check for all 
+        -- TODO: more convoluted change scenarious
+  describe "items with the same name" $ do
+    wd "can be present" $ do
+      createItem "item1"
+      waitUntil wait_delay $
+        expect . (== 2) . length =<< selectAll
+          (".item" :// ".item-name" :& HasText "item1")
+    wd "can be changed separately" $ do
+      item2 <- select $
+        Index 1 (".item" :<// (".item-name" :& HasText "item1"))
+      form <- openItemEditForm item2
+      enterInput "Blah" (form :// "[name='name']")
+      (item1 :// ".item-name") `shouldHaveText` "item1"
+      (item2 :// ".item-name") `shouldHaveText` "Blah"
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -480,6 +495,8 @@ data ComplexSelector where
   ContainsText :: Text -> ComplexSelector
   -- | Only pick the first N selected elements
   Take :: CanSelect a => Int -> a -> ComplexSelector
+  -- | Only pick the Nth (starting from 0) selected element
+  Index :: CanSelect a => Int -> a -> ComplexSelector
   -- | Displayed element
   Displayed :: ComplexSelector
 
@@ -542,7 +559,8 @@ instance CanSelect ComplexSelector where
         as <- Set.fromList <$> selectAll a
         bs <- Set.fromList <$> selectAll b
         return (Set.toList (as `Set.union` bs))
-      Take n a -> take n <$> selectAll a
+      Take  n a -> take n <$> selectAll a
+      Index n a -> toListOf (ix n) <$> selectAll a
       --
       Not a          -> defSelectAll (Not a)
       HasText      t -> defSelectAll (HasText t)

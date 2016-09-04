@@ -176,8 +176,8 @@ HTML: item-info-edit-form
          type="text" autocomplete="off">
   <br>
 
-  <input value="Save" type="submit">
-  <input value="Cancel" type="button" 
+  <input value="Save" class="save" type="submit">
+  <input value="Cancel" class="cancel" type="button"
          onclick="itemInfoCancelEdit('{{item.uid}}');">
 </form>
 
