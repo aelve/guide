@@ -276,7 +276,7 @@ itemTests = session "items" $ using Firefox $ do
         sel <- select (form :// "[name=group]")
         opt <- select (sel :// ContainsText "New group")
         shouldBeHidden (form :// "[name=custom-group]")
-        -- TODO: check that it's “-” by default
+        (sel :// ":checked") `shouldHaveText` "-"
         selectDropdown sel opt
         shouldBeDisplayed (form :// "[name=custom-group]")
         enterInput "some group" (form :// "[name=custom-group]")
@@ -287,9 +287,8 @@ itemTests = session "items" $ using Firefox $ do
         refresh
         form <- openItemEditForm item1
         sel <- select (form :// "[name=group]")
-        checkPresent (sel :// HasText "some group")
+        (sel :// ":checked") `shouldHaveText` "some group"
         click (form :// ".cancel")
-        -- TODO: check that it's “some group” by default
         -- TODO: more convoluted change scenarious
   describe "items with the same name" $ do
     wd "can be present" $ do
