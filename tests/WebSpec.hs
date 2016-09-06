@@ -293,7 +293,7 @@ itemTests = session "items" $ using Firefox $ do
       -- TODO: setting custom group to something that already exists
       -- doesn't result in two equal groups
       wd "changing it changes the color" $ do
-        [itemA, itemB, itemC] <- replicate 3 (createItem "blah")
+        [itemA, itemB, itemC] <- replicateM 3 (createItem "blah")
         setItemCustomGroup "one" itemA
         setItemGroup "one" itemB
         setItemCustomGroup "two" itemC
