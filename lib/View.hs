@@ -624,8 +624,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
              "/"
              mkLink "issue tracker" "https://github.com/aelve/guide/issues"
         , mkLink "rules" "/unwritten-rules"
-        , do div_ (mkLink "donate" "/donate")
-             div_ [class_ "unemployed"] "I don't have a job"
+        , mkLink "donate" "/donate"
         , do "licensed under "
              mkLink "CC+ BY-SA 4.0" "/license"
         ]
