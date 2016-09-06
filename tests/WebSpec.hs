@@ -119,14 +119,14 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize e; fs `shouldBeInRange` (20, 26)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        enterInput "Cat 1" (form :// "input[name=title]")
+        enterInput "Cat 1" (form :// ByName "title")
         categoryTitle `shouldHaveText` "Cat 1"
       wd "changes page slug when changed" $ do
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
            slug `shouldBe` "cat-1"
         form <- openCategoryEditForm
-        enterInput "Cat 2" (form :// "input[name=title]")
+        enterInput "Cat 2" (form :// ByName "title")
         changesURL $ refresh
         do (slug, _) <- parseCategoryURL . uriPath =<< getCurrentRelativeURL
            slug `shouldBe` "cat-2"
@@ -145,7 +145,7 @@ categoryTests = session "categories" $ using Firefox $ do
         fs <- fontSize group_; fs `shouldBeInRange` (12, 15)
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        enterInput "Basics" (form :// "input[name=group]")
+        enterInput "Basics" (form :// ByName "group")
         categoryGroup `shouldHaveText` "Basics"
       wd "is changed on the front page too" $ do
         onAnotherPage "/" $ do
@@ -155,13 +155,13 @@ categoryTests = session "categories" $ using Firefox $ do
     describe "status" $ do
       wd "is “stub” by default" $ do
         form <- openCategoryEditForm
-        chosenOption <- select (form :// "select[name=status] option:checked")
+        chosenOption <- select (form :// ByName "status" :// "option:checked")
         chosenOption `shouldHaveText` "Stub"
         onAnotherPage "/" $ do
           ByLinkText "Cat 2" `shouldHaveAttr` ("class", "status-stub")
       wd "can be changed" $ do
         form <- openCategoryEditForm
-        sel <- select (form :// "select[name=status]")
+        sel <- select (form :// ByName "status")
         opt <- select (sel :// HasText "Complete")
         selectDropdown sel opt
         click (form :// ".save")
@@ -173,40 +173,40 @@ categoryTests = session "categories" $ using Firefox $ do
     describe "pros/cons enabled" $ do
       wd "checkbox enabled by default" $ do
         form <- openCategoryEditForm
-        checkbox <- select (form :// "[name=pros-cons-enabled]")
+        checkbox <- select (form :// ByName "pros-cons-enabled")
         shouldBeSelected checkbox
         click (form :// ".cancel")
       wd "section is shown in an item" $ do
         mapM_ shouldBeDisplayed =<< selectAll ".item-traits"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
-        click (form :// "[name=pros-cons-enabled]")
+        click (form :// ByName "pros-cons-enabled")
         click (form :// ".save")
         waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
-        click (form :// "[name=pros-cons-enabled]")
+        click (form :// ByName "pros-cons-enabled")
         click (form :// ".save")
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-traits"
     describe "ecosystem enabled" $ do
       wd "checkbox enabled by default" $ do
         form <- openCategoryEditForm
-        checkbox <- select (form :// "[name=ecosystem-enabled]")
+        checkbox <- select (form :// ByName "ecosystem-enabled")
         shouldBeSelected checkbox
         click (form :// ".cancel")
       wd "section is shown in an item" $ do
         mapM_ shouldBeDisplayed =<< selectAll ".item-ecosystem"
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
-        click (form :// "[name=ecosystem-enabled]")
+        click (form :// ByName "ecosystem-enabled")
         click (form :// ".save")
         waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-ecosystem"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
-        click (form :// "[name=ecosystem-enabled]")
+        click (form :// ByName "ecosystem-enabled")
         click (form :// ".save")
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
@@ -242,51 +242,47 @@ itemTests = session "items" $ using Firefox $ do
   describe "item properties" $ do
     describe "name" $ do
       wd "is present" $ do
-        name <- select (item1 :// ".item-name")
-        name `shouldHaveText` "An item"
-        fs <- fontSize name; fs `shouldBeInRange` (20,26)
+        itemName item1 `shouldHaveText` "An item"
+        fs <- fontSize (itemName item1); fs `shouldBeInRange` (20,26)
       wd "doesn't link to Hackage" $ do
-        doesNotChangeURL $
-          click (item1 :// ".item-name")
+        doesNotChangeURL $ click (itemName item1)
         -- TODO: find a better test for this (maybe by checking all hrefs)
         checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "can be changed" $ do
         form <- openItemEditForm item1
-        enterInput "New item" (form :// "[name='name']")
-        (item1 :// ".item-name") `shouldHaveText` "New item"
+        enterInput "New item" (form :// ByName "name")
+        itemName item1 `shouldHaveText` "New item"
       wd "doesn't link to Hackage if changed to something without spaces" $ do
         form <- openItemEditForm item1
-        enterInput "item1" (form :// "[name='name']")
-        (item1 :// ".item-name") `shouldHaveText` "item1"
-        doesNotChangeURL $
-          click (item1 :// ".item-name")
+        enterInput "item1" (form :// ByName "name")
+        itemName item1 `shouldHaveText` "item1"
+        doesNotChangeURL $ click (itemName item1)
         checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "links to Hackage if the name is originally a package name" $ do
         item2 <- createItem "foo-bar-2"
-        (item2 :// ".item-name") `shouldHaveText` "foo-bar-2"
+        itemName item2 `shouldHaveText` "foo-bar-2"
         (item2 :// ByLinkText "Hackage")
           `shouldLinkTo` "https://hackage.haskell.org/package/foo-bar-2"
     describe "group" $ do
       wd "is present and “other” by default" $ do
-        group_ <- select (item1 :// ".item-group")
-        group_ `shouldHaveText` "other"
-        fs <- fontSize group_; fs `shouldBeInRange` (15,17)
+        itemGroup item1 `shouldHaveText` "other"
+        fs <- fontSize (itemGroup item1); fs `shouldBeInRange` (15,17)
       wd "can be changed" $ do
         form <- openItemEditForm item1
-        sel <- select (form :// "[name=group]")
+        sel <- select (form :// ByName "group")
         opt <- select (sel :// ContainsText "New group")
-        shouldBeHidden (form :// "[name=custom-group]")
+        shouldBeHidden (form :// ByName "custom-group")
         (sel :// ":checked") `shouldHaveText` "-"
         selectDropdown sel opt
-        shouldBeDisplayed (form :// "[name=custom-group]")
-        enterInput "some group" (form :// "[name=custom-group]")
-        (item1 :// ".item-group") `shouldHaveText` "some group"
+        shouldBeDisplayed (form :// ByName "custom-group")
+        enterInput "some group" (form :// ByName "custom-group")
+        itemGroup item1 `shouldHaveText` "some group"
       -- TODO: check that it works with 2 groups etc
       -- TODO: check that it's present in all items' choosers
       wd "is present in the chooser after a refresh" $ do
         refresh
         form <- openItemEditForm item1
-        sel <- select (form :// "[name=group]")
+        sel <- select (form :// ByName "group")
         (sel :// ":checked") `shouldHaveText` "some group"
         click (form :// ".cancel")
         -- TODO: more convoluted change scenarious
@@ -295,14 +291,14 @@ itemTests = session "items" $ using Firefox $ do
       createItem "item1"
       waitUntil wait_delay $
         expect . (== 2) . length =<< selectAll
-          (".item" :// ".item-name" :& HasText "item1")
+          (itemName ".item" :& HasText "item1")
     wd "can be changed separately" $ do
       item2 <- select $
         Index 1 (".item" :<// (".item-name" :& HasText "item1"))
       form <- openItemEditForm item2
-      enterInput "Blah" (form :// "[name='name']")
-      (item1 :// ".item-name") `shouldHaveText` "item1"
-      (item2 :// ".item-name") `shouldHaveText` "Blah"
+      enterInput "Blah" (form :// ByName "name")
+      itemName item1 `shouldHaveText` "item1"
+      itemName item2 `shouldHaveText` "Blah"
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -313,7 +309,7 @@ markdownTests = session "markdown" $ using Firefox $ do
       categoryTitle `shouldHaveText` "*foo*"
     wd "when changing existing category's name" $ do
       form <- openCategoryEditForm
-      enterInput "foo `bar`" (form :// "input[name=title]")
+      enterInput "foo `bar`" (form :// ByName "title")
       categoryTitle `shouldHaveText` "foo `bar`"
 
 -----------------------------------------------------------------------------
@@ -359,6 +355,12 @@ createItem t = do
     [] -> expectationFailure "an item wasn't created"
     [x] -> return x
     _ -> expectationFailure "more than one item was created"
+
+itemName :: CanSelect s => s -> ComplexSelector
+itemName item = item :// ".item-name"
+
+itemGroup :: CanSelect s => s -> ComplexSelector
+itemGroup item = item :// ".item-group"
 
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"
