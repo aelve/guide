@@ -26,7 +26,8 @@ import qualified Data.Text.All as T
 -- Files
 import System.Directory
 -- Testing
-import Test.Hspec.WebDriver hiding (shouldHaveAttr, shouldHaveText, click)
+import Test.Hspec.WebDriver hiding
+  (shouldHaveAttr, shouldHaveText, click, cssProp)
 import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
@@ -267,16 +268,19 @@ itemTests = session "items" $ using Firefox $ do
       wd "is present and “other” by default" $ do
         itemGroup item1 `shouldHaveText` "other"
         fs <- fontSize (itemGroup item1); fs `shouldBeInRange` (15,17)
-      wd "can be changed" $ do
+        form <- openItemEditForm item1
+        (form :// ByName "group" :// ":checked") `shouldHaveText` "-"
+        click (form :// ".cancel")
+      wd "custom group input is hidden but then shows" $ do
         form <- openItemEditForm item1
         sel <- select (form :// ByName "group")
-        opt <- select (sel :// ContainsText "New group")
+        opt <- select (sel :// HasText "New group...")
         shouldBeHidden (form :// ByName "custom-group")
-        (sel :// ":checked") `shouldHaveText` "-"
         selectDropdown sel opt
         shouldBeDisplayed (form :// ByName "custom-group")
-        enterInput "some group" (form :// ByName "custom-group")
-        itemGroup item1 `shouldHaveText` "some group"
+        click (form :// ".cancel")
+      wd "can be changed to a custom group" $ do
+        setItemCustomGroup "some group" item1
       -- TODO: check that it works with 2 groups etc
       -- TODO: check that it's present in all items' choosers
       wd "is present in the chooser after a refresh" $ do
@@ -286,6 +290,30 @@ itemTests = session "items" $ using Firefox $ do
         (sel :// ":checked") `shouldHaveText` "some group"
         click (form :// ".cancel")
         -- TODO: more convoluted change scenarious
+      -- TODO: setting custom group to something that already exists
+      -- doesn't result in two equal groups
+      wd "changing it changes the color" $ do
+        [itemA, itemB, itemC] <- replicate 3 (createItem "blah")
+        setItemCustomGroup "one" itemA
+        setItemGroup "one" itemB
+        setItemCustomGroup "two" itemC
+        let getColors = for [itemA, itemB, itemC] $ \item ->
+              (,) <$> cssProp (item :// ".item-info") "background-color"
+                  <*> cssProp (item :// ".item-body") "background-color"
+        -- A=1,B=1,C=2; check that A=B, A≠C
+        do [aCol, bCol, cCol] <- getColors
+           aCol `shouldBe` bCol; aCol `shouldNotBe` cCol
+        -- A:=2; now A=2,B=1,C=2; check that A≠B, A=C
+        setItemCustomGroup "two" itemA
+        do [aCol, bCol, cCol] <- getColors
+           aCol `shouldNotBe` bCol; aCol `shouldBe` cCol
+        -- C:=1; now A=2,B=1,C=1; check that A≠C, B=C
+        setItemGroup "one" itemC
+        do [aCol, bCol, cCol] <- getColors
+           aCol `shouldNotBe` cCol; bCol `shouldBe` cCol
+        
+    -- TODO: kind
+    -- TODO: site
   describe "items with the same name" $ do
     wd "can be present" $ do
       createItem "item1"
@@ -299,6 +327,13 @@ itemTests = session "items" $ using Firefox $ do
       enterInput "Blah" (form :// ByName "name")
       itemName item1 `shouldHaveText` "item1"
       itemName item2 `shouldHaveText` "Blah"
+  -- TODO: moving item up/down
+  -- TODO: deleting an item
+  -- TODO: pros/cons
+  -- TODO: summary
+  -- TODO: ecosystem
+  -- TODO: notes
+  -- TODO: item's self-link in the header
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
@@ -361,6 +396,24 @@ itemName item = item :// ".item-name"
 
 itemGroup :: CanSelect s => s -> ComplexSelector
 itemGroup item = item :// ".item-group"
+
+setItemGroup :: CanSelect s => Text -> s -> WD ()
+setItemGroup g item = do
+  form <- openItemEditForm item
+  sel <- select (form :// ByName "group")
+  opt <- select (sel :// HasText g)
+  selectDropdown sel opt
+  click (form :// ".save")
+  itemGroup item `shouldHaveText` g
+
+setItemCustomGroup :: CanSelect s => Text -> s -> WD ()
+setItemCustomGroup g item = do
+  form <- openItemEditForm item
+  sel <- select (form :// ByName "group")
+  opt <- select (sel :// HasText "New group...")
+  selectDropdown sel opt
+  enterInput g (form :// ByName "custom-group")
+  itemGroup item `shouldHaveText` g
 
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"
@@ -626,17 +679,21 @@ selectSome x = do
 
 -- | @font-size@ of an element, in pixels
 fontSize :: CanSelect a => a -> WD Double
--- TODO: can fail (NOTE [staleness])
 fontSize s = do
-  e <- select s
-  mbProp <- cssProp e "font-size"
+  mbProp <- cssProp s "font-size"
   case mbProp of
     Nothing -> expectationFailure $
-                 printf "expected %s to have font-size" (show e)
+                 printf "expected %s to have font-size" (show s)
     Just fs -> case reads (T.toString fs) of
       [(d, "px")] -> return d
       _ -> expectationFailure $
-             printf "couldn't parse font-size of %s: %s" (show e) (show fs)
+             printf "couldn't parse font-size of %s: %s" (show s) (show fs)
+
+cssProp :: CanSelect a => a -> Text -> WD (Maybe Text)
+-- TODO: can fail (NOTE [staleness])
+cssProp s p = do
+  e <- select s
+  WD.cssProp e p
 
 changesURL :: WD a -> WD a
 changesURL x = do
@@ -745,14 +802,16 @@ shouldBeInRange :: (Show a, Ord a, MonadIO m) => a -> (a, a) -> m ()
 shouldBeInRange a (x, y) =
   shouldSatisfy a ("be in range " ++ show (x,y), \n -> n >= x && n <= y)
 
+shouldNotBe :: (Show a, Eq a, MonadIO m) => a -> a -> m ()
+shouldNotBe a x =
+  shouldSatisfy a ("not be " ++ show x, const (a /= x))
+
 shouldHaveProp :: CanSelect a => a -> (Text, Text) -> WD ()
--- TODO: can fail (NOTE [staleness])
 s `shouldHaveProp` (a, txt) = do
-  e <- select s
-  t <- cssProp e a
+  t <- cssProp s a
   unless (Just txt == t) $ expectationFailure $
     printf "expected property %s of %s to be %s, got %s"
-           a (show e) (show txt) (show t)
+           a (show s) (show txt) (show t)
 
 shouldBeSelected :: CanSelect a => a -> WD ()
 -- TODO: can fail (NOTE [staleness])
