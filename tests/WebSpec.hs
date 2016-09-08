@@ -270,7 +270,15 @@ itemTests = session "items" $ using Firefox $ do
       wd "can be changed to a custom group" $ do
         setItemCustomGroup "some group" item1
       -- TODO: check that it works with 2 groups etc
-      -- TODO: check that it's present in all items' choosers
+      wd "is automatically put into all items' choosers" $ do
+        -- TODO: make a combinator for this
+        items <- selectAll ".item"
+        waitUntil wait_delay $ expect (length items >= 2)
+        for_ items $ \item -> do
+          form <- openItemEditForm item
+          checkPresent $
+            form :// ByName "group" :// "option" :& HasText "some group"
+          click (form :// ".cancel")
       wd "is present in the chooser after a refresh" $ do
         refresh
         form <- openItemEditForm item1
