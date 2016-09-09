@@ -677,7 +677,8 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
     section "normal" [shown, noScriptShown] $ h2_ $ do
       -- TODO: this link shouldn't be absolute [absolute-links]
       span_ [class_ "controls"] $
-        a_ [href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
+        a_ [class_ "category-feed",
+            href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
           img_ [src_ "/rss-alt.svg",
                 alt_ "category feed", title_ "category feed"]
       a_ [href_ (categoryLink category), class_ "category-title"] $

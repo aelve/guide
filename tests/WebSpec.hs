@@ -199,26 +199,36 @@ categoryTests = session "categories" $ using Firefox $ do
         click (form :// ".save")
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
-    describe "deleting a category" $ do
-      wd "dismissing the alert doesn't do anything" $ do
-        click (".category h2" :// ByLinkText "delete")
-        dismissAlert
-        getBackAfterwards $ do
-          catURL <- getCurrentURL
-          openGuidePage "/"
-          ByLinkText "Cat 2" `shouldLinkTo` catURL
-      wd "accepting the alert deletes the category" $ do
-        catURL <- getCurrentURL
-        changesURL $ do
-          click (".category h2" :// ByLinkText "delete")
-          acceptAlert
+    -- TODO: Description editing works
+  describe "feed" $ do
+    -- TODO: actually test the generated feed
+    wd "exists" $ do
+      getBackAfterwards $ do
         url <- getCurrentRelativeURL
-        uriPath url `shouldBe` "/haskell"
-        checkNotPresent (ByLinkText "Cat 2")
-        openPage catURL
-        "body" `shouldHaveText` "Something went wrong"
-  -- TODO: Feed button works
-  -- TODO: Description editing works
+        (_, catId) <- parseCategoryURL (uriPath url)
+        ".category-feed" `shouldLinkToRelative`
+          ("/haskell/feed/category/" <> catId)
+        click ".category-feed"
+        checkPresent (".item-name" :& HasText "some item")
+        checkPresent (".item-name" :& HasText "another item")
+  describe "deleting a category" $ do
+    wd "dismissing the alert doesn't do anything" $ do
+      click (".category h2" :// ByLinkText "delete")
+      dismissAlert
+      getBackAfterwards $ do
+        catURL <- getCurrentURL
+        openGuidePage "/"
+        ByLinkText "Cat 2" `shouldLinkTo` catURL
+    wd "accepting the alert deletes the category" $ do
+      catURL <- getCurrentURL
+      changesURL $ do
+        click (".category h2" :// ByLinkText "delete")
+        acceptAlert
+      url <- getCurrentRelativeURL
+      uriPath url `shouldBe` "/haskell"
+      checkNotPresent (ByLinkText "Cat 2")
+      openPage catURL
+      "body" `shouldHaveText` "Something went wrong"
 
 itemTests :: Spec
 itemTests = session "items" $ using Firefox $ do
