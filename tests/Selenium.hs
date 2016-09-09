@@ -22,6 +22,7 @@ module Selenium
   -- * Webdriver
   click,
   cssProp,
+  attr,
   enterInput,
   fontSize,
   highlight,
@@ -29,6 +30,7 @@ module Selenium
   getBackAfterwards,
   getLink,
   getText,
+  getValue,
 
   -- * Expectations
   changesURL,
@@ -68,7 +70,7 @@ import Data.Text.All (Text)
 import qualified Data.Text.All as T
 -- Testing
 import Test.Hspec.WebDriver hiding
-  (getText, shouldHaveAttr, shouldHaveText, click, cssProp)
+  (getText, shouldHaveAttr, shouldHaveText, click, cssProp, attr)
 import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
@@ -98,6 +100,9 @@ getText s = do
   -- TODO: Note [staleness]
   e <- select s
   WD.getText e
+
+getValue :: CanSelect s => s -> WD Text
+getValue x = fromMaybe "" <$> attr x "value"
 
 enterInput :: CanSelect s => Text -> s -> WD ()
 enterInput x s = do
@@ -335,6 +340,12 @@ cssProp :: CanSelect a => a -> Text -> WD (Maybe Text)
 cssProp s p = do
   e <- select s
   WD.cssProp e p
+
+attr :: CanSelect a => a -> Text -> WD (Maybe Text)
+-- TODO: can fail (NOTE [staleness])
+attr s p = do
+  e <- select s
+  WD.attr e p
 
 changesURL :: WD a -> WD a
 changesURL x = do

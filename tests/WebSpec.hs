@@ -213,9 +213,9 @@ categoryTests = session "categories" $ using Firefox $ do
   describe "description" $ do
     wd "has a default template" $ do
       click (ByLinkText "edit description")
-      contents <- T.lines <$> getText ".category-notes textarea"
+      contents <- T.lines <$> getValue ".category-notes textarea"
       contents `shouldSatisfy`
-        ("has “# Recommendations”", ("# Recommendations" `elem`))
+        ("have “# Recommendations”", ("# Recommendations" `elem`))
     -- TODO: editing works
   describe "deleting a category" $ do
     wd "dismissing the alert doesn't do anything" $ do
