@@ -28,6 +28,7 @@ module Selenium
   selectDropdown,
   getBackAfterwards,
   getLink,
+  getText,
 
   -- * Expectations
   changesURL,
@@ -67,7 +68,7 @@ import Data.Text.All (Text)
 import qualified Data.Text.All as T
 -- Testing
 import Test.Hspec.WebDriver hiding
-  (shouldHaveAttr, shouldHaveText, click, cssProp)
+  (getText, shouldHaveAttr, shouldHaveText, click, cssProp)
 import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
@@ -91,6 +92,12 @@ getLink s = do
              printf "expected %s to contain a link" (show s)
     _   -> expectationFailure $
              printf "expected %s to contain only one link" (show s)
+
+getText :: CanSelect s => s -> WD Text
+getText s = do
+  -- TODO: Note [staleness]
+  e <- select s
+  WD.getText e
 
 enterInput :: CanSelect s => Text -> s -> WD ()
 enterInput x s = do

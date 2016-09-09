@@ -199,7 +199,6 @@ categoryTests = session "categories" $ using Firefox $ do
         click (form :// ".save")
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
-    -- TODO: Description editing works
   describe "feed" $ do
     -- TODO: actually test the generated feed
     wd "exists" $ do
@@ -211,6 +210,13 @@ categoryTests = session "categories" $ using Firefox $ do
         click ".category-feed"
         checkPresent (".item-name" :& HasText "some item")
         checkPresent (".item-name" :& HasText "another item")
+  describe "description" $ do
+    wd "has a default template" $ do
+      click (ByLinkText "edit description")
+      contents <- T.lines <$> getText ".category-notes textarea"
+      contents `shouldSatisfy`
+        ("has “# Recommendations”", ("# Recommendations" `elem`))
+    -- TODO: editing works
   describe "deleting a category" $ do
     wd "dismissing the alert doesn't do anything" $ do
       click (".category h2" :// ByLinkText "delete")
@@ -352,6 +358,8 @@ markdownTests = session "markdown" $ using Firefox $ do
       form <- openCategoryEditForm
       enterInput "foo `bar`" (form :// ByName "title")
       categoryTitle `shouldHaveText` "foo `bar`"
+  -- TODO: check that headers in notes Markdown are rendered as headers but
+  -- still have smaller font size
 
 -----------------------------------------------------------------------------
 -- Helpers dealing with guide specifically
