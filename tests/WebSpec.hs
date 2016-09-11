@@ -210,13 +210,19 @@ categoryTests = session "categories" $ using Firefox $ do
         click ".category-feed"
         checkPresent (".item-name" :& HasText "some item")
         checkPresent (".item-name" :& HasText "another item")
-  describe "description" $ do
+  describe "notes" $ do
     wd "has a default template" $ do
-      click (ByLinkText "edit description")
-      contents <- T.lines <$> getValue ".category-notes textarea"
+      form <- openCategoryNotesEditForm
+      contents <- T.lines <$> getValue (form :// "textarea")
       contents `shouldSatisfy`
         ("have “# Recommendations”", ("# Recommendations" `elem`))
-    -- TODO: editing works
+      click (form :// ".cancel")
+    wd "can be edited" $ do
+      form <- openCategoryNotesEditForm
+      clearInput (form :// "textarea")
+      sendKeys "Blah blah" (form :// "textarea")
+      click (form :// ".save")
+      ".category-notes .notes-like" `shouldHaveText` "Blah blah"
   describe "deleting a category" $ do
     wd "dismissing the alert doesn't do anything" $ do
       click (".category h2" :// ByLinkText "delete")
@@ -439,6 +445,11 @@ openCategoryEditForm :: WD Element
 openCategoryEditForm = do
   click (".category h2" :// ByLinkText "edit")
   select ".category-info form"
+
+openCategoryNotesEditForm :: WD Element
+openCategoryNotesEditForm = do
+  click (".category-notes" :// ByLinkText "edit description")
+  select ".category-notes .editing"
 
 openItemEditForm :: CanSelect s => s -> WD Element
 openItemEditForm item = do

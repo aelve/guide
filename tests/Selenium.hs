@@ -31,6 +31,8 @@ module Selenium
   getLink,
   getText,
   getValue,
+  sendKeys,
+  clearInput,
 
   -- * Expectations
   changesURL,
@@ -70,7 +72,8 @@ import Data.Text.All (Text)
 import qualified Data.Text.All as T
 -- Testing
 import Test.Hspec.WebDriver hiding
-  (getText, shouldHaveAttr, shouldHaveText, click, cssProp, attr)
+  (getText, shouldHaveAttr, shouldHaveText, click, cssProp, attr,
+   sendKeys, clearInput)
 import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
@@ -103,6 +106,18 @@ getText s = do
 
 getValue :: CanSelect s => s -> WD Text
 getValue x = fromMaybe "" <$> attr x "value"
+
+clearInput :: CanSelect s => s -> WD ()
+clearInput s = do
+  -- TODO: Note [staleness]
+  input <- select s
+  WD.clearInput input
+
+sendKeys :: CanSelect s => Text -> s -> WD ()
+sendKeys t s = do
+  -- TODO: Note [staleness]
+  input <- select s
+  WD.sendKeys t input
 
 enterInput :: CanSelect s => Text -> s -> WD ()
 enterInput x s = do

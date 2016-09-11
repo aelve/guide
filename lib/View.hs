@@ -1164,10 +1164,10 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
               onEscape (JS.assign val s <> cancel) ]
              ++ attr) $
     toHtml s
-  button "Save" [] $
+  button "Save" [class_ " save "] $
     submit val
   emptySpan "6px"
-  button "Cancel" [] $
+  button "Cancel" [class_ " cancel "] $
     JS.assign val s <>
     cancel
   emptySpan "6px"
