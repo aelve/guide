@@ -458,7 +458,7 @@ _shift, _ctrl, _alt, _command :: Text
 (_shift, _ctrl, _alt, _command) = ("\xE008", "\xE009", "\xE00A", "\xE03D")
 
 wait_delay :: Double
-wait_delay = 5
+wait_delay = 10
 
 {-
 NULL            \uE000
