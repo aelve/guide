@@ -24,6 +24,7 @@ module Selenium
   cssProp,
   attr,
   enterInput,
+  setInput,
   fontSize,
   highlight,
   selectDropdown,
@@ -125,6 +126,12 @@ enterInput x s = do
   clearInput input
   sendKeys (x <> _enter) input
   checkNotPresent input
+
+setInput :: CanSelect s => Text -> s -> WD ()
+setInput x s = do
+  input <- select s
+  clearInput input
+  sendKeys x input
 
 isAlive :: Element -> WD Bool
 isAlive e = (isEnabled e >> return True) `onDead` return False

@@ -219,8 +219,7 @@ categoryTests = session "categories" $ using Firefox $ do
       click (form :// ".cancel")
     wd "can be edited" $ do
       form <- openCategoryNotesEditForm
-      clearInput (form :// "textarea")
-      sendKeys "Blah blah" (form :// "textarea")
+      setInput "Blah blah" (form :// "textarea")
       click (form :// ".save")
       ".category-notes .notes-like" `shouldHaveText` "Blah blah"
   describe "deleting a category" $ do
@@ -364,6 +363,12 @@ markdownTests = session "markdown" $ using Firefox $ do
       form <- openCategoryEditForm
       enterInput "foo `bar`" (form :// ByName "title")
       categoryTitle `shouldHaveText` "foo `bar`"
+  wd "Markdown in category notes" $ do
+    form <- openCategoryNotesEditForm
+    setInput "# Test\n*foo*" (form :// "textarea")
+    click (form :// ".save")
+    ".category-notes .notes-like h1" `shouldHaveText` "Test"
+    ".category-notes .notes-like p em" `shouldHaveText` "foo"
   -- TODO: check that headers in notes Markdown are rendered as headers but
   -- still have smaller font size
 
@@ -396,14 +401,14 @@ onAnotherPage s x = getBackAfterwards $ do
 -- Assumes that the main page is open
 createCategory :: Text -> WD ()
 createCategory t =
-  changesURL $ sendKeys (t <> _enter) =<< select ".add-category"
+  changesURL $ enterInput t ".add-category"
 
 -- Assumes that the category page is open
 createItem :: Text -> WD Element
 createItem t = do
   let selectItems = selectAll ".item"
   items <- selectItems
-  sendKeys (t <> _enter) =<< select ".add-item"
+  sendKeys (t <> _enter) ".add-item"
   waitUntil wait_delay (expect . (\xs -> length xs > length items) =<< selectItems)
   items2 <- selectItems
   case items2 \\ items of
