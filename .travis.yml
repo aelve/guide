@@ -34,24 +34,6 @@ before_script:
 - travis_retry wget http://selenium-release.storage.googleapis.com/2.53/selenium-server-standalone-2.53.1.jar
 - java -jar selenium-server-standalone-2.53.1.jar 2> /dev/null &
 - sleep 5
-# After each build Git index files change their timestamps and so it looks
-# to Travis as if the directory was modified and it creates a new cache.
-# To avoid this, we check whether the directories are bitwise identical –
-# if they are, we overwrite the old directory with the new directory.
-# “-p” preserves timestamps.
-- if [ -d ".stack-work/downloaded" ]; then
-    cp -r -p .stack-work/downloaded dl;
-  fi
 
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
-
-before_cache:
-# If the directory exists and there are no differences, replace the directory
-- if [ -d "dl" ]; then
-    if diff -rq .stack-work/downloaded dl/; then
-      rm -rf .stack-work/downloaded;
-      cp -r -p dl .stack-work/downloaded;
-    fi;
-    rm -rf dl;
-  fi
