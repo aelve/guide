@@ -38,7 +38,7 @@ before_script:
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
 
-after_script:
+before_cache:
 # This directory changes after every build. If we cache it, the cache
 # would have to be reuploaded after every build.
 - rm -rf .stack-work/downloaded
