@@ -17,6 +17,7 @@ HTML
     {{> small-control
           src    = "/pencil.svg"
           title  = "edit summary"
+          class  = "edit-item-description"
           action = [| editItemDescription(
                         {{{%js item.uid}}},
                         {{{%js item.description.text}}}); |] }}
@@ -36,6 +37,7 @@ HTML
     {{> small-control
           src    = "/pencil.svg"
           title  = "quit editing summary"
+          class  = "edit-item-description"
           action = [| stopEditingItemDescription({{{%js item.uid}}}); |] }}
     <div class="editor"></div>
   </div>

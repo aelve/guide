@@ -11,8 +11,7 @@ Both take the following arguments:
   * src    – link to the image
   * title  – title text
   * action – the JS action to execute on click, must end with a ';'
-
-img-button also takes an optional "class" argument.
+  * class  – optional "class" argument
 
 
 HTML: img-button
@@ -21,7 +20,7 @@ HTML: img-button
 
 HTML: small-control
 ============================================================
-{{> img-button class="small-control" }}
+{{> img-button class=[|small-control{{# class}} {{.}}{{/ class}}|] }}
 
 CSS
 ============================================================

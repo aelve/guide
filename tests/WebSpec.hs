@@ -369,6 +369,13 @@ markdownTests = session "markdown" $ using Firefox $ do
     click (form :// ".save")
     ".category-notes .notes-like h1" `shouldHaveText` "Test"
     ".category-notes .notes-like p em" `shouldHaveText` "foo"
+  wd "Markdown in item descriptions" $ do
+    item <- createItem "test"
+    form <- openItemDescriptionEditForm item
+    setInput "# Blah\n*bar*" (form :// "textarea")
+    click (form :// ".save")
+    (item :// ".item-description .notes-like h1") `shouldHaveText` "Blah"
+    (item :// ".item-description .notes-like p em") `shouldHaveText` "bar"
   -- TODO: check that headers in notes Markdown are rendered as headers but
   -- still have smaller font size
 
@@ -460,6 +467,11 @@ openItemEditForm :: CanSelect s => s -> WD Element
 openItemEditForm item = do
   click (item :// ".edit-item-info")
   select (item :// ".item-info form")
+
+openItemDescriptionEditForm :: CanSelect s => s -> WD Element
+openItemDescriptionEditForm item = do
+  click (item :// ".item-description .normal .edit-item-description")
+  select (item :// ".item-description .editing")
 
 -----------------------------------------------------------------------------
 -- Utilities for webdriver

@@ -21,8 +21,10 @@ function bigEditor(settings) {
         '<textarea class="big fullwidth editor-area"\
                    autocomplete="off">\
          </textarea>\
-         <input type="button" value="Save" style="right-margin:6px">\
-         <input type="button" value="Cancel" style="right-margin:6px">\
+         <input type="button" value="Save"\
+                class="save" style="right-margin:6px">\
+         <input type="button" value="Cancel"\
+                class="cancel" style="right-margin:6px">\
          <span class="edit-field-instruction"></span>\
          <a href="/markdown" target="_blank">Markdown</a>';
 
