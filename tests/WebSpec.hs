@@ -369,13 +369,22 @@ markdownTests = session "markdown" $ using Firefox $ do
     click (form :// ".save")
     ".category-notes .notes-like h1" `shouldHaveText` "Test"
     ".category-notes .notes-like p em" `shouldHaveText` "foo"
-  wd "Markdown in item descriptions" $ do
-    item <- createItem "test"
-    form <- openItemDescriptionEditForm item
-    setInput "# Blah\n*bar*" (form :// "textarea")
-    click (form :// ".save")
-    (item :// ".item-description .notes-like h1") `shouldHaveText` "Blah"
-    (item :// ".item-description .notes-like p em") `shouldHaveText` "bar"
+  describe "Markdown in item descriptions" $ do
+    let item = Index 0 ".item"
+    wd "works" $ do
+      createItem "test"
+      form <- openItemDescriptionEditForm item
+      setInput "# Blah\n*bar*" (form :// "textarea")
+      click (form :// ".save")
+      (item :// ".item-description .notes-like h1") `shouldHaveText` "Blah"
+      (item :// ".item-description .notes-like p em") `shouldHaveText` "bar"
+    wd "@hk links are parsed as Hackage links" $ do
+      form <- openItemDescriptionEditForm item
+      setInput "[foo-bar](@hk)" (form :// "textarea")
+      click (form :// ".save")
+      (item :// ".item-description .notes-like a") `shouldHaveText` "foo-bar"
+      (item :// ".item-description .notes-like a") `shouldLinkTo`
+        "https://hackage.haskell.org/package/foo-bar"
   -- TODO: check that headers in notes Markdown are rendered as headers but
   -- still have smaller font size
 
