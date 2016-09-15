@@ -249,6 +249,7 @@ itemTests = session "items" $ using Firefox $ do
   wd "add a new item" $ do
     createItem "An item"
   let item1 = Index 0 ".item"
+
   describe "item properties" $ do
     describe "name" $ do
       wd "is present" $ do
@@ -331,6 +332,31 @@ itemTests = session "items" $ using Firefox $ do
         
     -- TODO: kind
     -- TODO: site
+
+  describe "item sections" $ do
+    describe "description/summary" $ do
+      wd "default state" $ do
+        (item1 :// ".item-description .notes-like p") `shouldHaveText`
+          "write something here!"
+        form <- openItemDescriptionEditForm item1
+        val <- getValue (form :// "textarea")
+        val `shouldBe` ""
+        click (form :// ".cancel")
+      wd "can be changed" $ do
+        do form <- openItemDescriptionEditForm item1
+           setInput "foo *bar*" (form :// "textarea")
+           click (form :// ".save")
+        (item1 :// ".item-description .notes-like p") `shouldHaveText`
+          "foo bar"
+        do form <- openItemDescriptionEditForm item1
+           val <- getValue (form :// "textarea")
+           val `shouldBe` "foo *bar*"
+           click (form :// ".cancel")
+      -- TODO: check that edit and then cancel discards the edit
+    -- TODO: pros/cons
+    -- TODO: ecosystem
+    -- TODO: notes
+
   describe "items with the same name" $ do
     wd "can be present" $ do
       createItem "item1"
@@ -345,12 +371,10 @@ itemTests = session "items" $ using Firefox $ do
       itemName item1 `shouldHaveText` "item1"
       itemName item2 `shouldHaveText` "Blah"
   -- TODO: moving item up/down
-  -- TODO: deleting an item
-  -- TODO: pros/cons
-  -- TODO: summary
-  -- TODO: ecosystem
-  -- TODO: notes
   -- TODO: item's self-link in the header
+  -- TODO: deleting an item
+
+-- TODO: merge tests
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using Firefox $ do
