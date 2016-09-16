@@ -868,19 +868,20 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
       strong_ "Ecosystem"
       emptySpan "0.5em"
       imgButton "edit ecosystem" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5"] $
+        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
         JS.switchSection (this, "editing" :: Text) <>
         JS.focusOn [(this `JS.selectSection` "editing")
                     `JS.selectChildren`
                     JS.selectClass "editor"]
-      unless (markdownNull (item^.ecosystem)) $
-        toHtml (item^.ecosystem)
+      div_ [class_ "notes-like"] $ do
+        unless (markdownNull (item^.ecosystem)) $
+          toHtml (item^.ecosystem)
 
     section "editing" [] $ do
       strong_ "Ecosystem"
       emptySpan "0.5em"
       imgButton "quit editing ecosystem" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5"] $
+        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
         [rows_ "3", class_ " editor "]

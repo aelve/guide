@@ -344,17 +344,35 @@ itemTests = session "items" $ using Firefox $ do
         click (form :// ".cancel")
       wd "can be changed" $ do
         do form <- openItemDescriptionEditForm item1
-           setInput "foo *bar*" (form :// "textarea")
+           setInput "foo *bar*\n\n# Blah" (form :// "textarea")
            click (form :// ".save")
-        (item1 :// ".item-description .notes-like p") `shouldHaveText`
-          "foo bar"
+        section <- select (item1 :// ".item-description .notes-like")
+        (section :// "p")  `shouldHaveText` "foo bar"
+        (section :// "h1") `shouldHaveText` "Blah"
         do form <- openItemDescriptionEditForm item1
            val <- getValue (form :// "textarea")
-           val `shouldBe` "foo *bar*"
+           val `shouldBe` "foo *bar*\n\n# Blah"
            click (form :// ".cancel")
       -- TODO: check that edit and then cancel discards the edit
     -- TODO: pros/cons
-    -- TODO: ecosystem
+    describe "ecosystem" $ do
+      wd "default state" $ do
+        (item1 :// ".item-ecosystem .notes-like") `shouldHaveText` ""
+        form <- openItemEcosystemEditForm item1
+        val <- getValue (form :// "textarea")
+        val `shouldBe` ""
+        click (form :// ".cancel")
+      wd "can be changed" $ do
+        do form <- openItemEcosystemEditForm item1
+           setInput "foo *bar*\n\n# Blah" (form :// "textarea")
+           click (form :// ".save")
+        section <- select (item1 :// ".item-ecosystem .notes-like")
+        (section :// "p")  `shouldHaveText` "foo bar"
+        (section :// "h1") `shouldHaveText` "Blah"
+        do form <- openItemEcosystemEditForm item1
+           val <- getValue (form :// "textarea")
+           val `shouldBe` "foo *bar*\n\n# Blah"
+           click (form :// ".cancel")
     -- TODO: notes
 
   describe "items with the same name" $ do
@@ -505,6 +523,11 @@ openItemDescriptionEditForm :: CanSelect s => s -> WD Element
 openItemDescriptionEditForm item = do
   click (item :// ".item-description .normal .edit-item-description")
   select (item :// ".item-description .editing")
+
+openItemEcosystemEditForm :: CanSelect s => s -> WD Element
+openItemEcosystemEditForm item = do
+  click (item :// ".item-ecosystem .normal .edit-item-ecosystem")
+  select (item :// ".item-ecosystem .editing")
 
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
