@@ -353,7 +353,15 @@ itemTests = session "items" $ using Firefox $ do
            val <- getValue (form :// "textarea")
            val `shouldBe` "foo *bar*\n\n# Blah"
            click (form :// ".cancel")
-      -- TODO: check that edit and then cancel discards the edit
+      wd "edit-cancel-edit works" $ do
+        -- It should not store the edited text if it wasn't saved
+        do form <- openItemDescriptionEditForm item1
+           setInput "ehhhh" (form :// "textarea")
+           click (form :// ".cancel")
+        do form <- openItemDescriptionEditForm item1
+           val <- getValue (form :// "textarea")
+           val `shouldBe` "foo *bar*\n\n# Blah"
+           click (form :// ".cancel")
     -- TODO: pros/cons
     describe "ecosystem" $ do
       wd "default state" $ do
