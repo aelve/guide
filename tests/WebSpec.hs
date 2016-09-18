@@ -381,6 +381,15 @@ itemTests = session "items" $ using Firefox $ do
            val <- getValue (form :// "textarea")
            val `shouldBe` "foo *bar*\n\n# Blah"
            click (form :// ".cancel")
+      wd "edit-cancel-edit works" $ do
+        -- It should not store the edited text if it wasn't saved
+        do form <- openItemEcosystemEditForm item1
+           setInput "ehhhh" (form :// "textarea")
+           click (form :// ".cancel")
+        do form <- openItemEcosystemEditForm item1
+           val <- getValue (form :// "textarea")
+           val `shouldBe` "foo *bar*\n\n# Blah"
+           click (form :// ".cancel")
     -- TODO: notes
 
   describe "items with the same name" $ do
