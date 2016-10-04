@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 
@@ -405,7 +406,20 @@ itemTests = session "items" $ using Firefox $ do
       enterInput "Blah" (form :// ByName "name")
       itemName item1 `shouldHaveText` "item1"
       itemName item2 `shouldHaveText` "Blah"
-  -- TODO: moving item up/down
+  describe "moving items" $ do
+    let getId :: CanSelect a => a -> WD Text
+        getId x = attr x "id" >>= \case
+          Nothing -> expectationFailure $
+                       printf "expected %s to have an id" (show x)
+          Just i  -> return i
+    wd "up" $ do
+      ids <- mapM getId =<< selectAll ".item"
+      click (ById (ids !! 1) :// ".move-item-up")
+      ids2 <- mapM getId =<< selectAll ".item"
+      ids2 `shouldBe` (ids !! 1 : ids !! 0 : drop 2 ids)
+    -- TODO: select should only select visible elements
+    -- TODO: up the first item
+    -- TODO: down
   -- TODO: item's self-link in the header
   -- TODO: deleting an item
 
