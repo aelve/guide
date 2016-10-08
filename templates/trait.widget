@@ -150,7 +150,7 @@ function makeTraitEditor(itemUid, traitUid, content) {
            <span class="edit-field-instruction"> \
              press Ctrl+Enter or Enter to save \
            </span> \
-           <a href="/markdown" target="_blank"><img src="/markdown.svg" /></a> \
+           <a href="/markdown" target="_blank"><img class="markdown-supported" src="/markdown.svg" /></a> \
          </span>';
 
   $(sectionNode).html(template);
