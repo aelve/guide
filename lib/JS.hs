@@ -422,12 +422,15 @@ makeItemNotesEditor =
     enter = $("<span>", {
       "class": "edit-field-instruction",
       "text" : "or press Ctrl+Enter to save" })[0];
+    markdownSupported = $("<img>", {
+      "src": "/markdown.svg",
+      "class": "  markdown-supported "
+      })[0];
     markdown = $("<a>", {
       "href"   : "/markdown",
-      "target" : "_blank",
-      "text"   : "Markdown" })[0];
+      "target" : "_blank"})[0];
     $(sectionNode).append(
-      area, saveBtn, $(space), cancelBtn, $(space), enter, markdown);
+      area, saveBtn, $(space), cancelBtn, $(space), enter, $(markdown).append(markdownSupported));
   |]
 
 -- | Create a new category and redirect to it (or redirect to an old category
