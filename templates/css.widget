@@ -269,5 +269,5 @@ textarea.fullwidth {
 }
 
 .markdown-supported {
-  height: 1.5em;
+  height: 1em;
 }
