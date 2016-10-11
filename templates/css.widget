@@ -267,3 +267,7 @@ textarea.fullwidth {
   margin: 5px 0px;
   width: 100%;
 }
+
+.markdown-supported {
+  height: 1em;
+}

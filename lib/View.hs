@@ -1173,7 +1173,8 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
     cancel
   emptySpan "6px"
   span_ [class_ "edit-field-instruction"] (toHtml instr)
-  a_ [href_ "/markdown", target_ "_blank"] "Markdown"
+  a_ [href_ "/markdown", target_ "_blank"] $ 
+    img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
 
 smallMarkdownEditor
   :: MonadIO m
@@ -1198,7 +1199,8 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
       cancel
   span_ [style_ "float:right"] $ do
     span_ [class_ "edit-field-instruction"] (toHtml instr)
-    a_ [href_ "/markdown", target_ "_blank"] "Markdown"
+    a_ [href_ "/markdown", target_ "_blank"] $ 
+      img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
 
 thisNode :: MonadIO m => HtmlT m JQuerySelector
 thisNode = do
