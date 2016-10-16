@@ -165,7 +165,7 @@ Types.hs
 
   1. Fix all warnings about uninitialised fields that might appear (by e.g. providing a default value).
 
-  2. Update the migration code; see Note [acid-state]. (Usually updating the migration code means simply copying and pasting the old version of the type and adding “_n” to all fields, where ‘n’ is ‘previous n’ + 1.)
+  2. Update the migration code; see Note [acid-state].
 
   3. If the field is user-editable: add a new constructor to 'Edit' and update the migration code for 'Edit'. Update 'isVacuousEdit', too.
 
@@ -216,29 +216,15 @@ data Trait = Trait {
   deriving (Show, Generic)
 
 -- See Note [acid-state]
-deriveSafeCopySorted 3 'extension ''Trait
+deriveSafeCopySorted 4 'extension ''Trait
 makeFields ''Trait
+
+changelog ''Trait 4 []
+deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance A.ToJSON Trait where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
-
--- Old version, needed for safe migration. It can most likely be already
--- deleted (if a checkpoint has been created), but it's been left here as a
--- template for future migrations.
---
--- Again, see Note [acid-state].
-data Trait_v2 = Trait_v2 {
-  _traitUid_v2 :: Uid Trait,
-  _traitContent_v2 :: MarkdownInline }
-
-deriveSafeCopySimple 2 'base ''Trait_v2
-
-instance Migrate Trait where
-  type MigrateFrom Trait = Trait_v2
-  migrate Trait_v2{..} = Trait {
-    _traitUid = _traitUid_v2,
-    _traitContent = _traitContent_v2 }
 
 --
 
@@ -293,49 +279,15 @@ data Item = Item {
   _itemKind        :: ItemKind }
   deriving (Show, Generic)
 
-deriveSafeCopySorted 10 'extension ''Item
+deriveSafeCopySorted 11 'extension ''Item
 makeFields ''Item
+
+changelog ''Item 11 []
+deriveSafeCopySorted 10 'base ''Item_v10
 
 instance A.ToJSON Item where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_item") }
-
--- Old version, needed for safe migration. It can most likely be already
--- deleted (if a checkpoint has been created), but it's been left here as a
--- template for future migrations.
-data Item_v9 = Item_v9 {
-  _itemUid_v9         :: Uid Item,
-  _itemName_v9        :: Text,
-  _itemCreated_v9     :: UTCTime,
-  _itemGroup__v9      :: Maybe Text,
-  _itemDescription_v9 :: MarkdownBlock,
-  _itemPros_v9        :: [Trait],
-  _itemProsDeleted_v9 :: [Trait],
-  _itemCons_v9        :: [Trait],
-  _itemConsDeleted_v9 :: [Trait],
-  _itemEcosystem_v9   :: MarkdownBlock,
-  _itemNotes_v9       :: MarkdownBlockWithTOC,
-  _itemLink_v9        :: Maybe Url,
-  _itemKind_v9        :: ItemKind }
-
-deriveSafeCopySimple 9 'base ''Item_v9
-
-instance Migrate Item where
-  type MigrateFrom Item = Item_v9
-  migrate Item_v9{..} = Item {
-    _itemUid = _itemUid_v9,
-    _itemName = _itemName_v9,
-    _itemCreated = _itemCreated_v9,
-    _itemGroup_ = _itemGroup__v9,
-    _itemDescription = _itemDescription_v9,
-    _itemPros = _itemPros_v9,
-    _itemProsDeleted = _itemProsDeleted_v9,
-    _itemCons = _itemCons_v9,
-    _itemConsDeleted = _itemConsDeleted_v9,
-    _itemEcosystem = _itemEcosystem_v9,
-    _itemNotes = _itemNotes_v9,
-    _itemLink = _itemLink_v9,
-    _itemKind = _itemKind_v9 }
 
 --
 
@@ -448,8 +400,11 @@ data Category = Category {
   _categoryItemsDeleted :: [Item] }
   deriving (Show, Generic)
 
-deriveSafeCopySorted 8 'extension ''Category
+deriveSafeCopySorted 9 'extension ''Category
 makeFields ''Category
+
+changelog ''Category 9 []
+deriveSafeCopySorted 8 'base ''Category_v8
 
 instance A.ToJSON Category where
   toJSON = A.genericToJSON A.defaultOptions {
@@ -458,39 +413,6 @@ instance A.ToJSON Category where
 categorySlug :: Category -> Text
 categorySlug category =
   T.format "{}-{}" (makeSlug (category^.title), category^.uid)
-
--- Old version, needed for safe migration. It can most likely be already
--- deleted (if a checkpoint has been created), but it's been left here as a
--- template for future migrations.
-data Category_v7 = Category_v7 {
-  _categoryUid_v7 :: Uid Category,
-  _categoryTitle_v7 :: Text,
-  _categoryGroup__v7 :: Text,
-  _categoryProsConsEnabled_v7 :: Bool,
-  _categoryEcosystemEnabled_v7 :: Bool,
-  _categoryCreated_v7 :: UTCTime,
-  _categoryStatus_v7 :: CategoryStatus,
-  _categoryNotes_v7 :: MarkdownBlock,
-  _categoryGroups_v7 :: Map Text Hue,
-  _categoryItems_v7 :: [Item],
-  _categoryItemsDeleted_v7 :: [Item] }
-
-deriveSafeCopySimple 7 'base ''Category_v7
-
-instance Migrate Category where
-  type MigrateFrom Category = Category_v7
-  migrate Category_v7{..} = Category {
-    _categoryUid = _categoryUid_v7,
-    _categoryTitle = _categoryTitle_v7,
-    _categoryGroup_ = _categoryGroup__v7,
-    _categoryProsConsEnabled = _categoryProsConsEnabled_v7,
-    _categoryEcosystemEnabled = _categoryEcosystemEnabled_v7,
-    _categoryCreated = _categoryCreated_v7,
-    _categoryStatus = _categoryStatus_v7,
-    _categoryNotes = _categoryNotes_v7,
-    _categoryGroups = _categoryGroups_v7,
-    _categoryItems = _categoryItems_v7,
-    _categoryItemsDeleted = _categoryItemsDeleted_v7 }
 
 -- Edits
 
@@ -714,21 +636,10 @@ data EditDetails = EditDetails {
   editId   :: Int }
   deriving (Eq, Show)
 
-deriveSafeCopySorted 3 'extension ''EditDetails
+deriveSafeCopySorted 4 'extension ''EditDetails
 
-data EditDetails_v2 = EditDetails_v2 {
-  editIP_v2   :: Maybe IP,
-  editDate_v2 :: UTCTime,
-  editId_v2   :: Int }
-
-deriveSafeCopySimple 2 'base ''EditDetails_v2
-
-instance Migrate EditDetails where
-  type MigrateFrom EditDetails = EditDetails_v2
-  migrate EditDetails_v2{..} = EditDetails {
-    editIP = editIP_v2,
-    editDate = editDate_v2,
-    editId = editId_v2 }
+changelog ''EditDetails 4 []
+deriveSafeCopySorted 3 'base ''EditDetails_v3
 
 data Action
   = Action'MainPageVisit
@@ -751,24 +662,10 @@ data ActionDetails = ActionDetails {
   actionUserAgent :: Maybe Text }
   deriving (Show)
 
-deriveSafeCopySorted 2 'extension ''ActionDetails
+deriveSafeCopySorted 3 'extension ''ActionDetails
 
-data ActionDetails_v1 = ActionDetails_v1 {
-  actionIP_v1        :: Maybe IP,
-  actionDate_v1      :: UTCTime,
-  actionReferrer_v1  :: Maybe Referrer,
-  actionUserAgent_v1 :: Maybe Text }
-  deriving (Show)
-
-deriveSafeCopySimple 1 'base ''ActionDetails_v1
-
-instance Migrate ActionDetails where
-  type MigrateFrom ActionDetails = ActionDetails_v1
-  migrate ActionDetails_v1{..} = ActionDetails {
-    actionIP = actionIP_v1,
-    actionDate = actionDate_v1,
-    actionReferrer = actionReferrer_v1,
-    actionUserAgent = actionUserAgent_v1 }
+changelog ''ActionDetails 3 []
+deriveSafeCopySorted 2 'base ''ActionDetails_v2
 
 -- See Note [acid-state]
 
@@ -784,28 +681,11 @@ data GlobalState = GlobalState {
   _dirty :: Bool }
   deriving (Show)
 
-deriveSafeCopySorted 6 'extension ''GlobalState
+deriveSafeCopySorted 7 'extension ''GlobalState
 makeLenses ''GlobalState
 
-data GlobalState_v5 = GlobalState_v5 {
-  _categories_v5 :: [Category],
-  _categoriesDeleted_v5 :: [Category],
-  _actions_v5 :: [(Action, ActionDetails)],
-  _pendingEdits_v5 :: [(Edit, EditDetails)],
-  _editIdCounter_v5 :: Int,
-  _dirty_v5 :: Bool }
-
-deriveSafeCopySimple 5 'base ''GlobalState_v5
-
-instance Migrate GlobalState where
-  type MigrateFrom GlobalState = GlobalState_v5
-  migrate GlobalState_v5{..} = GlobalState {
-    _categories = _categories_v5,
-    _categoriesDeleted = _categoriesDeleted_v5,
-    _actions = _actions_v5,
-    _pendingEdits = _pendingEdits_v5,
-    _editIdCounter = _editIdCounter_v5,
-    _dirty = _dirty_v5 }
+changelog ''GlobalState 7 []
+deriveSafeCopySorted 6 'base ''GlobalState_v6
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
