@@ -53,6 +53,7 @@ library
     Markdown
     JS
     View
+    SafeCopy
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
@@ -61,6 +62,7 @@ library
                      , base >=4.8 && <4.9
                      , base-prelude
                      , bytestring
+                     , cereal
                      , cmark == 0.5.*
                      , cmark-highlight == 0.2.*
                      , cmark-sections == 0.1.*
@@ -71,6 +73,7 @@ library
                      , ekg
                      , ekg-core
                      , exceptions
+                     , extra
                      , feed >= 0.3.11 && < 0.4
                      , filemanip == 0.3.6.*
                      , filepath
@@ -78,6 +81,7 @@ library
                      , friendly-time == 0.4.*
                      , fsnotify == 0.2.*
                      , hashable
+                     , haskell-src-meta
                      , http-types
                      , ilist
                      , iproute == 1.7.*
@@ -102,6 +106,7 @@ library
                      , text-all == 0.3.*
                      , time >= 1.5
                      , transformers
+                     , uniplate
                      , vector
                      , wai
                      , wai-middleware-metrics

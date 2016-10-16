@@ -1,4 +1,6 @@
 {-# LANGUAGE
+ScopedTypeVariables,
+QuasiQuotes,
 OverloadedStrings,
 GeneralizedNewtypeDeriving,
 FlexibleContexts,
@@ -45,7 +47,13 @@ module Utils
   -- * Spock
   atomFeed,
 
+  -- * Template Haskell
+  hs,
+  dumpSplices,
+
   -- * Safecopy
+  Change(..),
+  changelog,
   GenConstructor(..),
   genVer,
   MigrateConstructor(..),
@@ -58,6 +66,8 @@ where
 
 
 import BasePrelude
+-- Lists
+import Data.List.Extra (stripSuffix)
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
@@ -65,6 +75,8 @@ import Control.Monad.Trans
 import Control.Monad.Catch
 -- Containers
 import qualified Data.Set as S
+import qualified Data.Map as M
+import Data.Map (Map)
 -- Hashable (needed for Uid)
 import Data.Hashable
 -- Randomness
@@ -78,7 +90,7 @@ import qualified Data.Aeson as A
 import qualified Network.Socket as Network
 import Data.IP
 -- Web
-import Lucid
+import Lucid hiding (for_)
 import Web.Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
 import Web.PathPieces
@@ -90,6 +102,10 @@ import qualified Text.XML.Light.Output as XML
 import Data.SafeCopy
 -- Template Haskell
 import Language.Haskell.TH
+import qualified Language.Haskell.TH.Syntax as TH (lift)
+import Language.Haskell.TH.Quote (QuasiQuoter(..))
+import Language.Haskell.Meta (parseExp)
+import Data.Generics.Uniplate.Data (transform)
 
 
 -- | Move the -1st element that satisfies the predicate- up.
@@ -205,6 +221,168 @@ atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
   bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+
+hs :: QuasiQuoter
+hs = QuasiQuoter {
+  quoteExp  = either fail TH.lift . parseExp,
+  quotePat  = fail "hs: can't parse patterns",
+  quoteType = fail "hs: can't parse types",
+  quoteDec  = fail "hs: can't parse declarations" }
+
+dumpSplices :: DecsQ -> DecsQ
+dumpSplices x = do
+  ds <- x
+  -- “reportWarning (pprint ds)” doesn't work in Emacs because of
+  -- haskell-mode's parsing of compiler messages
+  mapM_ (reportWarning . pprint) ds
+  return ds
+
+{- |
+A change from one version of a record (one constructor, several fields) to another version. We only record the latest version, so we have to be able to reconstruct the previous version knowing the current version and a list of 'Change's.
+-}
+data Change
+  -- | A field with a particular name and type was removed
+  = Removed String (Q Type)
+  -- | A field with a particular name and default value was added. We don't
+  -- have to record the type since it's already known (remember, we know what
+  -- the final version of the record is)
+  | Added String Exp
+
+{- |
+Generate previous version of the type.
+
+Assume that the new type and the changelog are, respectively:
+
+    -- version 4
+    data Foo = FooRec {
+      b :: Bool,
+      c :: Int }
+
+    changelog ''Foo 4 [
+      Removed "a" [t|String|],
+      Added "c" [|if null a then 0 else 1|] ]
+
+Then we will generate a type called Foo_v3:
+
+    data Foo_v3 = FooRec_v3 {
+      a_v3 :: String,
+      b_v3 :: Bool }
+
+We'll also generate a migration instance:
+
+    instance Migrate Foo where
+      type MigrateFrom Foo = Foo_v3
+      migrate old = FooRec {
+        b = b_v3 old,
+        c = if null (a_v3 old) then 0 else 1 }
+
+Note that you must use 'deriveSafeCopySorted' for types that use 'changelog' because otherwise fields will be parsed in the wrong order. Specifically, imagine that you have created a type with fields “b” and “a” and then removed “b”. 'changelog' has no way of knowing from “the current version has field “a”” and “the previous version also had field “b”” that the previous version had fields “b, a” and not “a, b”. Usual 'deriveSafeCopy' or 'deriveSafeCopySimple' care about field order and thus will treat “b, a” and “a, b” as different types.
+-}
+changelog
+  :: Name           -- ^ Type (without version suffix)
+  -> Int            -- ^ New version
+  -> [Change]       -- ^ List of changes between this version and previous one
+  -> DecsQ
+changelog tyName newVer changes = do
+  -- Get information about the new version of the datatype
+  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  -- Do some checks first – we only have to handle simple types for now, but
+  -- if/when we need to handle more complex ones, we want to be warned
+  unless (null _cxt) $
+    fail "changelog: can't yet work with types with context"
+  unless (null _vars) $
+    fail "changelog: can't yet work with types with variables"
+  con <- case cons of
+    [x] -> return x
+    []  -> fail "changelog: the type has to have at least one constructor"
+    _   -> fail "changelog: the type has to have only one constructor"
+  -- Check that the type is a record and that there are no strict fields
+  -- (which we cannot handle yet); when done, make a list of fields that is
+  -- easier to work with
+  (recName :: Name, fields :: [(Name, Type)]) <- case con of
+    RecC cn fs
+      | all (== NotStrict) (fs^..each._2) ->
+          return (cn, [(n, t) | (n,_,t) <- fs])
+      | otherwise -> fail "changelog: can't work with strict/unpacked fields"
+    _             -> fail "changelog: the type must be a record"
+  -- This will only be needed on newer GHC:
+  --     let normalBang = Bang NoSourceUnpackedness NoSourceStrictness
+  -- Check that all 'Added' fields are actually present in the new type
+  for_ (M.keys added) $ \n -> do
+    unless (n `elem` map (nameBase . fst) fields) $ fail $
+      printf "changelog: field %s isn't present in %s" (show n) (show tyName)
+
+  -- Now we can generate the old type based on the new type and the
+  -- changelog. First we determine the list of fields (and types) we'll have
+  -- by taking 'fields' from the new type, adding 'Removed' fields and
+  -- removing 'Added' fields:
+  let oldFields :: Map Name (Q Type)
+      oldFields = let f (Added x _) = M.delete x
+                      f (Removed n t) = M.insert n t
+                      m = M.fromList [(nameBase n, return t)
+                                       | (n,t) <- fields]
+                  in M.mapKeys (old . mkName) $ foldr f m changes
+  -- Then we construct the record constructor:
+  --   FooRec_v3 { a_v3 :: String, b_v3 :: Bool }
+  let oldRec = recC (old recName)
+                    [varStrictType fName
+                                   (strictType notStrict fType)
+                    | (fName, fType) <- M.toList oldFields]
+  -- And the data type:
+  --   data Foo_v3 = FooRec_v3 {...}
+  let oldTypeDecl = dataD (cxt [])       -- no context
+                          (old tyName)   -- name of old type
+                          []             -- no variables
+                          [oldRec]       -- one constructor
+                          []             -- not deriving anything
+
+  -- Next we generate the migration instance. It has two inner declarations.
+  -- First declaration – “type MigrateFrom Foo = Foo_v3”:
+  let migrateFromDecl =
+        tySynInstD ''MigrateFrom
+                   (tySynEqn [conT tyName] (conT (old tyName)))
+  -- Second declaration:
+  --   migrate old = FooRec {
+  --     b = b_v3 old,
+  --     c = if null (a_v3 old) then 0 else 1 }
+  migrateArg <- newName "old"
+  -- This function replaces accessors in an expression – “a” turns into
+  -- “(a_vN old)” if 'a' is one of the fields in the old type
+  let replaceAccessors = transform f
+        where f (VarE x) | old x `elem` M.keys oldFields =
+                AppE (VarE (old x)) (VarE migrateArg)
+              f x = x
+  let migrateDecl = funD 'migrate [
+        clause [varP migrateArg]
+          (normalB $ recConE recName $ do
+             (newField, _) <- fields
+             let content = case M.lookup (nameBase newField) added of
+                   Nothing -> appE (varE (old newField)) (varE migrateArg)
+                   Just e  -> return (replaceAccessors e)
+             return $ (newField,) <$> content)
+          []
+        ]
+
+  let migrateInstanceDecl =
+        instanceD
+          (cxt [])                        -- no context
+          [t|Migrate $(conT tyName)|]     -- Migrate Foo
+          [migrateFromDecl, migrateDecl]  -- associated type & migration func
+
+  -- Return everything
+  sequence [oldTypeDecl, migrateInstanceDecl]
+
+  where
+    oldVer = newVer - 1
+    -- Convert a new name to an old name by adding “_vN” to it or replacing
+    -- it if the name already has a “_v” suffix
+    old :: Name -> Name
+    old (nameBase -> n) =
+      let suffixless = fromMaybe n $ stripSuffix ("_v" ++ show newVer) n
+      in mkName (suffixless ++ "_v" ++ show oldVer)
+    -- List of 'Added' fields
+    added :: Map String Exp
+    added = M.fromList [(n, e) | Added n e <- changes]
 
 data GenConstructor = Copy Name | Custom String [(String, Name)]
 
