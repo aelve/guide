@@ -219,7 +219,7 @@ data Trait = Trait {
 deriveSafeCopySorted 4 'extension ''Trait
 makeFields ''Trait
 
-changelog ''Trait 4 []
+changelog ''Trait (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance A.ToJSON Trait where
@@ -282,7 +282,7 @@ data Item = Item {
 deriveSafeCopySorted 11 'extension ''Item
 makeFields ''Item
 
-changelog ''Item 11 []
+changelog ''Item (Current 11, Past 10) []
 deriveSafeCopySorted 10 'base ''Item_v10
 
 instance A.ToJSON Item where
@@ -403,7 +403,7 @@ data Category = Category {
 deriveSafeCopySorted 9 'extension ''Category
 makeFields ''Category
 
-changelog ''Category 9 []
+changelog ''Category (Current 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8
 
 instance A.ToJSON Category where
@@ -638,7 +638,7 @@ data EditDetails = EditDetails {
 
 deriveSafeCopySorted 4 'extension ''EditDetails
 
-changelog ''EditDetails 4 []
+changelog ''EditDetails (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''EditDetails_v3
 
 data Action
@@ -664,7 +664,7 @@ data ActionDetails = ActionDetails {
 
 deriveSafeCopySorted 3 'extension ''ActionDetails
 
-changelog ''ActionDetails 3 []
+changelog ''ActionDetails (Current 3, Past 2) []
 deriveSafeCopySorted 2 'base ''ActionDetails_v2
 
 -- See Note [acid-state]
@@ -684,7 +684,7 @@ data GlobalState = GlobalState {
 deriveSafeCopySorted 7 'extension ''GlobalState
 makeLenses ''GlobalState
 
-changelog ''GlobalState 7 []
+changelog ''GlobalState (Current 7, Past 6) []
 deriveSafeCopySorted 6 'base ''GlobalState_v6
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue

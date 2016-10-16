@@ -53,6 +53,7 @@ module Utils
 
   -- * Safecopy
   Change(..),
+  TypeVersion(..),
   changelog,
   GenConstructor(..),
   genVer,
@@ -68,6 +69,8 @@ where
 import BasePrelude
 -- Lists
 import Data.List.Extra (stripSuffix)
+-- Monads
+import Control.Monad.Extra
 -- Lenses
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
@@ -248,6 +251,9 @@ data Change
   -- the final version of the record is)
   | Added String Exp
 
+data TypeVersion = Current Int | Past Int
+  deriving (Show)
+
 {- |
 Generate previous version of the type.
 
@@ -258,7 +264,7 @@ Assume that the new type and the changelog are, respectively:
       b :: Bool,
       c :: Int }
 
-    changelog ''Foo 4 [
+    changelog ''Foo (Current 4, Past 3) [
       Removed "a" [t|String|],
       Added "c" [|if null a then 0 else 1|] ]
 
@@ -279,68 +285,132 @@ We'll also generate a migration instance:
 Note that you must use 'deriveSafeCopySorted' for types that use 'changelog' because otherwise fields will be parsed in the wrong order. Specifically, imagine that you have created a type with fields “b” and “a” and then removed “b”. 'changelog' has no way of knowing from “the current version has field “a”” and “the previous version also had field “b”” that the previous version had fields “b, a” and not “a, b”. Usual 'deriveSafeCopy' or 'deriveSafeCopySimple' care about field order and thus will treat “b, a” and “a, b” as different types.
 -}
 changelog
-  :: Name           -- ^ Type (without version suffix)
-  -> Int            -- ^ New version
-  -> [Change]       -- ^ List of changes between this version and previous one
+  :: Name                        -- ^ Type (without version suffix)
+  -> (TypeVersion, TypeVersion)  -- ^ New version, old version
+  -> [Change]                    -- ^ List of changes between this version
+                                 --   and previous one
   -> DecsQ
-changelog tyName newVer changes = do
+changelog _ (_newVer, Current _) _ =
+  -- We could've just changed the second element of the tuple to be 'Int'
+  -- instead of 'TypeVersion' but that would lead to worse-looking changelogs
+  fail "changelog: old version can't be 'Current'"
+changelog bareTyName (newVer, Past oldVer) changes = do
+  -- ------------------------------------------------------------------------
+  -- Name and version business
+  -- ------------------------------------------------------------------------
+  -- First, we can define functions for removing a new-version prefix and for
+  -- adding a new/old-version prefix to a bare name. We'll be working with
+  -- bare names everywhere.
+  let mkBare :: Name -> String
+      mkBare n = case newVer of
+        Current _ -> nameBase n
+        Past v ->
+          let suff = ("_v" ++ show v)
+          in case stripSuffix suff (nameBase n) of
+               Just n' -> n'
+               Nothing -> error $
+                 printf "changelog: %s doesn't have suffix %s"
+                        (show n) (show suff)
+  let mkOld, mkNew :: String -> Name
+      mkOld n = mkName (n ++ "_v" ++ show oldVer)
+      mkNew n = case newVer of
+        Current _ -> mkName n
+        Past v -> mkName (n ++ "_v" ++ show v)
+  -- We know the “base” name (tyName) of the type and we know the
+  -- versions. From this we can get actual new/old names:
+  let newTyName = mkNew (nameBase bareTyName)
+  let oldTyName = mkOld (nameBase bareTyName)
+  -- We should also check that the new version exists and that the old one
+  -- doesn't.
+  whenM (isNothing <$> lookupTypeName (nameBase newTyName)) $
+    fail (printf "changelog: %s not found" (show newTyName))
+  whenM (isJust <$> lookupTypeName (nameBase oldTyName)) $
+    fail (printf "changelog: %s is already present" (show oldTyName))
+
+  -- -----------------------------------------------------------------------
+  -- Process the changelog
+  -- -----------------------------------------------------------------------
+  -- Make separate lists of added and removed fields
+  let added :: Map String Exp
+      added = M.fromList [(n, e) | Added n e <- changes]
+  let removed :: Map String (Q Type)
+      removed = M.fromList [(n, t) | Removed n t <- changes]
+
+  -- -----------------------------------------------------------------------
   -- Get information about the new version of the datatype
-  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  -- -----------------------------------------------------------------------
+  -- First, 'reify' it. See documentation for 'reify' to understand why we
+  -- use 'lookupValueName' here (if we just do @reify newTyName@, we might
+  -- get the constructor instead).
+  TyConI (DataD _cxt _name _vars cons _deriving) <- do
+    mbReallyTyName <- lookupTypeName (nameBase newTyName)
+    case mbReallyTyName of
+      Just reallyTyName -> reify reallyTyName
+      Nothing -> fail $ printf "changelog: type %s not found" (show newTyName)
   -- Do some checks first – we only have to handle simple types for now, but
-  -- if/when we need to handle more complex ones, we want to be warned
+  -- if/when we need to handle more complex ones, we want to be warned.
   unless (null _cxt) $
     fail "changelog: can't yet work with types with context"
   unless (null _vars) $
     fail "changelog: can't yet work with types with variables"
+  -- We assume that the type is a single-constructor record.
   con <- case cons of
     [x] -> return x
     []  -> fail "changelog: the type has to have at least one constructor"
     _   -> fail "changelog: the type has to have only one constructor"
-  -- Check that the type is a record and that there are no strict fields
-  -- (which we cannot handle yet); when done, make a list of fields that is
-  -- easier to work with
-  (recName :: Name, fields :: [(Name, Type)]) <- case con of
+  -- Check that the type is actually a record and that there are no strict
+  -- fields (which we cannot handle yet); when done, make a list of fields
+  -- that is easier to work with. We strip names to their bare form.
+  (recName :: String, fields :: [(String, Type)]) <- case con of
     RecC cn fs
       | all (== NotStrict) (fs^..each._2) ->
-          return (cn, [(n, t) | (n,_,t) <- fs])
+          return (mkBare cn, [(mkBare n, t) | (n,_,t) <- fs])
       | otherwise -> fail "changelog: can't work with strict/unpacked fields"
     _             -> fail "changelog: the type must be a record"
   -- This will only be needed on newer GHC:
   --     let normalBang = Bang NoSourceUnpackedness NoSourceStrictness
   -- Check that all 'Added' fields are actually present in the new type
+  -- and that all 'Removed' fields aren't there
   for_ (M.keys added) $ \n -> do
-    unless (n `elem` map (nameBase . fst) fields) $ fail $
-      printf "changelog: field %s isn't present in %s" (show n) (show tyName)
+    unless (n `elem` map fst fields) $ fail $
+      printf "changelog: field %s isn't present in %s"
+             (show (mkNew n)) (show newTyName)
+  for_ (M.keys removed) $ \n -> do
+    when (n `elem` map fst fields) $ fail $
+      printf "changelog: field %s is present in %s \
+             \but was supposed to be removed"
+             (show (mkNew n)) (show newTyName)
 
+  -- -----------------------------------------------------------------------
+  -- Generate the old type
+  -- -----------------------------------------------------------------------
   -- Now we can generate the old type based on the new type and the
   -- changelog. First we determine the list of fields (and types) we'll have
   -- by taking 'fields' from the new type, adding 'Removed' fields and
-  -- removing 'Added' fields:
-  let oldFields :: Map Name (Q Type)
-      oldFields = let f (Added x _) = M.delete x
-                      f (Removed n t) = M.insert n t
-                      m = M.fromList [(nameBase n, return t)
-                                       | (n,t) <- fields]
-                  in M.mapKeys (old . mkName) $ foldr f m changes
+  -- removing 'Added' fields. We still use bare names everywhere.
+  let oldFields :: Map String (Q Type)
+      oldFields = fmap return (M.fromList fields)
+                    `M.union` removed
+                    `M.difference` added
+
   -- Then we construct the record constructor:
   --   FooRec_v3 { a_v3 :: String, b_v3 :: Bool }
-  let oldRec = recC (old recName)
-                    [varStrictType fName
+  let oldRec = recC (mkOld recName)
+                    [varStrictType (mkOld fName)
                                    (strictType notStrict fType)
                     | (fName, fType) <- M.toList oldFields]
   -- And the data type:
   --   data Foo_v3 = FooRec_v3 {...}
-  let oldTypeDecl = dataD (cxt [])       -- no context
-                          (old tyName)   -- name of old type
-                          []             -- no variables
-                          [oldRec]       -- one constructor
-                          []             -- not deriving anything
+  let oldTypeDecl = dataD (cxt [])      -- no context
+                          oldTyName     -- name of old type
+                          []            -- no variables
+                          [oldRec]      -- one constructor
+                          []            -- not deriving anything
 
   -- Next we generate the migration instance. It has two inner declarations.
   -- First declaration – “type MigrateFrom Foo = Foo_v3”:
   let migrateFromDecl =
-        tySynInstD ''MigrateFrom
-                   (tySynEqn [conT tyName] (conT (old tyName)))
+        tySynInstD ''MigrateFrom (tySynEqn [conT newTyName] (conT oldTyName))
   -- Second declaration:
   --   migrate old = FooRec {
   --     b = b_v3 old,
@@ -349,40 +419,30 @@ changelog tyName newVer changes = do
   -- This function replaces accessors in an expression – “a” turns into
   -- “(a_vN old)” if 'a' is one of the fields in the old type
   let replaceAccessors = transform f
-        where f (VarE x) | old x `elem` M.keys oldFields =
-                AppE (VarE (old x)) (VarE migrateArg)
+        where f (VarE x) | nameBase x `elem` M.keys oldFields =
+                AppE (VarE (mkOld (nameBase x))) (VarE migrateArg)
               f x = x
   let migrateDecl = funD 'migrate [
         clause [varP migrateArg]
-          (normalB $ recConE recName $ do
-             (newField, _) <- fields
-             let content = case M.lookup (nameBase newField) added of
-                   Nothing -> appE (varE (old newField)) (varE migrateArg)
+          (normalB $ recConE (mkNew recName) $ do
+             (field, _) <- fields
+             let content = case M.lookup field added of
+                   -- the field was present in old type
+                   Nothing -> appE (varE (mkOld field)) (varE migrateArg)
+                   -- wasn't
                    Just e  -> return (replaceAccessors e)
-             return $ (newField,) <$> content)
+             return $ (mkNew field,) <$> content)
           []
         ]
 
   let migrateInstanceDecl =
         instanceD
           (cxt [])                        -- no context
-          [t|Migrate $(conT tyName)|]     -- Migrate Foo
+          [t|Migrate $(conT newTyName)|]  -- Migrate Foo
           [migrateFromDecl, migrateDecl]  -- associated type & migration func
 
   -- Return everything
   sequence [oldTypeDecl, migrateInstanceDecl]
-
-  where
-    oldVer = newVer - 1
-    -- Convert a new name to an old name by adding “_vN” to it or replacing
-    -- it if the name already has a “_v” suffix
-    old :: Name -> Name
-    old (nameBase -> n) =
-      let suffixless = fromMaybe n $ stripSuffix ("_v" ++ show newVer) n
-      in mkName (suffixless ++ "_v" ++ show oldVer)
-    -- List of 'Added' fields
-    added :: Map String Exp
-    added = M.fromList [(n, e) | Added n e <- changes]
 
 data GenConstructor = Copy Name | Custom String [(String, Name)]
 
