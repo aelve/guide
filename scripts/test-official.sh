@@ -16,8 +16,8 @@ git status
 ls
 cd ..
 
-cabal build
-dist/build/guide/guide --dry-run
+stack build
+stack exec guide -- --dry-run
 
 rm -rf state
 
