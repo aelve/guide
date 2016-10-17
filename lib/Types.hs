@@ -1,4 +1,5 @@
 {-# LANGUAGE
+QuasiQuotes,
 FlexibleContexts,
 FlexibleInstances,
 TypeFamilies,
@@ -32,6 +33,7 @@ module Types
     status,
     prosConsEnabled,
     ecosystemEnabled,
+    notesEnabled,
     groups,
     items,
     itemsDeleted,
@@ -88,6 +90,7 @@ module Types
   SetCategoryStatus(..),
   SetCategoryProsConsEnabled(..),
   SetCategoryEcosystemEnabled(..),
+  SetCategoryNotesEnabled(..),
   -- *** 'Item'
   SetItemName(..),
   SetItemLink(..),
@@ -386,6 +389,8 @@ data Category = Category {
   -- | Whether to show items' ecosystem fields. This would be 'False' for
   -- lists of people, or for books
   _categoryEcosystemEnabled :: Bool,
+  -- | Whether to show notes.
+  _categoryNotesEnabled :: Bool,
   _categoryCreated :: UTCTime,
   _categoryStatus :: CategoryStatus,
   _categoryNotes :: MarkdownBlock,
@@ -400,10 +405,14 @@ data Category = Category {
   _categoryItemsDeleted :: [Item] }
   deriving (Show, Generic)
 
-deriveSafeCopySorted 9 'extension ''Category
+deriveSafeCopySorted 10 'extension ''Category
 makeFields ''Category
 
-changelog ''Category (Current 9, Past 8) []
+changelog ''Category (Current 10, Past 9)
+  [Added "_categoryNotesEnabled" [hs|True|]]
+deriveSafeCopySorted 9 'base ''Category_v9
+
+changelog ''Category (Past 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8
 
 instance A.ToJSON Category where
@@ -460,6 +469,10 @@ data Edit
       editCategoryUid                 :: Uid Category,
       editCategoryEcosystemEnabled    :: Bool,
       editCategoryNewEcosystemEnabled :: Bool }
+  | Edit'SetCategoryNotesEnabled {
+      editCategoryUid                 :: Uid Category,
+      editCategoryNotesEnabled        :: Bool,
+      editCategoryNewNotesEnabled     :: Bool }
 
   -- Change item properties
   | Edit'SetItemName {
@@ -521,9 +534,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 5 'extension ''Edit
+deriveSafeCopySimple 6 'extension ''Edit
 
-genVer ''Edit 4 [
+genVer ''Edit 5 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -534,8 +547,9 @@ genVer ''Edit 4 [
   Copy 'Edit'SetCategoryGroup,
   Copy 'Edit'SetCategoryNotes,
   Copy 'Edit'SetCategoryStatus,
-  -- Copy 'Edit'SetCategoryProsConsEnabled,
-  -- Copy 'Edit'SetCategoryEcosystemEnabled,
+  Copy 'Edit'SetCategoryProsConsEnabled,
+  Copy 'Edit'SetCategoryEcosystemEnabled,
+  -- Copy 'Edit'SetCategoryNotesEnabled,
   -- Change item properties
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
@@ -554,11 +568,11 @@ genVer ''Edit 4 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 4 'base ''Edit_v4
+deriveSafeCopySimple 5 'base ''Edit_v5
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v4
-  migrate = $(migrateVer ''Edit 4 [
+  type MigrateFrom Edit = Edit_v5
+  migrate = $(migrateVer ''Edit 5 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -568,8 +582,9 @@ instance Migrate Edit where
     CopyM 'Edit'SetCategoryGroup,
     CopyM 'Edit'SetCategoryNotes,
     CopyM 'Edit'SetCategoryStatus,
-    -- CopyM 'Edit'SetCategoryProsConsEnabled
-    -- CopyM 'Edit'SetCategoryEcosystemEnabled
+    CopyM 'Edit'SetCategoryProsConsEnabled,
+    CopyM 'Edit'SetCategoryEcosystemEnabled,
+    -- CopyM 'Edit'SetCategoryNotesEnabled,
     -- Change item properties
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
@@ -604,6 +619,8 @@ isVacuousEdit Edit'SetCategoryProsConsEnabled {..} =
   editCategoryProsConsEnabled == editCategoryNewProsConsEnabled
 isVacuousEdit Edit'SetCategoryEcosystemEnabled {..} =
   editCategoryEcosystemEnabled == editCategoryNewEcosystemEnabled
+isVacuousEdit Edit'SetCategoryNotesEnabled {..} =
+  editCategoryNotesEnabled == editCategoryNewNotesEnabled
 isVacuousEdit Edit'SetItemName{..} =
   editItemName == editItemNewName
 isVacuousEdit Edit'SetItemLink{..} =
@@ -764,6 +781,7 @@ addCategory catId title' created' = do
         _categoryGroup_ = "Miscellaneous",
         _categoryProsConsEnabled = True,
         _categoryEcosystemEnabled = True,
+        _categoryNotesEnabled = True,
         _categoryCreated = created',
         _categoryStatus = CategoryStub,
         _categoryNotes = toMarkdownBlock "",
@@ -869,6 +887,13 @@ setCategoryEcosystemEnabled
 setCategoryEcosystemEnabled catId val = do
   oldVal <- categoryById catId . ecosystemEnabled <<.= val
   let edit = Edit'SetCategoryEcosystemEnabled catId oldVal val
+  (edit,) <$> use (categoryById catId)
+
+setCategoryNotesEnabled
+  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
+setCategoryNotesEnabled catId val = do
+  oldVal <- categoryById catId . notesEnabled <<.= val
+  let edit = Edit'SetCategoryNotesEnabled catId oldVal val
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -1206,6 +1231,7 @@ makeAcidic ''GlobalState [
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'setCategoryProsConsEnabled, 'setCategoryEcosystemEnabled,
+    'setCategoryNotesEnabled,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,

@@ -424,6 +424,10 @@ renderEdit globalState edit = do
       if newVal == True
         then p_ $ "enabled ecosystem for category " >> printCategory catId
         else p_ $ "disabled ecosystem for category " >> printCategory catId
+    Edit'SetCategoryNotesEnabled catId _oldVal newVal -> do
+      if newVal == True
+        then p_ $ "enabled notes for category " >> printCategory catId
+        else p_ $ "disabled notes for category " >> printCategory catId
 
     -- Change item properties
     Edit'SetItemName _itemId oldName newName -> p_ $ do
@@ -740,6 +744,12 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
             & checkedIf (category^.ecosystemEnabled)
           "“Ecosystem” field enabled"
         br_ []
+        label_ $ do
+          input_ [type_ "checkbox", name_ "notes-enabled",
+                  autocomplete_ "off"]
+            & checkedIf (category^.notesEnabled)
+          "“Notes” field enabled"
+        br_ []
         input_ [type_ "submit", value_ "Save", class_ "save"]
         button "Cancel" [class_ "cancel"] $
           JS.switchSection (this, "normal" :: Text)
@@ -797,11 +807,11 @@ getItemHue category item = case item^.group_ of
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Categories have flags that enable/disable showing some sections of the items (currently pros/cons and ecosystem); this is done because for some items (like books, or people) “ecosystem” might not make any sense, and pros/cons don't make sense for categories that contain diverse items.
+Categories have flags that enable/disable showing some sections of the items (currently pros/cons, ecosystem and notes); this is done because for some items (like books, or people) “ecosystem” might not make any sense, and pros/cons don't make sense for categories that contain diverse items.
 
 When we change those flags (by editing category info), we want to update the way items are shown (without reloading the page). So, if the “show ecosystem” flag has been set and we unset it, we want to hide the ecosystem section in all items belonging to the category. This happens in 'JS.submitCategoryInfo'.
 
-If the category has showing pros/cons (or ecosystem, or both) disabled, we have to render traits and ecosystem as hidden (we can't just not render them at all, because then we wouldn't be able to un-hide them). How could we do it? If we do it in 'renderItemTraits' or 'renderItemEcosystem', this would mean that cached versions of traits/ecosystem would have to be rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead we do a somewhat inelegant thing: we wrap traits/ecosystem into yet another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates on those <div>s.
+If the category has showing pros/cons (or ecosystem, or both) disabled, we have to render traits and ecosystem as hidden (we can't just not render them at all, because then we wouldn't be able to un-hide them). How could we do it? If we do it in 'renderItemTraits' or 'renderItemEcosystem', this would mean that cached versions of traits/ecosystem/notes would have to be rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead we do a somewhat inelegant thing: we wrap traits/ecosystem/notes into yet another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates on those <div>s.
 -}
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
@@ -821,7 +831,9 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
       hiddenIf (not (category^.ecosystemEnabled)) $
         div_ [class_ "ecosystem-wrapper"] $
           renderItemEcosystem item
-      renderItemNotes category item
+      hiddenIf (not (category^.notesEnabled)) $
+        div_ [class_ "notes-wrapper"] $
+          renderItemNotes category item
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 

@@ -217,6 +217,8 @@ invalidateCacheForEdit ed = do
         [CacheCategoryInfo catId]
     Edit'SetCategoryEcosystemEnabled catId _ _ ->
         [CacheCategoryInfo catId]
+    Edit'SetCategoryNotesEnabled catId _ _ ->
+        [CacheCategoryInfo catId]
     Edit'SetCategoryNotes catId _ _ ->
         [CacheCategoryNotes catId]
     Edit'SetItemName itemId _ _ ->
@@ -292,6 +294,11 @@ undoEdit (Edit'SetCategoryEcosystemEnabled catId old new) = do
   if now /= new
     then return (Left "ecosystem-enabled has been changed further")
     else Right () <$ dbUpdate (SetCategoryEcosystemEnabled catId old)
+undoEdit (Edit'SetCategoryNotesEnabled catId old new) = do
+  now <- view notesEnabled <$> dbQuery (GetCategory catId)
+  if now /= new
+    then return (Left "notes-enabled has been changed further")
+    else Right () <$ dbUpdate (SetCategoryNotesEnabled catId old)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
   now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
@@ -388,8 +395,12 @@ setMethods = Spock.subcomponent "set" $ do
     invalidateCache' (CacheCategoryInfo catId)
     title' <- T.strip <$> param' "title"
     group' <- T.strip <$> param' "group"
-    prosConsEnabled'  <- (Just ("on" :: Text) ==) <$> param "pros-cons-enabled"
-    ecosystemEnabled' <- (Just ("on" :: Text) ==) <$> param "ecosystem-enabled"
+    prosConsEnabled'  <- (Just ("on" :: Text) ==) <$>
+                         param "pros-cons-enabled"
+    ecosystemEnabled' <- (Just ("on" :: Text) ==) <$>
+                         param "ecosystem-enabled"
+    notesEnabled'     <- (Just ("on" :: Text) ==) <$>
+                         param "notes-enabled"
     status' <- do
       statusName :: Text <- param' "status"
       return $ case statusName of
@@ -408,9 +419,14 @@ setMethods = Spock.subcomponent "set" $ do
       addEdit edit
     do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
        addEdit edit
-    do (edit, _) <- dbUpdate (SetCategoryProsConsEnabled catId prosConsEnabled')
+    do (edit, _) <- dbUpdate $
+                    SetCategoryProsConsEnabled catId prosConsEnabled'
        addEdit edit
-    do (edit, _) <- dbUpdate (SetCategoryEcosystemEnabled catId ecosystemEnabled')
+    do (edit, _) <- dbUpdate $
+                    SetCategoryEcosystemEnabled catId ecosystemEnabled'
+       addEdit edit
+    do (edit, _) <- dbUpdate $
+                    SetCategoryNotesEnabled catId notesEnabled'
        addEdit edit
     -- After all these edits we can render the category header
     category <- dbQuery (GetCategory catId)

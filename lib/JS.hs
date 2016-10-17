@@ -461,7 +461,7 @@ submitCategoryInfo =
     $.post("/haskell/set/category/"+catId+"/info", $(form).serialize())
      .done(function (data) {
         $(infoNode).replaceWith(data);
-        // If pros-cons-enabled and ecosystem-enabled were changed, we
+        // If pros-cons-enabled and other *enabled properties were changed, we
         // have to show/hide relevant sections in all items of the category.
         // See Note [enabled sections] for details.
         if ($(form)[0]["pros-cons-enabled"].checked)
@@ -470,6 +470,9 @@ submitCategoryInfo =
         if ($(form)[0]["ecosystem-enabled"].checked)
                  $(".ecosystem-wrapper").show();
             else $(".ecosystem-wrapper").hide();
+        if ($(form)[0]["notes-enabled"].checked)
+                 $(".notes-wrapper").show();
+            else $(".notes-wrapper").hide();
      });
   |]
 
