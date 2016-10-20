@@ -241,7 +241,10 @@ dumpSplices x = do
   return ds
 
 {- |
-A change from one version of a record (one constructor, several fields) to another version. We only record the latest version, so we have to be able to reconstruct the previous version knowing the current version and a list of 'Change's.
+A change from one version of a record (one constructor, several fields) to
+another version. We only record the latest version, so we have to be able to
+reconstruct the previous version knowing the current version and a list of
+'Change's.
 -}
 data Change
   -- | A field with a particular name and type was removed
@@ -282,7 +285,14 @@ We'll also generate a migration instance:
         b = b_v3 old,
         c = if null (a_v3 old) then 0 else 1 }
 
-Note that you must use 'deriveSafeCopySorted' for types that use 'changelog' because otherwise fields will be parsed in the wrong order. Specifically, imagine that you have created a type with fields “b” and “a” and then removed “b”. 'changelog' has no way of knowing from “the current version has field “a”” and “the previous version also had field “b”” that the previous version had fields “b, a” and not “a, b”. Usual 'deriveSafeCopy' or 'deriveSafeCopySimple' care about field order and thus will treat “b, a” and “a, b” as different types.
+Note that you must use 'deriveSafeCopySorted' for types that use 'changelog'
+because otherwise fields will be parsed in the wrong order. Specifically,
+imagine that you have created a type with fields “b” and “a” and then removed
+“b”. 'changelog' has no way of knowing from “the current version has field
+“a”” and “the previous version also had field “b”” that the previous version
+had fields “b, a” and not “a, b”. Usual 'deriveSafeCopy' or
+'deriveSafeCopySimple' care about field order and thus will treat “b, a” and
+“a, b” as different types.
 -}
 changelog
   :: Name                        -- ^ Type (without version suffix)

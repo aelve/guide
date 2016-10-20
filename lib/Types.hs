@@ -160,27 +160,34 @@ import Markdown
 {- Note [extending types]
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's what you should do if you add a new field to 'Trait', 'Item', or 'Category'.
+Here's what you should do if you add a new field to 'Trait', 'Item', or
+'Category'.
 
 
 Types.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  1. Fix all warnings about uninitialised fields that might appear (by e.g. providing a default value).
+  1. Fix all warnings about uninitialised fields that might appear (by
+     e.g. providing a default value).
 
   2. Update the migration code; see Note [acid-state].
 
-  3. If the field is user-editable: add a new constructor to 'Edit' and update the migration code for 'Edit'. Update 'isVacuousEdit', too.
+  3. If the field is user-editable: add a new constructor to 'Edit' and
+     update the migration code for 'Edit'. Update 'isVacuousEdit', too.
 
-  4. Create a method for updating the field (setSomethingField), add it to the “makeAcidic ''GlobalState” declaration, and export the SetSomethingField type.
+  4. Create a method for updating the field (setSomethingField), add it to
+     the “makeAcidic ''GlobalState” declaration, and export the
+     SetSomethingField type.
 
-  5. Export a lens for the field (if it shares the name with some other field, move it to the “* Overloaded things” heading).
+  5. Export a lens for the field (if it shares the name with some other
+     field, move it to the “* Overloaded things” heading).
 
 
 Cache.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  1. If the field is non-trivial (e.g. “notes”) and it makes sense to cache it, add it to 'CacheKey'.
+  1. If the field is non-trivial (e.g. “notes”) and it makes sense to cache
+     it, add it to 'CacheKey'.
 
   2. Update 'cacheDepends'.
 
@@ -188,7 +195,8 @@ Cache.hs
 JS.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  1. If the field is user-editable, add a method for setting it and don't forget to add it to the 'allJSFunctions' list.
+  1. If the field is user-editable, add a method for setting it and don't
+     forget to add it to the 'allJSFunctions' list.
 
 
 View.hs
@@ -208,7 +216,8 @@ Guide.hs
 
   2. Add a case to 'undoEdit'.
 
-  3. If the field is user-editable, add a method for changing it to 'setMethods'.
+  3. If the field is user-editable, add a method for changing it to
+     'setMethods'.
 
 -}
 
@@ -1032,7 +1041,8 @@ deleteTrait itemId traitId = do
   case mbItem of
     Nothing   -> return (Left "item not found")
     Just item -> do
-      -- Determine whether the trait is a pro or a con, and proceed accordingly
+      -- Determine whether the trait is a pro or a con, and proceed
+      -- accordingly
       case (find (hasUid traitId) (item^.pros),
             find (hasUid traitId) (item^.cons)) of
         -- It's in neither group, which means it was deleted. Do nothing.
@@ -1118,7 +1128,8 @@ restoreTrait itemId traitId pos = do
       let item = fromJust (find (hasUid itemId) (getItems category))
       case (find (hasUid traitId) (item^.prosDeleted),
             find (hasUid traitId) (item^.consDeleted)) of
-        (Nothing, Nothing) -> return (Left "trait not found in deleted traits")
+        (Nothing, Nothing) ->
+          return (Left "trait not found in deleted traits")
         (Just trait, _) -> do
           let item' = item
                 & prosDeleted %~ deleteFirst (hasUid traitId)

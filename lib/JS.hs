@@ -96,7 +96,13 @@ instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e) => JSParams (a,b,c,d,e) where
 instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e,ToJS f) => JSParams (a,b,c,d,e,f) where
   jsParams (a,b,c,d,e,f) = [toJS a, toJS b, toJS c, toJS d, toJS e, toJS f]
 
-{- | This hacky class lets you construct and use Javascript functions; you give 'makeJSFunction' function name, function parameters, and function body, and you get a polymorphic value of type @JSFunction a => a@, which you can use either as a complete function definition (if you set @a@ to be @JS@), or as a function that you can give some parameters and it would return a Javascript call:
+{- |
+This hacky class lets you construct and use Javascript functions; you give
+'makeJSFunction' function name, function parameters, and function body, and
+you get a polymorphic value of type @JSFunction a => a@, which you can use
+either as a complete function definition (if you set @a@ to be @JS@), or as a
+function that you can give some parameters and it would return a Javascript
+call:
 
 > plus = makeJSFunction "plus" ["a", "b"] "return a+b;"
 
@@ -365,12 +371,19 @@ showDiffPopup =
 
 A note on why we need the 'wasEmpty' parameter in 'makeItemNotesEditor'.
 
-Assume that the notes are empty. The text in the area, therefore, will be some default blurb (“# Links, #Imports, #Usage”, etc). Suppose the user edits it. What will be sent to the server?
+Assume that the notes are empty. The text in the area, therefore, will be
+some default blurb (“# Links, #Imports, #Usage”, etc). Suppose the user edits
+it. What will be sent to the server?
 
   * original: blurb
   * our version: modified blurb
 
-What will happen next? The server will compare it to the value currently at the server (i.e. an empty string), and think that the blurb *was* on the server but got deleted while the client was doing editing. This is wrong, and will result in a diff popup comparing an edited blurb to an empty string. To prevent this, we pass 'wasEmpty' to 'makeItemNotesEditor' – if we're using a blurb, we'll pass an empty string as the original.
+What will happen next? The server will compare it to the value currently at
+the server (i.e. an empty string), and think that the blurb *was* on the
+server but got deleted while the client was doing editing. This is wrong, and
+will result in a diff popup comparing an edited blurb to an empty string. To
+prevent this, we pass 'wasEmpty' to 'makeItemNotesEditor' – if we're using a
+blurb, we'll pass an empty string as the original.
 
 -}
 

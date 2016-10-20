@@ -98,13 +98,22 @@ import Cache
 {- Note [autosize]
 ~~~~~~~~~~~~~~~~~~
 
-All textareas on the site are autosized – i.e. they grow when the user is typing. This is done by the autosize.js plugin, which is called on page load:
+All textareas on the site are autosized – i.e. they grow when the user is
+typing. This is done by the autosize.js plugin, which is called on page load:
 
     autosize($('textarea'));
 
-A slight problem is that it doesn't compute the height of hidden elements correctly – thus, when something is shown and it happens to be a textarea or contain a textarea, we have to call autosize again. This is done in 'JS.switchSection'. So far there are no textboxes that are shown *without* switchSection being involved, and so there's no need to watch for elements being added to the DOM.
+A slight problem is that it doesn't compute the height of hidden elements
+correctly – thus, when something is shown and it happens to be a textarea or
+contain a textarea, we have to call autosize again. This is done in
+'JS.switchSection'. So far there are no textboxes that are shown *without*
+switchSection being involved, and so there's no need to watch for elements
+being added to the DOM.
 
-It would be nicer if we could watch for elements becoming visible without having to modify switchSection, but there doesn't seem to be an easy way to do this – MutationObserver doesn't let us find out when something becomes visible (i.e. when its clientHeight stops being 0).
+It would be nicer if we could watch for elements becoming visible without
+having to modify switchSection, but there doesn't seem to be an easy way to
+do this – MutationObserver doesn't let us find out when something becomes
+visible (i.e. when its clientHeight stops being 0).
 
 In switchSection we use
 
@@ -115,16 +124,22 @@ instead of simple
 
     autosize.update($('textarea'));
 
-– this is done because the textarea could have appeared after the original `autosize($('textarea'));` was called on page load (which could happen if an item was added, for instance).
+– this is done because the textarea could have appeared after the original
+`autosize($('textarea'));` was called on page load (which could happen if an
+item was added, for instance).
 
 -}
 
 {- Note [show-hide]
 ~~~~~~~~~~~~~~~~~~~
 
-A lot of things (notes, etc) can be expanded/collapsed by pressing a button. Similarly, pressing “edit” replaces rendered text with a textbox, or adds buttons to pros/cons. All this is done with sections and show/hide.
+A lot of things (notes, etc) can be expanded/collapsed by pressing a
+button. Similarly, pressing “edit” replaces rendered text with a textbox, or
+adds buttons to pros/cons. All this is done with sections and show/hide.
 
-A section is something that can be shown or hidden. You define a section by using 'section' (which creates a <div>) or 'sectionSpan' (which creates a <span>).
+A section is something that can be shown or hidden. You define a section by
+using 'section' (which creates a <div>) or 'sectionSpan' (which creates a
+<span>).
 
     section "normal" [shown, noScriptShown] $ do
       renderText
@@ -134,29 +149,48 @@ A section is something that can be shown or hidden. You define a section by usin
       renderEditbox
       ...
 
-You can even give 2 names to a section – e.g. "normal editing" if you want the section be visible both in “normal” mode and in “editing” mode.
+You can even give 2 names to a section – e.g. "normal editing" if you want
+the section be visible both in “normal” mode and in “editing” mode.
 
-The list parameter is used to add attributes to the section. 'shown' is an attribute that means that the section is normally visible; 'noScriptShown' means that the section will be visible when Javascipt is disabled. Sections without either attribute will be hidden. (Usually 'shown' and 'noScriptShown' go together, but not always.)
+The list parameter is used to add attributes to the section. 'shown' is an
+attribute that means that the section is normally visible; 'noScriptShown'
+means that the section will be visible when Javascipt is disabled. Sections
+without either attribute will be hidden. (Usually 'shown' and 'noScriptShown'
+go together, but not always.)
 
-When several sections are in the same container (e.g. a <div>), you can toggle between them with 'JS.switchSection', which shows the section (or several sections) with given name, and hides all sections with other names. The elements that aren't sections are not affected.
+When several sections are in the same container (e.g. a <div>), you can
+toggle between them with 'JS.switchSection', which shows the section (or
+several sections) with given name, and hides all sections with other
+names. The elements that aren't sections are not affected.
 
-Also, there's another function available – 'JS.switchSectionEverywhere' – that switches sections everywhere inside the container, not only among container's direct children. It's useful when you have something like a list of pros/cons and you want to switch them all into the “editable” state.
+Also, there's another function available – 'JS.switchSectionEverywhere' –
+that switches sections everywhere inside the container, not only among
+container's direct children. It's useful when you have something like a list
+of pros/cons and you want to switch them all into the “editable” state.
 
 ////////////////////////////////////
 
 And now, here's how it's all implemented.
 
-In 'wrapPage' there's a piece of CSS wrapped in <noscript> that hides everything except for 'noScriptShown' things:
+In 'wrapPage' there's a piece of CSS wrapped in <noscript> that hides
+everything except for 'noScriptShown' things:
 
     .section:not(.noscript-shown) {display:none;}
 
-There's also a piece of Javascript that, when executed, will change it to the following CSS:
+There's also a piece of Javascript that, when executed, will change it to the
+following CSS:
 
     .section:not(.shown) {display:none;}
 
-So, if Javascript is disabled we hide all sections except for those that have the 'noScriptShown' attribute, and if it's enabled we hide all sections except for those that have the 'shown' attribute.
+So, if Javascript is disabled we hide all sections except for those that have
+the 'noScriptShown' attribute, and if it's enabled we hide all sections
+except for those that have the 'shown' attribute.
 
-After that switching sections is simply done by adding/removing the “shown” class. (Note that we don't have to choose between “noscript-shown” and “shown” because switching sections is *only* possible if Javascript is enabled, and in this case the relevant tag will always be “shown” and not “noscript-shown”.)
+After that switching sections is simply done by adding/removing the “shown”
+class. (Note that we don't have to choose between “noscript-shown” and
+“shown” because switching sections is *only* possible if Javascript is
+enabled, and in this case the relevant tag will always be “shown” and not
+“noscript-shown”.)
 
 -}
 
@@ -411,7 +445,8 @@ renderEdit globalState edit = do
       " from " >> quote (toHtml (show oldStatus))
       " to "   >> quote (toHtml (show newStatus))
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
-      p_ $ (if (T.null oldNotes) then "added" else "changed") >> " notes of category " >> printCategory catId
+      p_ $ if T.null oldNotes then "added" else "changed" >>
+           " notes of category " >> printCategory catId
       table_ $ tr_ $ do
         unless (T.null oldNotes) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
@@ -446,19 +481,22 @@ renderEdit globalState edit = do
       " from " >> code_ (toHtml (show oldKind))
       " to "   >> code_ (toHtml (show newKind))
     Edit'SetItemDescription itemId oldDescr newDescr -> do
-      p_ $ (if (T.null oldDescr) then "added" else "changed") >> " description of item " >> printItem itemId
+      p_ $ if T.null oldDescr then "added" else "changed" >>
+           " description of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldDescr) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldDescr)
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newDescr)
     Edit'SetItemNotes itemId oldNotes newNotes -> do
-      p_ $ (if (T.null oldNotes) then "added" else "changed") >> " notes of item " >> printItem itemId
+      p_ $ if T.null oldNotes then "added" else "changed" >>
+           " notes of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldNotes) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
-      p_ $ (if (T.null oldEcosystem) then "added" else "changed") >> " ecosystem of item " >> printItem itemId
+      p_ $ if T.null oldEcosystem then "added" else "changed" >>
+           " ecosystem of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldEcosystem) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldEcosystem)
@@ -466,7 +504,8 @@ renderEdit globalState edit = do
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
-      p_ $ (if (T.null oldContent) then "added" else "changed") >> " trait of item " >> printItem itemId
+      p_ $ if T.null oldContent then "added" else "changed" >>
+           " trait of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldContent) $
           td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline oldContent))
@@ -807,11 +846,25 @@ getItemHue category item = case item^.group_ of
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Categories have flags that enable/disable showing some sections of the items (currently pros/cons, ecosystem and notes); this is done because for some items (like books, or people) “ecosystem” might not make any sense, and pros/cons don't make sense for categories that contain diverse items.
+Categories have flags that enable/disable showing some sections of the items
+(currently pros/cons, ecosystem and notes); this is done because for some
+items (like books, or people) “ecosystem” might not make any sense, and
+pros/cons don't make sense for categories that contain diverse items.
 
-When we change those flags (by editing category info), we want to update the way items are shown (without reloading the page). So, if the “show ecosystem” flag has been set and we unset it, we want to hide the ecosystem section in all items belonging to the category. This happens in 'JS.submitCategoryInfo'.
+When we change those flags (by editing category info), we want to update the
+way items are shown (without reloading the page). So, if the “show ecosystem”
+flag has been set and we unset it, we want to hide the ecosystem section in
+all items belonging to the category. This happens in 'JS.submitCategoryInfo'.
 
-If the category has showing pros/cons (or ecosystem, or both) disabled, we have to render traits and ecosystem as hidden (we can't just not render them at all, because then we wouldn't be able to un-hide them). How could we do it? If we do it in 'renderItemTraits' or 'renderItemEcosystem', this would mean that cached versions of traits/ecosystem/notes would have to be rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead we do a somewhat inelegant thing: we wrap traits/ecosystem/notes into yet another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates on those <div>s.
+If the category has showing pros/cons (or ecosystem, or both) disabled, we
+have to render traits and ecosystem as hidden (we can't just not render them
+at all, because then we wouldn't be able to un-hide them). How could we do
+it? If we do it in 'renderItemTraits' or 'renderItemEcosystem', this would
+mean that cached versions of traits/ecosystem/notes would have to be
+rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead
+we do a somewhat inelegant thing: we wrap traits/ecosystem/notes into yet
+another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates
+on those <div>s.
 -}
 
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
@@ -1265,7 +1318,9 @@ sectionSpan
 sectionSpan t attrs = span_ (class_ (t <> " section ") : attrs)
 
 {-
-TODO: warn about how one shouldn't write @foo("{{bar}}")@ in templates, because a newline in 'bar' directly after the quote will mess things up. Write @foo({{{%js bar}}})@ instead.
+TODO: warn about how one shouldn't write @foo("{{bar}}")@ in templates,
+because a newline in 'bar' directly after the quote will mess things
+up. Write @foo({{{%js bar}}})@ instead.
 -}
 mustache :: MonadIO m => PName -> A.Value -> HtmlT m ()
 mustache f v = do

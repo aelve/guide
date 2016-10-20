@@ -78,21 +78,39 @@ import Merge
 {- Note [acid-state]
 ~~~~~~~~~~~~~~~~~~~~
 
-This application doesn't use a database – instead, it uses acid-state. Acid-state works as follows:
+This application doesn't use a database – instead, it uses
+acid-state. Acid-state works as follows:
 
   * Everything is stored as Haskell values (in particular, all data is stored in 'GlobalState').
 
-  * All changes to the state (and all queries) have to be done by using 'dbUpdate'/'dbQuery' and types (GetItem, SetItemName, etc) from the Types.hs module.
+  * All changes to the state (and all queries) have to be done by using
+    'dbUpdate'/'dbQuery' and types (GetItem, SetItemName, etc) from the
+    Types.hs module.
 
   * When doing a 'dbUpdate', don't forget to 'invalidateCache'!
 
-  * The data is kept in-memory, but all changes are logged to the disk (which lets us recover the state in case of a crash by reapplying the changes) and you can't access the state directly. When the application exits, it creates a snapshot of the state (called “checkpoint”) and writes it to the disk. Additionally, a checkpoint is created every hour (grep for “createCheckpoint”).
+  * The data is kept in-memory, but all changes are logged to the disk (which
+    lets us recover the state in case of a crash by reapplying the changes)
+    and you can't access the state directly. When the application exits, it
+    creates a snapshot of the state (called “checkpoint”) and writes it to
+    the disk. Additionally, a checkpoint is created every hour (grep for
+    “createCheckpoint”).
 
-  * acid-state has a nasty feature – when the state hasn't changed, 'createCheckpoint' appends it to the previous checkpoint. When state doesn't change for a long time, it means that checkpoints can grow to 100 MB or more. So, we employ a dirty bit and use createCheckpoint' instead of createCheckpoint. The former only creates the checkpoint if the dirty bit is set, which is good.
+  * acid-state has a nasty feature – when the state hasn't changed,
+    'createCheckpoint' appends it to the previous checkpoint. When state
+    doesn't change for a long time, it means that checkpoints can grow to 100
+    MB or more. So, we employ a dirty bit and use createCheckpoint' instead
+    of createCheckpoint. The former only creates the checkpoint if the dirty
+    bit is set, which is good.
 
-  * When any type is changed, we have to write a migration function that would read the old version of the type and turn it into the new version. This is done by 'changelog' – you only need to provide the list of differences between the old type and the new type.
+  * When any type is changed, we have to write a migration function that
+    would read the old version of the type and turn it into the new
+    version. This is done by 'changelog' – you only need to provide the list
+    of differences between the old type and the new type.
 
-  * There are actually ways to access the state directly (GetGlobalState and SetGlobalState), but the latter should only be used when doing something one-off (e.g. if you need to migrate all IDs to a different ID scheme).
+  * There are actually ways to access the state directly (GetGlobalState and
+    SetGlobalState), but the latter should only be used when doing something
+    one-off (e.g. if you need to migrate all IDs to a different ID scheme).
 
 -}
 
