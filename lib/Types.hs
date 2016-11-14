@@ -363,27 +363,28 @@ hueToLightColor (Hue i) = table !! ((i-1) `mod` length table)
 data CategoryStatus
   = CategoryStub
   | CategoryWIP
-  | CategoryMostlyDone
   | CategoryFinished
   deriving (Eq, Show, Generic)
 
-deriveSafeCopySimple 1 'extension ''CategoryStatus
+deriveSafeCopySimple 2 'extension ''CategoryStatus
 
 instance A.ToJSON CategoryStatus where
   toJSON = A.genericToJSON A.defaultOptions
 
-data CategoryStatus_v0
-  = CategoryStub_v0
-  | CategoryWIP_v0
-  | CategoryFinished_v0
+data CategoryStatus_v1
+  = CategoryStub_v1
+  | CategoryWIP_v1
+  | CategoryMostlyDone_v1
+  | CategoryFinished_v1
 
-deriveSafeCopySimple 0 'base ''CategoryStatus_v0
+deriveSafeCopySimple 1 'base ''CategoryStatus_v1
 
 instance Migrate CategoryStatus where
-  type MigrateFrom CategoryStatus = CategoryStatus_v0
-  migrate CategoryStub_v0 = CategoryStub
-  migrate CategoryWIP_v0 = CategoryWIP
-  migrate CategoryFinished_v0 = CategoryFinished
+  type MigrateFrom CategoryStatus = CategoryStatus_v1
+  migrate CategoryStub_v1 = CategoryStub
+  migrate CategoryWIP_v1 = CategoryWIP
+  migrate CategoryMostlyDone_v1 = CategoryFinished
+  migrate CategoryFinished_v1 = CategoryFinished
 
 -- If you want to add a field here, see Note [extending types]
 data Category = Category {

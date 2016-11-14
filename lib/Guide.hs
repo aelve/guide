@@ -422,11 +422,10 @@ setMethods = Spock.subcomponent "set" $ do
     status' <- do
       statusName :: Text <- param' "status"
       return $ case statusName of
-        "finished"    -> CategoryFinished
-        "mostly-done" -> CategoryMostlyDone
-        "wip"         -> CategoryWIP
-        "stub"        -> CategoryStub
-        other         -> error ("unknown category status: " ++ show other)
+        "finished" -> CategoryFinished
+        "wip"      -> CategoryWIP
+        "stub"     -> CategoryStub
+        other      -> error ("unknown category status: " ++ show other)
     -- Modify the category
     -- TODO: actually validate the form and report errors
     unless (T.null title') $ do

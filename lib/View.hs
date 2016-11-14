@@ -782,8 +782,6 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
           select_ [name_ "status", autocomplete_ "off"] $ do
             option_ [value_ "finished"] "Complete"
               & selectedIf (category^.status == CategoryFinished)
-            option_ [value_ "mostly-done"] "Mostly done/usable"
-              & selectedIf (category^.status == CategoryMostlyDone)
             option_ [value_ "wip"] "Work in progress"
               & selectedIf (category^.status == CategoryWIP)
             option_ [value_ "stub"] "Stub"
