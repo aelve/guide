@@ -22,12 +22,19 @@ body {
 }
 
 #main > h1 {
+  font-size: 250%;
+  font-weight: 600;
   margin-bottom: 0px;
 }
 
+#main > h1 span {
+  font-weight: 200;
+}
+
 .subtitle {
-  font-weight: bold;
+  font-weight: 500;
   color: #e03;
+  margin-top: 0.4em;
   margin-bottom: 2em;
 }
 .subtitle a {
@@ -81,37 +88,76 @@ body {
   display: flex;
   flex-flow: row wrap;
   justify-content: space-between;
-  margin-top: 1em;
+  margin-top: 3em;
 }
 
-#categories a {
-  font-weight: bold;
-  line-height: 140%;
-  font-size: 110%;
-  padding: 2px 1px;
+#categories-search-results {
+  margin-top: 3em;
+  margin-bottom: 1em;
+  padding-left: 2em;
 }
-
-#categories a.status-mostly-done {
-  background-color: #fdd;
-}
-#categories a.status-wip {
-  background-color: #faa;
-}
-#categories a.status-stub {
-  background-color: #f78;
-}
-
-#categories .status {
-  margin-left: 5px;
-  color: gray;
-  font-weight: bold;
-  font-size: 70%; }
 
 .category-group {
-  min-width: 350px; }
+  width: 340px;
+  padding: 0 30px;
+  padding-bottom: 50px;
+}
+
+.category-group h2 {
+  font-size: 190%;
+  font-weight: 600;
+  padding: 0px 10px;
+  margin: 0 -36px;
+  margin-top: 0px;
+  margin-bottom: 30px;
+}
+
+/* inside .category-group we have .categories-finished|wip|stub */
+
+.categories-finished {
+  margin-top: -5px;
+  margin-bottom: 17px;
+}
+
+.categories-wip, .categories-stub {
+  margin-bottom: 13px;
+}
+
+.categories-wip,  .categories-wip h3,
+.categories-stub, .categories-stub h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.categories-wip h3, .categories-stub h3 {
+  margin: 0px;
+}
+
+.categories-wip p, .categories-stub p {
+  padding-left: 2em;
+  margin: 1px 0px;
+  line-height: 18px;
+}
+
+#categories-search-results .category-link,
+.categories-finished .category-link {
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 28px;
+  display: block;
+}
+.categories-wip .category-link, .categories-stub .category-link {
+  white-space: nowrap;
+}
+
+/* category pages */
 
 .category {
   margin-top: 3em;
+}
+
+.category-title {
+  font-weight: 600;
 }
 
 .item {

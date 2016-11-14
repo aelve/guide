@@ -535,17 +535,27 @@ renderEdit globalState edit = do
 
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
+-- | “Aelve Guide | Haskell”
+haskellHeader :: (Monad m, MonadReader Config m) => HtmlT m ()
+haskellHeader = do
+  h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
+  renderSubtitle
+
+haskellHeaderMain :: (Monad m, MonadReader Config m) => HtmlT m ()
+haskellHeaderMain = do
+  h1_ $ "Aelve Guide " >> span_ "| Haskell"
+  renderSubtitle
+
 renderHaskellRoot
   :: (MonadIO m, MonadThrow m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
-  wrapPage "Aelve Guide: Haskell" $ do
+  wrapPage "Aelve Guide | Haskell" $ do
     onPageLoad $ JS.expandHash ()
     case mbSearchQuery of
-      Nothing -> h1_ "Aelve Guide: Haskell"
+      Nothing -> haskellHeaderMain
       -- A search page isn't the main page, so we need a link to the main page
-      Just _  -> h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
-    renderSubtitle
+      Just _  -> haskellHeader
     renderNoScriptWarning
     renderSearch mbSearchQuery
     textInput [
@@ -576,9 +586,7 @@ renderCategoryPage
 renderCategoryPage category = do
   wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
-    -- TODO: another absolute link [absolute-links]
-    h1_ (mkLink "Aelve Guide: Haskell" "/haskell")
-    renderSubtitle
+    haskellHeader
     renderNoScriptWarning
     renderSearch Nothing
     renderCategory category
@@ -687,34 +695,44 @@ renderSearch mbSearchQuery =
 -- have to start invalidating 'CacheCategoryList' in more things in
 -- 'Cache.invalidateCache'.
 renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
-renderCategoryList cats = cached CacheCategoryList $ do
+renderCategoryList allCats = cached CacheCategoryList $ do
   div_ [id_ "categories"] $
-    for_ (groupWith (view group_) cats) $ \gr ->
+    for_ (groupWith (view group_) allCats) $ \catsInGroup ->
       div_ [class_ "category-group"] $ do
-        h2_ $ toHtml (gr^?!_head.group_)
-        for_ gr $ \category -> do
-          -- TODO: this link shouldn't be absolute [absolute-links]
-          let cl = case category^.status of
-                CategoryFinished   -> "status-finished"
-                CategoryMostlyDone -> "status-mostly-done"
-                CategoryWIP        -> "status-wip"
-                CategoryStub       -> "status-stub"
-          a_ [class_ cl, href_ (categoryLink category)] $
-            toHtml (category^.title)
-          case category^.status of
-            CategoryFinished   -> return ()
-            CategoryMostlyDone -> span_ [class_ "status"] "mostly done"
-            CategoryWIP        -> span_ [class_ "status"] "work in progress"
-            CategoryStub       -> span_ [class_ "status"] "stub"
-          br_ []
+        -- Grandcategory name
+        h2_ $ toHtml (catsInGroup^?!_head.group_)
+        -- Finished categories
+        do let cats = filter ((== CategoryFinished) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-finished"] $ do
+               mapM_ mkCategoryLink cats
+        -- In-progress categories, separated with commas
+        do let cats = filter ((== CategoryWIP) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-wip"] $ do
+               h3_ "In progress"
+               p_ $ sequence_ $ intersperse ", " $
+                 map mkCategoryLink cats
+        -- Stub categories, separated with commas
+        do let cats = filter ((== CategoryStub) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-stub"] $ do
+               h3_ "To be written"
+               p_ $ sequence_ $ intersperse ", " $
+                 map mkCategoryLink cats
+  where
+    -- TODO: this link shouldn't be absolute [absolute-links]
+    mkCategoryLink :: Category -> HtmlT IO ()
+    mkCategoryLink category =
+      a_ [class_ "category-link", href_ (categoryLink category)] $
+        toHtml (category^.title)
 
 renderSearchResults :: Monad m => [Category] -> HtmlT m ()
 renderSearchResults cats = do
-  div_ [id_ "categories"] $
+  div_ [id_ "categories-search-results"] $
     for_ cats $ \category -> do
-      a_ [href_ (categoryLink category)] $
+      a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
-      br_ []
 
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
 renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
