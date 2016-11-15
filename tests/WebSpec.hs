@@ -156,7 +156,6 @@ categoryTests = session "categories" $ using Chrome $ do
         selectDropdown sel opt
         click (form :// ".save")
         onAnotherPage "/" $ do
-          _pause
           ("div" :</ ByLinkText "Cat 2") `shouldHaveAttr`
             ("class", "categories-finished")
     wd "create two items for further tests" $ do
