@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 
 language: c
 
@@ -27,6 +27,13 @@ before_install:
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+- wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip
+- unzip chromedriver_linux64.zip
+- chmod +x chromedriver
+- sudo mv -f chromedriver /usr/local/share/chromedriver
+- sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
+- sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
 
 before_script:
 - sh -e /etc/init.d/xvfb start
