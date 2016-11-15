@@ -52,7 +52,7 @@ mainPageTests = session "main page" $ using Firefox $ do
     "meta[name=google-site-verification]" `shouldHaveAttr`
       ("content", "some-google-token")
   wd "has a title" $ do
-    "h1" `shouldHaveText` "Aelve Guide: Haskell"
+    "h1" `shouldHaveText` "Aelve Guide | Haskell"
   describe "subtitle" $ do
     wd "is present" $ do
       sub <- select ".subtitle"
@@ -87,7 +87,7 @@ categoryTests = session "categories" $ using Firefox $ do
   describe "created category" $ do
     wd "has a link to the main page" $ do
       titleLink <- select "h1 > a"
-      titleLink `shouldHaveText` "Aelve Guide: Haskell"
+      titleLink `shouldHaveText` "Aelve Guide | Haskell"
       titleLink `shouldLinkToRelative` "/haskell"
     wd "has a subtitle" $ do
       checkPresent ".subtitle"
