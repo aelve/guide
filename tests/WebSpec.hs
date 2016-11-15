@@ -147,7 +147,8 @@ categoryTests = session "categories" $ using Chrome $ do
         chosenOption <- select (form :// ByName "status" :// "option:checked")
         chosenOption `shouldHaveText` "Stub"
         onAnotherPage "/" $ do
-          ByLinkText "Cat 2" `shouldHaveAttr` ("class", "status-stub")
+          ("div" :</ ("p" :</ ByLinkText "Cat 2")) `shouldHaveAttr`
+            ("class", "categories-stub")
       wd "can be changed" $ do
         form <- openCategoryEditForm
         sel <- select (form :// ByName "status")
@@ -155,7 +156,9 @@ categoryTests = session "categories" $ using Chrome $ do
         selectDropdown sel opt
         click (form :// ".save")
         onAnotherPage "/" $ do
-          ByLinkText "Cat 2" `shouldHaveAttr` ("class", "status-finished")
+          _pause
+          ("div" :</ ByLinkText "Cat 2") `shouldHaveAttr`
+            ("class", "categories-finished")
     wd "create two items for further tests" $ do
       createItem "some item"
       createItem "another item"
