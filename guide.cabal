@@ -157,7 +157,7 @@ test-suite tests
                      , tagsoup < 0.14
                      , text-all < 0.4
                      , transformers
-                     , webdriver
+                     , webdriver >= 0.8.4 && < 0.9
   hs-source-dirs:      tests
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind

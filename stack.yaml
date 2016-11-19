@@ -3,20 +3,13 @@ resolver: lts-6.14
 packages:
 - location: .
 - location:
-    git: https://github.com/aelve/cmark-sections
-    commit: 559a992334adb7348072c7cf7d030787a41050ce
-  extra-dep: true
-- location:
-    git: https://github.com/neongreen/hs-webdriver
-    commit: 5a6be4720bd7c64d24c2b9d8807cb1377115e6da
-  extra-dep: true
-- location:
     git: https://github.com/aelve/stache-plus
     commit: a12f7edf9c034a01d5da466b212b3f9c0253b1f4
   extra-dep: true
 
 extra-deps:
 - cmark-highlight-0.2.0.0
+- cmark-sections-0.1.0.2
 - friendly-time-0.4
 - ilist-0.2.0.0
 - text-all-0.3.0.1
@@ -24,6 +17,7 @@ extra-deps:
 - megaparsec-5.0.1
 - http-client-0.5.1
 - generic-deriving-1.10.7
+- webdriver-0.8.4
 
 flags:
   generic-deriving:

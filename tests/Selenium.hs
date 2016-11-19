@@ -52,10 +52,6 @@ module Selenium
   shouldBeSelected,
   shouldBeDisplayed,
   expectationFailure,
-
-  -- * Keys
-  _backspace, _enter, _esc,
-  _shift, _ctrl, _alt, _command,
 )
 where
 
@@ -78,6 +74,7 @@ import Test.Hspec.WebDriver hiding
 import qualified Test.Hspec.WebDriver as WD
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
+import qualified Test.WebDriver.Common.Keys as Key
 import qualified Test.Hspec.Expectations as Hspec
 -- Exceptions
 import Control.Monad.Catch
@@ -124,7 +121,7 @@ enterInput :: CanSelect s => Text -> s -> WD ()
 enterInput x s = do
   input <- select s
   clearInput input
-  sendKeys (x <> _enter) input
+  sendKeys (x <> Key.enter) input
   checkNotPresent input
 
 setInput :: CanSelect s => Text -> s -> WD ()
@@ -452,64 +449,5 @@ shouldBeHidden s = do
   x <- isDisplayed e
   s `shouldSatisfy` ("be hidden", const (not x))
 
-_backspace, _enter, _esc :: Text
-(_backspace, _enter, _esc) = ("\xE003", "\xE007", "\xE00C")
-_shift, _ctrl, _alt, _command :: Text
-(_shift, _ctrl, _alt, _command) = ("\xE008", "\xE009", "\xE00A", "\xE03D")
-
 wait_delay :: Double
 wait_delay = 10
-
-{-
-NULL            \uE000
-CANCEL          \uE001
-HELP            \uE002
-TAB             \uE004
-CLEAR           \uE005
-RETURN          \uE006
-PAUSE           \uE00B
-SPACE           \uE00D
-PAGE_UP         \uE00E
-PAGE_DOWN       \uE00F
-END             \uE010
-HOME            \uE011
-ARROW_LEFT      \uE012
-ARROW_UP        \uE013
-ARROW_RIGHT     \uE014
-ARROW_DOWN      \uE015
-INSERT          \uE016
-DELETE          \uE017
-F1              \uE031
-F2              \uE032
-F3              \uE033
-F4              \uE034
-F5              \uE035
-F6              \uE036
-F7              \uE037
-F8              \uE038
-F9              \uE039
-F10             \uE03A
-F11             \uE03B
-F12             \uE03C
-META            \uE03D
-ZENKAKU_HANKAKU \uE040
-
-SEMICOLON       \uE018
-EQUALS          \uE019
-NUMPAD0         \uE01A
-NUMPAD1         \uE01B
-NUMPAD2         \uE01C
-NUMPAD3         \uE01D
-NUMPAD4         \uE01E
-NUMPAD5         \uE01F
-NUMPAD6         \uE020
-NUMPAD7         \uE021
-NUMPAD8         \uE022
-NUMPAD9         \uE023
-MULTIPLY        \uE024
-ADD             \uE025
-SEPARATOR       \uE026
-SUBTRACT        \uE027
-DECIMAL         \uE028
-DIVIDE          \uE029
--}

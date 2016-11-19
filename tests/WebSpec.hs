@@ -25,6 +25,7 @@ import Control.Monad.Catch
 
 -- Testing
 import Selenium
+import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
 import qualified Guide
@@ -498,7 +499,7 @@ createItem :: Text -> WD Element
 createItem t = do
   let selectItems = selectAll ".item"
   items <- selectItems
-  sendKeys (t <> _enter) ".add-item"
+  sendKeys (t <> Key.enter) ".add-item"
   waitUntil wait_delay (expect . (\xs -> length xs > length items) =<< selectItems)
   items2 <- selectItems
   case items2 \\ items of
