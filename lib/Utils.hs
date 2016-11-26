@@ -50,6 +50,7 @@ module Utils
   -- * Template Haskell
   hs,
   dumpSplices,
+  bangNotStrict,
 
   -- * Safecopy
   Change(..),
@@ -240,6 +241,9 @@ dumpSplices x = do
   mapM_ (reportWarning . pprint) ds
   return ds
 
+bangNotStrict :: Q Bang
+bangNotStrict = bang noSourceUnpackedness noSourceStrictness
+
 {- |
 A change from one version of a record (one constructor, several fields) to
 another version. We only record the latest version, so we have to be able to
@@ -352,7 +356,7 @@ changelog bareTyName (newVer, Past oldVer) changes = do
   -- First, 'reify' it. See documentation for 'reify' to understand why we
   -- use 'lookupValueName' here (if we just do @reify newTyName@, we might
   -- get the constructor instead).
-  TyConI (DataD _cxt _name _vars cons _deriving) <- do
+  TyConI (DataD _cxt _name _vars _kind cons _deriving) <- do
     mbReallyTyName <- lookupTypeName (nameBase newTyName)
     case mbReallyTyName of
       Just reallyTyName -> reify reallyTyName
@@ -363,6 +367,8 @@ changelog bareTyName (newVer, Past oldVer) changes = do
     fail "changelog: can't yet work with types with context"
   unless (null _vars) $
     fail "changelog: can't yet work with types with variables"
+  unless (isNothing _kind) $
+    fail "changelog: can't yet work with types with kinds"
   -- We assume that the type is a single-constructor record.
   con <- case cons of
     [x] -> return x
@@ -371,14 +377,13 @@ changelog bareTyName (newVer, Past oldVer) changes = do
   -- Check that the type is actually a record and that there are no strict
   -- fields (which we cannot handle yet); when done, make a list of fields
   -- that is easier to work with. We strip names to their bare form.
+  let normalBang = Bang NoSourceUnpackedness NoSourceStrictness
   (recName :: String, fields :: [(String, Type)]) <- case con of
     RecC cn fs
-      | all (== NotStrict) (fs^..each._2) ->
+      | all (== normalBang) (fs^..each._2) ->
           return (mkBare cn, [(mkBare n, t) | (n,_,t) <- fs])
       | otherwise -> fail "changelog: can't work with strict/unpacked fields"
     _             -> fail "changelog: the type must be a record"
-  -- This will only be needed on newer GHC:
-  --     let normalBang = Bang NoSourceUnpackedness NoSourceStrictness
   -- Check that all 'Added' fields are actually present in the new type
   -- and that all 'Removed' fields aren't there
   for_ (M.keys added) $ \n -> do
@@ -406,16 +411,17 @@ changelog bareTyName (newVer, Past oldVer) changes = do
   -- Then we construct the record constructor:
   --   FooRec_v3 { a_v3 :: String, b_v3 :: Bool }
   let oldRec = recC (mkOld recName)
-                    [varStrictType (mkOld fName)
-                                   (strictType notStrict fType)
+                    [varBangType (mkOld fName)
+                                 (bangType bangNotStrict fType)
                     | (fName, fType) <- M.toList oldFields]
   -- And the data type:
   --   data Foo_v3 = FooRec_v3 {...}
   let oldTypeDecl = dataD (cxt [])      -- no context
                           oldTyName     -- name of old type
                           []            -- no variables
+                          Nothing       -- no explicit kind
                           [oldRec]      -- one constructor
-                          []            -- not deriving anything
+                          (cxt [])      -- not deriving anything
 
   -- Next we generate the migration instance. It has two inner declarations.
   -- First declaration – “type MigrateFrom Foo = Foo_v3”:
@@ -459,12 +465,14 @@ data GenConstructor = Copy Name | Custom String [(String, Name)]
 genVer :: Name -> Int -> [GenConstructor] -> Q [Dec]
 genVer tyName ver constructors = do
   -- Get information about the new version of the datatype
-  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  TyConI (DataD _cxt _name _vars _kind cons _deriving) <- reify tyName
   -- Let's do some checks first
   unless (null _cxt) $
     fail "genVer: can't yet work with types with context"
   unless (null _vars) $
     fail "genVer: can't yet work with types with variables"
+  unless (isNothing _kind) $
+    fail "genVer: can't yet work with types with kinds"
 
   let oldName n = mkName (nameBase n ++ "_v" ++ show ver)
 
@@ -479,8 +487,8 @@ genVer tyName ver constructors = do
 
   let customConstructor conName fields =
         recC (oldName (mkName conName))
-             [varStrictType (oldName (mkName fName))
-                            (strictType notStrict (conT fType))
+             [varBangType (oldName (mkName fName))
+                          (bangType bangNotStrict (conT fType))
                | (fName, fType) <- fields]
 
   cons' <- for constructors $ \genCons -> do
@@ -495,10 +503,12 @@ genVer tyName ver constructors = do
     (oldName tyName)
     -- no variables
     []
+    -- no explicit kind
+    Nothing
     -- constructors
     (map return cons')
     -- not deriving anything
-    []
+    (cxt [])
   return [decl]
 
 data MigrateConstructor = CopyM Name | CustomM Name ExpQ
@@ -506,12 +516,14 @@ data MigrateConstructor = CopyM Name | CustomM Name ExpQ
 migrateVer :: Name -> Int -> [MigrateConstructor] -> Q Exp
 migrateVer tyName ver constructors = do
   -- Get information about the new version of the datatype
-  TyConI (DataD _cxt _name _vars cons _deriving) <- reify tyName
+  TyConI (DataD _cxt _name _vars _kind cons _deriving) <- reify tyName
   -- Let's do some checks first
   unless (null _cxt) $
     fail "migrateVer: can't yet work with types with context"
   unless (null _vars) $
     fail "migrateVer: can't yet work with types with variables"
+  unless (isNothing _kind) $
+    fail "migrateVer: can't yet work with types with kinds"
 
   let oldName n = mkName (nameBase n ++ "_v" ++ show ver)
 

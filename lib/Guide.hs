@@ -37,6 +37,8 @@ import Data.IP (IP)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
+import Web.Spock.Config
+import Web.Routing.Combinators (PathState(..))
 import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
@@ -149,13 +151,13 @@ getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
           => m Config
 getConfig = _config <$> Spock.getState
 
-itemVar :: Path '[Uid Item]
+itemVar :: Path '[Uid Item] 'Open
 itemVar = "item" <//> var
 
-categoryVar :: Path '[Uid Category]
+categoryVar :: Path '[Uid Category] 'Open
 categoryVar = "category" <//> var
 
-traitVar :: Path '[Uid Trait]
+traitVar :: Path '[Uid Trait] 'Open
 traitVar = "trait" <//> var
 
 invalidateCache'
@@ -826,8 +828,10 @@ mainWith config = do
     let serverState = ServerState {
           _config = config,
           _db     = db }
-    let spockConfig = (defaultSpockCfg () PCNoDatabase serverState) {
-          spc_maxRequestSize = Just (1024*1024) }
+    spockConfig <- do
+      cfg <- defaultSpockCfg () PCNoDatabase serverState
+      return cfg {
+        spc_maxRequestSize = Just (1024*1024) }
     when (_prerender config) $ do
       putStr "Prerendering pages to be cached... "
       globalState <- liftIO $ Acid.query db GetGlobalState
