@@ -30,6 +30,7 @@ HTML
 ============================================================
 <div class="item-info" style="background-color:{{item_color.dark}}">
   <div class="section normal shown noscript-shown">
+    {{> item-info-anchor }}
     {{> item-info-title }}
     {{> item-info-controls }}
   </div>
@@ -41,58 +42,88 @@ HTML
 CSS
 ------------------------------------------------------------
 .item-info {
+  padding-bottom: 12px;
   padding: 10px 15px;
 }
 
+.item-info .section.normal {
+  display: flex;
+}
 
+HTML: item-info-anchor
+------------------------------------------------------------
+<div style="font-size:23px; line-height:27px;">
+  <a class="anchor" href="{{link_to_item}}">#</a>
+</div>
 
 HTML: item-info-title
 ------------------------------------------------------------
-<span style="font-size:150%">
-  <a class="anchor" href="{{link_to_item}}">#</a>
+<div style="font-size:23px; line-height:27px;">
   {{> item-title}}
-</span>
-{{> space em=2 }}
-<span class="item-group">
+</div>
+<div class="item-group" style="line-height:27px;">
   {{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
-</span>
+</div>
 
+CSS
+------------------------------------------------------------
+.item-group {
+  padding-left: 2em;
+}
 
 HTML: item-info-controls
 ------------------------------------------------------------
-<span class="controls">
-  {{> img-button
-        src    = "/arrow-thick-top.svg"
-        title  = "move item up"
-        class  = "move-item-up"
-        action = [| moveItem("up", {{{%js item.uid}}}); |] }}
-  {{> img-button
-        src    = "/arrow-thick-bottom.svg"
-        title  = "move item down"
-        class  = "move-item-down"
-        action = [| moveItem("down", {{{%js item.uid}}}); |] }}
-  {{> space em=1.5 }}
-  {{> img-button
-        src    = "/pencil.svg"
-        title  = "edit item info"
-        class  = "edit-item-info"
-        action = [| editItemInfo({{{%js item.uid}}}); |] }}
-  {{> space em=0.5 }}
-  {{> img-button
-        src    = "/x.svg"
-        title  = "delete item"
-        class  = "delete-item"
-        action = [| deleteItem({{{%js item.uid}}}); |] }}
-</span>
+<div class="controls">
+  <span>
+    {{> img-button
+          src    = "/arrow-thick-top.svg"
+          title  = "move item up"
+          class  = "move-item-up"
+          action = [| moveItem("up", {{{%js item.uid}}}); |] }}
+    {{> img-button
+          src    = "/arrow-thick-bottom.svg"
+          title  = "move item down"
+          class  = "move-item-down"
+          action = [| moveItem("down", {{{%js item.uid}}}); |] }}
+  </span>
+  <span>
+    {{> img-button
+          src    = "/pencil.svg"
+          title  = "edit item info"
+          class  = "edit-item-info"
+          action = [| editItemInfo({{{%js item.uid}}}); |] }}
+    {{> space em=0.4 }}
+    {{> img-button
+          src    = "/x.svg"
+          title  = "delete item"
+          class  = "delete-item"
+          action = [| deleteItem({{{%js item.uid}}}); |] }}
+  </span>
+</div>
 
 CSS
 ------------------------------------------------------------
 .item-info .controls {
-  float: right;
+  margin-left: auto;
+  padding-left: 2em;
+}
+.item-info .controls > span {
+  white-space: nowrap;
+}
+/* on big screens we don't want to wrap the controls */
+@media (min-width: 480px) {
+  .item-info .controls {
+    white-space: nowrap;
+  }
+  .item-info .controls > span:first-child {
+    padding-right: 1em;
+  }
 }
 .item-info .controls img {
   opacity: 0.4;
-  height: 23px;
+  height: 20px;
+  position: relative;
+  bottom: -3px;
 }
 
 JS

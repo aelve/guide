@@ -180,6 +180,10 @@ body {
   color: gray;
 }
 
+.item-body {
+  padding-top: 5px;
+}
+
 .item-traits,
 .item-notes,
 .item-description,
