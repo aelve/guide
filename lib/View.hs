@@ -445,7 +445,7 @@ renderEdit globalState edit = do
       " from " >> quote (toHtml (show oldStatus))
       " to "   >> quote (toHtml (show newStatus))
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
-      p_ $ if T.null oldNotes then "added" else "changed" >>
+      p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of category " >> printCategory catId
       table_ $ tr_ $ do
         unless (T.null oldNotes) $
@@ -481,21 +481,21 @@ renderEdit globalState edit = do
       " from " >> code_ (toHtml (show oldKind))
       " to "   >> code_ (toHtml (show newKind))
     Edit'SetItemDescription itemId oldDescr newDescr -> do
-      p_ $ if T.null oldDescr then "added" else "changed" >>
+      p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldDescr) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldDescr)
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newDescr)
     Edit'SetItemNotes itemId oldNotes newNotes -> do
-      p_ $ if T.null oldNotes then "added" else "changed" >>
+      p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldNotes) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
-      p_ $ if T.null oldEcosystem then "added" else "changed" >>
+      p_ $ (if T.null oldEcosystem then "added" else "changed") >>
            " ecosystem of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldEcosystem) $
@@ -504,7 +504,7 @@ renderEdit globalState edit = do
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
-      p_ $ if T.null oldContent then "added" else "changed" >>
+      p_ $ (if T.null oldContent then "added" else "changed") >>
            " trait of item " >> printItem itemId
       table_ $ tr_ $ do
         unless (T.null oldContent) $
