@@ -18,7 +18,6 @@ where
 
 import BasePrelude hiding (Category)
 -- Monads and monad transformers
-import Control.Monad.Catch (MonadThrow)
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Morph
@@ -729,7 +728,7 @@ otherMethods = do
         Atom.feedLinks   = [Atom.nullLink feedUrl] }
 
 itemToFeedEntry
-  :: (MonadIO m, MonadThrow m)
+  :: (MonadIO m)
   => String -> Category -> Item -> m Atom.Entry
 itemToFeedEntry baseUrl category item = do
   entryContent <- Lucid.renderTextT (renderItemForFeed category item)

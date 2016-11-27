@@ -51,7 +51,6 @@ import BasePrelude hiding (Category)
 import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
 import Control.Monad.IO.Class
-import Control.Monad.Catch
 import Control.Monad.Reader
 -- Lists
 import Data.List.Split
@@ -194,7 +193,7 @@ enabled, and in this case the relevant tag will always be “shown” and not
 
 -}
 
-renderSubtitle :: (Monad m, MonadReader Config m) => HtmlT m ()
+renderSubtitle :: (MonadReader Config m) => HtmlT m ()
 renderSubtitle =
   div_ [class_ "subtitle"] $ do
     "alpha version • don't post on Reddit yet"
@@ -536,18 +535,18 @@ renderEdit globalState edit = do
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 -- | “Aelve Guide | Haskell”
-haskellHeader :: (Monad m, MonadReader Config m) => HtmlT m ()
+haskellHeader :: (MonadReader Config m) => HtmlT m ()
 haskellHeader = do
   h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
   renderSubtitle
 
-haskellHeaderMain :: (Monad m, MonadReader Config m) => HtmlT m ()
+haskellHeaderMain :: (MonadReader Config m) => HtmlT m ()
 haskellHeaderMain = do
   h1_ $ "Aelve Guide " >> span_ "| Haskell"
   renderSubtitle
 
 renderHaskellRoot
-  :: (MonadIO m, MonadThrow m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide | Haskell" $ do
@@ -581,7 +580,7 @@ renderHaskellRoot globalState mbSearchQuery =
     -- unfinished”
 
 renderCategoryPage
-  :: (MonadIO m, MonadThrow m, MonadReader Config m)
+  :: (MonadIO m, MonadReader Config m)
   => Category -> HtmlT m ()
 renderCategoryPage category = do
   wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
@@ -685,7 +684,7 @@ wrapPage pageTitle page = doctypehtml_ $ do
              mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
-renderSearch :: (MonadIO m, MonadThrow m) => Maybe Text -> HtmlT m ()
+renderSearch :: (MonadIO m) => Maybe Text -> HtmlT m ()
 renderSearch mbSearchQuery =
   mustache "search" $ A.object [
     "query" A..= mbSearchQuery ]
@@ -906,13 +905,13 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
-renderItemTitle :: (MonadIO m, MonadThrow m) => Item -> HtmlT m ()
+renderItemTitle :: (MonadIO m) => Item -> HtmlT m ()
 renderItemTitle item =
   mustache "item-title" $ A.object [
     "item" A..= item ]
 
 -- TODO: give a link to oldest available docs when the new docs aren't there
-renderItemInfo :: (MonadIO m, MonadThrow m) => Category -> Item -> HtmlT m ()
+renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
   let itemkindname :: Text
       itemkindname = case item^.kind of
@@ -1137,7 +1136,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
       return ()
 
 renderItemForFeed
-  :: (MonadIO m, MonadThrow m)
+  :: (MonadIO m)
   => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item
