@@ -937,5 +937,3 @@ adminHook = do
     Spock.requireBasicAuth "Authenticate (login = admin)" check return
 
 -- TODO: a function to find all links to Hackage that have version in them
-
--- TODO: page titles in Google have “artyom.me” in them, that's bad
