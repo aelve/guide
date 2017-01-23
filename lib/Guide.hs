@@ -3,8 +3,7 @@ OverloadedStrings,
 ScopedTypeVariables,
 TypeFamilies,
 DataKinds,
-FlexibleContexts,
-NoImplicitPrelude
+FlexibleContexts
   #-}
 
 
@@ -16,21 +15,15 @@ module Guide
 where
 
 
-import BasePrelude hiding (Category)
+import Imports
+
 -- Monads and monad transformers
-import Control.Monad.State
-import Control.Monad.Reader
 import Control.Monad.Morph
--- Lenses
-import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 -- Text
-import Data.Text.All (Text)
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
--- Paths
-import System.FilePath ((</>))
 -- Network
 import Data.IP (IP)
 -- Web
@@ -57,8 +50,6 @@ import qualified System.Metrics.Gauge     as EKG.Gauge
 import Data.Acid as Acid
 -- Time
 import Data.Time
--- Deepseq
-import Control.DeepSeq
 -- IO
 import System.IO
 import qualified SlaveThread as Slave

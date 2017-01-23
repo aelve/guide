@@ -1,8 +1,3 @@
-{-# LANGUAGE
-NoImplicitPrelude
-  #-}
-
-
 module Cache
 (
   CacheKey(..),
@@ -13,17 +8,11 @@ module Cache
 where
 
 
-import BasePrelude hiding (Category)
--- Lenses
-import Lens.Micro.Platform hiding ((&))
--- Monads and monad transformers
-import Control.Monad.IO.Class
--- ByteString
-import qualified Data.ByteString.Lazy as BSL
+import Imports
+
 -- Concurrent map
 import qualified STMContainers.Map as STMMap
 import qualified Focus
-import Data.Hashable
 -- Lucid
 import Lucid.Base
 
@@ -34,7 +23,7 @@ import Utils
 
 -- Left = someone started rendering but haven't finished yet
 -- Right = result of the render
-type Cache = STMMap.Map CacheKey (Either Unique BSL.ByteString)
+type Cache = STMMap.Map CacheKey (Either Unique LByteString)
 
 cache :: Cache
 {-# NOINLINE cache #-}

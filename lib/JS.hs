@@ -3,8 +3,7 @@ FlexibleInstances,
 GeneralizedNewtypeDeriving,
 OverloadedStrings,
 QuasiQuotes,
-BangPatterns,
-NoImplicitPrelude
+BangPatterns
   #-}
 
 
@@ -14,10 +13,10 @@ NoImplicitPrelude
 module JS where
 
 
-import BasePrelude
+import Imports
+
 -- Text
 import qualified Data.Text.All as T
-import Data.Text.All (Text)
 -- Interpolation
 import NeatInterpolation
 

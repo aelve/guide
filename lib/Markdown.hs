@@ -1,8 +1,7 @@
 {-# LANGUAGE
 OverloadedStrings,
 FlexibleInstances,
-FlexibleContexts,
-NoImplicitPrelude
+FlexibleContexts
   #-}
 
 
@@ -33,18 +32,13 @@ module Markdown
 where
 
 
-import BasePrelude hiding (Space)
--- Lenses
-import Lens.Micro.Platform hiding ((&))
--- Monad transformers and monads
-import Control.Monad.State
+import Imports
+
 -- Text
 import qualified Data.Text.All as T
-import Data.Text.All (Text)
 -- ByteString
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
-import Data.ByteString (ByteString)
 -- Parsing
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Text
@@ -56,7 +50,6 @@ import Text.HTML.SanitizeXSS
 -- Containers
 import Data.Tree
 import qualified Data.Set as S
-import Data.Set (Set)
 -- Markdown
 import CMark hiding (Node)
 import qualified CMark as MD
