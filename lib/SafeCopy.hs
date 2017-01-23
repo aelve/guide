@@ -1,6 +1,4 @@
-{-# LANGUAGE
-CPP
-  #-}
+{-# LANGUAGE CPP #-}
 
 
 -- Hack for bug in older Cabal versions
@@ -38,7 +36,7 @@ internalDeriveSafeCopySorted versionId kindName tyName = do
   internalDeriveSafeCopySorted' versionId kindName tyName info
 
 internalDeriveSafeCopySorted' :: Version a -> Name -> Name -> Info -> Q [Dec]
-internalDeriveSafeCopySorted' versionId kindName tyName info = do
+internalDeriveSafeCopySorted' versionId kindName tyName info =
   case info of
 #if MIN_VERSION_template_haskell(2,11,0)
     TyConI (DataD context _name tyvars _kind cons _derivs)

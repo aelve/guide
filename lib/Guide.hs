@@ -1,12 +1,9 @@
-{-# LANGUAGE
-OverloadedStrings,
-ScopedTypeVariables,
-TypeFamilies,
-DataKinds,
-FlexibleContexts,
-NoImplicitPrelude
-  #-}
-
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Guide
 (

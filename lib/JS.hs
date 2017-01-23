@@ -1,12 +1,9 @@
-{-# LANGUAGE
-FlexibleInstances,
-GeneralizedNewtypeDeriving,
-OverloadedStrings,
-QuasiQuotes,
-BangPatterns,
-NoImplicitPrelude
-  #-}
-
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -- TODO: try to make it more type-safe somehow?
 

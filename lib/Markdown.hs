@@ -1,10 +1,7 @@
-{-# LANGUAGE
-OverloadedStrings,
-FlexibleInstances,
-FlexibleContexts,
-NoImplicitPrelude
-  #-}
-
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Markdown
 (

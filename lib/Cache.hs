@@ -1,7 +1,4 @@
-{-# LANGUAGE
-NoImplicitPrelude
-  #-}
-
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Cache
 (

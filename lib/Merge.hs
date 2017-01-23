@@ -1,7 +1,5 @@
-{-# LANGUAGE
-OverloadedStrings,
-NoImplicitPrelude
-  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 
 module Merge
@@ -36,7 +34,7 @@ merge orig a b = T.concat . V.toList $ PV.apply (pa <> pb') orig'
       V.fromList . consolidate . map T.toStrict . break' . T.toString
     pa = PV.diff orig' a'
     pb = PV.diff orig' b'
-    (_, pb') = PV.transformWith PV.ours pa pb  
+    (_, pb') = PV.transformWith PV.ours pa pb
 
 -- | Break a string into words, spaces, and special characters.
 break' :: String -> [String]
