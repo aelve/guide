@@ -155,10 +155,7 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
         sel <- select (form :// ByName "status")
         opt <- select (sel :// HasText "Complete")
         selectDropdown sel opt
-        click (form :// ".save")
-        -- normally Selenium wouldn't wait for the request to complete, so we
-        -- have to wait manually by waiting until the form is hidden
-        checkNotPresent form
+        saveForm form
         onAnotherPage "/" $ do
           ("div" :</ ByLinkText "Cat 2") `shouldHaveAttr`
             ("class", "categories-finished")
@@ -176,13 +173,13 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// ByName "pros-cons-enabled")
-        click (form :// ".save")
+        saveForm form
         waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-traits"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// ByName "pros-cons-enabled")
-        click (form :// ".save")
+        saveForm form
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-traits"
     describe "ecosystem enabled" $ do
@@ -196,13 +193,13 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
       wd "section isn't shown after unchecking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// ByName "ecosystem-enabled")
-        click (form :// ".save")
+        saveForm form
         waitUntil wait_delay $
           expect . not =<< anyM isDisplayed =<< selectAll ".item-ecosystem"
       wd "section is shown again after checking the checkbox" $ do
         form <- openCategoryEditForm
         click (form :// ByName "ecosystem-enabled")
-        click (form :// ".save")
+        saveForm form
         waitUntil wait_delay $
           expect =<< allM isDisplayed =<< selectAll ".item-ecosystem"
   describe "feed" $ do
@@ -226,7 +223,7 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
     wd "can be edited" $ do
       form <- openCategoryNotesEditForm
       setInput "Blah blah" (form :// "textarea")
-      click (form :// ".save")
+      saveForm form
       ".category-notes .notes-like" `shouldHaveText` "Blah blah"
   describe "deleting a category" $ do
     wd "dismissing the alert doesn't do anything" $ do
@@ -351,7 +348,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
       wd "can be changed" $ do
         do form <- openItemDescriptionEditForm item1
            setInput "foo *bar*\n\n# Blah" (form :// "textarea")
-           click (form :// ".save")
+           saveForm form
         section <- select (item1 :// ".item-description .notes-like")
         (section :// "p")  `shouldHaveText` "foo bar"
         (section :// "h1") `shouldHaveText` "Blah"
@@ -379,7 +376,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
       wd "can be changed" $ do
         do form <- openItemEcosystemEditForm item1
            setInput "foo *bar*\n\n# Blah" (form :// "textarea")
-           click (form :// ".save")
+           saveForm form
         section <- select (item1 :// ".item-ecosystem .notes-like")
         (section :// "p")  `shouldHaveText` "foo bar"
         (section :// "h1") `shouldHaveText` "Blah"
@@ -444,7 +441,7 @@ markdownTests = session "markdown" $ using [chromeCaps] $ do
   wd "Markdown in category notes" $ do
     form <- openCategoryNotesEditForm
     setInput "# Test\n*foo*" (form :// "textarea")
-    click (form :// ".save")
+    saveForm form
     ".category-notes .notes-like h1" `shouldHaveText` "Test"
     ".category-notes .notes-like p em" `shouldHaveText` "foo"
   describe "Markdown in item descriptions" $ do
@@ -453,13 +450,13 @@ markdownTests = session "markdown" $ using [chromeCaps] $ do
       createItem "test"
       form <- openItemDescriptionEditForm item
       setInput "# Blah\n*bar*" (form :// "textarea")
-      click (form :// ".save")
+      saveForm form
       (item :// ".item-description .notes-like h1") `shouldHaveText` "Blah"
       (item :// ".item-description .notes-like p em") `shouldHaveText` "bar"
     wd "@hk links are parsed as Hackage links" $ do
       form <- openItemDescriptionEditForm item
       setInput "[foo-bar](@hk)" (form :// "textarea")
-      click (form :// ".save")
+      saveForm form
       (item :// ".item-description .notes-like a") `shouldHaveText` "foo-bar"
       (item :// ".item-description .notes-like a") `shouldLinkTo`
         "https://hackage.haskell.org/package/foo-bar"
@@ -522,7 +519,7 @@ setItemGroup g item = do
   sel <- select (form :// ByName "group")
   opt <- select (sel :// HasText g)
   selectDropdown sel opt
-  click (form :// ".save")
+  saveForm form
   itemGroup item `shouldHaveText` g
 
 setItemCustomGroup :: CanSelect s => Text -> s -> WD ()
@@ -564,6 +561,18 @@ openItemEcosystemEditForm :: CanSelect s => s -> WD Element
 openItemEcosystemEditForm item = do
   click (item :// ".item-ecosystem .normal .edit-item-ecosystem")
   select (item :// ".item-ecosystem .editing")
+
+-- | Save a form and wait for it to close.
+--
+-- Assumes that the form has a button with class @save@.
+saveForm :: CanSelect s => s -> WD ()
+saveForm form = do
+  click (form :// ".save")
+  -- Normally Selenium wouldn't wait for the “save” request to complete, so
+  -- we have to manually wait until the form is hidden. It's important
+  -- because otherwise things like issue #134 happen (when Selenium asks for
+  -- another page before the form has finished saving).
+  checkNotPresent form
 
 -----------------------------------------------------------------------------
 -- Utilities for webdriver
