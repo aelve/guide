@@ -54,6 +54,8 @@ library
     JS
     View
     SafeCopy
+  other-modules:
+    Imports
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
@@ -129,6 +131,7 @@ library
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
+                     , NoImplicitPrelude
 
 test-suite tests
   main-is:             Main.hs

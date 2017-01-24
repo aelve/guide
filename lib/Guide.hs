@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Guide
 (
@@ -13,21 +12,15 @@ module Guide
 where
 
 
-import BasePrelude hiding (Category)
+import Imports
+
 -- Monads and monad transformers
-import Control.Monad.State
-import Control.Monad.Reader
 import Control.Monad.Morph
--- Lenses
-import Lens.Micro.Platform hiding ((&))
 -- Containers
 import qualified Data.Map as M
 -- Text
-import Data.Text.All (Text)
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
--- Paths
-import System.FilePath ((</>))
 -- Network
 import Data.IP (IP)
 -- Web
@@ -54,8 +47,6 @@ import qualified System.Metrics.Gauge     as EKG.Gauge
 import Data.Acid as Acid
 -- Time
 import Data.Time
--- Deepseq
-import Control.DeepSeq
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
@@ -760,21 +751,24 @@ createCheckpoint' db = liftIO $ do
     createArchive db
     createCheckpoint db
 
+----------------------------------------------------------------------------
+-- The entry point
+----------------------------------------------------------------------------
+
+-- | Start the site.
 main :: IO ()
 main = do
   config <- readConfig
   mainWith config
 
+-- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
 mainWith config = do
   -- Emptying the cache is needed because during development (i.e. in REPL)
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
   emptyCache
-  Slave.fork $ FSNotify.withManager $ \mgr -> do
-    FSNotify.watchTree mgr "templates/" (const True) $ \_ -> do
-      emptyCache
-    forever $ threadDelay 1000000
+  startTemplateWatcher
   let emptyState = GlobalState {
         _categories = [],
         _categoriesDeleted = [],
@@ -828,14 +822,7 @@ mainWith config = do
       cfg <- defaultSpockCfg () PCNoDatabase serverState
       return cfg {
         spc_maxRequestSize = Just (1024*1024) }
-    when (_prerender config) $ do
-      putStr "Prerendering pages to be cached... "
-      globalState <- liftIO $ Acid.query db GetGlobalState
-      for_ (globalState^.categories) $ \cat -> do
-        putStr "|"
-        evaluate . force =<<
-          renderBST (hoist (flip runReaderT config) (renderCategoryPage cat))
-      putStrLn " done"
+    when (_prerender config) $ prerenderPages config db
     runSpock 8080 $ spock spockConfig $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
@@ -935,4 +922,30 @@ adminHook = do
 
 -- TODO: a function to find all links to Hackage that have version in them
 
--- TODO: page titles in Google have “artyom.me” in them, that's bad
+-- | During development you need to see the changes whenever you change
+-- anything. This function starts a thread that watches for changes in
+-- templates and clears the cache whenever a change occurs, so that you
+-- wouldn't see cached pages.
+startTemplateWatcher :: IO ()
+startTemplateWatcher = void $ do
+  Slave.fork $ FSNotify.withManager $ \mgr -> do
+    FSNotify.watchTree mgr "templates/" (const True) $ \_ -> do
+      emptyCache
+    forever $ threadDelay 1000000
+
+-- | Render all pages and put them into the cache, so that (unlucky) users
+-- wouldn't see delays after a restart of the site.
+--
+-- Well, actually instead unlucky users would see an error after a restart of
+-- the site until prerendering completes, which is probably worse.
+--
+-- TODO: make prerendering asynchronous.
+prerenderPages :: Config -> DB -> IO ()
+prerenderPages config db = do
+  putStr "Prerendering pages to be cached... "
+  globalState <- Acid.query db GetGlobalState
+  for_ (globalState^.categories) $ \cat -> do
+    putStr "|"
+    evaluate . force =<<
+      renderBST (hoist (flip runReaderT config) (renderCategoryPage cat))
+  putStrLn " done"

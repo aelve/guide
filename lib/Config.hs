@@ -1,6 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 
 module Config
 (
@@ -12,17 +10,14 @@ module Config
 where
 
 
-import BasePrelude
--- Text
-import Data.Text.All (Text)
+import Imports hiding ((.=))
+
 -- JSON
 import Data.Aeson               as Aeson
 import Data.Aeson.Encode.Pretty as Aeson hiding (Config)
 -- ByteString
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
--- Files
-import System.Directory
 -- Default
 import Data.Default
 

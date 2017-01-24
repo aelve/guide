@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 -- TODO: try to make it more type-safe somehow?
 
@@ -11,10 +10,10 @@
 module JS where
 
 
-import BasePrelude
+import Imports
+
 -- Text
 import qualified Data.Text.All as T
-import Data.Text.All (Text)
 -- Interpolation
 import NeatInterpolation
 

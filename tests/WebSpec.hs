@@ -44,7 +44,7 @@ tests = run $ do
   markdownTests
 
 mainPageTests :: Spec
-mainPageTests = session "main page" $ using Chrome $ do
+mainPageTests = session "main page" $ using [chromeCaps] $ do
   openGuide "/"
   wd "is initially empty" $ do
     checkPresent "#categories"
@@ -77,7 +77,7 @@ mainPageTests = session "main page" $ using Chrome $ do
       height2 `shouldBeInRange` (90, 140)
 
 categoryTests :: Spec
-categoryTests = session "categories" $ using Chrome $ do
+categoryTests = session "categories" $ using [chromeCaps] $ do
   openGuide "/"
   wd "add a new category" $ do
     createCategory "Some category"
@@ -245,7 +245,7 @@ categoryTests = session "categories" $ using Chrome $ do
       "body" `shouldHaveText` "Something went wrong"
 
 itemTests :: Spec
-itemTests = session "items" $ using Chrome $ do
+itemTests = session "items" $ using [chromeCaps] $ do
   openGuide "/"
   wd "create a test category" $ do
     createCategory "Item test category"
@@ -428,7 +428,7 @@ itemTests = session "items" $ using Chrome $ do
 -- TODO: merge tests
 
 markdownTests :: Spec
-markdownTests = session "markdown" $ using Chrome $ do
+markdownTests = session "markdown" $ using [chromeCaps] $ do
   openGuide "/"
   describe "Markdown isn't allowed in category names" $ do
     wd "when creating a category" $ do
@@ -617,7 +617,7 @@ run ts = do
 
 _site :: IO ()
 _site = run $ do
-  session "_" $ using Chrome $ do
+  session "_" $ using [chromeCaps] $ do
     wd "_" $ do
       openGuidePage "/"
       _pause

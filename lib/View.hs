@@ -1,7 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module View
 (
@@ -43,12 +42,8 @@ module View
 where
 
 
-import BasePrelude hiding (Category)
--- Lenses
-import Lens.Micro.Platform hiding ((&))
--- Monads and monad transformers
-import Control.Monad.IO.Class
-import Control.Monad.Reader
+import Imports
+
 -- Lists
 import Data.List.Split
 -- Containers
@@ -57,12 +52,10 @@ import Data.Tree
 -- Text
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
-import Data.Text.All (Text)
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
 -- Files
-import System.FilePath
 import qualified System.FilePath.Find as F
 -- Network
 import Data.IP

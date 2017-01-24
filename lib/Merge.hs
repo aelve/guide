@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 
 module Merge
@@ -9,12 +8,10 @@ module Merge
 where
 
 
-import BasePrelude
--- Lenses
-import Lens.Micro.Platform hiding ((&))
+import Imports
+
 -- Text
 import qualified Data.Text.All as T
-import Data.Text.All (Text)
 import Data.List.Split
 -- Vector
 import qualified Data.Vector as V

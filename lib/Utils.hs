@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -65,26 +64,20 @@ module Utils
 where
 
 
-import BasePrelude
+import Imports
+
 -- Lists
 import Data.List.Extra (stripSuffix)
 -- Monads
 import Control.Monad.Extra
--- Lenses
-import Lens.Micro.Platform hiding ((&))
 -- Monads and monad transformers
-import Control.Monad.Trans
 import Control.Monad.Catch
 -- Containers
 import qualified Data.Set as S
 import qualified Data.Map as M
-import Data.Map (Map)
--- Hashable (needed for Uid)
-import Data.Hashable
 -- Randomness
 import System.Random
 -- Text
-import Data.Text.All (Text)
 import qualified Data.Text.All as T
 -- JSON
 import qualified Data.Aeson as A

@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -124,20 +123,12 @@ module Types
 where
 
 
-import BasePrelude hiding (Category)
--- Monads and monad transformers
-import Control.Monad.State
-import Control.Monad.Reader
--- Lenses
-import Lens.Micro.Platform hiding ((&))
+import Imports
+
 -- Containers
 import qualified Data.Map as M
-import Data.Map (Map)
--- Lists
-import Data.List.Index
 -- Text
 import qualified Data.Text.All as T
-import Data.Text.All (Text)
 -- JSON
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A

@@ -1,0 +1,38 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
+
+-- | Imports used in the whole codebase.
+module Imports
+(
+  module X,
+  LByteString
+)
+where
+
+
+import BasePrelude as X hiding (Category, GeneralCategory, lazy)
+-- Lists
+import Data.List.Index as X
+-- Lenses
+import Lens.Micro.Platform as X hiding ((&))
+-- Monads and monad transformers
+import Control.Monad.IO.Class as X
+import Control.Monad.State as X
+import Control.Monad.Reader as X
+-- Common types
+import Data.Text.All as X (Text, LText)
+import Data.ByteString as X (ByteString)
+import Data.Map as X (Map)
+import Data.Set as X (Set)
+-- Files
+import System.Directory as X
+import System.FilePath as X
+-- Deepseq
+import Control.DeepSeq as X
+-- Hashable
+import Data.Hashable as X
+-- Lazy bytestring
+import qualified Data.ByteString.Lazy as BSL
+
+
+type LByteString = BSL.ByteString
