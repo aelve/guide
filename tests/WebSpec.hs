@@ -156,6 +156,9 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
         opt <- select (sel :// HasText "Complete")
         selectDropdown sel opt
         click (form :// ".save")
+        -- normally Selenium wouldn't wait for the request to complete, so we
+        -- have to wait manually by waiting until the form is hidden
+        checkNotPresent form
         onAnotherPage "/" $ do
           ("div" :</ ByLinkText "Cat 2") `shouldHaveAttr`
             ("class", "categories-finished")
