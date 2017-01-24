@@ -1,9 +1,6 @@
-{-# LANGUAGE
-QuasiQuotes,
-OverloadedStrings,
-FlexibleContexts
-  #-}
-
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module View
 (
@@ -1251,7 +1248,7 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
     cancel
   emptySpan "6px"
   span_ [class_ "edit-field-instruction"] (toHtml instr)
-  a_ [href_ "/markdown", target_ "_blank"] $ 
+  a_ [href_ "/markdown", target_ "_blank"] $
     img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
 
 smallMarkdownEditor
@@ -1277,7 +1274,7 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
       cancel
   span_ [style_ "float:right"] $ do
     span_ [class_ "edit-field-instruction"] (toHtml instr)
-    a_ [href_ "/markdown", target_ "_blank"] $ 
+    a_ [href_ "/markdown", target_ "_blank"] $
       img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
 
 thisNode :: MonadIO m => HtmlT m JQuerySelector

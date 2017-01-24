@@ -1,12 +1,10 @@
-{-# LANGUAGE
-ScopedTypeVariables,
-QuasiQuotes,
-OverloadedStrings,
-GeneralizedNewtypeDeriving,
-FlexibleContexts,
-FlexibleInstances,
-TypeFamilies
-  #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -31,7 +29,7 @@ module Utils
 
   -- * IP
   sockAddrToIP,
-  
+
   -- * UID
   Uid(..),
   Node,
@@ -107,12 +105,12 @@ import Data.Generics.Uniplate.Data (transform)
 
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]
-moveUp p (x:y:xs) = if p y then (y:x:xs) else x : moveUp p (y:xs)
+moveUp p (x:y:xs) = if p y then y : x : xs else x : moveUp p (y:xs)
 moveUp _ xs = xs
 
 -- | Move the -1st element that satisfies the predicate- down.
 moveDown :: (a -> Bool) -> [a] -> [a]
-moveDown p (x:y:xs) = if p x then (y:x:xs) else x : moveDown p (y:xs)
+moveDown p (x:y:xs) = if p x then y : x : xs else x : moveDown p (y:xs)
 moveDown _ xs = xs
 
 deleteFirst :: (a -> Bool) -> [a] -> [a]
@@ -379,11 +377,11 @@ changelog bareTyName (newVer, Past oldVer) changes = do
     _             -> fail "changelog: the type must be a record"
   -- Check that all 'Added' fields are actually present in the new type
   -- and that all 'Removed' fields aren't there
-  for_ (M.keys added) $ \n -> do
+  for_ (M.keys added) $ \n ->
     unless (n `elem` map fst fields) $ fail $
       printf "changelog: field %s isn't present in %s"
              (show (mkNew n)) (show newTyName)
-  for_ (M.keys removed) $ \n -> do
+  for_ (M.keys removed) $ \n ->
     when (n `elem` map fst fields) $ fail $
       printf "changelog: field %s is present in %s \
              \but was supposed to be removed"
@@ -484,7 +482,7 @@ genVer tyName ver constructors = do
                           (bangType bangNotStrict (conT fType))
                | (fName, fType) <- fields]
 
-  cons' <- for constructors $ \genCons -> do
+  cons' <- for constructors $ \genCons ->
     case genCons of
       Copy conName -> copyConstructor conName
       Custom conName fields -> customConstructor conName fields
@@ -539,7 +537,7 @@ migrateVer tyName ver constructors = do
               (normalB res)
               []
 
-  branches' <- for constructors $ \genCons -> do
+  branches' <- for constructors $ \genCons ->
     case genCons of
       CopyM conName -> copyConstructor conName
       CustomM conName res -> customConstructor conName res

@@ -1,10 +1,8 @@
-{-# LANGUAGE
-QuasiQuotes,
-FlexibleContexts,
-FlexibleInstances,
-TypeFamilies,
-OverloadedStrings
-  #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -926,7 +924,7 @@ setItemGroup itemId newGroup = do
   -- is moved to a different group. Note that this is done after adding a new
   -- group because we also want the color to change. So, if the item was the
   -- only item in its group, the sequence of actions is as follows:
-  -- 
+  --
   --   * new group is added (and hence a new color is assigned)
   --   * old group is deleted (and now the old color is unused)
   oldGroup <- use (itemLens.group_)

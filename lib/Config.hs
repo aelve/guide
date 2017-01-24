@@ -1,7 +1,4 @@
-{-# LANGUAGE
-OverloadedStrings
-  #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 
 module Config
 (
@@ -65,7 +62,7 @@ readConfig :: IO Config
 readConfig = do
   let filename = "config.json"
   exists <- doesFileExist filename
-  when (not exists) $ do
+  unless exists $ do
     putStrLn "config.json doesn't exist, creating it"
     BSL.writeFile filename (Aeson.encodePretty (def :: Config))
   contents <- BSL.fromStrict <$> BS.readFile filename

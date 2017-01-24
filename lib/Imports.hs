@@ -1,6 +1,4 @@
-{-# LANGUAGE
-NoImplicitPrelude
-  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 
 -- | Imports used in the whole codebase.
