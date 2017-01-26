@@ -243,7 +243,8 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
       uriPath url `shouldBe` "/haskell"
       checkNotPresent (ByLinkText "Cat 2")
       openPage catURL
-      "body" `shouldHaveText` "Something went wrong"
+      -- TODO: we should have, like, a 404 page
+      "body" `shouldHaveText` "500 - Internal Server Error\npowered by Spock"
 
 itemTests :: Spec
 itemTests = session "items" $ using [chromeCaps] $ do
