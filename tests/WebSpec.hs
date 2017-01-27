@@ -419,15 +419,16 @@ itemTests = session "items" $ using [chromeCaps] $ do
     wd "up" $ do
       ids <- mapM getId =<< selectAll ".item"
       click (ById (ids !! 1) :// ".move-item-up")
+      waitWhile 0.05 (return ()) `onTimeout` return ()
       ids2 <- mapM getId =<< selectAll ".item"
       ids2 `shouldBe` (ids !! 1 : ids !! 0 : drop 2 ids)
     -- TODO: select should only select visible elements
-    -- TODO: up the first item
+    -- TODO: try to move the first item up
     -- TODO: down
   -- TODO: item's self-link in the header
   -- TODO: deleting an item
 
--- TODO: merge tests
+-- TODO: tests for merging-on-conflicts
 
 markdownTests :: Spec
 markdownTests = session "markdown" $ using [chromeCaps] $ do
