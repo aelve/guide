@@ -15,8 +15,7 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import Data.Text.Arbitrary ()
 
--- Local
-import Merge
+import Guide.Merge
 
 
 tests :: Spec

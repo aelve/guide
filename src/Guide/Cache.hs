@@ -1,4 +1,4 @@
-module Cache
+module Guide.Cache
 (
   CacheKey(..),
   invalidateCache,
@@ -16,9 +16,8 @@ import qualified Focus
 -- Lucid
 import Lucid.Base
 
--- local
-import Types
-import Utils
+import Guide.Types
+import Guide.Utils
 
 
 -- Left = someone started rendering but haven't finished yet

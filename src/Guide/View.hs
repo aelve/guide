@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module View
+module Guide.View
 (
   getJS,
   getCSS,
@@ -74,14 +74,13 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Text.Megaparsec
 import Text.Megaparsec.Text
 
--- Local
-import Config
-import Types
-import Utils
-import JS (JS(..), JQuerySelector)
-import qualified JS
-import Markdown
-import Cache
+import Guide.Config
+import Guide.Types
+import Guide.Utils
+import Guide.JS (JS(..), JQuerySelector)
+import qualified Guide.JS as JS
+import Guide.Markdown
+import Guide.Cache
 
 
 {- Note [autosize]

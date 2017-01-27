@@ -8,7 +8,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-module Types
+module Guide.Types
 (
   Trait(..),
   ItemKind(..),
@@ -140,10 +140,9 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
 
--- Local
-import Utils
-import SafeCopy
-import Markdown
+import Guide.Utils
+import Guide.SafeCopy
+import Guide.Markdown
 
 
 {- Note [extending types]

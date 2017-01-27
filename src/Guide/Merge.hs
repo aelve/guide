@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Merge
+module Guide.Merge
 (
   merge,
 )

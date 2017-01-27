@@ -7,7 +7,7 @@
 -- TODO: try to make it more type-safe somehow?
 
 -- TODO: maybe use jmacro or something?
-module JS where
+module Guide.JS where
 
 
 import Imports
@@ -17,8 +17,7 @@ import qualified Data.Text.All as T
 -- Interpolation
 import NeatInterpolation
 
--- Local
-import Utils
+import Guide.Utils
 
 
 -- | Javascript code.

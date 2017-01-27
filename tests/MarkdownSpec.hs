@@ -22,8 +22,7 @@ import Data.Tree
 -- Testing
 import Test.Hspec
 
--- Local
-import Markdown
+import Guide.Markdown
 
 
 tests :: Spec

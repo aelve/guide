@@ -4,7 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Guide
+module Guide.Server
 (
   main,
   mainWith,
@@ -53,15 +53,14 @@ import qualified SlaveThread as Slave
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
 
--- Local
-import Config
-import Types
-import View
-import JS (JS(..), allJSFunctions)
-import Utils
-import Markdown
-import Cache
-import Merge
+import Guide.Config
+import Guide.Types
+import Guide.View
+import Guide.JS (JS(..), allJSFunctions)
+import Guide.Utils
+import Guide.Markdown
+import Guide.Cache
+import Guide.Merge
 
 
 {- Note [acid-state]

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Config
+module Guide.Config
 (
   Config(..),
   readConfig,
@@ -21,8 +21,7 @@ import qualified Data.ByteString.Lazy as BSL
 -- Default
 import Data.Default
 
--- Local
-import Utils
+import Guide.Utils
 
 
 data Config = Config {

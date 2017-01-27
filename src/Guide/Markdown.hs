@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Markdown
+module Guide.Markdown
 (
   -- * Types
   MarkdownInline(..),
@@ -57,8 +57,7 @@ import ShortcutLinks.All (hackage)
 -- acid-state
 import Data.SafeCopy
 
--- Local
-import Utils
+import Guide.Utils
 
 
 data MarkdownInline = MarkdownInline {

@@ -7,7 +7,7 @@
 #endif
 
 
-module SafeCopy
+module Guide.SafeCopy
 (
   deriveSafeCopySorted,
 )

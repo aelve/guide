@@ -79,8 +79,7 @@ import qualified Test.Hspec.Expectations as Hspec
 -- Exceptions
 import Control.Monad.Catch
 
--- Local
-import Utils (ordNub)
+import Guide.Utils (ordNub)
 
 
 getLink :: CanSelect s => s -> WD String

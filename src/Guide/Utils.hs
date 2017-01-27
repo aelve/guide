@@ -10,7 +10,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-module Utils
+module Guide.Utils
 (
   -- * Lists
   moveUp,
