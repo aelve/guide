@@ -40,3 +40,9 @@ a:link    {color: #008ACE; text-decoration: none;}
 a:visited {color: #B40EB4; text-decoration: none;}
 a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
+
+.category-status-banner {
+  background-color: #FFE97A;
+  text-align: center;
+  border: 2px solid #202020;
+}

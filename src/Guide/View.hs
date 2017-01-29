@@ -41,8 +41,8 @@ module Guide.View
 )
 where
 
-
 import Imports
+
 
 -- Lists
 import Data.List.Split
@@ -722,6 +722,21 @@ renderSearchResults cats = do
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
 
+renderCategoryStatus :: MonadIO m => Category -> HtmlT m ()
+renderCategoryStatus category = do
+  case category^.status of
+    CategoryFinished -> return ()
+    CategoryWIP -> catBanner $ do
+      "This category is a work in progress"
+    CategoryStub -> catBanner $ do
+      "This category is a stub, contributions are welcome!"
+  where
+    catBanner :: MonadIO m => HtmlT m () -> HtmlT m ()
+    catBanner divContent = do
+      div_ [class_ "category-status-banner"] $
+        h3_ divContent
+
+
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
 renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
   let thisId = "category-info-" <> uidToText (category^.uid)
@@ -831,6 +846,7 @@ renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryInfo category
+    renderCategoryStatus category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem category) (category^.items)
