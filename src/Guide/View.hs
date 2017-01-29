@@ -734,8 +734,7 @@ renderCategoryStatus category = do
     catBanner :: MonadIO m => HtmlT m () -> HtmlT m ()
     catBanner divContent = do
       div_ [class_ "category-status-banner"] $
-        h3_ divContent
-
+        strong_ divContent
 
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
 renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
