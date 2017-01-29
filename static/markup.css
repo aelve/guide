@@ -42,7 +42,10 @@ a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
 
 .category-status-banner {
-  background-color: #FFE97A;
+  background-color: #FFF694;
   text-align: center;
   border: 2px solid #202020;
+  padding: 0.5em;
+  margin-left: 10%;
+  margin-right: 10%;
 }
