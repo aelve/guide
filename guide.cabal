@@ -45,6 +45,7 @@ executable guide
 library
   exposed-modules:
     Guide.Server
+    Guide.ServerStuff
     Guide.Config
     Guide.State
     Guide.Types
@@ -52,6 +53,7 @@ library
       Guide.Types.Core
       Guide.Types.Edit
       Guide.Types.Action
+    Guide.Handlers
     Guide.Utils
     Guide.Merge
     Guide.Cache
