@@ -103,6 +103,10 @@ import Language.Haskell.Meta (parseExp)
 import Data.Generics.Uniplate.Data (transform)
 
 
+----------------------------------------------------------------------------
+-- Lists
+----------------------------------------------------------------------------
+
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]
 moveUp p (x:y:xs) = if p y then y : x : xs else x : moveUp p (y:xs)
@@ -129,8 +133,16 @@ ordNub = go mempty
     go s (x:xs) | x `S.member` s = go s xs
                 | otherwise      = x : go (S.insert x s) xs
 
+----------------------------------------------------------------------------
+-- Eq
+----------------------------------------------------------------------------
+
 equating :: Eq b => (a -> b) -> (a -> a -> Bool)
 equating f = (==) `on` f
+
+----------------------------------------------------------------------------
+-- Urls
+----------------------------------------------------------------------------
 
 type Url = Text
 
@@ -150,6 +162,10 @@ makeSlug =
   T.toLower .
   T.map (\x -> if x == '_' || x == '/' then '-' else x)
 
+----------------------------------------------------------------------------
+-- IP
+----------------------------------------------------------------------------
+
 deriveSafeCopySimple 0 'base ''IPv4
 deriveSafeCopySimple 0 'base ''IPv6
 deriveSafeCopySimple 0 'base ''IP
@@ -158,6 +174,10 @@ sockAddrToIP :: Network.SockAddr -> Maybe IP
 sockAddrToIP (Network.SockAddrInet  _   x)   = Just (IPv4 (fromHostAddress x))
 sockAddrToIP (Network.SockAddrInet6 _ _ x _) = Just (IPv6 (fromHostAddress6 x))
 sockAddrToIP _ = Nothing
+
+----------------------------------------------------------------------------
+-- Uid
+----------------------------------------------------------------------------
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
@@ -206,16 +226,28 @@ data Node
 uid_ :: Uid Node -> Attribute
 uid_ = id_ . uidToText
 
+----------------------------------------------------------------------------
+-- Lucid
+----------------------------------------------------------------------------
+
 includeJS :: Monad m => Url -> HtmlT m ()
 includeJS url = with (script_ "") [src_ url]
 
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
+----------------------------------------------------------------------------
+-- Spock
+----------------------------------------------------------------------------
+
 atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
   bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+
+----------------------------------------------------------------------------
+-- Template Haskell
+----------------------------------------------------------------------------
 
 hs :: QuasiQuoter
 hs = QuasiQuoter {
@@ -234,6 +266,10 @@ dumpSplices x = do
 
 bangNotStrict :: Q Bang
 bangNotStrict = bang noSourceUnpackedness noSourceStrictness
+
+----------------------------------------------------------------------------
+-- SafeCopy
+----------------------------------------------------------------------------
 
 {- |
 A change from one version of a record (one constructor, several fields) to
@@ -543,6 +579,10 @@ migrateVer tyName ver constructors = do
       CustomM conName res -> customConstructor conName res
 
   lam1E (varP arg) (caseE (varE arg) (map return branches'))
+
+----------------------------------------------------------------------------
+-- Orphan instances
+----------------------------------------------------------------------------
 
 instance MonadThrow m => MonadThrow (HtmlT m) where
   throwM e = lift $ throwM e
