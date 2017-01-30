@@ -303,12 +303,14 @@ instance CanSelect ComplexSelector where
       Displayed -> anyM (andNotDead . isDisplayed) es
       _ -> defAnyElem s es  
 
+{-
 class ToSelector a where
   toSelector :: a -> Selector
 instance ToSelector Selector where
   toSelector = id
 instance ToSelector Text where
   toSelector = ByCSS
+-}
 
 -- | Ensure that the element is the only element matching the selector.
 select :: CanSelect a => a -> WD Element
