@@ -186,17 +186,7 @@ newtype Uid a = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable, A.ToJSON)
 
 -- See Note [acid-state]
-deriveSafeCopySimple 2 'extension ''Uid
-
-newtype Uid_v1 a = Uid_v1 {uidToText_v1 :: Text}
-
--- TODO: at the next migration change this to deriveSafeCopySimple!
-deriveSafeCopy 1 'base ''Uid_v1
-
-instance SafeCopy a => Migrate (Uid a) where
-  type MigrateFrom (Uid a) = Uid_v1 a
-  migrate Uid_v1{..} = Uid {
-    uidToText = uidToText_v1 }
+deriveSafeCopySimple 2 'base ''Uid
 
 instance IsString (Uid a) where
   fromString = Uid . T.pack
