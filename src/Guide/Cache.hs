@@ -17,6 +17,7 @@ import qualified Focus
 import Lucid.Base
 
 import Guide.Types
+import Guide.State
 import Guide.Utils
 
 

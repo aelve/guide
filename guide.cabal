@@ -46,7 +46,12 @@ library
   exposed-modules:
     Guide.Server
     Guide.Config
+    Guide.State
     Guide.Types
+      Guide.Types.Hue
+      Guide.Types.Core
+      Guide.Types.Edit
+      Guide.Types.Action
     Guide.Utils
     Guide.Merge
     Guide.Cache

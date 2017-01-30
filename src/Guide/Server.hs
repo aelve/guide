@@ -54,6 +54,7 @@ import qualified SlaveThread as Slave
 import qualified System.FSNotify as FSNotify
 
 import Guide.Config
+import Guide.State
 import Guide.Types
 import Guide.View
 import Guide.JS (JS(..), allJSFunctions)

@@ -75,6 +75,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Text
 
 import Guide.Config
+import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.JS (JS(..), JQuerySelector)
