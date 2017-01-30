@@ -44,3 +44,4 @@ before_script:
 
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
+ - scripts/test-official.sh
