@@ -185,8 +185,14 @@ sockAddrToIP _ = Nothing
 newtype Uid a = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable, A.ToJSON)
 
--- See Note [acid-state]
-deriveSafeCopySimple 2 'base ''Uid
+-- This instance is written manually because otherwise it produces a warning:
+--     • Redundant constraint: SafeCopy a
+--     • In the instance declaration for ‘SafeCopy (Uid a)’
+instance SafeCopy (Uid a) where
+  putCopy = contain . safePut . uidToText
+  getCopy = contain safeGet
+  version = 2
+  kind = base
 
 instance IsString (Uid a) where
   fromString = Uid . T.pack
