@@ -60,7 +60,6 @@ import qualified System.FilePath.Find as F
 -- Network
 import Data.IP
 -- Time
-import Data.Time
 import Data.Time.Format.Human
 -- Markdown
 import qualified CMark as MD

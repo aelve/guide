@@ -43,6 +43,7 @@ module Guide.Utils
 
   -- * Spock
   atomFeed,
+  getRequestDetails,
 
   -- * Template Haskell
   hs,
@@ -86,9 +87,10 @@ import qualified Network.Socket as Network
 import Data.IP
 -- Web
 import Lucid hiding (for_)
-import Web.Spock
+import Web.Spock as Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
 import Web.PathPieces
+import qualified Network.Wai as Wai
 -- Feeds
 import qualified Text.Atom.Feed        as Atom
 import qualified Text.Atom.Feed.Export as Atom
@@ -244,6 +246,35 @@ atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
   bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+
+getRequestDetails
+  :: (MonadIO m, HasSpock (ActionCtxT ctx m))
+  => ActionCtxT ctx m (UTCTime, Maybe IP, Maybe Text, Maybe Text)
+getRequestDetails = do
+  time <- liftIO $ getCurrentTime
+  mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
+                                 (Spock.header "X-Forwarded-For")
+  mbIP <- case mbForwardedFor of
+    Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
+    Just ff -> case readMaybe (T.unpack ip) of
+      Nothing -> error ("couldn't read Forwarded-For address: " ++
+                        show ip ++ " (full header: " ++
+                        show ff ++ ")")
+      Just i  -> return (Just i)
+      where
+        addr = T.strip . snd . T.breakOnEnd "," $ ff
+        ip -- [IPv6]:port
+           | T.take 1 addr == "[" =
+               T.drop 1 (T.takeWhile (/= ']') addr)
+           -- IPv4 or IPv4:port
+           | T.any (== '.') addr =
+               T.takeWhile (/= ':') addr
+           -- IPv6 without port
+           | otherwise =
+               addr
+  mbReferrer <- Spock.header "Referer"
+  mbUA       <- Spock.header "User-Agent"
+  return (time, mbIP, mbReferrer, mbUA)
 
 ----------------------------------------------------------------------------
 -- Template Haskell

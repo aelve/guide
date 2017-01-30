@@ -25,7 +25,7 @@ import Data.ByteString as X (ByteString)
 import Data.Map as X (Map)
 import Data.Set as X (Set)
 -- Time
-import Data.Time as X (UTCTime)
+import Data.Time as X
 -- Files
 import System.Directory as X
 import System.FilePath as X

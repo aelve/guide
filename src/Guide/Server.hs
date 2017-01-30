@@ -21,8 +21,6 @@ import qualified Data.Map as M
 -- Text
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
--- Network
-import Data.IP (IP)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -32,7 +30,6 @@ import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import qualified Network.HTTP.Types.Status as HTTP
-import qualified Network.Wai as Wai
 -- Feeds
 import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
@@ -45,8 +42,6 @@ import qualified Network.Wai.Metrics      as EKG
 import qualified System.Metrics.Gauge     as EKG.Gauge
 -- acid-state
 import Data.Acid as Acid
--- Time
-import Data.Time
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
@@ -181,35 +176,6 @@ invalidateCache' key = do
   gs <- dbQuery GetGlobalState
   invalidateCache gs key
 
-getDetails
-  :: (MonadIO m, HasSpock (ActionCtxT ctx m))
-  => ActionCtxT ctx m (UTCTime, Maybe IP, Maybe Text, Maybe Text)
-getDetails = do
-  time <- liftIO $ getCurrentTime
-  mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
-                                 (Spock.header "X-Forwarded-For")
-  mbIP <- case mbForwardedFor of
-    Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
-    Just ff -> case readMaybe (T.unpack ip) of
-      Nothing -> error ("couldn't read Forwarded-For address: " ++
-                        show ip ++ " (full header: " ++
-                        show ff ++ ")")
-      Just i  -> return (Just i)
-      where
-        addr = T.strip . snd . T.breakOnEnd "," $ ff
-        ip -- [IPv6]:port
-           | T.take 1 addr == "[" =
-               T.drop 1 (T.takeWhile (/= ']') addr)
-           -- IPv4 or IPv4:port
-           | T.any (== '.') addr =
-               T.takeWhile (/= ':') addr
-           -- IPv6 without port
-           | otherwise =
-               addr
-  mbReferrer <- Spock.header "Referer"
-  mbUA       <- Spock.header "User-Agent"
-  return (time, mbIP, mbReferrer, mbUA)
-
 -- | Remember an edit.
 --
 -- Call this whenever any user-made change is applied to the database.
@@ -217,7 +183,7 @@ addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
             SpockState (ActionCtxT ctx m) ~ ServerState)
         => Edit -> ActionCtxT ctx m ()
 addEdit ed = do
-  (time, mbIP, mbReferrer, mbUA) <- getDetails
+  (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
   unless (isVacuousEdit ed) $ do
     dbUpdate (RegisterEdit ed mbIP time)
     baseUrl <- _baseUrl <$> getConfig
@@ -906,7 +872,7 @@ mainWith config = do
         Spock.get root $ do
           s <- dbQuery GetGlobalState
           q <- param "q"
-          (time, mbIP, mbReferrer, mbUA) <- getDetails
+          (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
           let act = case q of
                 Nothing -> Action'MainPageVisit
                 Just x  -> Action'Search x
@@ -924,7 +890,7 @@ mainWith config = do
           case mbCategory of
             Nothing -> Spock.jumpNext
             Just category -> do
-              (time, mbIP, mbReferrer, mbUA) <- getDetails
+              (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
               baseUrl <- _baseUrl <$> getConfig
               dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
                            mbIP time baseUrl mbReferrer mbUA
