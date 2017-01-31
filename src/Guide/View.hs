@@ -528,13 +528,6 @@ renderEdit globalState edit = do
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 -- | Render the header on the </haskell> subpage: “Aelve Guide | Haskell”.
-haskellHeaderMain :: (MonadReader Config m) => HtmlT m ()
-haskellHeaderMain = do
-  h1_ $ "Aelve Guide " >> span_ "| Haskell"
-  renderSubtitle
-
--- | Same as 'haskellHeaderMain', but used on subpages of </haskell>. Links
--- to the main page.
 haskellHeader :: (MonadReader Config m) => HtmlT m ()
 haskellHeader = do
   h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
@@ -547,10 +540,7 @@ renderHaskellRoot
 renderHaskellRoot globalState mbSearchQuery =
   wrapPage "Aelve Guide | Haskell" $ do
     onPageLoad $ JS.expandHash ()
-    case mbSearchQuery of
-      Nothing -> haskellHeaderMain
-      -- A search page isn't the main page, so we need a link to the main page
-      Just _  -> haskellHeader
+    haskellHeader
     renderNoScriptWarning
     renderSearch mbSearchQuery
     textInput [

@@ -31,6 +31,11 @@ body {
   font-weight: 200;
 }
 
+#main > h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .subtitle {
   font-weight: 500;
   color: #e03;
