@@ -190,7 +190,7 @@ newtype Uid a = Uid {uidToText :: Text}
 --     • In the instance declaration for ‘SafeCopy (Uid a)’
 instance SafeCopy (Uid a) where
   putCopy = contain . safePut . uidToText
-  getCopy = contain safeGet
+  getCopy = contain (Uid <$> safeGet)
   version = 2
   kind = base
 
