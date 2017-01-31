@@ -16,7 +16,7 @@ git status
 ls
 cd ..
 
-stack build
+stack build $@
 stack exec guide -- --dry-run
 
 rm -rf state

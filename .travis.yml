@@ -44,7 +44,7 @@ before_script:
 
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
- - scripts/test-official.sh
+ - scripts/test-official.sh $ARGS
 
 notifications:
   slack:
