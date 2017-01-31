@@ -182,6 +182,8 @@ enabled, and in this case the relevant tag will always be “shown” and not
 
 -}
 
+-- | Render the subtitle below the “Aelve Guide” header that is present on
+-- every page.
 renderSubtitle :: (MonadReader Config m) => HtmlT m ()
 renderSubtitle =
   div_ [class_ "subtitle"] $ do
@@ -190,6 +192,7 @@ renderSubtitle =
       Nothing -> return ()
       Just l  -> " • " >> mkLink "discuss the site" l
 
+-- | Render the main page (<https://guide.aelve.com>).
 renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderRoot = do
   wrapPage "Aelve Guide" $ do
@@ -197,8 +200,7 @@ renderRoot = do
     renderSubtitle
     h2_ (mkLink "Haskell" "/haskell")
 
--- TODO: show a “category not found” page
-
+-- | Render the administration panel (</admin>).
 renderAdmin :: (MonadIO m) => GlobalState -> HtmlT m ()
 renderAdmin globalState = do
   head_ $ do
@@ -223,6 +225,7 @@ renderAdmin globalState = do
     div_ [id_ "edits"] $
       renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
 
+-- | Render statistics on the admin page.
 renderStats
   :: (MonadIO m)
   => GlobalState
@@ -323,7 +326,7 @@ renderStats globalState acts = do
 -- TODO: when showing Edit'DeleteCategory, show the amount of items in that
 -- category and titles of items themselves
 
--- | Group edits by IP and render them
+-- | Group edits by IP and render them.
 renderEdits
   :: (MonadIO m)
   => GlobalState
@@ -369,6 +372,7 @@ renderEdits globalState edits = do
             "Can't apply the edit: " >> toHtml err
         renderEdit globalState edit
 
+-- | Render a single edit.
 renderEdit :: Monad m => GlobalState -> Edit -> HtmlT m ()
 renderEdit globalState edit = do
   let quote :: Monad m => HtmlT m () -> HtmlT m ()
@@ -523,17 +527,20 @@ renderEdit globalState edit = do
 
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
--- | “Aelve Guide | Haskell”
-haskellHeader :: (MonadReader Config m) => HtmlT m ()
-haskellHeader = do
-  h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
-  renderSubtitle
-
+-- | Render the header on the </haskell> subpage: “Aelve Guide | Haskell”.
 haskellHeaderMain :: (MonadReader Config m) => HtmlT m ()
 haskellHeaderMain = do
   h1_ $ "Aelve Guide " >> span_ "| Haskell"
   renderSubtitle
 
+-- | Same as 'haskellHeaderMain', but used on subpages of </haskell>. Links
+-- to the main page.
+haskellHeader :: (MonadReader Config m) => HtmlT m ()
+haskellHeader = do
+  h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
+  renderSubtitle
+
+-- | Render </haskell>.
 renderHaskellRoot
   :: (MonadIO m, MonadReader Config m)
   => GlobalState -> Maybe Text -> HtmlT m ()
@@ -568,6 +575,7 @@ renderHaskellRoot globalState mbSearchQuery =
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
 
+-- | Render a category.
 renderCategoryPage
   :: (MonadIO m, MonadReader Config m)
   => Category -> HtmlT m ()
@@ -579,6 +587,8 @@ renderCategoryPage category = do
     renderSearch Nothing
     renderCategory category
 
+-- | Render a warning that is displayed to the user when they don't have
+-- Javascript enabled.
 renderNoScriptWarning :: Monad m => HtmlT m ()
 renderNoScriptWarning =
   noscript_ $ div_ [id_ "noscript-message"] $
@@ -588,18 +598,20 @@ renderNoScriptWarning =
       you won't be able to edit anything.
       |]
 
+-- | Render the </donate> page.
 renderDonate
   :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderDonate = wrapPage "Donate to Artyom" $ do
   toHtmlRaw =<< liftIO (readFile "static/donate.html")
 
+-- | Render any page that is a static piece of Markdown.
 renderStaticMd
   :: (MonadIO m, MonadReader Config m)
   => Text -> String -> HtmlT m ()
 renderStaticMd t fn = wrapPage t $
   toHtml . toMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
 
--- Include all the necessary things
+-- | Include all the necessary things into a page – header, footer, etc.
 wrapPage
   :: (MonadIO m, MonadReader Config m)
   => Text                              -- ^ Page title
@@ -673,11 +685,14 @@ wrapPage pageTitle page = doctypehtml_ $ do
              mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
+-- | Render the search box.
 renderSearch :: (MonadIO m) => Maybe Text -> HtmlT m ()
 renderSearch mbSearchQuery =
   mustache "search" $ A.object [
     "query" A..= mbSearchQuery ]
 
+-- | Render list of categories on the main page.
+--
 -- If the presentation of the category list ever changes (e.g. to include
 -- lists of items in categories, or their counts, or something), you might
 -- have to start invalidating 'CacheCategoryList' in more things in
@@ -715,6 +730,7 @@ renderCategoryList allCats = cached CacheCategoryList $ do
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
 
+-- | Render a page with search results (just a list of categories).
 renderSearchResults :: Monad m => [Category] -> HtmlT m ()
 renderSearchResults cats = do
   div_ [id_ "categories-search-results"] $
@@ -722,6 +738,8 @@ renderSearchResults cats = do
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
 
+-- | Render the category status banner that is shown on the page of each
+-- unfinished category.
 renderCategoryStatus :: MonadIO m => Category -> HtmlT m ()
 renderCategoryStatus category = do
   case category^.status of
@@ -736,6 +754,8 @@ renderCategoryStatus category = do
       div_ [class_ "category-status-banner"] $
         strong_ divContent
 
+-- | Render info about the category (the header with category name + the edit
+-- form).
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
 renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
   let thisId = "category-info-" <> uidToText (category^.uid)
@@ -811,6 +831,7 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         button "Cancel" [class_ "cancel"] $
           JS.switchSection (this, "normal" :: Text)
 
+-- | Render category notes (or “description”).
 renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
 renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
   let thisId = "category-notes-" <> uidToText (category^.uid)
@@ -841,6 +862,7 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
+-- | Render the whole category.
 renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
@@ -857,6 +879,8 @@ renderCategory category = cached (CacheCategory (category^.uid)) $ do
       onEnter $ JS.addItem (itemsNode, category^.uid, inputValue) <>
                 clearInput ]
 
+-- | Decide what color should an item have. (Requires looking at its parent
+-- category.)
 getItemHue :: Category -> Item -> Hue
 getItemHue category item = case item^.group_ of
   Nothing -> NoHue
@@ -886,6 +910,8 @@ another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operate
 on those <div>s.
 -}
 
+-- | Render an item.
+--
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: MonadIO m => Category -> Item -> HtmlT m ()
@@ -909,11 +935,14 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 
+-- | Render item's title.
 renderItemTitle :: (MonadIO m) => Item -> HtmlT m ()
 renderItemTitle item =
   mustache "item-title" $ A.object [
     "item" A..= item ]
 
+-- | Render item info.
+--
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
@@ -942,11 +971,13 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
       "dark"  A..= hueToDarkColor (getItemHue cat item),
       "light" A..= hueToLightColor (getItemHue cat item) ] ]
 
+-- | Render item description.
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
 renderItemDescription item = cached (CacheItemDescription (item^.uid)) $
   mustache "item-description" $ A.object [
     "item" A..= item ]
 
+-- | Render the “ecosystem” secion..
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
 renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
@@ -980,6 +1011,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
+-- | Render the “traits” section.
 renderItemTraits :: MonadIO m => Item -> HtmlT m ()
 renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
   div_ [class_ "item-traits"] $ do
@@ -1038,6 +1070,7 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
+-- | Render a single trait.
 renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemUid trait =
   mustache "trait" $ A.object [
@@ -1062,6 +1095,7 @@ renderTrait itemUid trait =
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
 
+-- | Render the “notes” section.
 renderItemNotes :: MonadIO m => Category -> Item -> HtmlT m ()
 renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
@@ -1139,6 +1173,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
     section "editing" [uid_ editingSectionUid] $
       return ()
 
+-- | Render item as it will be shown in a feed.
 renderItemForFeed
   :: (MonadIO m)
   => Category -> Item -> HtmlT m ()
@@ -1162,9 +1197,11 @@ renderItemForFeed category item = do
 
 -- Utils
 
+-- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
 onPageLoad js = script_ $ T.format "$(document).ready(function(){{}});" [js]
 
+-- | Add some empty space.
 emptySpan :: Monad m => Text -> HtmlT m ()
 emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 
