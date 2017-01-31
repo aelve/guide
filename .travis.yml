@@ -40,7 +40,7 @@ before_script:
 - export DISPLAY=:99.0
 - travis_retry wget http://selenium-release.storage.googleapis.com/2.53/selenium-server-standalone-2.53.1.jar
 - java -jar selenium-server-standalone-2.53.1.jar 2> /dev/null &
-- sleep 5
+- sleep 15
 
 script:
  - stack $ARGS --no-terminal --install-ghc build --test
