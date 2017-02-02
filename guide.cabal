@@ -61,6 +61,12 @@ library
     Guide.Markdown
     Guide.JS
     Guide.View
+    Guide.Views
+      Guide.Views.Page
+      Guide.Views.Auth
+        Guide.Views.Auth.Register
+        Guide.Views.Auth.Login
+      Guide.Views.Utils
     Guide.Cache
     Guide.SafeCopy
   other-modules:

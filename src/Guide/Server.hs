@@ -46,6 +46,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.View
+import Guide.Views
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -257,6 +258,11 @@ mainWith config = do
         -- take them and inject into the page. We don't want to duplicate
         -- rendering on server side and on client side.
         methods
+      
+      Spock.subcomponent "auth" $ do
+        Spock.get "login" $ lucidWithConfig renderLogin
+        
+        Spock.get "register" $ lucidWithConfig renderRegister
 
 adminHook :: ActionCtxT ctx (WebStateM () () ServerState) ()
 adminHook = do

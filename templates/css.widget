@@ -17,9 +17,26 @@ body {
   flex-direction: column;
 }
 
+#header > h1 {
+  font-size: 250%;
+  font-weight: 600;
+  margin-bottom: 0px;
+}
+
+#header > h1 span {
+  font-weight: 200;
+}
+
+#header > h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
 #main {
   flex: 1;
 }
+
+/* TODO: Remove after instances are moved to #header */
 
 #main > h1 {
   font-size: 250%;

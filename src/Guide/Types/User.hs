@@ -10,7 +10,6 @@ where
 
 import Imports
 
-
 -- acid-state
 import Data.SafeCopy hiding (kind)
 -- scrypt
@@ -32,7 +31,7 @@ data User = User {
 makeUser :: MonadIO m => Text -> Text -> Pass -> m User
 makeUser username email password = do
   encPass <- liftIO $ encryptPassIO' password
-  userID <- randomLongUid 
+  userID <- randomLongUid
   return User {
     userID = userID,
     userName = username,
