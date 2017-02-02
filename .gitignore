@@ -22,3 +22,6 @@ TAGS
 *#
 state/
 config.json
+
+.vscode/
+tags
