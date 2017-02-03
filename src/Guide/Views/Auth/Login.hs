@@ -5,11 +5,9 @@
 
 module Guide.Views.Auth.Login where
 
-import Imports hiding ((&))
+import Imports
 
 import Lucid hiding (for_)
-
-import Lens.Micro.Platform ((&))
 
 import Guide.Views.Page
 

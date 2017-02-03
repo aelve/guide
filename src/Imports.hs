@@ -10,11 +10,11 @@ module Imports
 where
 
 
-import BasePrelude as X hiding (Category, GeneralCategory, lazy)
+import BasePrelude as X hiding (Category, GeneralCategory, lazy, (&))
 -- Lists
 import Data.List.Index as X
 -- Lenses
-import Lens.Micro.Platform as X hiding ((&))
+import Lens.Micro.Platform as X
 -- Monads and monad transformers
 import Control.Monad.IO.Class as X
 import Control.Monad.State as X

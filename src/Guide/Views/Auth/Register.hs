@@ -5,11 +5,9 @@
 
 module Guide.Views.Auth.Register where
 
-import Imports hiding ((&))
+import Imports
 
 import Lucid hiding (for_)
-
-import Lens.Micro.Platform ((&))
 
 import Guide.Views.Page
 
@@ -22,12 +20,13 @@ import qualified Guide.JS as JS
 import Guide.Markdown
 import Guide.Cache
 
+
 registerContent :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-registerContent = do
+registerContent =
   div_ ""
 
 renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-renderRegister = do
+renderRegister =
   renderPage $ 
     pageDef & title .~ "Aelve Guide"
             & name .~ Just "Register"
