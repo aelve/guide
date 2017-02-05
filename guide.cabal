@@ -66,6 +66,7 @@ library
       Guide.Views.Auth
         Guide.Views.Auth.Register
         Guide.Views.Auth.Login
+      Guide.Views.Item
       Guide.Views.Utils
     Guide.Cache
     Guide.SafeCopy

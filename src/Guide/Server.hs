@@ -4,6 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+
 module Guide.Server
 (
   main,
@@ -47,6 +48,7 @@ import Guide.State
 import Guide.Types
 import Guide.View
 import Guide.Views
+import Guide.Views.Utils (getJS, getCSS)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache

@@ -38,6 +38,7 @@ import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.View
+import Guide.Views
 
 
 methods :: SpockM () () ServerState ()
