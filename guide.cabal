@@ -54,7 +54,6 @@ library
       Guide.Types.Edit
       Guide.Types.Action
       Guide.Types.User
-      Guide.Types.Message
     Guide.Handlers
     Guide.Utils
     Guide.Merge
