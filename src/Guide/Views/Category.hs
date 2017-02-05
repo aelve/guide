@@ -8,8 +8,8 @@ module Guide.Views.Category
   renderCategory,
 
   -- * Helpers
-  renderCategoryStatus,
   renderCategoryInfo,
+  renderCategoryStatus,
   renderCategoryNotes,
 )
 where
@@ -40,7 +40,6 @@ renderCategory :: MonadIO m => Category -> HtmlT m ()
 renderCategory category = cached (CacheCategory (category^.uid)) $ do
   div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryInfo category
-    renderCategoryStatus category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
       mapM_ (renderItem category) (category^.items)
@@ -56,48 +55,34 @@ renderCategory category = cached (CacheCategory (category^.uid)) $ do
 -- Helpers
 ----------------------------------------------------------------------------
 
--- | Render the category status banner that is shown on the page of each
--- unfinished category.
-renderCategoryStatus :: MonadIO m => Category -> HtmlT m ()
-renderCategoryStatus category = do
-  case category^.status of
-    CategoryFinished -> return ()
-    CategoryWIP -> catBanner $ do
-      "This category is a work in progress"
-    CategoryStub -> catBanner $ do
-      "This category is a stub, contributions are welcome!"
-  where
-    catBanner :: MonadIO m => HtmlT m () -> HtmlT m ()
-    catBanner divContent = do
-      div_ [class_ "category-status-banner"] $
-        strong_ divContent
-
 -- | Render info about the category (the header with category name + the edit
--- form).
+-- form + possibly status banner).
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
 renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
   let thisId = "category-info-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
   div_ [id_ thisId, class_ "category-info"] $ do
 
-    section "normal" [shown, noScriptShown] $ h2_ $ do
-      -- TODO: this link shouldn't be absolute [absolute-links]
-      span_ [class_ "controls"] $
-        a_ [class_ "category-feed",
-            href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
-          img_ [src_ "/rss-alt.svg",
-                alt_ "category feed", title_ "category feed"]
-      a_ [href_ (categoryLink category), class_ "category-title"] $
-        toHtml (category^.title)
-      emptySpan "1em"
-      span_ [class_ "group"] $
-        toHtml (category^.group_)
-      emptySpan "1em"
-      textButton "edit" $
-        JS.switchSection (this, "editing" :: Text)
-      emptySpan "1em"
-      textButton "delete" $
-        JS.deleteCategoryAndRedirect [category^.uid]
+    section "normal" [shown, noScriptShown] $ do
+      h2_ $ do
+        -- TODO: this link shouldn't be absolute [absolute-links]
+        span_ [class_ "controls"] $
+          a_ [class_ "category-feed",
+              href_ ("/haskell/feed/category/" <> uidToText (category^.uid))] $
+            img_ [src_ "/rss-alt.svg",
+                  alt_ "category feed", title_ "category feed"]
+        a_ [href_ (categoryLink category), class_ "category-title"] $
+          toHtml (category^.title)
+        emptySpan "1em"
+        span_ [class_ "group"] $
+          toHtml (category^.group_)
+        emptySpan "1em"
+        textButton "edit" $
+          JS.switchSection (this, "editing" :: Text)
+        emptySpan "1em"
+        textButton "delete" $
+          JS.deleteCategoryAndRedirect [category^.uid]
+      renderCategoryStatus category
 
     section "editing" [] $ do
       let formSubmitHandler formNode =
@@ -148,6 +133,22 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         input_ [type_ "submit", value_ "Save", class_ "save"]
         button "Cancel" [class_ "cancel"] $
           JS.switchSection (this, "normal" :: Text)
+
+-- | Render the category status banner that is shown on the page of each
+-- unfinished category.
+renderCategoryStatus :: MonadIO m => Category -> HtmlT m ()
+renderCategoryStatus category = do
+  case category^.status of
+    CategoryFinished -> return ()
+    CategoryWIP -> catBanner $ do
+      "This category is a work in progress"
+    CategoryStub -> catBanner $ do
+      "This category is a stub, contributions are welcome!"
+  where
+    catBanner :: MonadIO m => HtmlT m () -> HtmlT m ()
+    catBanner divContent = do
+      div_ [class_ "category-status-banner"] $
+        strong_ divContent
 
 -- | Render category notes (or “description”).
 renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
