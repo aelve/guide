@@ -1,6 +1,6 @@
 module Guide.Views
 (
-  module X
+  module X,
 )
 where
 

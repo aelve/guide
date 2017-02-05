@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+
 module Guide.Views.Page
 (
   Page (..),
@@ -20,6 +21,7 @@ module Guide.Views.Page
   renderPage
 )
 where
+
 
 import Imports
 
@@ -40,30 +42,32 @@ import qualified Guide.JS as JS
 
 import Guide.Views.Utils
 
+
 -- |Record for the parts of a page, for rendering in a standard template.
 data Page m = Page {
-    -- |Title for the root of a site.
-    -- By default displays before the page name in the <title> and header of page, e.g.: "Aelve Guide"
+    -- | Title for the root of a site.
+    -- By default displays before the page name in the <title>
+    -- and header of page, e.g. "Aelve Guide"
     _pageTitle :: Text,
-    -- |Name of a particular page.
-    -- Displays after the title, e.g.: "Haskell" or "Login"
+    -- | Name of a particular page.
+    -- Displays after the title, e.g. "Haskell" or "Login"
     _pageName :: Maybe Text,
-    -- |Url accessed by clicking header text.
+    -- | Url accessed by clicking header text.
     _pageHeaderUrl :: Url,
-    -- |Subtitle element.
+    -- | Subtitle element.
     -- By default displays immediately below the "Title | Name" header.
     _pageSubtitle :: Page m -> HtmlT m (),
-    -- |Scripts to load in the <head> tag.
+    -- | Scripts to load in the <head> tag.
     _pageScripts :: [Url],
-    -- |Stylesheets to load in the <head> tag. 
+    -- | Stylesheets to load in the <head> tag.
     _pageStyles :: [Url],
-    -- |Contents of <head> tag
+    -- | Contents of <head> tag
     _pageHeadTag :: Page m -> HtmlT m (),
-    -- |Header element to display at the top of the body element.
+    -- | Header element to display at the top of the body element.
     _pageHeader :: Page m -> HtmlT m (),
-    -- |Content element to display in the center of the template.
+    -- | Content element to display in the center of the template.
     _pageContent :: HtmlT m (),
-    -- |Footer element to display at bottom of the body element.
+    -- | Footer element to display at bottom of the body element.
     _pageFooter :: Page m -> HtmlT m ()
   }
 
