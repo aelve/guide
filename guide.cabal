@@ -115,7 +115,6 @@ library
                      , reroute
                      , safecopy
                      , scrypt
-                     , semigroups
                      , shortcut-links >= 0.4.2
                      , slave-thread
                      , split
@@ -126,7 +125,6 @@ library
                      , time >= 1.5
                      , transformers
                      , uniplate
-                     , uuid
                      , vector
                      , wai
                      , wai-middleware-metrics
