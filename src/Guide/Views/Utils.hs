@@ -1,7 +1,54 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Guide.Views.Utils where
+
+module Guide.Views.Utils
+(
+  -- * Script utils
+  onPageLoad,
+  onEnter,
+  onCtrlEnter,
+  onEscape,
+  onFormSubmit,
+  inputValue,
+  clearInput,
+
+  -- * HTML utils
+  emptySpan,
+  mkLink,
+  selectedIf,
+  checkedIf,
+  hiddenIf,
+  categoryLink,
+  itemLink,
+
+  -- * HTML components
+  button,
+  textButton,
+  imgButton,
+  textInput,
+  markdownEditor,
+  smallMarkdownEditor,
+
+  -- * Node identifiers
+  thisNode,
+  itemNodeId,
+  categoryNodeId,
+
+  -- * Sections system
+  shown,
+  noScriptShown,
+  section,
+  sectionSpan,
+
+  -- * Widget system & templates
+  mustache,
+  readWidgets,
+  getJS,
+  getCSS,
+)
+where
+
 
 import Imports
 
