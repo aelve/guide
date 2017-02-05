@@ -37,7 +37,6 @@ import Guide.Markdown
 import Guide.State
 import Guide.Types
 import Guide.Utils
-import Guide.View
 import Guide.Views
 
 

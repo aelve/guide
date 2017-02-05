@@ -46,7 +46,6 @@ import Guide.Handlers
 import Guide.Config
 import Guide.State
 import Guide.Types
-import Guide.View
 import Guide.Views
 import Guide.Views.Utils (getJS, getCSS)
 import Guide.JS (JS(..), allJSFunctions)

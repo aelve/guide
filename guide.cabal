@@ -59,13 +59,13 @@ library
     Guide.Merge
     Guide.Markdown
     Guide.JS
-    Guide.View
     Guide.Views
       Guide.Views.Page
       Guide.Views.Auth
         Guide.Views.Auth.Register
         Guide.Views.Auth.Login
       Guide.Views.Item
+      Guide.Views.Category
       Guide.Views.Utils
     Guide.Cache
     Guide.SafeCopy
