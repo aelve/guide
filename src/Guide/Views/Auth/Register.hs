@@ -28,6 +28,6 @@ registerContent =
 renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderRegister =
   renderPage $ 
-    pageDef & title .~ "Aelve Guide"
-            & name .~ Just "Register"
-            & content .~ registerContent
+    pageDef & pageTitle .~ "Aelve Guide"
+            & pageName .~ Just "Register"
+            & pageContent .~ registerContent

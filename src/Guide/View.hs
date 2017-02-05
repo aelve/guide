@@ -607,9 +607,9 @@ wrapPage
   => Text                              -- ^ Page title
   -> HtmlT m ()
   -> HtmlT m ()
-wrapPage pageTitle page = doctypehtml_ $ do
+wrapPage pageTitle' page = doctypehtml_ $ do
   head_ $ do
-    title_ (toHtml pageTitle)
+    title_ (toHtml pageTitle')
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
     link_ [rel_ "icon", href_ "/favicon.ico"]

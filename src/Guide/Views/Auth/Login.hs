@@ -28,6 +28,6 @@ loginContent = do
 renderLogin :: (MonadIO m, MonadReader Config m) => HtmlT m ()
 renderLogin = do
   renderPage $ 
-    pageDef & title .~ "Aelve Guide"
-            & name .~ Just "Login"
-            & content .~ loginContent
+    pageDef & pageTitle .~ "Aelve Guide"
+            & pageName .~ Just "Login"
+            & pageContent .~ loginContent

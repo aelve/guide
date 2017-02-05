@@ -7,18 +7,18 @@
 module Guide.Views.Page
 (
   Page (..),
-    title,
-    name,
-    headerUrl,
-    subtitle,
-    scripts,
-    styles,
-    headTag,
-    header,
-    content,
-    footer,
+    pageTitle,
+    pageName,
+    pageHeaderUrl,
+    pageSubtitle,
+    pageScripts,
+    pageStyles,
+    pageHeadTag,
+    pageHeader,
+    pageContent,
+    pageFooter,
   pageDef,
-  renderPage
+  renderPage,
 )
 where
 
@@ -71,7 +71,7 @@ data Page m = Page {
     _pageFooter :: Page m -> HtmlT m ()
   }
 
-makeFields ''Page
+makeLenses ''Page
 
 pageDef :: (MonadIO m, MonadReader Config m) => Page m
 pageDef = Page {
@@ -115,8 +115,8 @@ headTagDef
   -> HtmlT m ()
 headTagDef page = do
   let titleText = case _pageName page of
-        Just pageName -> _pageTitle page <> " | " <> pageName
-        Nothing -> _pageTitle page
+        Just name -> _pageTitle page <> " | " <> name
+        Nothing   -> _pageTitle page
   title_ $ toHtml titleText
   meta_ [name_ "viewport",
           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
@@ -154,10 +154,9 @@ headerDef
   => Page m
   -> HtmlT m ()
 headerDef page = do
-  let nameHtml = 
-        case _pageName page of
-          Just pageName -> span_ (" | " >> toHtml pageName)
-          Nothing -> mempty
+  let nameHtml = case _pageName page of
+        Just name -> span_ (" | " >> toHtml name)
+        Nothing -> mempty
   h1_ $ mkLink (toHtml (_pageTitle page) >> nameHtml) (_pageHeaderUrl page)
   (_pageSubtitle page) page
 
