@@ -4,14 +4,11 @@ packages:
 - location: .
 - location:
     git: https://github.com/aelve/stache-plus
-    commit: a12f7edf9c034a01d5da466b212b3f9c0253b1f4
-  extra-dep: true
-- location:
-    git: https://github.com/liamoc/patches-vector
-    commit: cf29fc9d84df1ffb81d6fc82374d83b52f573746
+    commit: e8e7967d561148167eb1fe4112c6ad0e091490ab
   extra-dep: true
 
 extra-deps:
 - cmark-sections-0.1.0.2
 - http-client-0.5.1
 - edit-distance-vector-1.0.0.4
+- patches-vector-0.1.5.4
