@@ -1,8 +1,11 @@
 .notes-like h1 {
+  margin-top: 40px;
   font-size: 1.2em; }
 .notes-like h2 {
+  margin-top: 20px;
   font-size: 1em; }
 .notes-like h3 {
+  margin-top: 10px;
   font-size: 0.8em; }
 
 blockquote {
