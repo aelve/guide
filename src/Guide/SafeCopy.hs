@@ -7,6 +7,9 @@
 #endif
 
 
+{- |
+Safecopy utilities.
+-}
 module Guide.SafeCopy
 (
   deriveSafeCopySorted,

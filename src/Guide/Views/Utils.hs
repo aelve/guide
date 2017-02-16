@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
+{- |
+Various HTML utils, Mustache utils, etc.
+-}
 module Guide.Views.Utils
 (
   -- * Script utils

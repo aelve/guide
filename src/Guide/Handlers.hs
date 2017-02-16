@@ -3,6 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 
+{- |
+All rest API handlers.
+-}
 module Guide.Handlers
 (
   methods,

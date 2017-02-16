@@ -3,6 +3,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 
+{- |
+Views for login.
+-}
 module Guide.Views.Auth.Login where
 
 import Imports

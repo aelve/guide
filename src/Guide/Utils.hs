@@ -10,6 +10,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
+{- |
+All utility functions and types go here.
+-}
 module Guide.Utils
 (
   -- * Lists

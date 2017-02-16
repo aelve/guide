@@ -2,6 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
+{- |
+Category rendering.
+
+The main function this module provides is 'renderCategory'.
+-}
 module Guide.Views.Category
 (
   -- * Main functions

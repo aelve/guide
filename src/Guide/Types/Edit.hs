@@ -1,6 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 
 
+{- |
+Types for edits.
+
+Every content edit is associated with an 'Edit', which is stored in the
+database and can be undone. In addition, each edit has a corresponding
+'EditDetails' (which stores IP, date, and ID of an edit).
+-}
 module Guide.Types.Edit
 (
   Edit(..),
@@ -88,6 +95,7 @@ data Edit
       editItemUid            :: Uid Item,
       editItemKind           :: ItemKind,
       editItemNewKind        :: ItemKind }
+
   | Edit'SetItemDescription {
       editItemUid            :: Uid Item,
       editItemDescription    :: Text,

@@ -1,6 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
+{- |
+A type for users. Currently unused.
+-}
 module Guide.Types.User
 (
   User(..),

@@ -3,6 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
+{- |
+All views and all rendering logic.
+-}
 module Guide.Views
 (
   module X,

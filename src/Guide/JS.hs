@@ -6,7 +6,12 @@
 
 -- TODO: try to make it more type-safe somehow?
 
--- TODO: maybe use jmacro or something?
+{- |
+Javascript methods used for the site.
+
+Some Javascript can also be found in .widget files. Hopefully, in the future
+this whole module would be removed.
+-}
 module Guide.JS where
 
 

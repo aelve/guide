@@ -1,3 +1,7 @@
+{- |
+An umbrella module reexporting most types from the codebase (excluding
+specialized ones, like ones from "Guide.Markdown"
+-}
 module Guide.Types
 (
   module Guide.Types.Hue,

@@ -4,6 +4,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
+
+{- |
+Core types for content.
+
+The whole site is a list of categories ('Category'). Categories have items
+('Item') in them. Items have some sections (fields inside of 'Item'), as well
+as traits ('Trait').
+
+It is recommended to use lenses to access fields of various types. All those
+lenses are exported from this module. Some lenses (like 'uid' and 'name') are
+overloaded and can be used with many types.
+-}
 module Guide.Types.Core
 (
   Trait(..),

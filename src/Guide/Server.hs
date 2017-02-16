@@ -5,6 +5,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 
+{- |
+The main module.
+
+  * Run 'main' to actually start the server.
+  * Run 'mainWith' to run it with a custom config.
+-}
 module Guide.Server
 (
   main,

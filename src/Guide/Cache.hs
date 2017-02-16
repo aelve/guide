@@ -1,3 +1,7 @@
+{- |
+HTML cache for pages and parts of pages (such as rendered items, traits,
+etc). Be careful – the cache is a top-level global variable.
+-}
 module Guide.Cache
 (
   CacheKey(..),

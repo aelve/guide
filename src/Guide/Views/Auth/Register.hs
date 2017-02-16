@@ -2,6 +2,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+
+{- |
+Views for user registration.
+-}
 module Guide.Views.Auth.Register where
 
 import Imports

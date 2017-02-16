@@ -1,6 +1,9 @@
+{- |
+An umbrella module for views concerning users and authorisation.
+-}
 module Guide.Views.Auth
 (
-  module X
+  module X,
 )
 where
 

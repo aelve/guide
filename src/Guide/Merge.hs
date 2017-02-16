@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
+{- |
+An algorithm for merging users' edits. Specifically, there's just one
+function – 'merge' – and it simply does a three-way diff.
+-}
 module Guide.Merge
 (
   merge,

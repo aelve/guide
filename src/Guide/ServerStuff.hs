@@ -4,9 +4,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
--- | Spock state, functions for manipulating it, handler helpers, and so on.
---
--- TODO: this is not the best name for a module. Really.
+{- |
+Spock state, functions for manipulating it, handler helpers, and so on.
+
+TODO: this is not the best name for a module. Really.
+-}
 module Guide.ServerStuff
 (
   ServerState(..),

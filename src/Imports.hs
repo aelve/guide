@@ -1,7 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 
--- | Imports used in the whole codebase.
+{- |
+Imports used in the whole codebase. (All modules import this one instead of
+the "Prelude".)
+-}
 module Imports
 (
   module X,

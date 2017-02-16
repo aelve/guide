@@ -2,6 +2,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+
+{- |
+Everything concerning rendering and processing Markdown.
+
+Currently we use the @cmark@ package as the Markdown parser.
+-}
 module Guide.Markdown
 (
   -- * Types
