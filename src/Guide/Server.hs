@@ -21,6 +21,8 @@ where
 
 import Imports
 
+-- Containers
+import qualified Data.Map as M
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
@@ -59,6 +61,7 @@ import Guide.Views.Utils (getJS, getCSS)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
+import Guide.Session
 
 
 {- Note [acid-state]
@@ -102,6 +105,10 @@ acid-state. Acid-state works as follows:
 
 -}
 
+type GuideApp ctx = SpockCtxM ctx () GuideData ServerState ()
+
+-- type GuideAction ctx a = SpockActionCtx ctx () () ServerState a
+
 -- TODO: rename GlobalState to DB, and DB to AcidDB
 
 lucidWithConfig
@@ -136,6 +143,7 @@ mainWith config = do
         _actions = [],
         _pendingEdits = [],
         _editIdCounter = 0,
+        _sessionStore = M.empty,
         _dirty = True }
   do args <- getArgs
      when (args == ["--dry-run"]) $ do
@@ -185,10 +193,27 @@ mainWith config = do
           _db     = db }
     spockConfig <- do
       cfg <- defaultSpockCfg () PCNoDatabase serverState
+      store <- newAcidSessionStore db
+      let sessionCfg = SessionCfg {
+            sc_cookieName = "spockcookie",
+            sc_sessionTTL = 3600,
+            sc_sessionIdEntropy = 64,
+            sc_sessionExpandTTL = True,
+            sc_emptySession = GuideData (),
+            sc_store = store,
+            sc_housekeepingInterval = 60 * 10,
+            sc_hooks = defaultSessionHooks
+          }
       return cfg {
-        spc_maxRequestSize = Just (1024*1024) }
+        spc_maxRequestSize = Just (1024*1024),
+        spc_csrfProtection = True,
+        spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ do
+    runSpock 8080 $ spock spockConfig $ guideApp waiMetrics
+
+-- TODO: Fix indentation after rebasing.
+guideApp :: EKG.WaiMetrics -> GuideApp ()
+guideApp waiMetrics = do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
@@ -277,7 +302,7 @@ mainWith config = do
         
         Spock.get "register" $ lucidWithConfig renderRegister
 
-adminHook :: ActionCtxT ctx (WebStateM () () ServerState) ()
+adminHook :: ActionCtxT ctx (WebStateM () GuideData ServerState) ()
 adminHook = do
   adminPassword <- _adminPassword <$> getConfig
   unless (adminPassword == "") $ do

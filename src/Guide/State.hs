@@ -75,6 +75,9 @@ module Guide.State
   RestoreItem(..),
   RestoreTrait(..),
   SetDirty(..), UnsetDirty(..),
+  
+  LoadSession(..), StoreSession(..),
+  DeleteSession(..), GetSessions(..),
 )
 where
 
@@ -91,6 +94,9 @@ import Data.IP
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
+--
+import Web.Spock.Internal.SessionManager (SessionId)
+import qualified Web.Spock.Internal.SessionManager as Spock
 
 import Guide.Utils
 import Guide.SafeCopy
@@ -98,6 +104,7 @@ import Guide.Markdown
 import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Action
+import Guide.Types.Session
 
 
 {- Note [extending types]
@@ -172,15 +179,20 @@ data GlobalState = GlobalState {
   _pendingEdits :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
   _editIdCounter :: Int,
+  -- | Sessions
+  _sessionStore :: Map SessionId GuideSession,
+
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
   _dirty :: Bool }
   deriving (Show)
 
-deriveSafeCopySorted 7 'extension ''GlobalState
+deriveSafeCopySorted 8 'extension ''GlobalState
 makeLenses ''GlobalState
 
-changelog ''GlobalState (Current 7, Past 6) []
-deriveSafeCopySorted 6 'base ''GlobalState_v6
+changelog ''GlobalState (Current 8, Past 7) [
+  Added "_sessionStore" [hs|M.empty|]
+  ]
+deriveSafeCopySorted 7 'base ''GlobalState_v7
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
@@ -683,6 +695,26 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
+loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
+loadSession key = do 
+  m <- view sessionStore 
+  return $ M.lookup key m
+
+storeSession :: GuideSession -> Acid.Update GlobalState ()
+storeSession sess = do
+  sessionStore %= M.insert (sess ^. sess_id) sess
+  setDirty
+
+deleteSession :: SessionId -> Acid.Update GlobalState ()
+deleteSession key = do
+  sessionStore %= M.delete key
+  setDirty
+
+getSessions :: Acid.Query GlobalState [GuideSession]
+getSessions = do
+  m <- view sessionStore
+  return . map snd $ M.toList m
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -715,5 +747,8 @@ makeAcidic ''GlobalState [
   -- other
   'moveItem, 'moveTrait,
   'restoreCategory, 'restoreItem, 'restoreTrait,
-  'setDirty, 'unsetDirty
+  'setDirty, 'unsetDirty,
+
+  -- sessions
+  'loadSession, 'storeSession, 'deleteSession, 'getSessions
   ]

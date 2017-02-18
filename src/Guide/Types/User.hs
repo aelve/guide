@@ -20,8 +20,6 @@ import Crypto.Scrypt (Pass, encryptPassIO', getEncryptedPass)
 
 import Guide.Utils
 import Guide.SafeCopy
--- import Guide.Types.Core
--- import Guide.Types.Edit
 
 data User = User {
   userID          :: Uid User,

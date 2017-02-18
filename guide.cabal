@@ -46,6 +46,7 @@ library
   exposed-modules:
     Guide.Server
     Guide.ServerStuff
+    Guide.Session
     Guide.Config
     Guide.State
     Guide.Types
@@ -101,6 +102,7 @@ library
                      , hashable
                      , haskell-src-meta
                      , http-types
+                     , hvect
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
@@ -120,8 +122,10 @@ library
                      , slave-thread
                      , split
                      , stache-plus == 0.1.*
+                     , stm
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
+                     , text
                      , text-all == 0.3.*
                      , time >= 1.5
                      , transformers
