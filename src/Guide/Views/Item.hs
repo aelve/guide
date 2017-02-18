@@ -67,13 +67,13 @@ renderItem category item = cached (CacheItem (item^.uid)) $ do
     div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
       -- See Note [enabled sections]
       renderItemDescription item
-      hiddenIf (not (category^.prosConsEnabled)) $
+      hiddenIf (ItemProsConsSection `notElem` category^.enabledSections) $
         div_ [class_ "pros-cons-wrapper"] $
           renderItemTraits item
-      hiddenIf (not (category^.ecosystemEnabled)) $
+      hiddenIf (ItemEcosystemSection `notElem` category^.enabledSections) $
         div_ [class_ "ecosystem-wrapper"] $
           renderItemEcosystem item
-      hiddenIf (not (category^.notesEnabled)) $
+      hiddenIf (ItemNotesSection `notElem` category^.enabledSections) $
         div_ [class_ "notes-wrapper"] $
           renderItemNotes category item
 
@@ -85,12 +85,12 @@ renderItemForFeed category item = do
   h1_ $ renderItemTitle item
   unless (markdownNull (item^.description)) $
     toHtml (item^.description)
-  when (category^.prosConsEnabled) $ do
+  when (ItemProsConsSection `elem` category^.enabledSections) $ do
     h2_ "Pros"
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
     h2_ "Cons"
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
-  when (category^.ecosystemEnabled) $ do
+  when (ItemEcosystemSection `elem` category^.enabledSections) $ do
     unless (markdownNull (item^.ecosystem)) $ do
       h2_ "Ecosystem"
       toHtml (item^.ecosystem)

@@ -517,7 +517,7 @@ changelog bareTyName (newVer, Past oldVer) changes = do
   -- Return everything
   sequence [oldTypeDecl, migrateInstanceDecl]
 
-data GenConstructor = Copy Name | Custom String [(String, Name)]
+data GenConstructor = Copy Name | Custom String [(String, Q Type)]
 
 genVer :: Name -> Int -> [GenConstructor] -> Q [Dec]
 genVer tyName ver constructors = do
@@ -545,7 +545,7 @@ genVer tyName ver constructors = do
   let customConstructor conName fields =
         recC (oldName (mkName conName))
              [varBangType (oldName (mkName fName))
-                          (bangType bangNotStrict (conT fType))
+                          (bangType bangNotStrict fType)
                | (fName, fType) <- fields]
 
   cons' <- for constructors $ \genCons ->
@@ -568,7 +568,7 @@ genVer tyName ver constructors = do
     (cxt [])
   return [decl]
 
-data MigrateConstructor = CopyM Name | CustomM Name ExpQ
+data MigrateConstructor = CopyM Name | CustomM String ExpQ
 
 migrateVer :: Name -> Int -> [MigrateConstructor] -> Q Exp
 migrateVer tyName ver constructors = do
@@ -599,8 +599,8 @@ migrateVer tyName ver constructors = do
           other -> fail ("migrateVer: copyConstructor: got " ++ show other)
 
   let customConstructor conName res =
-        match (recP (oldName conName) [])
-              (normalB res)
+        match (recP (oldName (mkName conName)) [])
+              (normalB (res `appE` varE arg))
               []
 
   branches' <- for constructors $ \genCons ->

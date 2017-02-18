@@ -417,18 +417,19 @@ renderEdit globalState edit = do
         unless (T.null oldNotes) $
           td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
-    Edit'SetCategoryProsConsEnabled catId _oldVal newVal -> do
-      if newVal == True
-        then p_ $ "enabled pros/cons for category " >> printCategory catId
-        else p_ $ "disabled pros/cons for category " >> printCategory catId
-    Edit'SetCategoryEcosystemEnabled catId _oldVal newVal -> do
-      if newVal == True
-        then p_ $ "enabled ecosystem for category " >> printCategory catId
-        else p_ $ "disabled ecosystem for category " >> printCategory catId
-    Edit'SetCategoryNotesEnabled catId _oldVal newVal -> do
-      if newVal == True
-        then p_ $ "enabled notes for category " >> printCategory catId
-        else p_ $ "disabled notes for category " >> printCategory catId
+    Edit'ChangeCategoryEnabledSections catId toEnable toDisable -> do
+      let sectName ItemProsConsSection  = "pros/cons"
+          sectName ItemEcosystemSection = "ecosystem"
+          sectName ItemNotesSection     = "notes"
+      let list = toHtml . T.intercalate ", "
+      unless (null toEnable) $
+        p_ $ "enabled " >>
+             strong_ (list (map sectName (toList toEnable))) >>
+             " for category " >> printCategory catId
+      unless (null toDisable) $
+        p_ $ "disabled " >>
+             strong_ (list (map sectName (toList toDisable))) >>
+             " for category " >> printCategory catId
 
     -- Change item properties
     Edit'SetItemName _itemId oldName newName -> p_ $ do

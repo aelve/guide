@@ -18,6 +18,7 @@ import Imports
 
 -- Containers
 import qualified Data.Map as M
+import qualified Data.Set as S
 -- Feeds
 import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
@@ -113,14 +114,15 @@ setMethods = Spock.subcomponent "set" $ do
         addEdit edit
       do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
          addEdit edit
-      do (edit, _) <- dbUpdate $
-                      SetCategoryProsConsEnabled catId prosConsEnabled'
-         addEdit edit
-      do (edit, _) <- dbUpdate $
-                      SetCategoryEcosystemEnabled catId ecosystemEnabled'
-         addEdit edit
-      do (edit, _) <- dbUpdate $
-                      SetCategoryNotesEnabled catId notesEnabled'
+      do oldEnabledSections <- view enabledSections <$> dbQuery (GetCategory catId)
+         let newEnabledSections = S.fromList . concat $
+               [ [ItemProsConsSection  | prosConsEnabled']
+               , [ItemEcosystemSection | ecosystemEnabled']
+               , [ItemNotesSection     | notesEnabled'] ]
+         (edit, _) <- dbUpdate $
+                      ChangeCategoryEnabledSections catId
+                        (newEnabledSections S.\\ oldEnabledSections)
+                        (oldEnabledSections S.\\ newEnabledSections)
          addEdit edit
     -- After all these edits we can render the category header
     category <- dbQuery (GetCategory catId)

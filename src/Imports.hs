@@ -8,7 +8,7 @@ the "Prelude".)
 module Imports
 (
   module X,
-  LByteString
+  LByteString,
 )
 where
 
@@ -41,3 +41,4 @@ import qualified Data.ByteString.Lazy as BSL
 
 
 type LByteString = BSL.ByteString
+-- LText is already provided by Data.Text.All

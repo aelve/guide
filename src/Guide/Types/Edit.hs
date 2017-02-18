@@ -19,6 +19,8 @@ where
 
 import Imports
 
+-- Containers
+import qualified Data.Set as S
 -- Network
 import Data.IP
 -- acid-state
@@ -65,18 +67,10 @@ data Edit
       editCategoryUid       :: Uid Category,
       editCategoryStatus    :: CategoryStatus,
       editCategoryNewStatus :: CategoryStatus }
-  | Edit'SetCategoryProsConsEnabled {
-      editCategoryUid                 :: Uid Category,
-      editCategoryProsConsEnabled     :: Bool,
-      editCategoryNewProsConsEnabled  :: Bool }
-  | Edit'SetCategoryEcosystemEnabled {
-      editCategoryUid                 :: Uid Category,
-      editCategoryEcosystemEnabled    :: Bool,
-      editCategoryNewEcosystemEnabled :: Bool }
-  | Edit'SetCategoryNotesEnabled {
-      editCategoryUid                 :: Uid Category,
-      editCategoryNotesEnabled        :: Bool,
-      editCategoryNewNotesEnabled     :: Bool }
+  | Edit'ChangeCategoryEnabledSections {
+      editCategoryUid             :: Uid Category,
+      editCategoryEnableSections  :: Set ItemSection,
+      editCategoryDisableSections :: Set ItemSection }
 
   -- Change item properties
   | Edit'SetItemName {
@@ -139,9 +133,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 6 'extension ''Edit
+deriveSafeCopySimple 7 'extension ''Edit
 
-genVer ''Edit 5 [
+genVer ''Edit 6 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -152,9 +146,18 @@ genVer ''Edit 5 [
   Copy 'Edit'SetCategoryGroup,
   Copy 'Edit'SetCategoryNotes,
   Copy 'Edit'SetCategoryStatus,
-  Copy 'Edit'SetCategoryProsConsEnabled,
-  Copy 'Edit'SetCategoryEcosystemEnabled,
-  -- Copy 'Edit'SetCategoryNotesEnabled,
+  Custom "Edit'SetCategoryProsConsEnabled" [
+      ("editCategoryUid"                , [t|Uid Category|]),
+      ("_editCategoryProsConsEnabled"   , [t|Bool|]),
+      ("editCategoryNewProsConsEnabled" , [t|Bool|]) ],
+  Custom "Edit'SetCategoryEcosystemEnabled" [
+      ("editCategoryUid"                , [t|Uid Category|]),
+      ("_editCategoryEcosystemEnabled"  , [t|Bool|]),
+      ("editCategoryNewEcosystemEnabled", [t|Bool|]) ],
+  Custom "Edit'SetCategoryNotesEnabled" [
+      ("editCategoryUid"                , [t|Uid Category|]),
+      ("_editCategoryNotesEnabled"      , [t|Bool|]),
+      ("editCategoryNewNotesEnabled"    , [t|Bool|]) ],
   -- Change item properties
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
@@ -173,11 +176,11 @@ genVer ''Edit 5 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 5 'base ''Edit_v5
+deriveSafeCopySimple 6 'base ''Edit_v6
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v5
-  migrate = $(migrateVer ''Edit 5 [
+  type MigrateFrom Edit = Edit_v6
+  migrate = $(migrateVer ''Edit 6 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -187,9 +190,24 @@ instance Migrate Edit where
     CopyM 'Edit'SetCategoryGroup,
     CopyM 'Edit'SetCategoryNotes,
     CopyM 'Edit'SetCategoryStatus,
-    CopyM 'Edit'SetCategoryProsConsEnabled,
-    CopyM 'Edit'SetCategoryEcosystemEnabled,
-    -- CopyM 'Edit'SetCategoryNotesEnabled,
+    CustomM "Edit'SetCategoryProsConsEnabled" [|\x ->
+        if editCategoryNewProsConsEnabled_v6 x
+          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 (S.singleton ItemProsConsSection) mempty
+          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 mempty (S.singleton ItemProsConsSection) |],
+    CustomM "Edit'SetCategoryEcosystemEnabled" [|\x ->
+        if editCategoryNewEcosystemEnabled_v6 x
+          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 (S.singleton ItemEcosystemSection) mempty
+          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 mempty (S.singleton ItemEcosystemSection) |],
+    CustomM "Edit'SetCategoryNotesEnabled" [|\x ->
+        if editCategoryNewNotesEnabled_v6 x
+          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 (S.singleton ItemNotesSection) mempty
+          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
+                 mempty (S.singleton ItemNotesSection) |],
     -- Change item properties
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
@@ -220,12 +238,9 @@ isVacuousEdit Edit'SetCategoryNotes{..} =
   editCategoryNotes == editCategoryNewNotes
 isVacuousEdit Edit'SetCategoryStatus{..} =
   editCategoryStatus == editCategoryNewStatus
-isVacuousEdit Edit'SetCategoryProsConsEnabled {..} =
-  editCategoryProsConsEnabled == editCategoryNewProsConsEnabled
-isVacuousEdit Edit'SetCategoryEcosystemEnabled {..} =
-  editCategoryEcosystemEnabled == editCategoryNewEcosystemEnabled
-isVacuousEdit Edit'SetCategoryNotesEnabled {..} =
-  editCategoryNotesEnabled == editCategoryNewNotesEnabled
+isVacuousEdit Edit'ChangeCategoryEnabledSections {..} =
+  null editCategoryEnableSections &&
+  null editCategoryDisableSections
 isVacuousEdit Edit'SetItemName{..} =
   editItemName == editItemNewName
 isVacuousEdit Edit'SetItemLink{..} =

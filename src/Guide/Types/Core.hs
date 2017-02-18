@@ -21,6 +21,7 @@ module Guide.Types.Core
   Trait(..),
   ItemKind(..),
     hackageName,
+  ItemSection(..),
   Item(..),
     pros,
     prosDeleted,
@@ -36,9 +37,7 @@ module Guide.Types.Core
   Category(..),
     title,
     status,
-    prosConsEnabled,
-    ecosystemEnabled,
-    notesEnabled,
+    enabledSections,
     groups,
     items,
     itemsDeleted,
@@ -61,6 +60,8 @@ import Imports
 
 -- Text
 import qualified Data.Text.All as T
+-- Containers
+import qualified Data.Set as S
 -- JSON
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
@@ -137,6 +138,19 @@ instance Migrate ItemKind where
     _itemKindHackageName = _itemKindHackageName_v2 }
   migrate Other_v2 = Other
 
+-- | Different kinds of sections inside items. This type is only used for
+-- '_categoryEnabledSections'.
+data ItemSection
+  = ItemProsConsSection
+  | ItemEcosystemSection
+  | ItemNotesSection
+  deriving (Eq, Ord, Show, Generic)
+
+deriveSafeCopySimple 0 'base ''ItemSection
+
+instance A.ToJSON ItemSection where
+  toJSON = A.genericToJSON A.defaultOptions
+
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
@@ -202,14 +216,9 @@ data Category = Category {
   -- | The “grandcategory” of the category (“meta”, “basics”, “specialised
   -- needs”, etc)
   _categoryGroup_ :: Text,
-  -- | Whether to show items' pros and cons. This would be 'False' for
-  -- e.g. lists of people, or lists of successful projects written in Haskell
-  _categoryProsConsEnabled :: Bool,
-  -- | Whether to show items' ecosystem fields. This would be 'False' for
-  -- lists of people, or for books
-  _categoryEcosystemEnabled :: Bool,
-  -- | Whether to show notes.
-  _categoryNotesEnabled :: Bool,
+  -- | Enabled sections in this category. For instance, if this set contains
+  -- 'ItemNotesSection', then notes will be shown for each item.
+  _categoryEnabledSections :: Set ItemSection,
   _categoryCreated :: UTCTime,
   _categoryStatus :: CategoryStatus,
   _categoryNotes :: MarkdownBlock,
@@ -224,12 +233,23 @@ data Category = Category {
   _categoryItemsDeleted :: [Item] }
   deriving (Show, Generic)
 
-deriveSafeCopySorted 10 'extension ''Category
+deriveSafeCopySorted 11 'extension ''Category
 makeFields ''Category
 
-changelog ''Category (Current 10, Past 9)
+changelog ''Category (Current 11, Past 10)
+  [Removed "_categoryProsConsEnabled"  [t|Bool|],
+   Removed "_categoryEcosystemEnabled" [t|Bool|],
+   Removed "_categoryNotesEnabled"     [t|Bool|],
+   Added   "_categoryEnabledSections"  [hs|
+     S.fromList $ concat
+       [ [ItemProsConsSection  | _categoryProsConsEnabled]
+       , [ItemEcosystemSection | _categoryEcosystemEnabled]
+       , [ItemNotesSection     | _categoryNotesEnabled] ] |] ]
+deriveSafeCopySorted 10 'extension ''Category_v10
+
+changelog ''Category (Past 10, Past 9)
   [Added "_categoryNotesEnabled" [hs|True|]]
-deriveSafeCopySorted 9 'base ''Category_v9
+deriveSafeCopySorted 9 'extension ''Category_v9
 
 changelog ''Category (Past 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8

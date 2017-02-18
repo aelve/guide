@@ -120,19 +120,19 @@ renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
         label_ $ do
           input_ [type_ "checkbox", name_ "pros-cons-enabled",
                   autocomplete_ "off"]
-            & checkedIf (category^.prosConsEnabled)
+            & checkedIf (ItemProsConsSection `elem` category^.enabledSections)
           "Pros/cons enabled"
         br_ []
         label_ $ do
           input_ [type_ "checkbox", name_ "ecosystem-enabled",
                   autocomplete_ "off"]
-            & checkedIf (category^.ecosystemEnabled)
+            & checkedIf (ItemEcosystemSection `elem` category^.enabledSections)
           "“Ecosystem” field enabled"
         br_ []
         label_ $ do
           input_ [type_ "checkbox", name_ "notes-enabled",
                   autocomplete_ "off"]
-            & checkedIf (category^.notesEnabled)
+            & checkedIf (ItemNotesSection `elem` category^.enabledSections)
           "“Notes” field enabled"
         br_ []
         input_ [type_ "submit", value_ "Save", class_ "save"]

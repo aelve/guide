@@ -43,9 +43,7 @@ module Guide.State
   SetCategoryGroup(..),
   SetCategoryNotes(..),
   SetCategoryStatus(..),
-  SetCategoryProsConsEnabled(..),
-  SetCategoryEcosystemEnabled(..),
-  SetCategoryNotesEnabled(..),
+  ChangeCategoryEnabledSections(..),
   -- *** 'Item'
   SetItemName(..),
   SetItemLink(..),
@@ -85,6 +83,7 @@ import Imports
 
 -- Containers
 import qualified Data.Map as M
+import qualified Data.Set as S
 -- Text
 import qualified Data.Text.All as T
 -- Network
@@ -255,9 +254,10 @@ addCategory catId title' created' = do
         _categoryUid = catId,
         _categoryTitle = title',
         _categoryGroup_ = "Miscellaneous",
-        _categoryProsConsEnabled = True,
-        _categoryEcosystemEnabled = True,
-        _categoryNotesEnabled = True,
+        _categoryEnabledSections = S.fromList [
+            ItemProsConsSection,
+            ItemEcosystemSection,
+            ItemNotesSection ],
         _categoryCreated = created',
         _categoryStatus = CategoryStub,
         _categoryNotes = toMarkdownBlock "",
@@ -351,25 +351,15 @@ setCategoryStatus catId status' = do
   let edit = Edit'SetCategoryStatus catId oldStatus status'
   (edit,) <$> use (categoryById catId)
 
-setCategoryProsConsEnabled
-  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
-setCategoryProsConsEnabled catId val = do
-  oldVal <- categoryById catId . prosConsEnabled <<.= val
-  let edit = Edit'SetCategoryProsConsEnabled catId oldVal val
-  (edit,) <$> use (categoryById catId)
-
-setCategoryEcosystemEnabled
-  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
-setCategoryEcosystemEnabled catId val = do
-  oldVal <- categoryById catId . ecosystemEnabled <<.= val
-  let edit = Edit'SetCategoryEcosystemEnabled catId oldVal val
-  (edit,) <$> use (categoryById catId)
-
-setCategoryNotesEnabled
-  :: Uid Category -> Bool -> Acid.Update GlobalState (Edit, Category)
-setCategoryNotesEnabled catId val = do
-  oldVal <- categoryById catId . notesEnabled <<.= val
-  let edit = Edit'SetCategoryNotesEnabled catId oldVal val
+changeCategoryEnabledSections
+  :: Uid Category
+  -> Set ItemSection     -- ^ Sections to enable
+  -> Set ItemSection     -- ^ Sections to disable
+  -> Acid.Update GlobalState (Edit, Category)
+changeCategoryEnabledSections catId toEnable toDisable = do
+  categoryById catId . enabledSections %= \sections ->
+    (sections <> toEnable) S.\\ toDisable
+  let edit = Edit'ChangeCategoryEnabledSections catId toEnable toDisable
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -708,8 +698,7 @@ makeAcidic ''GlobalState [
   -- set
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
-    'setCategoryProsConsEnabled, 'setCategoryEcosystemEnabled,
-    'setCategoryNotesEnabled,
+    'changeCategoryEnabledSections,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,

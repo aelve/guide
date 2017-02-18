@@ -175,21 +175,11 @@ undoEdit (Edit'SetCategoryStatus catId old new) = do
   if now /= new
     then return (Left "status has been changed further")
     else Right () <$ dbUpdate (SetCategoryStatus catId old)
-undoEdit (Edit'SetCategoryProsConsEnabled catId old new) = do
-  now <- view prosConsEnabled <$> dbQuery (GetCategory catId)
-  if now /= new
-    then return (Left "pros-cons-enabled has been changed further")
-    else Right () <$ dbUpdate (SetCategoryProsConsEnabled catId old)
-undoEdit (Edit'SetCategoryEcosystemEnabled catId old new) = do
-  now <- view ecosystemEnabled <$> dbQuery (GetCategory catId)
-  if now /= new
-    then return (Left "ecosystem-enabled has been changed further")
-    else Right () <$ dbUpdate (SetCategoryEcosystemEnabled catId old)
-undoEdit (Edit'SetCategoryNotesEnabled catId old new) = do
-  now <- view notesEnabled <$> dbQuery (GetCategory catId)
-  if now /= new
-    then return (Left "notes-enabled has been changed further")
-    else Right () <$ dbUpdate (SetCategoryNotesEnabled catId old)
+undoEdit (Edit'ChangeCategoryEnabledSections catId toEnable toDisable) = do
+  enabledNow <- view enabledSections <$> dbQuery (GetCategory catId)
+  if any (`elem` enabledNow) toDisable || any (`notElem` enabledNow) toEnable
+    then return (Left "enabled-sections has been changed further")
+    else Right () <$ dbUpdate (ChangeCategoryEnabledSections catId toDisable toEnable)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
   now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
   if now /= new
@@ -270,11 +260,7 @@ invalidateCacheForEdit ed = do
         [CacheCategoryInfo catId]
     Edit'SetCategoryStatus catId _ _ ->
         [CacheCategoryInfo catId]
-    Edit'SetCategoryProsConsEnabled catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'SetCategoryEcosystemEnabled catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'SetCategoryNotesEnabled catId _ _ ->
+    Edit'ChangeCategoryEnabledSections catId _ _ ->
         [CacheCategoryInfo catId]
     Edit'SetCategoryNotes catId _ _ ->
         [CacheCategoryNotes catId]
