@@ -29,6 +29,7 @@ module Guide.Utils
   Url,
   sanitiseUrl,
   makeSlug,
+  (//),
 
   -- * IP
   sockAddrToIP,
@@ -166,6 +167,24 @@ makeSlug =
   T.filter (\c -> isLetter c || isDigit c || c == ' ' || c == '-') .
   T.toLower .
   T.map (\x -> if x == '_' || x == '/' then '-' else x)
+
+{- |
+Add a path element to an URL:
+
+>>> "https://guide.aelve.com" // "haskell"
+"https://guide.aelve.com/haskell"
+
+If slashes are already present, it strips them:
+
+>>> "https://guide.aelve.com/" // "/haskell"
+"https://guide.aelve.com/haskell"
+
+Note that ('</>') from "System.FilePath" shouldn't be used, as on Windows it
+appends backslashes (@\@) and not slashes (@/@).
+-}
+(//) :: Url -> Text -> Url
+(//) x y = fromMaybe x (T.stripSuffix "/" x) <> "/" <>
+           fromMaybe y (T.stripPrefix "/" y)
 
 ----------------------------------------------------------------------------
 -- IP

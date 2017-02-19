@@ -351,7 +351,7 @@ otherMethods = do
 
   -- Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
-  baseUrl <- (</> "haskell") . T.unpack . _baseUrl <$> getConfig
+  baseUrl <- (// "haskell") . _baseUrl <$> getConfig
   Spock.subcomponent "feed" $ do
     -- Feed for items in a category
     Spock.get categoryVar $ \catId -> do
@@ -359,19 +359,17 @@ otherMethods = do
       let sortedItems = reverse $ sortBy cmp (category^.items)
             where cmp = comparing (^.created) <> comparing (^.uid)
       let route = "feed" <//> categoryVar
-      -- We use ++ instead of </> because the rendered route already has ‘/’
-      -- in front of it, and if we used </> it'd just skip baseUrl
-      let feedUrl = baseUrl ++ T.unpack (renderRoute route (category^.uid))
+      let feedUrl = baseUrl // renderRoute route (category^.uid)
           feedTitle = Atom.TextString (T.unpack (category^.title) ++
                                        " – Haskell – Aelve Guide")
           feedLastUpdate = case sortedItems of
             (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
             _        -> ""
-      let feedBase = Atom.nullFeed feedUrl feedTitle feedLastUpdate
+      let feedBase = Atom.nullFeed (T.unpack feedUrl) feedTitle feedLastUpdate
       entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
       atomFeed $ feedBase {
         Atom.feedEntries = entries,
-        Atom.feedLinks   = [Atom.nullLink feedUrl] }
+        Atom.feedLinks   = [Atom.nullLink (T.unpack feedUrl)] }
 
 adminMethods :: SpockM () () ServerState ()
 adminMethods = Spock.subcomponent "admin" $ do
@@ -416,16 +414,15 @@ adminMethods = Spock.subcomponent "admin" $ do
 
 itemToFeedEntry
   :: (MonadIO m)
-  => String -> Category -> Item -> m Atom.Entry
+  => Url -> Category -> Item -> m Atom.Entry
 itemToFeedEntry baseUrl category item = do
   entryContent <- Lucid.renderTextT (renderItemForFeed category item)
   return entryBase {
-    Atom.entryLinks = [Atom.nullLink entryLink],
+    Atom.entryLinks = [Atom.nullLink (T.unpack entryLink)],
     Atom.entryContent = Just (Atom.HTMLContent (TL.unpack entryContent)) }
   where
-    entryLink = baseUrl </>
-                T.unpack (T.format "{}#item-{}"
-                                   (categorySlug category, item^.uid))
+    entryLink = baseUrl //
+                T.format "{}#item-{}" (categorySlug category, item^.uid)
     entryBase = Atom.nullEntry
       (T.unpack (uidToText (item^.uid)))
       (Atom.TextString (T.unpack (item^.name)))
