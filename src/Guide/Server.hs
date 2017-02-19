@@ -44,6 +44,8 @@ import Data.Acid as Acid
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
+-- Catching signals
+import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
 
@@ -150,10 +152,16 @@ mainWith config = do
   -- 'createCheckpoint', etc
   let prepare = openLocalStateFrom "state/" emptyState
       finalise db = do
+        putStrLn "Creating an acid-state checkpoint"
         createCheckpoint' db
+        putStrLn "Closing acid-state"
         closeAcidState db
+        -- Killing EKG has to be done last, because of
+        -- <https://github.com/tibbe/ekg/issues/62>
+        putStrLn "Killing EKG"
         mapM_ killThread =<< readIORef ekgId
   bracket prepare finalise $ \db -> do
+    installTerminationCatcher =<< myThreadId
     hSetBuffering stdout NoBuffering
     -- Create a checkpoint every six hours. Note: if nothing was changed, the
     -- checkpoint won't be created, which saves us some space.
@@ -310,3 +318,17 @@ prerenderPages config db = do
     evaluate . force =<<
       renderBST (hoist (flip runReaderT config) (renderCategoryPage cat))
   putStrLn " done"
+
+data Quit = CtrlC | ServiceStop
+  deriving (Eq, Ord, Show)
+
+instance Exception Quit
+
+{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM
+(i.e. service stop) and throw an exception instead of them. This lets us
+create a checkpoint and close connections on exit.
+-}
+installTerminationCatcher :: ThreadId -> IO ()
+installTerminationCatcher thread = void $ do
+  installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
+  installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing

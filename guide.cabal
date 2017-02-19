@@ -125,6 +125,7 @@ library
                      , time >= 1.5
                      , transformers
                      , uniplate
+                     , unix
                      , vector
                      , wai
                      , wai-middleware-metrics
