@@ -78,6 +78,10 @@ module Guide.State
   
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
+
+  GetUser(..), CreateUser(..), DeleteUser(..),
+
+  GetAdminUsers(..)
 )
 where
 
@@ -96,7 +100,6 @@ import Data.SafeCopy hiding (kind)
 import Data.Acid as Acid
 --
 import Web.Spock.Internal.SessionManager (SessionId)
-import qualified Web.Spock.Internal.SessionManager as Spock
 
 import Guide.Utils
 import Guide.SafeCopy
@@ -105,6 +108,7 @@ import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Action
 import Guide.Types.Session
+import Guide.Types.User
 
 
 {- Note [extending types]
@@ -181,7 +185,8 @@ data GlobalState = GlobalState {
   _editIdCounter :: Int,
   -- | Sessions
   _sessionStore :: Map SessionId GuideSession,
-
+  -- | Users
+  _users :: Map (Uid User) User,
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
   _dirty :: Bool }
   deriving (Show)
@@ -190,7 +195,8 @@ deriveSafeCopySorted 8 'extension ''GlobalState
 makeLenses ''GlobalState
 
 changelog ''GlobalState (Current 8, Past 7) [
-  Added "_sessionStore" [hs|M.empty|]
+  Added "_sessionStore" [hs|M.empty|],
+  Added "_users" [hs|M.empty|]
   ]
 deriveSafeCopySorted 7 'base ''GlobalState_v7
 
@@ -695,25 +701,62 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
+-- | Retrieves a session by 'SessionID'. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
-loadSession key = do 
-  m <- view sessionStore 
-  return $ M.lookup key m
+loadSession key = view (sessionStore . at key)
 
+-- | Stores a session object. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 storeSession :: GuideSession -> Acid.Update GlobalState ()
 storeSession sess = do
   sessionStore %= M.insert (sess ^. sess_id) sess
   setDirty
 
+-- | Deletes a session by 'SessionID'. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 deleteSession :: SessionId -> Acid.Update GlobalState ()
 deleteSession key = do
   sessionStore %= M.delete key
   setDirty
 
+-- | Retrieves all sessions. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 getSessions :: Acid.Query GlobalState [GuideSession]
 getSessions = do
   m <- view sessionStore
   return . map snd $ M.toList m
+
+-- | Retrieves a user by their unique identifier.
+getUser :: Uid User -> Acid.Query GlobalState (Maybe User)
+getUser key = view (users . at key)
+
+-- | Creates a user, maintaining unique constraints on certain fields.
+createUser :: User -> Acid.Update GlobalState Bool
+createUser user = do
+  m <- use users
+  if all (canCreateUser user) (m ^.. each) 
+  then do
+    users %= M.insert (user ^. userID) user
+    return True
+  else
+    return False
+
+-- | Remove a user completely. Unsets all user sessions with this user ID.
+deleteUser :: Uid User -> Acid.Update GlobalState ()
+deleteUser key = do
+  users %= M.delete key
+  sessions <- use sessionStore
+  for_ (M.toList sessions) $ \(sessID, sess) -> do
+    when ((sess ^. sess_data.sessionUserID) == Just key) $ do
+      sessionStore %= M.insert sessID (sess & sess_data.sessionUserID .~ Nothing)
+  setDirty
+
+-- | Retrieve all users with the 'userIsAdmin' field set to True.
+getAdminUsers :: Acid.Query GlobalState [User]
+getAdminUsers = do
+  m <- view users
+  return $ m ^.. each . filtered _userIsAdmin
 
 makeAcidic ''GlobalState [
   -- queries
@@ -750,5 +793,10 @@ makeAcidic ''GlobalState [
   'setDirty, 'unsetDirty,
 
   -- sessions
-  'loadSession, 'storeSession, 'deleteSession, 'getSessions
+  'loadSession, 'storeSession, 'deleteSession, 'getSessions,
+
+  -- users
+  'getUser, 'createUser, 'deleteUser,
+
+  'getAdminUsers
   ]

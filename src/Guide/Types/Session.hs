@@ -6,6 +6,8 @@
 module Guide.Types.Session
 (
   GuideData (..),
+    sessionUserID,
+  emptyGuideData,
   SpockSession,
   GuideSession,
     sess_id,
@@ -21,24 +23,33 @@ where
 import Imports
 
 -- Spock
-import qualified Web.Spock as Spock
 import Web.Spock.Internal.SessionManager (SessionId)
 import qualified Web.Spock.Internal.SessionManager as Spock
 -- Spock Session wrapper
 import Data.Time.Clock ( UTCTime(..) )
 import qualified Data.Text as T
-import Data.Map (Map)
-import qualified Data.Map as Map
 -- acid-state
-import qualified Data.Acid as Acid
 import Data.SafeCopy hiding (kind)
 
+import Guide.SafeCopy
+import Guide.Utils
+import Guide.Types.User
 
 type SpockSession conn st = Spock.Session conn GuideData st
 
-data GuideData = GuideData ()
+-- | GuideData is the session data exposed by Spock.SessionAction operations.
+data GuideData = GuideData {
+    -- | If logged in, must be a valid userID
+    _sessionUserID :: Maybe (Uid User)
+  }
   deriving (Show, Eq)
-deriveSafeCopy 0 'base ''GuideData
+
+deriveSafeCopySorted 0 'base ''GuideData
+makeLenses ''GuideData
+
+emptyGuideData :: GuideData
+emptyGuideData = GuideData {
+  _sessionUserID = Nothing }
 
 data GuideSession = GuideSession {
   _sess_id :: !SessionId,
@@ -46,7 +57,8 @@ data GuideSession = GuideSession {
   _sess_validUntil :: !UTCTime,
   _sess_data :: !GuideData }
   deriving (Show, Eq)
-deriveSafeCopy 0 'base ''GuideSession
+
+deriveSafeCopySorted 0 'base ''GuideSession
 makeLenses ''GuideSession
 
 unwrapSession :: GuideSession -> SpockSession conn st

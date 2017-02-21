@@ -13,3 +13,5 @@ extra-deps:
 - edit-distance-vector-1.0.0.4
 - patches-vector-0.1.5.4
 - fmt-0.0.0.4
+- Spock-digestive-0.3.0.0
+- digestive-functors-0.8.2.0

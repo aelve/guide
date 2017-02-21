@@ -49,6 +49,8 @@ module Guide.Views.Utils
   readWidgets,
   getJS,
   getCSS,
+
+  module Guide.Views.Utils.Input
 )
 where
 
@@ -92,6 +94,8 @@ import Guide.JS (JS(..), JQuerySelector)
 import qualified Guide.JS as JS
 import Guide.Markdown
 -- import Guide.Cache
+
+import Guide.Views.Utils.Input
 
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()

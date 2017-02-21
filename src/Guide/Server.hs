@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeOperators #-}
 
 
 {- |
@@ -35,6 +36,10 @@ import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
 import qualified Network.HTTP.Types.Status as HTTP
+-- Spock-digestive
+import Web.Spock.Digestive (runForm)
+-- digestive-functors
+import qualified Text.Digestive as V
 -- Highlighting
 import CMark.Highlight (styleToCss, pygments)
 -- Monitoring
@@ -50,7 +55,12 @@ import qualified SlaveThread as Slave
 import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
+-- scrypt
+import Crypto.Scrypt (Pass (..))
+-- HVect
+import Data.HVect hiding (length)
 
+import Guide.App
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config
@@ -58,6 +68,7 @@ import Guide.State
 import Guide.Types
 import Guide.Views
 import Guide.Views.Utils (getJS, getCSS)
+import qualified Guide.Views.Utils as V
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -105,10 +116,6 @@ acid-state. Acid-state works as follows:
 
 -}
 
-type GuideApp ctx = SpockCtxM ctx () GuideData ServerState ()
-
--- type GuideAction ctx a = SpockActionCtx ctx () () ServerState a
-
 -- TODO: rename GlobalState to DB, and DB to AcidDB
 
 lucidWithConfig
@@ -144,6 +151,7 @@ mainWith config = do
         _pendingEdits = [],
         _editIdCounter = 0,
         _sessionStore = M.empty,
+        _users = M.empty,
         _dirty = True }
   do args <- getArgs
      when (args == ["--dry-run"]) $ do
@@ -199,7 +207,7 @@ mainWith config = do
             sc_sessionTTL = 3600,
             sc_sessionIdEntropy = 64,
             sc_sessionExpandTTL = True,
-            sc_emptySession = GuideData (),
+            sc_emptySession = emptyGuideData,
             sc_store = store,
             sc_housekeepingInterval = 60 * 10,
             sc_hooks = defaultSessionHooks
@@ -213,7 +221,7 @@ mainWith config = do
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
-guideApp waiMetrics = do
+guideApp waiMetrics = prehook initHook $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
@@ -240,7 +248,7 @@ guideApp waiMetrics = do
         lucidWithConfig $ renderRoot
 
       -- Admin page
-      prehook adminHook $ do
+      prehook authHook $ prehook adminHook $ do
         Spock.get "admin" $ do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdmin s
@@ -300,17 +308,55 @@ guideApp waiMetrics = do
       Spock.subcomponent "auth" $ do
         Spock.get "login" $ lucidWithConfig renderLogin
         
-        Spock.get "register" $ lucidWithConfig renderRegister
+        Spock.getpost "register" signinAction
 
-adminHook :: ActionCtxT ctx (WebStateM () GuideData ServerState) ()
+signinAction :: GuideAction ctx ()
+signinAction = do
+  r <- runForm "register" registerForm
+  case r of 
+    (v, Nothing) -> do
+      formHtml <- protectForm registerFormView v
+      lucidWithConfig $ renderRegister formHtml
+    (v, Just UserRegistration {..}) -> do
+      user <- makeUser registerUserName registerUserEmail (Pass $ T.encodeUtf8 registerUserPassword)
+      success <- dbUpdate $ CreateUser user
+      if success
+      then do
+        modifySession (sessionUserID .~ Just (user ^. userID))
+        lucidWithConfig $ renderRegister (registerView user)
+      else do
+        formHtml <- protectForm registerFormView v
+        lucidWithConfig $ renderRegister formHtml
+
+initHook :: GuideAction () (HVect '[])
+initHook = return HNil
+
+authHook :: GuideAction (HVect xs) (HVect (User ': xs))
+authHook = do
+  oldCtx <- getContext
+  user <- getLoggedInUser
+  case user of
+    Nothing -> Spock.text "Not logged in."
+    Just user -> return (user :&: oldCtx)
+  
+adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ': xs))
 adminHook = do
-  adminPassword <- _adminPassword <$> getConfig
-  unless (adminPassword == "") $ do
-    let check user pass =
-          unless (user == "admin" && pass == adminPassword) $ do
-            Spock.setStatus HTTP.status401
-            Spock.text "Wrong password!"
-    Spock.requireBasicAuth "Authenticate (login = admin)" check return
+  oldCtx <- getContext
+  let user = findFirst oldCtx
+  if user ^. userIsAdmin 
+  then return (IsAdmin :&: oldCtx)
+  else Spock.text "Not authorized."
+
+protectForm :: MonadIO m
+  => (V.View (HtmlT m ()) -> HtmlT m ())
+  -> V.View (HtmlT m ())
+  -> GuideAction ctx (HtmlT m ())
+protectForm render formView = do
+  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
+  csrfToken <- getCsrfToken
+  return $ V.form formView "" $ do
+    input_ [ type_ "hidden", name_ csrfTokenName, value_ csrfToken ]
+    render formView
 
 -- TODO: a function to find all links to Hackage that have version in them
 

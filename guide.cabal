@@ -44,6 +44,7 @@ executable guide
 
 library
   exposed-modules:
+    Guide.App
     Guide.Server
     Guide.ServerStuff
     Guide.Session
@@ -74,6 +75,7 @@ library
     Imports
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
+                     , Spock-digestive
                      , acid-state == 0.14.*
                      , aeson == 0.11.*
                      , aeson-pretty
@@ -87,6 +89,7 @@ library
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
+                     , digestive-functors
                      , directory >= 1.2
                      , ekg
                      , ekg-core

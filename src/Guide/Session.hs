@@ -13,7 +13,7 @@ module Guide.Session
 )
 where
 
-import Imports hiding (toList)
+import Imports
 
 -- Spock
 import Web.Spock.Config
@@ -25,17 +25,17 @@ import Guide.Types.Session
 
 -- |Queries for all user sessions and then removes sessions unless predicate matches.
 filterSessions :: AcidState GlobalState -> (SpockSession conn st -> Bool) -> IO ()
-filterSessions db f = do
+filterSessions db p = do
   sessions <- Acid.query db GetSessions
-  forM_ sessions $ \sess -> do
-    unless (f $ unwrapSession sess) $
+  for_ sessions $ \sess -> do
+    unless (p $ unwrapSession sess) $
       Acid.update db $ DeleteSession (sess ^. sess_id)
 
 -- |Queries for all user sessions and then performs an operation over all.
 mapSessions :: MonadIO m => AcidState GlobalState -> (SpockSession conn st -> m (SpockSession conn st)) -> m ()
 mapSessions db f = do
   sessions <- liftIO $ Acid.query db GetSessions
-  forM_ sessions $ \sess -> do
+  for_ sessions $ \sess -> do
     newSess <- f (unwrapSession sess)
     liftIO $ Acid.update db $ StoreSession (wrapSession newSess)
 
