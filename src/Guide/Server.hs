@@ -308,10 +308,10 @@ guideApp waiMetrics = prehook initHook $ do
       Spock.subcomponent "auth" $ do
         Spock.get "login" $ lucidWithConfig renderLogin
         
-        Spock.getpost "register" signinAction
+        Spock.getpost "register" signupAction
 
-signinAction :: GuideAction ctx ()
-signinAction = do
+signupAction :: GuideAction ctx ()
+signupAction = do
   r <- runForm "register" registerForm
   case r of 
     (v, Nothing) -> do
