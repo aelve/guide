@@ -56,6 +56,7 @@ library
       Guide.Types.Edit
       Guide.Types.Action
       Guide.Types.User
+      Guide.Types.Session
     Guide.Handlers
     Guide.Utils
     Guide.Merge
@@ -69,6 +70,7 @@ library
       Guide.Views.Item
       Guide.Views.Category
       Guide.Views.Utils
+        Guide.Views.Utils.Input
     Guide.Cache
     Guide.SafeCopy
   other-modules:
