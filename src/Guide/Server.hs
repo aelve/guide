@@ -152,10 +152,8 @@ mainWith config = do
   -- 'createCheckpoint', etc
   let prepare = openLocalStateFrom "state/" emptyState
       finalise db = do
-        putStrLn "Creating an acid-state checkpoint"
-        createCheckpoint' db
-        putStrLn "Closing acid-state"
-        closeAcidState db
+        putStrLn "Creating an acid-state checkpoint and closing acid-state"
+        createCheckpointAndClose' db
         -- Killing EKG has to be done last, because of
         -- <https://github.com/tibbe/ekg/issues/62>
         putStrLn "Killing EKG"

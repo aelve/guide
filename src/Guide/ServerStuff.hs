@@ -33,6 +33,7 @@ module Guide.ServerStuff
 
   -- * Other helpers
   createCheckpoint',
+  createCheckpointAndClose',
 )
 where
 
@@ -45,6 +46,7 @@ import qualified Web.Spock as Spock
 import Web.Routing.Combinators (PathState(..))
 -- acid-state
 import Data.Acid as Acid
+import Data.Acid.Local as Acid
 
 import Guide.Config
 import Guide.State
@@ -316,3 +318,14 @@ createCheckpoint' db = liftIO $ do
   when wasDirty $ do
     createArchive db
     createCheckpoint db
+
+-- | Like 'createCheckpointAndClose', but doesn't create a checkpoint if
+-- there were no changes made.
+createCheckpointAndClose' :: MonadIO m => DB -> m ()
+createCheckpointAndClose' db = liftIO $ do
+  wasDirty <- Acid.update db UnsetDirty
+  if wasDirty then do
+    createArchive db
+    createCheckpointAndClose db
+  else do
+    closeAcidState db
