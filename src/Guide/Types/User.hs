@@ -6,13 +6,14 @@ A type for users. Currently unused.
 -}
 module Guide.Types.User
 (
-  User(..),
+  User,
     userID,
     userName,
     userEmail,
     userPassword,
     userIsAdmin,
   makeUser,
+  verifyUser,
   canCreateUser,
 )
 where
@@ -22,7 +23,7 @@ import Imports
 -- acid-state
 import Data.SafeCopy hiding (kind)
 -- scrypt
-import Crypto.Scrypt (Pass, encryptPassIO', getEncryptedPass)
+import Crypto.Scrypt (Pass (..), EncryptedPass (..), encryptPassIO', getEncryptedPass, verifyPass')
 
 import Guide.Utils
 import Guide.SafeCopy
@@ -44,9 +45,10 @@ data User = User {
 deriveSafeCopySorted 0 'base ''User
 makeLenses ''User
 
-makeUser :: MonadIO m => Text -> Text -> Pass -> m User
+-- | Creates a user object with an SCrypt encrypted password.
+makeUser :: MonadIO m => Text -> Text -> ByteString -> m User
 makeUser username email password = do
-  encPass <- liftIO $ encryptPassIO' password
+  encPass <- liftIO $ encryptPassIO' (Pass password)
   userid <- randomLongUid
   return User {
     _userID = userid,
@@ -54,6 +56,13 @@ makeUser username email password = do
     _userEmail = email,
     _userPassword = Just $ getEncryptedPass encPass,
     _userIsAdmin = False }
+
+-- | Verifies a given password corresponds to a user's encrypted password.
+verifyUser :: User -> ByteString -> Bool
+verifyUser user password = 
+  case user ^. userPassword of
+    Just encPass -> verifyPass' (Pass password) (EncryptedPass encPass)
+    Nothing -> False
 
 -- | Looks at two users, and returns true if all unique fields are different.
 canCreateUser :: User -> User -> Bool

@@ -80,6 +80,7 @@ module Guide.State
   DeleteSession(..), GetSessions(..),
 
   GetUser(..), CreateUser(..), DeleteUser(..),
+  LoginUser(..),
 
   GetAdminUsers(..)
 )
@@ -734,7 +735,7 @@ getUser key = view (users . at key)
 -- | Creates a user, maintaining unique constraints on certain fields.
 createUser :: User -> Acid.Update GlobalState Bool
 createUser user = do
-  m <- use users
+  m <- toList <$> use users
   if all (canCreateUser user) (m ^.. each) 
   then do
     users %= M.insert (user ^. userID) user
@@ -746,17 +747,32 @@ createUser user = do
 deleteUser :: Uid User -> Acid.Update GlobalState ()
 deleteUser key = do
   users %= M.delete key
+  logoutUserGlobally key
+  setDirty
+
+-- | Given an email address and a password, return the user if it exists
+-- and the password is correct.
+loginUser :: Text -> ByteString -> Acid.Query GlobalState (Maybe User)
+loginUser email password = do
+  matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
+  case matches of
+    [user] -> 
+      if verifyUser user password
+      then return $ Just user
+      else return $ Nothing
+    _ -> return Nothing
+
+-- | Global logout of all of a user's active sessions
+logoutUserGlobally :: Uid User -> Acid.Update GlobalState ()
+logoutUserGlobally key = do
   sessions <- use sessionStore
   for_ (M.toList sessions) $ \(sessID, sess) -> do
     when ((sess ^. sess_data.sessionUserID) == Just key) $ do
-      sessionStore %= M.insert sessID (sess & sess_data.sessionUserID .~ Nothing)
-  setDirty
+      sessionStore . ix sessID . sess_data . sessionUserID .= Nothing
 
 -- | Retrieve all users with the 'userIsAdmin' field set to True.
 getAdminUsers :: Acid.Query GlobalState [User]
-getAdminUsers = do
-  m <- view users
-  return $ m ^.. each . filtered _userIsAdmin
+getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
 
 makeAcidic ''GlobalState [
   -- queries
@@ -796,7 +812,8 @@ makeAcidic ''GlobalState [
   'loadSession, 'storeSession, 'deleteSession, 'getSessions,
 
   -- users
-  'getUser, 'createUser, 'deleteUser,
+  'getUser, 'createUser, 'deleteUser, 
+  'loginUser,
 
   'getAdminUsers
   ]

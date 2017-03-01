@@ -34,6 +34,5 @@ type GuideAction ctx r = ActionCtxT ctx (WebStateM GuideConn GuideData ServerSta
 
 data IsAdmin = IsAdmin
 
-
 type AdminM ctx r = forall n xs. (ctx ~ HVect xs, ListContains n IsAdmin xs) => GuideM ctx r
 type AdminAction ctx r = forall n xs. (ctx ~ HVect xs, ListContains n IsAdmin xs) => GuideAction ctx r

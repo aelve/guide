@@ -306,9 +306,34 @@ guideApp waiMetrics = prehook initHook $ do
         methods
       
       Spock.subcomponent "auth" $ do
-        Spock.get "login" $ lucidWithConfig renderLogin
+        Spock.getpost "login" $ authRedirect "/" $ loginAction
+
+        Spock.get "logout" $ logoutAction 
         
-        Spock.getpost "register" signupAction
+        Spock.getpost "register" $ authRedirect "/" $ signupAction
+
+loginAction :: GuideAction ctx ()
+loginAction = do
+  r <- runForm "login" loginForm
+  case r of
+    (v, Nothing) -> do
+      formHtml <- protectForm loginFormView v
+      lucidWithConfig $ renderRegister formHtml
+    (v, Just Login {..}) -> do
+      loginAttempt <- dbQuery $ LoginUser loginEmail (T.encodeUtf8 loginUserPassword)
+      case loginAttempt of
+        Just user -> do
+          modifySession (sessionUserID .~ Just (user ^. userID))
+          Spock.redirect "/"
+        -- TODO: show error message/validation of input
+        Nothing -> do
+          formHtml <- protectForm loginFormView v
+          lucidWithConfig $ renderRegister formHtml
+
+logoutAction :: GuideAction ctx ()
+logoutAction = do
+  modifySession (sessionUserID .~ Nothing)
+  Spock.redirect "/"
 
 signupAction :: GuideAction ctx ()
 signupAction = do
@@ -318,12 +343,12 @@ signupAction = do
       formHtml <- protectForm registerFormView v
       lucidWithConfig $ renderRegister formHtml
     (v, Just UserRegistration {..}) -> do
-      user <- makeUser registerUserName registerUserEmail (Pass $ T.encodeUtf8 registerUserPassword)
+      user <- makeUser registerUserName registerUserEmail (T.encodeUtf8 registerUserPassword)
       success <- dbUpdate $ CreateUser user
       if success
       then do
         modifySession (sessionUserID .~ Just (user ^. userID))
-        lucidWithConfig $ renderRegister (registerView user)
+        Spock.redirect ""
       else do
         formHtml <- protectForm registerFormView v
         lucidWithConfig $ renderRegister formHtml
@@ -338,7 +363,7 @@ authHook = do
   case user of
     Nothing -> Spock.text "Not logged in."
     Just user -> return (user :&: oldCtx)
-  
+
 adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ': xs))
 adminHook = do
   oldCtx <- getContext
@@ -347,6 +372,24 @@ adminHook = do
   then return (IsAdmin :&: oldCtx)
   else Spock.text "Not authorized."
 
+-- |Redirect the user to a given path if they are logged in.
+authRedirect :: Text -> GuideAction ctx a -> GuideAction ctx a
+authRedirect path action = do
+  user <- getLoggedInUser
+  case user of
+    Just _ -> do
+      Spock.redirect path
+    Nothing -> action
+
+-- | 'protectForm' renders a set of input fields within a CSRF-protected form.
+--
+-- This sets the method (POST) of submission and includes a server-generated
+-- token to help prevent cross-site request forgery (CSRF) attacks.
+-- 
+-- Briefly: this is necessary to prevent third party sites from impersonating
+-- logged in users, because a POST to the right URL is not sufficient to
+-- submit the form and perform an action. The CSRF token is only displayed
+-- when viewing the page.
 protectForm :: MonadIO m
   => (V.View (HtmlT m ()) -> HtmlT m ())
   -> V.View (HtmlT m ())
