@@ -75,5 +75,4 @@ renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m () -> HtmlT m ()
 renderRegister content = do
   renderPage $ 
     pageDef & pageTitle .~ "Aelve Guide"
-            & pageName .~ Just "Register"
             & pageContent .~ content
