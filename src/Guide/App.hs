@@ -34,5 +34,8 @@ type GuideAction ctx r = ActionCtxT ctx (WebStateM GuideConn GuideData ServerSta
 
 data IsAdmin = IsAdmin
 
+type AuthM ctx r = forall n xs. (ctx ~ HVect xs, ListContains n User xs) => GuideM ctx r
+type AuthAction ctx r = forall n xs. (ctx ~ HVect xs, ListContains n User xs) => GuideAction ctx r
+
 type AdminM ctx r = forall n xs. (ctx ~ HVect xs, ListContains n IsAdmin xs) => GuideM ctx r
 type AdminAction ctx r = forall n xs. (ctx ~ HVect xs, ListContains n IsAdmin xs) => GuideAction ctx r
