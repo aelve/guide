@@ -35,11 +35,8 @@ import Web.Spock.Config
 import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
-import qualified Network.HTTP.Types.Status as HTTP
 -- Spock-digestive
 import Web.Spock.Digestive (runForm)
--- digestive-functors
-import qualified Text.Digestive as V
 -- Highlighting
 import CMark.Highlight (styleToCss, pygments)
 -- Monitoring
@@ -55,8 +52,6 @@ import qualified SlaveThread as Slave
 import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
--- scrypt
-import Crypto.Scrypt (Pass (..))
 -- HVect
 import Data.HVect hiding (length)
 
@@ -67,8 +62,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS)
-import qualified Guide.Views.Utils as V
+import Guide.Views.Utils (getJS, getCSS, protectForm)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -359,8 +353,8 @@ initHook = return HNil
 authHook :: GuideAction (HVect xs) (HVect (User ': xs))
 authHook = do
   oldCtx <- getContext
-  user <- getLoggedInUser
-  case user of
+  maybeUser <- getLoggedInUser
+  case maybeUser of
     Nothing -> Spock.text "Not logged in."
     Just user -> return (user :&: oldCtx)
 
@@ -380,26 +374,6 @@ authRedirect path action = do
     Just _ -> do
       Spock.redirect path
     Nothing -> action
-
--- | 'protectForm' renders a set of input fields within a CSRF-protected form.
---
--- This sets the method (POST) of submission and includes a server-generated
--- token to help prevent cross-site request forgery (CSRF) attacks.
--- 
--- Briefly: this is necessary to prevent third party sites from impersonating
--- logged in users, because a POST to the right URL is not sufficient to
--- submit the form and perform an action. The CSRF token is only displayed
--- when viewing the page.
-protectForm :: MonadIO m
-  => (V.View (HtmlT m ()) -> HtmlT m ())
-  -> V.View (HtmlT m ())
-  -> GuideAction ctx (HtmlT m ())
-protectForm render formView = do
-  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
-  csrfToken <- getCsrfToken
-  return $ V.form formView "" $ do
-    input_ [ type_ "hidden", name_ csrfTokenName, value_ csrfToken ]
-    render formView
 
 -- TODO: a function to find all links to Hackage that have version in them
 

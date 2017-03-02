@@ -50,6 +50,8 @@ module Guide.Views.Utils
   getJS,
   getCSS,
 
+  protectForm,
+
   module Guide.Views.Utils.Input
 )
 where
@@ -57,6 +59,9 @@ where
 
 import Imports
 
+-- Web
+import Web.Spock
+import Web.Spock.Config
 -- Lists
 import Data.List.Split
 -- Containers
@@ -65,6 +70,8 @@ import qualified Data.Map as M
 -- Text
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
+-- digestive-functors
+import Text.Digestive (View)
 -- import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
@@ -86,6 +93,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Text.Megaparsec
 import Text.Megaparsec.Text
 
+import Guide.App
 -- import Guide.Config
 -- import Guide.State
 import Guide.Types
@@ -368,3 +376,23 @@ getCSS = do
   widgets <- readWidgets
   let css = [t | (CSS_, t) <- widgets]
   return (T.concat css)
+
+-- | 'protectForm' renders a set of input fields within a CSRF-protected form.
+--
+-- This sets the method (POST) of submission and includes a server-generated
+-- token to help prevent cross-site request forgery (CSRF) attacks.
+-- 
+-- Briefly: this is necessary to prevent third party sites from impersonating
+-- logged in users, because a POST to the right URL is not sufficient to
+-- submit the form and perform an action. The CSRF token is only displayed
+-- when viewing the page.
+protectForm :: MonadIO m
+  => (View (HtmlT m ()) -> HtmlT m ())
+  -> View (HtmlT m ())
+  -> GuideAction ctx (HtmlT m ())
+protectForm render formView = do
+  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
+  csrfToken <- getCsrfToken
+  return $ form formView "" $ do
+    input_ [ type_ "hidden", name_ csrfTokenName, value_ csrfToken ]
+    render formView
