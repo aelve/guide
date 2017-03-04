@@ -68,13 +68,13 @@ mainPageTests = session "main page" $ using [chromeCaps] $ do
       footer <- select "#footer"
       (width, height) <- elemSize footer
       width `shouldBeInRange` (750, 850)
-      height `shouldBeInRange` (60, 70)
+      height `shouldBeInRange` (30, 70)
+    wd "overflows when shrunk" $ do
       -- and now it shall be overflowing
-      setWindowSize (700, 500)
-      waitUntil wait_delay (expect . inRange (90, 140) . snd =<< elemSize footer)
-        `catch` \(_::ExpectFailed) -> return ()
-      height2 <- snd <$> elemSize footer
-      height2 `shouldBeInRange` (90, 140)
+      setWindowSize (600, 500)
+      footer <- select "#footer"
+      (_, height) <- elemSize footer
+      height `shouldBeInRange` (71, 140)
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using [chromeCaps] $ do
