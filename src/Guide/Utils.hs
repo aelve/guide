@@ -63,6 +63,9 @@ module Guide.Utils
   MigrateConstructor(..),
   migrateVer,
 
+  -- * STM
+  liftSTM,
+
   -- * Instances
   -- ** 'MonadThrow' for 'HtmlT'
 )
@@ -628,6 +631,13 @@ migrateVer tyName ver constructors = do
       CustomM conName res -> customConstructor conName res
 
   lam1E (varP arg) (caseE (varE arg) (map return branches'))
+
+----------------------------------------------------------------------------
+-- STM
+----------------------------------------------------------------------------
+
+liftSTM :: MonadIO m => STM a -> m a
+liftSTM = liftIO . atomically
 
 ----------------------------------------------------------------------------
 -- Orphan instances

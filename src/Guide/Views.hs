@@ -657,7 +657,8 @@ renderSearch mbSearchQuery =
   mustache "search" $ A.object [
     "query" A..= mbSearchQuery ]
 
--- | Render list of categories on the main page.
+-- | Render list of categories on the main page (the one with category groups
+-- and categories in it).
 --
 -- If the presentation of the category list ever changes (e.g. to include
 -- lists of items in categories, or their counts, or something), you might
