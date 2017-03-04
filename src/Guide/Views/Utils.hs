@@ -95,7 +95,8 @@ import Guide.Markdown
 
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
-onPageLoad js = script_ $ T.format "$(document).ready(function(){{}});" [js]
+onPageLoad js = script_ $
+  "$(document).ready(function(){"%<js>%"});"
 
 -- | Add some empty space.
 emptySpan :: Monad m => Text -> HtmlT m ()
@@ -104,19 +105,19 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 -- Use inputValue to get the value (works with input_ and textarea_)
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
-  T.format "if (event.keyCode == 13 || event.keyCode == 10)\
-           \ {{} return false;}\n" [handler]
+  "if (event.keyCode == 13 || event.keyCode == 10) {"
+      %<handler>%" return false;}\n"
 
 onCtrlEnter :: JS -> Attribute
 onCtrlEnter handler = onkeydown_ $
-  T.format "if ((event.keyCode == 13 || event.keyCode == 10) &&\
-           \    (event.metaKey || event.ctrlKey))\
-           \ {{} return false;}\n" [handler]
+  "if ((event.keyCode == 13 || event.keyCode == 10) && " <>
+      "(event.metaKey || event.ctrlKey)) {"
+      %<handler>%" return false;}\n"
 
 onEscape :: JS -> Attribute
 onEscape handler = onkeydown_ $
-  T.format "if (event.keyCode == 27)\
-           \ {{} return false;}\n" [handler]
+  "if (event.keyCode == 27) {"
+      %<handler>%" return false;}\n"
 
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
@@ -128,7 +129,7 @@ clearInput :: JS
 clearInput = JS "this.value = '';"
 
 onFormSubmit :: (JS -> JS) -> Attribute
-onFormSubmit f = onsubmit_ $ T.format "{} return false;" [f (JS "this")]
+onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
 
 button :: Monad m => Text -> [Attribute] -> JS -> HtmlT m ()
 button value attrs handler =
@@ -177,7 +178,7 @@ markdownEditor
   -> HtmlT m ()
 markdownEditor attr (view mdText -> s) submit cancel instr = do
   textareaUid <- randomLongUid
-  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaUid]
+  let val = JS $ "document.getElementById(\""%<textareaUid>%"\").value"
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
   textarea_ ([uid_ textareaUid,
@@ -196,7 +197,8 @@ markdownEditor attr (view mdText -> s) submit cancel instr = do
   emptySpan "6px"
   span_ [class_ "edit-field-instruction"] (toHtml instr)
   a_ [href_ "/markdown", target_ "_blank"] $
-    img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
+    img_ [src_ "/markdown.svg", alt_ "markdown supported",
+          class_ " markdown-supported "]
 
 smallMarkdownEditor
   :: MonadIO m
@@ -208,7 +210,7 @@ smallMarkdownEditor
   -> HtmlT m ()
 smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
-  let val = JS $ T.format "document.getElementById(\"{}\").value" [textareaId]
+  let val = JS $ "document.getElementById(\""%<textareaId>%"\").value"
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
              [onEnter (submit val)] ++
              [onEscape cancel | Just cancel <- [mbCancel]] ++
@@ -222,7 +224,8 @@ smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   span_ [style_ "float:right"] $ do
     span_ [class_ "edit-field-instruction"] (toHtml instr)
     a_ [href_ "/markdown", target_ "_blank"] $
-      img_ [src_ "/markdown.svg", alt_ "markdown supported", class_ " markdown-supported "]
+      img_ [src_ "/markdown.svg", alt_ "markdown supported",
+            class_ " markdown-supported "]
 
 thisNode :: MonadIO m => HtmlT m JQuerySelector
 thisNode = do
@@ -233,18 +236,18 @@ thisNode = do
   return (JS.selectParent (JS.selectUid uid'))
 
 itemNodeId :: Item -> Text
-itemNodeId item = "item-" <> uidToText (item^.uid)
+itemNodeId item = format "item-{}" [item^.uid]
 
 categoryNodeId :: Category -> Text
-categoryNodeId category = "category-" <> uidToText (category^.uid)
+categoryNodeId category = format "category-{}" [category^.uid]
 
 -- TODO: another absolute link to get rid of [absolute-links]
 categoryLink :: Category -> Url
-categoryLink category = "/haskell/" <> categorySlug category
+categoryLink category = format "/haskell/{}" [categorySlug category]
 
 itemLink :: Category -> Item -> Url
 itemLink category item =
-  T.format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
+  format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute

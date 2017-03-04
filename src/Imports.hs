@@ -38,6 +38,8 @@ import Control.DeepSeq as X
 import Data.Hashable as X
 -- Lazy bytestring
 import qualified Data.ByteString.Lazy as BSL
+-- Formatting
+import Fmt as X
 
 
 type LByteString = BSL.ByteString

@@ -121,20 +121,22 @@ class JSFunction a where
 -- This generates function definition
 instance JSFunction JS where
   makeJSFunction fName fParams fDef =
-    JS $ T.format "function {}({}) {\n{}}\n"
-                  (fName, T.intercalate "," fParams, fDef)
+    let paramList = T.intercalate "," fParams
+    in JS $ "function "%<fName>%"("%<paramList>%") {\n"
+                %<indent 2 (build fDef)>%
+            "}\n"
 
 -- This generates a function that takes arguments and produces a Javascript
 -- function call
 instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _fParams _fDef = \args ->
-    JS $ T.format "{}({});"
-                  (fName, T.intercalate "," (map fromJS (jsParams args)))
+    let paramList = T.intercalate "," (map fromJS (jsParams args))
+    in  JS $ ""%<fName>%"("%<paramList>%");"
 
 -- This isn't a standalone function and so it doesn't have to be listed in
 -- 'allJSFunctions'.
 assign :: ToJS x => JS -> x -> JS
-assign v x = JS $ T.format "{} = {};" (v, toJS x)
+assign v x = JS $ format "{} = {};" (v, toJS x)
 
 -- TODO: all links here shouldn't be absolute [absolute-links]
 
@@ -708,19 +710,20 @@ newtype JQuerySelector = JQuerySelector Text
   deriving (ToJS, T.Buildable)
 
 selectId :: Text -> JQuerySelector
-selectId x = JQuerySelector $ T.format "#{}" [x]
+selectId x = JQuerySelector $ format "#{}" [x]
 
 selectUid :: Uid Node -> JQuerySelector
-selectUid x = JQuerySelector $ T.format "#{}" [x]
+selectUid x = JQuerySelector $ format "#{}" [x]
 
 selectClass :: Text -> JQuerySelector
-selectClass x = JQuerySelector $ T.format ".{}" [x]
+selectClass x = JQuerySelector $ format ".{}" [x]
 
 selectParent :: JQuerySelector -> JQuerySelector
-selectParent x = JQuerySelector $ T.format ":has(> {})" [x]
+selectParent x = JQuerySelector $ format ":has(> {})" [x]
 
 selectChildren :: JQuerySelector -> JQuerySelector -> JQuerySelector
-selectChildren a b = JQuerySelector $ T.format "{} > {}" (a, b)
+selectChildren a b = JQuerySelector $ format "{} > {}" (a, b)
 
 selectSection :: JQuerySelector -> Text -> JQuerySelector
-selectSection a b = JQuerySelector $ T.format "{} > .section.{}" (a, b)
+selectSection a b = JQuerySelector $ format "{} > .section.{}" (a, b)
+

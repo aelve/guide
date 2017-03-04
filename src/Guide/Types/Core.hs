@@ -260,7 +260,7 @@ instance A.ToJSON Category where
 
 categorySlug :: Category -> Text
 categorySlug category =
-  T.format "{}-{}" (makeSlug (category^.title), category^.uid)
+  format "{}-{}" (makeSlug (category^.title), category^.uid)
 
 ----------------------------------------------------------------------------
 -- Utils

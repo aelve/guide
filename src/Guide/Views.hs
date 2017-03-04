@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -311,8 +312,8 @@ renderEdits globalState edits = do
   -- Unlike 'groupWith', “groupBy . equating” doesn't sort the input.
   let editBlocks = groupBy (equating getIP) edits
   let ipNum = length $ groupWith getIP edits
-  h1_ $ toHtml $
-    T.format "Pending edits (IPs: {}, blocks: {})" (ipNum, length editBlocks)
+  h1_ $ toHtml @Text $
+    "Pending edits (IPs: "%<ipNum>%", blocks: "%<length editBlocks>%")"
   for_ editBlocks $ \editBlock -> div_ $ do
     blockNode <- thisNode
     h2_ $ do
