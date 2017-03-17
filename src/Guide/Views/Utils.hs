@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE QuasiQuotes #-}
 
 {- |
 Various HTML utils, Mustache utils, etc.
@@ -51,6 +51,7 @@ module Guide.Views.Utils
   getCSS,
 
   protectForm,
+  getCsrfHeader,
 
   module Guide.Views.Utils.Input
 )
@@ -391,8 +392,21 @@ protectForm :: MonadIO m
   -> View (HtmlT m ())
   -> GuideAction ctx (HtmlT m ())
 protectForm render formView = do
-  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
-  csrfToken <- getCsrfToken
+  (name, value) <- getCsrfTokenPair
   return $ form formView "" $ do
-    input_ [ type_ "hidden", name_ csrfTokenName, value_ csrfToken ]
+    input_ [ type_ "hidden", name_ name, value_ value ]
     render formView
+
+getCsrfTokenPair :: GuideAction ctx (Text, Text)
+getCsrfTokenPair = do
+  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
+  csrfTokenValue <- getCsrfToken
+  return (csrfTokenName, csrfTokenValue)
+
+getCsrfHeader :: GuideAction ctx (Text, Text)
+getCsrfHeader = do
+  csrfTokenName <- spc_csrfHeaderName <$> getSpockCfg
+  csrfTokenValue <- getCsrfToken
+  return (csrfTokenName, csrfTokenValue)
+
+

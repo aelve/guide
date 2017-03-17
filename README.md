@@ -33,6 +33,7 @@ If you want to contribute but don't know where to start, grep the source for
   * `templates` – HTML templates for pages and elements of pages
   * `scripts` – some scripts used by automatic testing
   * `favicon` – code used to generate a favicon
+  * `guidejs` – client side JavaScript
 
 ### Notes
 

@@ -4,7 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
-
+{-# LANGUAGE QuasiQuotes #-}
 
 {- |
 The main module.
@@ -28,6 +28,7 @@ import qualified Data.Map as M
 import Control.Monad.Morph
 -- Text
 import qualified Data.Text.All as T
+import qualified NeatInterpolation as Neat
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -62,7 +63,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS, protectForm)
+import Guide.Views.Utils (getJS, getCSS, protectForm, getCsrfHeader)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -221,8 +222,12 @@ guideApp waiMetrics = prehook initHook $ do
       -- Javascript
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
+        (csrfTokenName, csrfTokenValue) <- getCsrfHeader
+        let jqueryCsrfProtection = [Neat.text|
+              guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
+            |]
         js <- getJS
-        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions <> js)
+        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"

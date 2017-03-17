@@ -12,7 +12,7 @@ maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
 tested-with:         GHC == 8.0.1
-build-type:          Simple
+build-type:          Custom
 extra-source-files:
   CHANGELOG.md
 -- Whatever, this won't ever be installed from a .tar package anyway so I

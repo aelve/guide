@@ -602,7 +602,7 @@ wrapPage pageTitle' page = doctypehtml_ $ do
               "https://github.com/aelve/guide/issues");
         return false; };
       |]
-    includeJS "/jquery.js"
+    includeJS "/js/bundle.js"
     -- for modal dialogs
     includeJS "/magnific-popup.js"
     includeCSS "/magnific-popup.css"
