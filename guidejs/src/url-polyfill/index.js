@@ -618,6 +618,6 @@ var module = {};
 
 })(module);
 
-var urlpoly = urlpoly.URL || URL;
+var urlpoly = module.URL || URL;
 
 export default urlpoly;
