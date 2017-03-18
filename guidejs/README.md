@@ -1,3 +1,12 @@
+# Developing this module
+
+To work on this module, it's necessary to use either
+[yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/). Yarn is an
+alternative to npm by Facebook, but they perform the same function here.
+
+When run in the parent directory, `stack build` will run a build script in the
+root to install any dependencies and build the output bundle.
+
 # Motivation for this module
 
 The situation for handling client-side CSRF token injection was unsatisfying, to
