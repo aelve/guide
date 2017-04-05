@@ -58,6 +58,7 @@ library
     Guide.Utils
     Guide.Merge
     Guide.Markdown
+    Guide.Search
     Guide.JS
     Guide.Views
       Guide.Views.Page
