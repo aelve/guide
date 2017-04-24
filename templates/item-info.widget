@@ -154,13 +154,13 @@ function editItemInfo(itemUid) {
 
 CSS
 ------------------------------------------------------------
-.formLabel {
+.item-info-edit-form label {
   display: block;
   margin-bottom: 5px;
   margin-top: 15px;
 }
 
-.form-group {
+.item-info-edit-form {
   margin-top: 15px;
   margin-bottom: 5px;
 }
@@ -170,21 +170,21 @@ CSS
   margin-bottom: 5px;
 }
 
-.save {
+.item-form-save-btn {
   margin-right: 20px;
 }
 
 HTML: item-info-edit-form
 ------------------------------------------------------------
 {{! "autocomplete=off" everywhere: http://stackoverflow.com/q/8311455 }}
-<form class="form-group" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
-  <label class="formLabel" for="name">
+<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
+  <label for="name">
     Name
   </label>
   <input id="name" name="name" value="{{item.name}}"
           type="text" autocomplete="off">
 
-  <label class="formLabel" for="kind">
+  <label for="kind">
     Kind
   </label>
   <select id="kind" name="kind" autocomplete="off">
@@ -194,20 +194,20 @@ HTML: item-info-edit-form
     {{/possible_kinds}}
   </select>
  
-  <label class="formLabel" for="hackage-name">
+  <label for="hackage-name">
     Name on Hackage
   </label>
   <input id="hackage-name" name="hackage-name" value="{{#item.kind.hackageName}}{{.}}{{/item.kind.hackageName}}"
           type="text" autocomplete="off">
 
-  <label class="formLabel" for="site">
+  <label for="site">
     Site (optional)
   </label>
   <input id="site" name="link" value="{{item.link}}"
           type="text" autocomplete="off">
   
 <div class="form-group">
-  <label class="formLabel" for="group">
+  <label for="group">
     Group
   </label>
   {{! When “new group” is selected in the list, we show a field for
@@ -226,7 +226,7 @@ HTML: item-info-edit-form
   </div>
 
   <div class="form-btn-group">
-    <input value="Save" class="save" type="submit">
+    <input value="Save" class="item-form-save-btn" type="submit">
     <input value="Cancel" class="cancel" type="button"
           onclick="itemInfoCancelEdit('{{item.uid}}');">
   </div>
