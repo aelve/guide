@@ -126,15 +126,20 @@ moveDown :: (a -> Bool) -> [a] -> [a]
 moveDown p (x:y:xs) = if p x then y : x : xs else x : moveDown p (y:xs)
 moveDown _ xs = xs
 
+-- | Delete the first element that satisfies the predicate (if such an
+-- element is present).
 deleteFirst :: (a -> Bool) -> [a] -> [a]
 deleteFirst _   []   = []
 deleteFirst f (x:xs) = if f x then xs else x : deleteFirst f xs
 
+-- | Insert given element into the list, or append it to the list if the
+-- position is outside the list bounds.
 insertAtGuaranteed :: Int -> a -> [a] -> [a]
 insertAtGuaranteed _ a   []   = [a]
 insertAtGuaranteed 0 a   xs   = a:xs
 insertAtGuaranteed n a (x:xs) = x : insertAtGuaranteed (n-1) a xs
 
+-- | A version of 'works in @O(n log n)@ instead of @O(n^2)@.
 ordNub :: Ord a => [a] -> [a]
 ordNub = go mempty
   where
@@ -146,6 +151,9 @@ ordNub = go mempty
 -- Eq
 ----------------------------------------------------------------------------
 
+-- | Like 'comparing', but for 'Eq' for 'Eq' comparison instead of 'Ord'. Can
+-- be used with e.g. 'grourison instead of 'Ord'. Can be usedpBy'. with e.g.
+-- 'groupBy'.
 equating :: Eq b => (a -> b) -> (a -> a -> Bool)
 equating f = (==) `on` f
 
@@ -153,8 +161,12 @@ equating f = (==) `on` f
 -- Urls
 ----------------------------------------------------------------------------
 
+-- | A type for URLs.
 type Url = Text
 
+-- | Return 'Nothing' if the URL is unsafe (e.g. a @javascript:@ or @data:@
+-- URL). Otherwise return the original URL, possibly adding @http://@ to it
+-- if it doesn't have a scheme.
 sanitiseUrl :: Url -> Maybe Url
 sanitiseUrl u
   | not (sanitaryURI u)       = Nothing
@@ -163,7 +175,7 @@ sanitiseUrl u
   | otherwise                 = Just ("http://" <> u)
 
 -- | Make text suitable for inclusion into an URL (by turning spaces into
--- hyphens and so on)
+-- hyphens and so on).
 makeSlug :: Text -> Text
 makeSlug =
   T.intercalate "-" . T.words .
@@ -222,11 +234,12 @@ instance SafeCopy (Uid a) where
 instance IsString (Uid a) where
   fromString = Uid . T.pack
 
+-- | Generate a random text of given length from characters @a-z@ and digits.
 randomText :: MonadIO m => Int -> m Text
 randomText n = liftIO $ do
   -- We don't want the 1st char to be a digit. Just in case (I don't really
   -- have a good reason). Maybe to prevent Javascript from doing automatic
-  -- conversions or something (tho it should never happen).
+  -- conversions or something (though it should never happen).
   x <- randomRIO ('a', 'z')
   let randomChar = do
         i <- randomRIO (0, 35)
@@ -235,17 +248,36 @@ randomText n = liftIO $ do
   xs <- replicateM (n-1) randomChar
   return (T.pack (x:xs))
 
+-- For probability tables, see
+-- https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
+
+-- | Generate a random UID of length 12.
+--
+-- Probability of collision for
+--
+--   * a million UIDs: approximately 1e-6
+--   * a billion UIDs: approximately 0.25
+--
 randomLongUid :: MonadIO m => m (Uid a)
 randomLongUid = Uid <$> randomText 12
 
--- These are only used for items and categories (because their uids can occur
--- in links and so they should look a bit nicer).
+-- | Generate a random UID of length 8.
+--
+-- These UIDs are only used for items and categories (because their uids can
+-- occur in links and so they should look a bit nicer).
+--
+-- Probability of collision for
+--
+--   * a hundred thousand UIDs: approximately 0.5%
+--   * a million UIDs: approximately 40%
+--
 randomShortUid :: MonadIO m => m (Uid a)
 randomShortUid = Uid <$> randomText 8
 
 -- | A marker for Uids that would be used with HTML nodes
 data Node
 
+-- | Generate a HTML @id@ attribute from an 'Uid'.
 uid_ :: Uid Node -> Attribute
 uid_ = id_ . uidToText
 
@@ -253,9 +285,11 @@ uid_ = id_ . uidToText
 -- Lucid
 ----------------------------------------------------------------------------
 
+-- | Include Javascript into page by creating a @<script>@ tag.
 includeJS :: Monad m => Url -> HtmlT m ()
 includeJS url = with (script_ "") [src_ url]
 
+-- | Include CSS into page.
 includeCSS :: Monad m => Url -> HtmlT m ()
 includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 
@@ -263,11 +297,15 @@ includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 -- Spock
 ----------------------------------------------------------------------------
 
+-- | Serve an Atom feed.
 atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
   bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
 
+-- | Get details of the request:
+--
+-- @(time, IP, referrer, user-agent)@
 getRequestDetails
   :: (MonadIO m, HasSpock (ActionCtxT ctx m))
   => ActionCtxT ctx m (UTCTime, Maybe IP, Maybe Text, Maybe Text)
@@ -301,6 +339,10 @@ getRequestDetails = do
 -- Template Haskell
 ----------------------------------------------------------------------------
 
+-- | Parse a Haskell expression with haskell-src-meta. The difference between
+-- @[|exp|]@ and @[hs|exp|]@ is the the former requires all variables in
+-- @exp@ to be present in scope at the moment of generation, but the latter
+-- doesn't. This makes 'hs' useful for 'changelog'.
 hs :: QuasiQuoter
 hs = QuasiQuoter {
   quoteExp  = either fail TH.lift . parseExp,
@@ -308,6 +350,14 @@ hs = QuasiQuoter {
   quoteType = fail "hs: can't parse types",
   quoteDec  = fail "hs: can't parse declarations" }
 
+-- | Print splices generated by a TH splice (the printing will happen during
+-- compilation, as a GHC warning). Useful for debugging.
+--
+-- For instance, you can dump splices generated with 'makeLenses' by
+-- replacing a top-level invocation of 'makeLenses' in your code with:
+--
+-- @dumpSplices $ makeLenses ''Foo@
+--
 dumpSplices :: DecsQ -> DecsQ
 dumpSplices x = do
   ds <- x
@@ -337,6 +387,7 @@ data Change
   -- the final version of the record is)
   | Added String Exp
 
+-- | An ADT for versions. Only used in invocations of 'changelog'.
 data TypeVersion = Current Int | Past Int
   deriving (Show)
 
@@ -539,9 +590,22 @@ changelog bareTyName (newVer, Past oldVer) changes = do
   -- Return everything
   sequence [oldTypeDecl, migrateInstanceDecl]
 
-data GenConstructor = Copy Name | Custom String [(String, Q Type)]
+-- | A type for specifying what constructors existed in an old version of a
+-- sum datatype.
+data GenConstructor
+  = Copy Name                         -- ^ Just reuse the constructor
+                                      --   existing now.
+  | Custom String [(String, Q Type)]  -- ^ The previous version had a
+                                      --   constructor with such-and-such
+                                      --   name and such-and-such fields.
 
-genVer :: Name -> Int -> [GenConstructor] -> Q [Dec]
+-- | Generate an old version of a sum type (used for 'SafeCopy').
+genVer
+  :: Name                  -- ^ Name of type to generate old version for
+  -> Int                   -- ^ Version to generate
+  -> [GenConstructor]      -- ^ List of constructors in the version we're
+                           --   generating
+  -> Q [Dec]
 genVer tyName ver constructors = do
   -- Get information about the new version of the datatype
   TyConI (DataD _cxt _name _vars _kind cons _deriving) <- reify tyName
@@ -590,9 +654,24 @@ genVer tyName ver constructors = do
     (cxt [])
   return [decl]
 
-data MigrateConstructor = CopyM Name | CustomM String ExpQ
+-- | A type for migrating constructors from an old version of a sum datatype.
+data MigrateConstructor
+  = CopyM Name             -- ^ Copy constructor without changes
+  | CustomM String ExpQ    -- ^ The old constructor with such-and-such name
+                           --   should be turned into a value of the new type
+                           --   (i.e. type of current version) using
+                           --   such-and-such code.
 
-migrateVer :: Name -> Int -> [MigrateConstructor] -> Q Exp
+-- | Generate 'SafeCopy' migration code for a sum datatype.
+--
+-- See @instance Migrate Edit@ for an example.
+migrateVer
+  :: Name                  -- ^ Type we're migrating to
+  -> Int                   -- ^ Version we're migrating from
+  -> [MigrateConstructor]  -- ^ For each constructor existing in the (old
+                           --   version of) type, a specification of how to
+                           --   migrate it.
+  -> Q Exp
 migrateVer tyName ver constructors = do
   -- Get information about the new version of the datatype
   TyConI (DataD _cxt _name _vars _kind cons _deriving) <- reify tyName
@@ -636,6 +715,7 @@ migrateVer tyName ver constructors = do
 -- STM
 ----------------------------------------------------------------------------
 
+-- | Lift an 'STM' action to any IO-supporting monad.
 liftSTM :: MonadIO m => STM a -> m a
 liftSTM = liftIO . atomically
 
