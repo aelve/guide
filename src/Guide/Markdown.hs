@@ -31,6 +31,7 @@ module Guide.Markdown
   -- * Misc
   renderMD,
   markdownNull,
+  extractFirstParagraph,
 )
 where
 
@@ -138,6 +139,12 @@ stringify = T.concat . map go
       LINEBREAK         -> " "
       HTML_BLOCK _      -> ""
       HTML_INLINE _     -> ""
+
+-- | Extracts the first paragraph.
+extractFirstParagraph :: Text -> MarkdownBlock
+extractFirstParagraph = toMarkdownBlock . annSource . preface . toMdTree
+  where
+    toMdTree = markdownBlockWithTOCMdTree . toMarkdownBlockWithTOC ""
 
 -- | Flatten Markdown by concatenating all block elements.
 extractInlines :: [MD.Node] -> [MD.Node]
