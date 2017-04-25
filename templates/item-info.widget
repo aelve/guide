@@ -170,8 +170,8 @@ CSS
   margin-bottom: 5px;
 }
 
-.item-form-save-btn {
-  margin-right: 20px;
+.form-btn-group .save {
+  margin-right: 25px;
 }
 
 HTML: item-info-edit-form
@@ -226,7 +226,7 @@ HTML: item-info-edit-form
   </div>
 
   <div class="form-btn-group">
-    <input value="Save" class="item-form-save-btn" type="submit">
+    <input value="Save" class="save" type="submit">
     <input value="Cancel" class="cancel" type="button"
           onclick="itemInfoCancelEdit('{{item.uid}}');">
   </div>
