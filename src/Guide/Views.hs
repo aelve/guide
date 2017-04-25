@@ -46,6 +46,7 @@ import Data.IP
 import Data.Time.Format.Human
 -- Mustache (templates)
 import qualified Data.Aeson as A
+
 import Guide.Config
 import Guide.State
 import Guide.Types
@@ -701,7 +702,8 @@ renderSearchResult r = do
         a_ [class_ "category-link", href_ (categoryLink cat)] $
           toHtml (cat^.title)
         div_ [class_ "category-description notes-like"] $
-          toHtml (extractFirstParagraph $ cat^.notes^.mdText)
+          toHtml (extractPreface $
+                  toMarkdownBlockWithTOC "" $ cat^.notes.mdText)
       SRItem cat item -> do
         a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
           toHtml (cat^.title)
