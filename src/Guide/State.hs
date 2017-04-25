@@ -288,7 +288,7 @@ addItem catId itemId name' created' kind' = do
         _itemConsDeleted = [],
         _itemEcosystem   = toMarkdownBlock "",
         _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
-                           in  toMarkdownBlockWithTOC pref "",
+                           in  toMarkdownTree pref "",
         _itemLink        = Nothing,
         _itemKind        = kind' }
   categoryById catId . items %= (++ [newItem])
@@ -425,7 +425,7 @@ setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
   oldNotes <- itemById itemId . notes <<.=
-                toMarkdownBlockWithTOC pref notes'
+                toMarkdownTree pref notes'
   let edit = Edit'SetItemNotes itemId (oldNotes ^. mdText) notes'
   (edit,) <$> use (itemById itemId)
 

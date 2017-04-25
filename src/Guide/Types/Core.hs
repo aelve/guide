@@ -165,7 +165,7 @@ data Item = Item {
   _itemCons        :: [Trait],
   _itemConsDeleted :: [Trait],
   _itemEcosystem   :: MarkdownBlock,
-  _itemNotes       :: MarkdownBlockWithTOC,
+  _itemNotes       :: MarkdownTree,
   _itemLink        :: Maybe Url,
   _itemKind        :: ItemKind }
   deriving (Show, Generic)

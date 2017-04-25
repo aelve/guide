@@ -13,7 +13,7 @@ module Guide.Markdown
   -- * Types
   MarkdownInline(..),
   MarkdownBlock(..),
-  MarkdownBlockWithTOC(..),
+  MarkdownTree(..),
 
   -- * Lenses
   mdHtml,
@@ -26,7 +26,7 @@ module Guide.Markdown
   -- * Converting text to Markdown
   toMarkdownInline,
   toMarkdownBlock,
-  toMarkdownBlockWithTOC,
+  toMarkdownTree,
 
   -- * Misc
   renderMD,
@@ -77,15 +77,15 @@ data MarkdownBlock = MarkdownBlock {
   markdownBlockMdHtml     :: ByteString,
   markdownBlockMdMarkdown :: ![MD.Node] }
 
-data MarkdownBlockWithTOC = MarkdownBlockWithTOC {
-  markdownBlockWithTOCMdText     :: Text,
-  markdownBlockWithTOCMdTree     :: !(Document Text ByteString),
-  markdownBlockWithTOCMdIdPrefix :: Text,
-  markdownBlockWithTOCMdTOC      :: Forest ([MD.Node], Text) }
+data MarkdownTree = MarkdownTree {
+  markdownTreeMdText     :: Text,
+  markdownTreeMdTree     :: !(Document Text ByteString),
+  markdownTreeMdIdPrefix :: Text,
+  markdownTreeMdTOC      :: Forest ([MD.Node], Text) }
 
 makeFields ''MarkdownInline
 makeFields ''MarkdownBlock
-makeFields ''MarkdownBlockWithTOC
+makeFields ''MarkdownTree
 
 parseMD :: Text -> [MD.Node]
 parseMD s =
@@ -141,7 +141,11 @@ stringify = T.concat . map go
       HTML_INLINE _     -> ""
 
 -- | Extract everything before the first heading.
-extractPreface :: MarkdownBlockWithTOC -> MarkdownBlock
+--
+-- Note that if you render 'mdText' of the produced Markdown block, it won't
+-- necessarily parse into 'mdHtml' from the same block. It's because rendered
+-- Markdown might depend on links that are defined further in the tree.
+extractPreface :: MarkdownTree -> MarkdownBlock
 extractPreface = mkBlock . preface . view mdTree
   where
     mkBlock x = MarkdownBlock {
@@ -246,12 +250,12 @@ toMarkdownBlock s = MarkdownBlock {
     doc = parseMD s
     html = renderMD doc
 
-toMarkdownBlockWithTOC :: Text -> Text -> MarkdownBlockWithTOC
-toMarkdownBlockWithTOC idPrefix s = MarkdownBlockWithTOC {
-  markdownBlockWithTOCMdText     = s,
-  markdownBlockWithTOCMdIdPrefix = idPrefix,
-  markdownBlockWithTOCMdTree     = tree,
-  markdownBlockWithTOCMdTOC      = toc }
+toMarkdownTree :: Text -> Text -> MarkdownTree
+toMarkdownTree idPrefix s = MarkdownTree {
+  markdownTreeMdText     = s,
+  markdownTreeMdIdPrefix = idPrefix,
+  markdownTreeMdTree     = tree,
+  markdownTreeMdTOC      = toc }
   where
     blocks :: [MD.Node]
     blocks = parseMD s
@@ -291,7 +295,7 @@ instance Show MarkdownInline where
   show = show . view mdText
 instance Show MarkdownBlock where
   show = show . view mdText
-instance Show MarkdownBlockWithTOC where
+instance Show MarkdownTree where
   show = show . view mdText
 
 instance A.ToJSON MarkdownInline where
@@ -302,7 +306,7 @@ instance A.ToJSON MarkdownBlock where
   toJSON md = A.object [
     "text" A..= (md^.mdText),
     "html" A..= T.decodeUtf8 (md^.mdHtml) ]
-instance A.ToJSON MarkdownBlockWithTOC where
+instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
     "text" A..= (md^.mdText) ]
 
@@ -312,7 +316,7 @@ instance ToHtml MarkdownInline where
 instance ToHtml MarkdownBlock where
   toHtmlRaw = toHtml
   toHtml    = toHtmlRaw . view mdHtml
-instance ToHtml MarkdownBlockWithTOC where
+instance ToHtml MarkdownTree where
   toHtmlRaw = toHtml
   toHtml    = toHtmlRaw . renderDoc . view mdTree
     where
@@ -340,14 +344,14 @@ instance SafeCopy MarkdownBlock where
   kind = base
   putCopy = contain . safePut . view mdText
   getCopy = contain $ toMarkdownBlock <$> safeGet
-instance SafeCopy MarkdownBlockWithTOC where
+instance SafeCopy MarkdownTree where
   version = 0
   kind = base
   putCopy md = contain $ do
     safePut (md ^. mdIdPrefix)
     safePut (md ^. mdText)
   getCopy = contain $
-    toMarkdownBlockWithTOC <$> safeGet <*> safeGet
+    toMarkdownTree <$> safeGet <*> safeGet
 
 -- | Is a piece of Markdown empty?
 markdownNull :: HasMdText a Text => a -> Bool
