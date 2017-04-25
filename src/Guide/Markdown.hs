@@ -31,6 +31,7 @@ module Guide.Markdown
   -- * Misc
   renderMD,
   markdownNull,
+  extractPreface,
 )
 where
 
@@ -138,6 +139,15 @@ stringify = T.concat . map go
       LINEBREAK         -> " "
       HTML_BLOCK _      -> ""
       HTML_INLINE _     -> ""
+
+-- | Extract everything before the first heading.
+extractPreface :: MarkdownBlockWithTOC -> MarkdownBlock
+extractPreface = mkBlock . preface . view mdTree
+  where
+    mkBlock x = MarkdownBlock {
+      markdownBlockMdText     = annSource x,
+      markdownBlockMdHtml     = renderMD (annValue x),
+      markdownBlockMdMarkdown = annValue x }
 
 -- | Flatten Markdown by concatenating all block elements.
 extractInlines :: [MD.Node] -> [MD.Node]
