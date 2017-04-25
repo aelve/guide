@@ -101,7 +101,7 @@ tests = describe "Markdown" $ do
   describe "block+toc Markdown" $ do
     it "renders correctly" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
-      htmlToText (toMarkdownBlockWithTOC "i-" s) `shouldBe`
+      htmlToText (toMarkdownTree "i-" s) `shouldBe`
         "<p>x</p>\n\
         \<h1><span id=\"i-foo\"></span>foo</h1>\
         \<h2><span id=\"i-foo_\"></span>foo</h2>\
@@ -113,7 +113,7 @@ tests = describe "Markdown" $ do
           headingMD = MD.Node Nothing (TEXT "foo") []
           foo2MD    = MD.Node (Just (PosInfo 7 1 7 1)) PARAGRAPH
                               [MD.Node Nothing (TEXT "y") []]
-      (toMarkdownBlockWithTOC "i-" s ^. mdTree) `shouldBe` Document {
+      (toMarkdownTree "i-" s ^. mdTree) `shouldBe` Document {
         prefaceAnn = "<p>x</p>\n",
         preface    = Ann "x\n\n" [prefaceMD],
         sections   = [
@@ -134,7 +134,7 @@ tests = describe "Markdown" $ do
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
       let headingMD = MD.Node Nothing (TEXT "foo") []
-      (toMarkdownBlockWithTOC "i-" s ^. mdTOC) `shouldBe` [
+      (toMarkdownTree "i-" s ^. mdTOC) `shouldBe` [
         Node {rootLabel = ([headingMD],"i-foo"),
               subForest = [
                  Node {rootLabel = ([headingMD],"i-foo_"),
@@ -157,7 +157,7 @@ blockMarkdowns f = do
   describe "block MD" $
     f ((view mdText &&& htmlToText) . toMarkdownBlock)
   describe "block+toc MD" $
-    f ((view mdText &&& htmlToText) . toMarkdownBlockWithTOC "")
+    f ((view mdText &&& htmlToText) . toMarkdownTree "")
 
 mdInlineExamples :: [Text]
 mdInlineExamples = [
