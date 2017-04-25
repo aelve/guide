@@ -152,64 +152,84 @@ function editItemInfo(itemUid) {
   switchSection("#item-" + itemUid + " .item-info", "editing");
 }
 
+CSS
+------------------------------------------------------------
+.item-info-edit-form label {
+  display: block;
+  margin-bottom: 5px;
+  margin-top: 15px;
+}
+
+.item-info-edit-form {
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.form-btn-group {
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.form-btn-group .save {
+  margin-right: 25px;
+}
 
 HTML: item-info-edit-form
 ------------------------------------------------------------
 {{! "autocomplete=off" everywhere: http://stackoverflow.com/q/8311455 }}
-<form onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
-  <label>
-    Name<br>
-    <input name="name" value="{{item.name}}"
-           type="text" autocomplete="off">
+<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
+  <label for="name">
+    Name
   </label>
-  <br>
+  <input id="name" name="name" value="{{item.name}}"
+          type="text" autocomplete="off">
 
-  <label>
-    Kind<br>
-    <select name="kind" autocomplete="off">
-      {{! possible_kinds would have stuff like “library”, “tool”, “other” }}
-      {{#possible_kinds}}
-        <option value="{{name}}" {{%selectIf selected}}>{{caption}}</option>
-      {{/possible_kinds}}
+  <label for="kind">
+    Kind
+  </label>
+  <select id="kind" name="kind" autocomplete="off">
+    {{! possible_kinds would have stuff like “library”, “tool”, “other” }}
+    {{#possible_kinds}}
+      <option value="{{name}}" {{%selectIf selected}}>{{caption}}</option>
+    {{/possible_kinds}}
+  </select>
+ 
+  <label for="hackage-name">
+    Name on Hackage
+  </label>
+  <input id="hackage-name" name="hackage-name" value="{{#item.kind.hackageName}}{{.}}{{/item.kind.hackageName}}"
+          type="text" autocomplete="off">
+
+  <label for="site">
+    Site (optional)
+  </label>
+  <input id="site" name="link" value="{{item.link}}"
+          type="text" autocomplete="off">
+  
+<div class="form-group">
+  <label for="group">
+    Group
+  </label>
+  {{! When “new group” is selected in the list, we show a field for
+      entering new group's name }}
+  <select id="group" name="group" onchange="itemGroupSelectHandler(this);"
+          autocomplete="off">
+    <option value="-" {{%selectIf item_no_group}}>-</option>
+    {{# category_groups }}
+      <option value="{{name}}" {{%selectIf selected}}>{{name}}</option>
+    {{/ category_groups }}
+    <option value="">New group...</option>
     </select>
-  </label>
-  <br>
-
-  <label>
-    Name on Hackage<br>
-    <input name="hackage-name" value="{{#item.kind.hackageName}}{{.}}{{/item.kind.hackageName}}"
-           type="text" autocomplete="off">
-  </label>
-  <br>
-
-  <label>
-    Site (optional)<br>
-    <input name="link" value="{{item.link}}"
-           type="text" autocomplete="off">
-  </label>
-  <br>
-
-  <label>
-    Group<br>
-    {{! When “new group” is selected in the list, we show a field for
-        entering new group's name }}
-    <select name="group" onchange="itemGroupSelectHandler(this);"
-            autocomplete="off">
-      <option value="-" {{%selectIf item_no_group}}>-</option>
-      {{# category_groups }}
-        <option value="{{name}}" {{%selectIf selected}}>{{name}}</option>
-      {{/ category_groups }}
-      <option value="">New group...</option>
-    </select>
-  </label>
-
+  
   <input hidden class="custom-group-input" name="custom-group"
          type="text" autocomplete="off">
-  <br>
+  </div>
 
-  <input value="Save" class="save" type="submit">
-  <input value="Cancel" class="cancel" type="button"
-         onclick="itemInfoCancelEdit('{{item.uid}}');">
+  <div class="form-btn-group">
+    <input value="Save" class="save" type="submit">
+    <input value="Cancel" class="cancel" type="button"
+          onclick="itemInfoCancelEdit('{{item.uid}}');">
+  </div>
 </form>
 
 
