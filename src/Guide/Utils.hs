@@ -375,9 +375,8 @@ hs = QuasiQuoter {
 dumpSplices :: DecsQ -> DecsQ
 dumpSplices x = do
   ds <- x
-  -- “reportWarning (pprint ds)” doesn't work in Emacs because of
-  -- haskell-mode's parsing of compiler messages
-  mapM_ (reportWarning . pprint) ds
+  let code = lines (pprint ds)
+  reportWarning ("\n" ++ unlines (map ("    " ++) code))
   return ds
 
 bangNotStrict :: Q Bang
