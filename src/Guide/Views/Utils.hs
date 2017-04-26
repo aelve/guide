@@ -96,7 +96,7 @@ import Guide.Markdown
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
 onPageLoad js = script_ $
-  "$(document).ready(function(){"%<js>%"});"
+  "$(document).ready(function(){"#|js|#"});"
 
 -- | Add some empty space.
 emptySpan :: Monad m => Text -> HtmlT m ()
@@ -106,18 +106,18 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
   "if (event.keyCode == 13 || event.keyCode == 10) {"
-      %<handler>%" return false;}\n"
+      #|handler|#" return false;}\n"
 
 onCtrlEnter :: JS -> Attribute
 onCtrlEnter handler = onkeydown_ $
   "if ((event.keyCode == 13 || event.keyCode == 10) && " <>
       "(event.metaKey || event.ctrlKey)) {"
-      %<handler>%" return false;}\n"
+      #|handler|#" return false;}\n"
 
 onEscape :: JS -> Attribute
 onEscape handler = onkeydown_ $
   "if (event.keyCode == 27) {"
-      %<handler>%" return false;}\n"
+      #|handler|#" return false;}\n"
 
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
@@ -129,7 +129,7 @@ clearInput :: JS
 clearInput = JS "this.value = '';"
 
 onFormSubmit :: (JS -> JS) -> Attribute
-onFormSubmit f = onsubmit_ $ format "{} return false;" [f (JS "this")]
+onFormSubmit f = onsubmit_ $ format "{} return false;" (f (JS "this"))
 
 button :: Monad m => Text -> [Attribute] -> JS -> HtmlT m ()
 button value attrs handler =
@@ -178,7 +178,7 @@ markdownEditor
   -> HtmlT m ()
 markdownEditor attr (view mdText -> s) submit cancel instr = do
   textareaUid <- randomLongUid
-  let val = JS $ "document.getElementById(\""%<textareaUid>%"\").value"
+  let val = JS $ "document.getElementById(\""#|textareaUid|#"\").value"
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
   textarea_ ([uid_ textareaUid,
@@ -210,7 +210,7 @@ smallMarkdownEditor
   -> HtmlT m ()
 smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
-  let val = JS $ "document.getElementById(\""%<textareaId>%"\").value"
+  let val = JS $ "document.getElementById(\""#|textareaId|#"\").value"
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
              [onEnter (submit val)] ++
              [onEscape cancel | Just cancel <- [mbCancel]] ++
@@ -236,18 +236,18 @@ thisNode = do
   return (JS.selectParent (JS.selectUid uid'))
 
 itemNodeId :: Item -> Text
-itemNodeId item = format "item-{}" [item^.uid]
+itemNodeId item = format "item-{}" (item^.uid)
 
 categoryNodeId :: Category -> Text
-categoryNodeId category = format "category-{}" [category^.uid]
+categoryNodeId category = format "category-{}" (category^.uid)
 
 -- TODO: another absolute link to get rid of [absolute-links]
 categoryLink :: Category -> Url
-categoryLink category = format "/haskell/{}" [categorySlug category]
+categoryLink category = format "/haskell/{}" (categorySlug category)
 
 itemLink :: Category -> Item -> Url
 itemLink category item =
-  format "/haskell/{}#{}" (categorySlug category, itemNodeId item)
+  format "/haskell/{}#{}" (categorySlug category) (itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
 shown, noScriptShown :: Attribute

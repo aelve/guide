@@ -271,7 +271,7 @@ instance A.ToJSON Category where
 -- @performance-optimization-t3c9hwzo@.
 categorySlug :: Category -> Text
 categorySlug category =
-  format "{}-{}" (makeSlug (category^.title), category^.uid)
+  format "{}-{}" (makeSlug (category^.title)) (category^.uid)
 
 ----------------------------------------------------------------------------
 -- Utils

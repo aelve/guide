@@ -422,7 +422,7 @@ itemToFeedEntry baseUrl category item = do
     Atom.entryContent = Just (Atom.HTMLContent (TL.unpack entryContent)) }
   where
     entryLink = baseUrl //
-                format "{}#item-{}" (categorySlug category, item^.uid)
+                format "{}#item-{}" (categorySlug category) (item^.uid)
     entryBase = Atom.nullEntry
       (T.unpack (uidToText (item^.uid)))
       (Atom.TextString (T.unpack (item^.name)))
