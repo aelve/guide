@@ -111,6 +111,7 @@ library
                      , mtl >= 2.1.1
                      , neat-interpolation == 0.3.*
                      , network
+                     , network-uri
                      , patches-vector
                      , path-pieces
                      , random >= 1.1
@@ -128,6 +129,7 @@ library
                      , transformers
                      , uniplate
                      , unix
+                     , utf8-string
                      , vector
                      , wai
                      , wai-middleware-metrics

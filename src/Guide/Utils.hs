@@ -110,6 +110,9 @@ import qualified Language.Haskell.TH.Syntax as TH (lift)
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 import Language.Haskell.Meta (parseExp)
 import Data.Generics.Uniplate.Data (transform)
+-- needed for 'sanitiseUrl'
+import qualified Codec.Binary.UTF8.String as UTF8
+import qualified Network.URI as URI
 
 
 ----------------------------------------------------------------------------
@@ -173,10 +176,17 @@ type Url = Text
 -- if it doesn't have a scheme.
 sanitiseUrl :: Url -> Maybe Url
 sanitiseUrl u
-  | not (sanitaryURI u)       = Nothing
-  | "http:" `T.isPrefixOf` u  = Just u
-  | "https:" `T.isPrefixOf` u = Just u
-  | otherwise                 = Just ("http://" <> u)
+  | not (sanitaryURI u) = Nothing
+  | otherwise =
+      Just $ case URI.uriScheme <$> parse (T.toString u) of
+        Nothing -> "http://" <> u
+        Just "" -> "http://" <> u
+        _       -> u
+  where
+    -- code taken from implementation of 'sanitaryURI'
+    parse  = URI.parseURIReference . escape
+    escape = URI.escapeURIString URI.isAllowedInURI .
+             UTF8.encodeString
 
 -- | Make text suitable for inclusion into an URL (by turning spaces into
 -- hyphens and so on).
