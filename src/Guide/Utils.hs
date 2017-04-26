@@ -19,7 +19,7 @@ module Guide.Utils
   moveUp,
   moveDown,
   deleteFirst,
-  insertAtGuaranteed,
+  insertOrAppend,
   ordNub,
 
   -- * 'Eq'
@@ -134,10 +134,14 @@ deleteFirst f (x:xs) = if f x then xs else x : deleteFirst f xs
 
 -- | Insert given element into the list, or append it to the list if the
 -- position is outside the list bounds.
-insertAtGuaranteed :: Int -> a -> [a] -> [a]
-insertAtGuaranteed _ a   []   = [a]
-insertAtGuaranteed 0 a   xs   = a:xs
-insertAtGuaranteed n a (x:xs) = x : insertAtGuaranteed (n-1) a xs
+insertOrAppend
+  :: Int          -- ^ Preferred position
+  -> a            -- ^ Element to insert
+  -> [a]
+  -> [a]
+insertOrAppend _ a   []   = [a]
+insertOrAppend 0 a   xs   = a:xs
+insertOrAppend n a (x:xs) = x : insertOrAppend (n-1) a xs
 
 -- | A version of 'works in @O(n log n)@ instead of @O(n^2)@.
 ordNub :: Ord a => [a] -> [a]

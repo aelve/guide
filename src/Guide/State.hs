@@ -556,7 +556,7 @@ restoreCategory catId pos = do
     Nothing -> return (Left "category not found in deleted categories")
     Just category -> do
       categoriesDeleted %= deleteFirst (hasUid catId)
-      categories        %= insertAtGuaranteed pos category
+      categories        %= insertOrAppend pos category
       return (Right ())
 
 restoreItem :: Uid Item -> Int -> Acid.Update GlobalState (Either String ())
@@ -569,7 +569,7 @@ restoreItem itemId pos = do
       let item = fromJust (find (hasUid itemId) (category^.itemsDeleted))
       let category' = category
             & itemsDeleted %~ deleteFirst (hasUid itemId)
-            & items        %~ insertAtGuaranteed pos item
+            & items        %~ insertOrAppend pos item
       categories        . each . filtered ourCategory .= category'
       categoriesDeleted . each . filtered ourCategory .= category'
       return (Right ())
@@ -590,7 +590,7 @@ restoreTrait itemId traitId pos = do
         (Just trait, _) -> do
           let item' = item
                 & prosDeleted %~ deleteFirst (hasUid traitId)
-                & pros        %~ insertAtGuaranteed pos trait
+                & pros        %~ insertOrAppend pos trait
           let category' = category
                 & items        . each . filtered (hasUid itemId) .~ item'
                 & itemsDeleted . each . filtered (hasUid itemId) .~ item'
@@ -600,7 +600,7 @@ restoreTrait itemId traitId pos = do
         (_, Just trait) -> do
           let item' = item
                 & consDeleted %~ deleteFirst (hasUid traitId)
-                & cons        %~ insertAtGuaranteed pos trait
+                & cons        %~ insertOrAppend pos trait
           let category' = category
                 & items        . each . filtered (hasUid itemId) .~ item'
                 & itemsDeleted . each . filtered (hasUid itemId) .~ item'
