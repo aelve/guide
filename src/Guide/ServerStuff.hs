@@ -56,10 +56,13 @@ import Guide.Utils
 import Guide.Markdown
 
 
+-- | Global state of the site.
 data ServerState = ServerState {
-  _config :: Config,
-  _db     :: DB }
+  _config :: Config,                -- ^ Config (doesn't change in runtime)
+  _db     :: DB                     -- ^ DB connection
+  }
 
+-- | Get config in a Spock monad.
 getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
           => m Config
 getConfig = _config <$> Spock.getState
@@ -70,6 +73,9 @@ type DB = AcidState GlobalState
 
 -- | Update something in the database. Don't forget to 'invalidateCache' or
 -- use 'uncache' when you update something that is cached.
+--
+-- Example: @dbUpdate (DeleteCategory catId)@
+--
 dbUpdate :: (MonadIO m, HasSpock m, SpockState m ~ ServerState,
              EventState event ~ GlobalState, UpdateEvent event)
          => event -> m (EventResult event)
@@ -80,6 +86,9 @@ dbUpdate x = do
     Acid.update db x
 
 -- | Read something from the database.
+--
+-- Example: @dbQuery (GetCategory catId)@.
+--
 dbQuery :: (MonadIO m, HasSpock m, SpockState m ~ ServerState,
             EventState event ~ GlobalState, QueryEvent event)
         => event -> m (EventResult event)
@@ -150,8 +159,8 @@ addEdit ed = do
 --
 -- TODO: make this do cache invalidation.
 --
--- TODO: many of these don't work when the changed category/item/etc has been
--- deleted; this should change.
+-- TODO: many of these don't work when the changed category, item, etc has
+-- been deleted; this should change.
 undoEdit :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
          => Edit -> m (Either String ())
 undoEdit (Edit'AddCategory catId _) = do
@@ -238,6 +247,8 @@ undoEdit (Edit'MoveItem itemId direction) = do
 undoEdit (Edit'MoveTrait itemId traitId direction) = do
   Right () <$ dbUpdate (MoveTrait itemId traitId (not direction))
 
+-- | Given an edit, invalidate cache items that should be invalidated when
+-- that edit is undone.
 invalidateCacheForEdit
   :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
   => Edit -> m ()
@@ -297,12 +308,15 @@ invalidateCacheForEdit ed = do
 -- Handler helpers
 ----------------------------------------------------------------------------
 
+-- | A path piece for items
 itemVar :: Path '[Uid Item] 'Open
 itemVar = "item" <//> var
 
+-- | A path piece for categories
 categoryVar :: Path '[Uid Category] 'Open
 categoryVar = "category" <//> var
 
+-- | A path pieces for traits
 traitVar :: Path '[Uid Trait] 'Open
 traitVar = "trait" <//> var
 
