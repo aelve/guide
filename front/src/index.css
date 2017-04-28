@@ -1,0 +1,41 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+blockquote {
+  background: rgba(10,10,10,0.075);
+  border-left: 5px solid rgba(10,10,10,0.15);
+  padding: 1px 1em;
+  margin-left: 0;
+  margin-right: 0; }
+
+blockquote p {
+  margin: 0.5em 0; }
+
+code {
+  background: rgba(10, 10, 10, 0.1);
+  font-size: 95%;
+  padding: 2px 4px; }
+
+div.sourceCode {
+  overflow-x: unset; }
+
+pre {
+  background: rgba(10, 10, 10, 0.1);
+  line-height: 150%;
+  padding: 0.5em 1em;
+  overflow-x: auto; }
+
+pre.repl {
+  border-left: 5px solid gray; }
+
+pre code {
+  background: rgba(0, 0, 0, 0);
+  padding: 0; }
+
+a:link    {color: #008ACE; text-decoration: none;}
+a:visited {color: #B40EB4; text-decoration: none;}
+a:hover   {text-decoration: underline;}
+a:active  {text-decoration: underline;}

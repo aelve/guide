@@ -132,6 +132,7 @@ library
                      , utf8-string
                      , vector
                      , wai
+                     , wai-cors
                      , wai-middleware-metrics
                      , wai-middleware-static
                      , xml

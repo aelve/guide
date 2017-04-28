@@ -25,3 +25,12 @@ config.json
 
 .vscode/
 tags
+
+node_modules/
+front/coverage/
+front/build/
+
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

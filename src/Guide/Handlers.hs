@@ -26,10 +26,13 @@ import qualified Text.Atom.Feed  as Atom
 -- Text
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
+-- JSON
+import qualified Data.Aeson as A
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
+import Network.Wai.Middleware.Cors
 import Lucid hiding (for_)
 import qualified Network.HTTP.Types.Status as HTTP
 
@@ -42,15 +45,45 @@ import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.Views
+import Guide.Views.Utils (categoryLink)
 
 
 methods :: SpockM () () ServerState ()
 methods = do
+  apiMethods
   renderMethods
   setMethods
   addMethods
   otherMethods
 
+apiMethods :: SpockM () () ServerState ()
+apiMethods = Spock.subcomponent "api" $ do
+  middleware simpleCors
+  Spock.get "all-categories" $ do
+    grands <- groupWith (view group_) <$> dbQuery GetCategories
+    let jsonCat cat = M.fromList [
+          ("title" :: Text,
+             cat^.title),
+          ("link" :: Text,
+             categoryLink cat),
+          ("uid" :: Text,
+             uidToText (cat^.uid))
+          ]
+    let jsonGrand grand = A.object
+          [ "title" A..=
+                (grand^?!_head.group_)
+          , "finished" A..=
+                map jsonCat
+                (filter ((== CategoryFinished) . view status) grand)
+          , "wip" A..=
+                map jsonCat
+                (filter ((== CategoryWIP) . view status) grand)
+          , "stubs" A..=
+                map jsonCat
+                (filter ((== CategoryStub) . view status) grand)
+          ]
+    json (map jsonGrand grands)
+  
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Notes for a category
