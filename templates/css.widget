@@ -343,3 +343,29 @@ textarea.fullwidth {
 .markdown-supported {
   height: 1em;
 }
+
+#login-form {
+  margin: 0px auto;
+  width: 430px;
+  border: 1px solid gray;
+  border-radius: 4px;
+  padding: 40px 50px;
+  padding-bottom: 35px;
+  margin-top: 60px;
+  font-size: 120%;
+}
+
+#login-form > div {
+  margin-bottom: 25px;
+}
+
+#login-form [type='text'], #login-form [type='password'] {
+  float: right;
+  margin-top: -5px;
+  padding: 2px 3px;
+}
+
+#login-form [type='submit'] {
+  width: 100px;
+  margin-top: 10px;
+}

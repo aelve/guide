@@ -152,12 +152,15 @@ label ref view = label_
     ref' = absoluteRef ref view
 
 
-form :: Monad m => View (HtmlT m ()) -> Text -> HtmlT m () -> HtmlT m ()
-form view action = form_
+form
+  :: Monad m
+  => View (HtmlT m ()) -> Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
+form view action attributes = form_ $
     [ method_  "POST"
     , enctype_ (pack $ show $ viewEncType view)
     , action_  action
     ]
+    ++ attributes
 
 
 errorList :: Monad m => Text -> View (HtmlT m ()) -> HtmlT m ()

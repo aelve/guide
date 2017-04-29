@@ -393,7 +393,7 @@ protectForm :: MonadIO m
   -> GuideAction ctx (HtmlT m ())
 protectForm render formView = do
   (name, value) <- getCsrfTokenPair
-  return $ form formView "" $ do
+  return $ form formView "" [id_ "login-form"] $ do
     input_ [ type_ "hidden", name_ name, value_ value ]
     render formView
 
