@@ -55,7 +55,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS)
+import Guide.Views.Utils (getJS, getCSS, fromCategorySlug)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -249,16 +249,14 @@ mainWith config = do
         Spock.get var $ \path -> do
           -- The links look like /parsers-gao238b1 (because it's nice when
           -- you can find out where a link leads just by looking at it)
-          let (_, catId) = T.breakOnEnd "-" path
-          when (T.null catId) $
-            Spock.jumpNext
-          mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
+          let (_, catId) = fromCategorySlug path
+          mbCategory <- dbQuery (GetCategoryMaybe catId)
           case mbCategory of
             Nothing -> Spock.jumpNext
             Just category -> do
               (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
               baseUrl <- _baseUrl <$> getConfig
-              dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
+              dbUpdate $ RegisterAction (Action'CategoryVisit catId)
                            mbIP time baseUrl mbReferrer mbUA
               -- If the slug in the url is old (i.e. if it doesn't match the
               -- one we would've generated now), let's do a redirect
