@@ -45,7 +45,7 @@ import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.Views
-import Guide.Views.Utils (categoryLink)
+import Guide.Views.Utils (categoryLink, fromCategoryLink)
 
 
 methods :: SpockM () () ServerState ()
@@ -83,7 +83,17 @@ apiMethods = Spock.subcomponent "api" $ do
                 (filter ((== CategoryStub) . view status) grand)
           ]
     json (map jsonGrand grands)
-  
+
+  Spock.get categoryLinkVar $ \catLink ->
+    do
+      let (_, catUid) = fromCategoryLink catLink
+      cat <- dbQuery (GetCategory catUid)
+      let jsonCat = A.object
+            [ "title" A..= (cat^.title)
+            , "items" A..= (cat^.items)
+            ]
+      json jsonCat
+
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Notes for a category
