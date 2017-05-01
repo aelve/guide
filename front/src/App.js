@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 import renderIf from 'render-if';
 import R from 'ramda';
@@ -6,9 +8,7 @@ function checkStatus(response) {
   if (response.status >= 200 && response.status < 300) {
     return response;
   } else {
-    var error = new Error(response.statusText);
-    error.response = response;
-    throw error;
+    throw new Error(response.statusText);
   }
 }
 
@@ -16,7 +16,23 @@ function parseJSON(response) {
   return response.json();
 }
 
+type Category = {
+  uid   : string,
+  link  : string,
+  title : string
+  };
+
+type GrandCategoryT = {
+  title    : string,
+  finished : Array<Category>,
+  wip      : Array<Category>,
+  stubs    : Array<Category>
+  }
+
 class GrandCategory extends Component {
+  props: {
+    val: GrandCategoryT
+  };
   render() {
     const renderBigCatLink = cat => {
       return(
@@ -44,27 +60,29 @@ class GrandCategory extends Component {
       );
     };
 
+    const grand = this.props.val;
+
     return(
-      <div className="GrandCategory" key={this.props.title}>
-        <h1>{this.props.title}</h1>
+      <div className="GrandCategory" key={grand.title}>
+        <h1>{grand.title}</h1>
         
         <div className="finished">
-          {this.props.finished.map(renderBigCatLink)}
+          {grand.finished.map(renderBigCatLink)}
         </div>
 
-        {renderIf(!R.isEmpty(this.props.wip))(
+        {renderIf(!R.isEmpty(grand.wip))(
           <div className="wip">
             <h2>In progress</h2>
             <p>{R.intersperse(", ")(
-                  this.props.wip.map(renderSmallCatLink))}</p>
+                  grand.wip.map(renderSmallCatLink))}</p>
           </div>
         )}
 
-        {renderIf(!R.isEmpty(this.props.stubs))(
+        {renderIf(!R.isEmpty(grand.stubs))(
           <div className="stubs">
             <h2>To be written</h2>
             <p>{R.intersperse(", ")(
-                  this.props.stubs.map(renderSmallCatLink))}</p>
+                  grand.stubs.map(renderSmallCatLink))}</p>
           </div>
         )}
 
@@ -97,6 +115,9 @@ class GrandCategory extends Component {
 }
 
 class App extends Component {
+  state: {
+    categories: Array<GrandCategoryT>;
+  };
   componentWillMount() {
     this.setState({ categories: [] });
   }
@@ -114,7 +135,7 @@ class App extends Component {
       <div className="App">
         <Tiles space="1em">
           {this.state.categories.map(grand => {
-             return <GrandCategory {...grand} />;
+             return <GrandCategory val={grand} />;
            })
           }
         </Tiles>
