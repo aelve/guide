@@ -30,7 +30,6 @@ module Guide.ServerStuff
   itemVar,
   categoryVar,
   traitVar,
-  categoryLinkVar,
 
   -- * Other helpers
   createCheckpoint',
@@ -321,8 +320,6 @@ categoryVar = "category" <//> var
 traitVar :: Path '[Uid Trait] 'Open
 traitVar = "trait" <//> var
 
-categoryLinkVar :: Path '[Url] 'Open
-categoryLinkVar = var
 ----------------------------------------------------------------------------
 -- Other helpers
 ----------------------------------------------------------------------------
