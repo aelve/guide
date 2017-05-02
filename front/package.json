@@ -6,7 +6,7 @@
     "ramda": "^0.23.0",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
-    "render-if": "^0.1.1",
+    "react-router-dom": "^4.1.1",
     "styled-jsx": "^0.5.7"
   },
   "devDependencies": {
@@ -39,6 +39,7 @@
     "http-proxy-middleware": "0.17.3",
     "jest": "18.1.0",
     "json-loader": "0.5.4",
+    "jsx-control-statements": "^3.1.5",
     "object-assign": "4.1.1",
     "postcss-loader": "1.2.2",
     "promise": "7.1.1",
