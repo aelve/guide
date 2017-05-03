@@ -1,7 +1,7 @@
 module Main where
 
-import qualified Guide.Server
+import qualified Guide.Main
 import           Prelude      (IO)
 
 main :: IO ()
-main = Guide.Server.main
+main = Guide.Main.main
