@@ -88,6 +88,7 @@ apiMethods = Spock.subcomponent "api" $ do
     cat <- dbQuery (GetCategory catId)
     let jsonCat = A.object
           [ "title" A..= (cat^.title)
+          , "description" A..= (cat^.notes)
           , "items" A..= (cat^.items)
           ]
     json jsonCat

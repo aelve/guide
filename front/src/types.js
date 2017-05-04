@@ -48,5 +48,6 @@ export type Item = {
 
 export type Cat = {
   title : string,
+  description : Description,
   items : Array<Item>
 };
