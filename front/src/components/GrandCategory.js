@@ -10,8 +10,8 @@ class GrandCategory extends Component {
   render() {
     const renderBigCatLink = cat => {
       return(
-        <span>
-          <a key={cat.uid} href={cat.link}>{cat.title}</a>
+        <span key={cat.uid}>
+          <a href={cat.link}>{cat.title}</a>
           <style jsx>{`
             a {
               display: block;
@@ -25,8 +25,8 @@ class GrandCategory extends Component {
 
     const renderSmallCatLink = cat => {
       return(
-        <span>
-          <a key={cat.uid} href={cat.link}>{cat.title}</a>
+        <span key={cat.uid}>
+          <a href={cat.link}>{cat.title}</a>
           <style jsx>{`
             a {white-space: nowrap;}
           `}</style>
@@ -37,7 +37,7 @@ class GrandCategory extends Component {
     const grand = this.props.val;
 
     return(
-      <div className="GrandCategory" key={grand.title}>
+      <div className="GrandCategory">
         <h1>{grand.title}</h1>
 
         <div className="finished">

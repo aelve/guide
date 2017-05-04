@@ -1,19 +1,8 @@
 // @flow
 
 import React, { Component } from 'react';
-import { CategoryChild, Home } from './components/index';
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-
-class NoMatch extends Component {
-  render() {
-    return (
-      <div>
-        <h1>Not Found</h1>
-        <p><Link to="/">Go home</Link></p>
-      </div>
-    )
-  }
-}
+import { CategoryChild, Home, NoMatch } from './components/index';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 class App extends Component {
   render() {
