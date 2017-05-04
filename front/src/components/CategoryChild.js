@@ -31,7 +31,8 @@ class CategoryChild extends Component {
         <div>
           <h1>{ this.state.cat.title }</h1>
           <If condition={this.state.cat.description !== undefined}>
-             { this.state.cat.description.html}
+             <div dangerouslySetInnerHTML=
+                  {{__html: this.state.cat.description.html}} />
           </If>
           <If condition={this.state.cat.items !== undefined}>
               { this.state.cat.items.map(i => item(i.uid, i.name)) }
