@@ -1,7 +1,7 @@
 // @flow
 
 import React, { Component } from 'react';
-import { CategoryChild, Home, NoMatch } from './components/index';
+import { Category, Home, NoMatch } from './components/index';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 class App extends Component {
@@ -11,7 +11,7 @@ class App extends Component {
         <Router>
           <Switch>
             <Route exact path="/" component={ Home } />
-            <Route path="/haskell/:uid" component={ CategoryChild } />
+            <Route path="/haskell/:uid" component={ Category } />
             <Route component={ NoMatch } />
           </Switch>
         </Router>

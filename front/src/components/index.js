@@ -1,13 +1,13 @@
 import { GrandCategory } from './GrandCategory';
 import { Tiles } from './Tiles';
-import { CategoryChild } from './CategoryChild';
+import { Category } from './Category';
 import { Home } from './Home';
 import { NoMatch } from './NoMatch';
 
 module.exports = {
     GrandCategory,
     Tiles,
-    CategoryChild,
+    Category,
     Home,
     NoMatch
 }
