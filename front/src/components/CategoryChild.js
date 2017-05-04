@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 import * as T from '../types';
 import { fetchData } from '../utils/index';
@@ -31,8 +33,8 @@ class CategoryChild extends Component {
         <div>
           <h1>{ this.state.cat.title }</h1>
           <If condition={this.state.cat.description !== undefined}>
-             <div dangerouslySetInnerHTML=
-                  {{__html: this.state.cat.description.html}} />
+             <div dangerouslySetInnerHTML={{__html:
+                    this.state.cat.description.html}} />
           </If>
           <If condition={this.state.cat.items !== undefined}>
               { this.state.cat.items.map(i => item(i.uid, i.name)) }

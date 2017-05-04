@@ -1,3 +1,4 @@
+// @flow
 
 export type Category = {
   uid   : string,

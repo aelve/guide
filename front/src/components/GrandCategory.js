@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 import { If } from 'jsx-control-statements';
 import R from 'ramda';

@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 import { GrandCategory } from './GrandCategory';
 import { Tiles } from './Tiles';
