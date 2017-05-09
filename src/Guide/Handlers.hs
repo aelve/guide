@@ -87,7 +87,9 @@ apiMethods = Spock.subcomponent "api" $ do
   Spock.get categoryVar $ \catId -> do
     cat <- dbQuery (GetCategory catId)
     let jsonCat = A.object
-          [ "title" A..= (cat^.title)
+          [ "uid" A..= (cat^.uid)
+          , "title" A..= (cat^.title)
+          , "group" A..= (cat^.group_)
           , "description" A..= (cat^.notes)
           , "items" A..= (cat^.items)
           ]
