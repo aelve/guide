@@ -8,7 +8,7 @@ class NoMatch extends Component {
     return (
       <div>
         <h1>Not Found</h1>
-        <p><Link to="/">Go home</Link></p>
+        <p><Link to="/haskell">Go home</Link></p>
       </div>
     )
   }

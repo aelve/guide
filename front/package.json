@@ -6,6 +6,7 @@
     "ramda": "^0.23.0",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
+    "react-markdown": "^2.5.0",
     "react-router-dom": "^4.1.1",
     "styled-jsx": "^0.5.7"
   },

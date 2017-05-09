@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import { GrandCategory } from './GrandCategory';
 import { Tiles } from './Tiles';
-import { GrandCategoryT } from '../types';
+import type { GrandCategoryT } from '../types';
 import { fetchData } from '../utils/index';
 
 class Home extends Component {

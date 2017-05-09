@@ -29,9 +29,7 @@ export type Kind = {
 };
 
 export type Note = {
-  text : string,
-  pros : Array<Valoration>,
-  cons : Array<Valoration>
+  text : string
 };
 
 export type Item = {
@@ -45,10 +43,15 @@ export type Item = {
   name : string,
   prosDeleted : Array<String>,
   notes : Note,
+  description: Description,
+  pros : Array<Valoration>,
+  cons : Array<Valoration>
 };
 
 export type Cat = {
+  uid: string,
   title : string,
+  group: string,
   description : Description,
   items : Array<Item>
 };

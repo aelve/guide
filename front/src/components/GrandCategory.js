@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import { If } from 'jsx-control-statements';
 import R from 'ramda';
-import { GrandCategoryT } from '../types';
+import type { GrandCategoryT } from '../types';
 
 class GrandCategory extends Component {
   props: {
