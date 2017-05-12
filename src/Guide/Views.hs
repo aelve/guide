@@ -505,9 +505,12 @@ renderEdit globalState edit = do
 
 -- | Render the header on the </haskell> subpage: “Aelve Guide | Haskell”.
 haskellHeader :: (MonadReader Config m) => HtmlT m ()
-haskellHeader = do
-  h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
-  renderSubtitle
+haskellHeader = div_ [id_ "header"] $ do
+  div_ $ do
+    h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
+    renderSubtitle
+  div_ [class_ "auth-link-container"] $ do
+    a_ [href_ "/auth"] "login/logout"
 
 -- | Render </haskell>.
 renderHaskellRoot

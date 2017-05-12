@@ -161,12 +161,14 @@ headerDef
   => Page m
   -> HtmlT m ()
 headerDef page = do
-  let nameHtml = case _pageName page of
-        Just name -> span_ (" | " >> toHtml name)
-        Nothing -> mempty
-  h1_ $ mkLink (toHtml (_pageTitle page) >> nameHtml) (_pageHeaderUrl page)
-  (_pageSubtitle page) page
-
+  div_ $ do
+    let nameHtml = case _pageName page of
+          Just name -> span_ (" | " >> toHtml name)
+          Nothing -> mempty
+    h1_ $ mkLink (toHtml (_pageTitle page) >> nameHtml) (_pageHeaderUrl page)
+    (_pageSubtitle page) page
+  div_ [class_ "auth-link-container"] $ do
+    a_ [href_ "/auth"] "login/logout"
 
 footerDef 
   :: MonadIO m

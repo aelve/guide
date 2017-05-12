@@ -305,10 +305,17 @@ guideApp waiMetrics = prehook initHook $ do
         methods
       
       Spock.subcomponent "auth" $ do
+        -- plain "/auth" logs out a logged-in user and lets a logged-out user
+        -- log in (this is not the best idea, granted, and we should just
+        -- shot logged-in users a “logout” link and logged-out users a
+        -- “login” link instead)
+        Spock.get root $ do
+          user <- getLoggedInUser
+          if isJust user
+            then Spock.redirect "auth/logout"
+            else Spock.redirect "auth/login"
         Spock.getpost "login" $ authRedirect "/" $ loginAction
-
         Spock.get "logout" $ logoutAction 
-        
         Spock.getpost "register" $ authRedirect "/" $ signupAction
 
 loginAction :: GuideAction ctx ()
