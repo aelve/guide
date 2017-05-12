@@ -18,7 +18,7 @@ export type Description = {
   html : string
 };
 
-export type Valoration = {
+export type Trait = {
   uid : string,
   content : Description,
 };
@@ -44,8 +44,8 @@ export type Item = {
   prosDeleted : Array<String>,
   notes : Note,
   description: Description,
-  pros : Array<Valoration>,
-  cons : Array<Valoration>
+  pros : Array<Trait>,
+  cons : Array<Trait>
 };
 
 export type Cat = {

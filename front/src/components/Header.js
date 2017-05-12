@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 
 class Header extends Component {
@@ -15,7 +17,7 @@ class Header extends Component {
               .subtitle {
                 font-weight: 500;
                 color: #e03;
-                margin-top: 0.4em;
+                margin-top: 0.8em;
                 margin-bottom: 2em;
               }
               
