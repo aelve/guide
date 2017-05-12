@@ -96,6 +96,7 @@ pageDef = Page {
       [ "/jquery.js"
       , "/magnific-popup.js"
       , "/autosize.js"
+      , "/js/bundle.js"
       , "/js.js"
       ],
     _pageHeadTag = headTagDef,
