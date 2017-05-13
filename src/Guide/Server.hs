@@ -352,12 +352,12 @@ signupAction = do
       user <- makeUser registerUserName registerUserEmail (T.encodeUtf8 registerUserPassword)
       success <- dbUpdate $ CreateUser user
       if success
-      then do
-        modifySession (sessionUserID .~ Just (user ^. userID))
-        Spock.redirect ""
-      else do
-        formHtml <- protectForm registerFormView v
-        lucidWithConfig $ renderRegister formHtml
+        then do
+          modifySession (sessionUserID .~ Just (user ^. userID))
+          Spock.redirect ""
+        else do
+          formHtml <- protectForm registerFormView v
+          lucidWithConfig $ renderRegister formHtml
 
 initHook :: GuideAction () (HVect '[])
 initHook = return HNil
@@ -375,8 +375,8 @@ adminHook = do
   oldCtx <- getContext
   let user = findFirst oldCtx
   if user ^. userIsAdmin 
-  then return (IsAdmin :&: oldCtx)
-  else Spock.text "Not authorized."
+    then return (IsAdmin :&: oldCtx)
+    else Spock.text "Not authorized."
 
 -- |Redirect the user to a given path if they are logged in.
 authRedirect :: Text -> GuideAction ctx a -> GuideAction ctx a
