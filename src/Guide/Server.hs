@@ -190,6 +190,7 @@ mainWith config = do
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
+    -- Create an admin user
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -216,7 +217,11 @@ mainWith config = do
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
-guideApp waiMetrics = prehook initHook $ do
+guideApp waiMetrics = do
+    createAdminUser  -- TODO: perhaps it needs to be inside of “prehook
+                     -- initHook”? (I don't actually know what “prehook
+                     -- initHook” does, feel free to edit.)
+    prehook initHook $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
@@ -430,3 +435,13 @@ installTerminationCatcher :: ThreadId -> IO ()
 installTerminationCatcher thread = void $ do
   installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
   installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing
+
+-- | Create an admin user (with login “admin”, email “admin@guide.aelve.com”
+-- and password specified in the config).
+--
+-- The user won't be added if it exists already.
+createAdminUser :: GuideApp ()
+createAdminUser = do
+  pass <- T.encodeUtf8 . _adminPassword <$> getConfig
+  user <- makeUser "admin" "admin@guide.aelve.com" pass
+  void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)
