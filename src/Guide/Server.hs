@@ -28,7 +28,7 @@ import qualified Data.Map as M
 import Control.Monad.Morph
 -- Text
 import qualified Data.Text.All as T
-import qualified NeatInterpolation as Neat
+import NeatInterpolation (text)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -223,7 +223,7 @@ guideApp waiMetrics = prehook initHook $ do
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
         (csrfTokenName, csrfTokenValue) <- getCsrfHeader
-        let jqueryCsrfProtection = [Neat.text|
+        let jqueryCsrfProtection = [text|
               guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
             |]
         js <- getJS
