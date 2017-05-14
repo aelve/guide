@@ -39,7 +39,7 @@ loginFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
 loginFormView view = do
   div_ $ do
     errorList "email" view
-    label     "email" view "Account: "
+    label     "email" view "Email: "
     inputText "email" view
 
   div_ $ do

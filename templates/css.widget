@@ -366,8 +366,8 @@ textarea.fullwidth {
 #login-form {
   margin: 0px auto;
   width: 430px;
-  border: 1px solid gray;
-  border-radius: 4px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
   padding: 40px 50px;
   padding-bottom: 35px;
   margin-top: 60px;
@@ -382,9 +382,12 @@ textarea.fullwidth {
   float: right;
   margin-top: -5px;
   padding: 2px 3px;
+  width: 220px;
 }
 
 #login-form [type='submit'] {
   width: 100px;
+  height: 30px;
   margin-top: 10px;
+  font-size: 90%;
 }
