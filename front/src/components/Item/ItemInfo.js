@@ -16,7 +16,7 @@ class ItemInfo extends Component {
             </div>
             <div>
               <span className="item-name">{item.name + " "} 
-                ( <a href={mkHackageUrl(item)}>Hackage</a> )
+                (<a href={mkHackageUrl(item)}>Hackage</a>)
               </span>
             </div>
             <div className="item-group">
@@ -44,9 +44,23 @@ class ItemInfo extends Component {
             </div>
           </div>
           <style jsx>{`
+           .item-info {
+             background-color: #D6D6D6;
+           }
+
+           .item-info {
+             padding-bottom: 12px;
+             padding: 10px 15px;
+            }
+            
             a.anchor {
               margin-right: 0.5em;
               color: gray;
+              font-size: 23px;
+            }
+
+            span.item-name {
+              font-size: 23px;
             }
 
             .controls {

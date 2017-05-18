@@ -56,8 +56,11 @@ class Category extends Component {
           }
           
           .category-info {
-            display:flex;
-            justify-content: flex-start;    
+            display: block;
+            box-sizing: border-box;
+            line-height: 19.2px;
+            width: 762px;
+            height: 24px;
           }
 
           .category-info span {

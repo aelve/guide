@@ -6,6 +6,7 @@ import { NoMatch } from './NoMatch';
 import { Item } from './Item';
 import { Search } from './Search';
 import { Header } from './Header'; 
+import { Footer } from './Footer';
 
 module.exports = {
     GrandCategory,
@@ -15,5 +16,6 @@ module.exports = {
     NoMatch,
     Item,
     Search,
-    Header
+    Header,
+    Footer
 }

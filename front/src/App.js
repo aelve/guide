@@ -1,7 +1,7 @@
 // @flow
 
 import React, { Component } from 'react';
-import { Category, Home, NoMatch, Search, Header } from './components/index';
+import { Category, Home, NoMatch, Search, Header, Footer } from './components/index';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 class App extends Component {
@@ -17,6 +17,7 @@ class App extends Component {
             <Route component={ NoMatch } />
           </Switch>
         </Router>
+        <Footer />
         <style jsx>{`
           .App {
             margin: auto;
