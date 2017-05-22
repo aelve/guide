@@ -231,11 +231,11 @@ undoEdit (Edit'SetItemEcosystem itemId old new) = do
   if now /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
-undoEdit (Edit'SetTraitContent itemId traitId old new) = do
+undoEdit (Edit'SetTraitContent itemId catId traitId old new) = do
   now <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
   if now /= new
     then return (Left "trait has been changed further")
-    else Right () <$ dbUpdate (SetTraitContent itemId traitId old)
+    else Right () <$ dbUpdate (SetTraitContent itemId catId traitId old)
 undoEdit (Edit'DeleteCategory catId pos) = do
   dbUpdate (RestoreCategory catId pos)
 undoEdit (Edit'DeleteItem itemId pos) = do
@@ -291,7 +291,7 @@ invalidateCacheForEdit ed = do
         [CacheItemNotes itemId]
     Edit'SetItemEcosystem itemId _ _ ->
         [CacheItemEcosystem itemId]
-    Edit'SetTraitContent itemId _ _ _ ->
+    Edit'SetTraitContent itemId _ _ _ _ ->
         [CacheItemTraits itemId]
     Edit'DeleteCategory catId _ ->
         [CacheCategory catId]

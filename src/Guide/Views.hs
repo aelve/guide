@@ -390,8 +390,9 @@ renderEdit globalState edit = do
     -- Add
     Edit'AddCategory _catId title' -> p_ $ do
       "added category " >> quote (toHtml title')
-    Edit'AddItem catId _itemId name' -> p_ $ do
-      "added item " >> quote (toHtml name')
+    Edit'AddItem catId _itemId _ -> p_ $ do
+      "added item " >> printItem _itemId
+
       " to category " >> printCategory catId
     Edit'AddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
@@ -472,9 +473,9 @@ renderEdit globalState edit = do
         td_ $ blockquote_ $ toHtml (toMarkdownBlock newEcosystem)
 
     -- Change trait properties
-    Edit'SetTraitContent itemId _traitId oldContent newContent -> do
+    Edit'SetTraitContent  itemId catId _traitId oldContent newContent -> do
       p_ $ (if T.null oldContent then "added" else "changed") >>
-           " trait of item " >> printItem itemId
+           " trait of item " >> printItem itemId >> " from category " >> printCategory catId
       table_ $ tr_ $ do
         unless (T.null oldContent) $
           td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline oldContent))
