@@ -1,15 +1,13 @@
-resolver: lts-7.9
+resolver: lts-8.13
 
 packages:
 - location: .
 - location:
     git: https://github.com/aelve/stache-plus
-    commit: e8e7967d561148167eb1fe4112c6ad0e091490ab
+    commit: 789aeabbf8069dec80647160f127d047e8f5a330
   extra-dep: true
 
 extra-deps:
-- cmark-sections-0.1.0.2
-- http-client-0.5.1
-- edit-distance-vector-1.0.0.4
+- cmark-sections-0.1.0.3
 - patches-vector-0.1.5.4
 - fmt-0.2.0.0

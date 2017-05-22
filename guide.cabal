@@ -75,7 +75,7 @@ library
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
-                     , aeson == 0.11.*
+                     , aeson == 1.0.*
                      , aeson-pretty
                      , base >=4.9 && <4.10
                      , base-prelude
@@ -101,11 +101,12 @@ library
                      , fsnotify == 0.2.*
                      , hashable
                      , haskell-src-meta
+                     , http-api-data
                      , http-types
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
-                     , megaparsec == 5.0.*
+                     , megaparsec == 5.*
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
@@ -113,7 +114,6 @@ library
                      , network
                      , network-uri
                      , patches-vector
-                     , path-pieces
                      , random >= 1.1
                      , reroute
                      , safecopy
@@ -160,7 +160,7 @@ test-suite tests
                        MergeSpec
                        Selenium
   type:                exitcode-stdio-1.0
-  build-depends:       QuickCheck < 2.9
+  build-depends:       QuickCheck < 2.10
                      , base < 5
                      , base-prelude
                      , cmark

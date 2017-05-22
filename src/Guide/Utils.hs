@@ -96,7 +96,7 @@ import Data.IP
 import Lucid hiding (for_)
 import Web.Spock as Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
-import Web.PathPieces
+import Web.HttpApiData
 import qualified Network.Wai as Wai
 -- Feeds
 import qualified Text.Atom.Feed        as Atom
@@ -234,7 +234,9 @@ sockAddrToIP _ = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Eq, Ord, Show, PathPiece, T.Buildable, Hashable, A.ToJSON)
+  deriving (Eq, Ord, Show,
+            ToHttpApiData, FromHttpApiData,
+            T.Buildable, Hashable, A.ToJSON)
 
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a
