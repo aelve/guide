@@ -3,7 +3,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {- |
 The main module.
@@ -21,10 +22,13 @@ where
 
 import Imports
 
+-- Containers
+import qualified Data.Map as M
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
 import qualified Data.Text.All as T
+import NeatInterpolation (text)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -32,7 +36,8 @@ import Web.Spock.Config
 import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
-import qualified Network.HTTP.Types.Status as HTTP
+-- Spock-digestive
+import Web.Spock.Digestive (runForm)
 -- Highlighting
 import CMark.Highlight (styleToCss, pygments)
 -- Monitoring
@@ -48,17 +53,21 @@ import qualified SlaveThread as Slave
 import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
+-- HVect
+import Data.HVect hiding (length)
 
+import Guide.App
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS)
+import Guide.Views.Utils (getJS, getCSS, protectForm, getCsrfHeader)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
+import Guide.Session
 
 
 {- Note [acid-state]
@@ -136,6 +145,8 @@ mainWith config = do
         _actions = [],
         _pendingEdits = [],
         _editIdCounter = 0,
+        _sessionStore = M.empty,
+        _users = M.empty,
         _dirty = True }
   do args <- getArgs
      when (args == ["--dry-run"]) $ do
@@ -179,23 +190,49 @@ mainWith config = do
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
+    -- Create an admin user
     -- Run the server
     let serverState = ServerState {
           _config = config,
           _db     = db }
     spockConfig <- do
       cfg <- defaultSpockCfg () PCNoDatabase serverState
+      store <- newAcidSessionStore db
+      let sessionCfg = SessionCfg {
+            sc_cookieName = "spockcookie",
+            sc_sessionTTL = 3600,
+            sc_sessionIdEntropy = 64,
+            sc_sessionExpandTTL = True,
+            sc_emptySession = emptyGuideData,
+            sc_store = store,
+            sc_housekeepingInterval = 60 * 10,
+            sc_hooks = defaultSessionHooks
+          }
       return cfg {
-        spc_maxRequestSize = Just (1024*1024) }
+        spc_maxRequestSize = Just (1024*1024),
+        spc_csrfProtection = True,
+        spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ do
+    runSpock 8080 $ spock spockConfig $ guideApp waiMetrics
+
+-- TODO: Fix indentation after rebasing.
+guideApp :: EKG.WaiMetrics -> GuideApp ()
+guideApp waiMetrics = do
+    createAdminUser  -- TODO: perhaps it needs to be inside of “prehook
+                     -- initHook”? (I don't actually know what “prehook
+                     -- initHook” does, feel free to edit.)
+    prehook initHook $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
+        (csrfTokenName, csrfTokenValue) <- getCsrfHeader
+        let jqueryCsrfProtection = [text|
+              guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
+            |]
         js <- getJS
-        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions <> js)
+        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
@@ -215,7 +252,7 @@ mainWith config = do
         lucidWithConfig $ renderRoot
 
       -- Admin page
-      prehook adminHook $ do
+      prehook authHook $ prehook adminHook $ do
         Spock.get "admin" $ do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdmin s
@@ -273,19 +310,87 @@ mainWith config = do
         methods
       
       Spock.subcomponent "auth" $ do
-        Spock.get "login" $ lucidWithConfig renderLogin
-        
-        Spock.get "register" $ lucidWithConfig renderRegister
+        -- plain "/auth" logs out a logged-in user and lets a logged-out user
+        -- log in (this is not the best idea, granted, and we should just
+        -- shot logged-in users a “logout” link and logged-out users a
+        -- “login” link instead)
+        Spock.get root $ do
+          user <- getLoggedInUser
+          if isJust user
+            then Spock.redirect "auth/logout"
+            else Spock.redirect "auth/login"
+        Spock.getpost "login" $ authRedirect "/" $ loginAction
+        Spock.get "logout" $ logoutAction 
+        Spock.getpost "register" $ authRedirect "/" $ signupAction
 
-adminHook :: ActionCtxT ctx (WebStateM () () ServerState) ()
+loginAction :: GuideAction ctx ()
+loginAction = do
+  r <- runForm "login" loginForm
+  case r of
+    (v, Nothing) -> do
+      formHtml <- protectForm loginFormView v
+      lucidWithConfig $ renderRegister formHtml
+    (v, Just Login {..}) -> do
+      loginAttempt <- dbQuery $ LoginUser loginEmail (T.encodeUtf8 loginUserPassword)
+      case loginAttempt of
+        Just user -> do
+          modifySession (sessionUserID .~ Just (user ^. userID))
+          Spock.redirect "/"
+        -- TODO: show error message/validation of input
+        Nothing -> do
+          formHtml <- protectForm loginFormView v
+          lucidWithConfig $ renderRegister formHtml
+
+logoutAction :: GuideAction ctx ()
+logoutAction = do
+  modifySession (sessionUserID .~ Nothing)
+  Spock.redirect "/"
+
+signupAction :: GuideAction ctx ()
+signupAction = do
+  r <- runForm "register" registerForm
+  case r of 
+    (v, Nothing) -> do
+      formHtml <- protectForm registerFormView v
+      lucidWithConfig $ renderRegister formHtml
+    (v, Just UserRegistration {..}) -> do
+      user <- makeUser registerUserName registerUserEmail (T.encodeUtf8 registerUserPassword)
+      success <- dbUpdate $ CreateUser user
+      if success
+        then do
+          modifySession (sessionUserID .~ Just (user ^. userID))
+          Spock.redirect ""
+        else do
+          formHtml <- protectForm registerFormView v
+          lucidWithConfig $ renderRegister formHtml
+
+initHook :: GuideAction () (HVect '[])
+initHook = return HNil
+
+authHook :: GuideAction (HVect xs) (HVect (User ': xs))
+authHook = do
+  oldCtx <- getContext
+  maybeUser <- getLoggedInUser
+  case maybeUser of
+    Nothing -> Spock.text "Not logged in."
+    Just user -> return (user :&: oldCtx)
+
+adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ': xs))
 adminHook = do
-  adminPassword <- _adminPassword <$> getConfig
-  unless (adminPassword == "") $ do
-    let check user pass =
-          unless (user == "admin" && pass == adminPassword) $ do
-            Spock.setStatus HTTP.status401
-            Spock.text "Wrong password!"
-    Spock.requireBasicAuth "Authenticate (login = admin)" check return
+  oldCtx <- getContext
+  let user = findFirst oldCtx
+  if user ^. userIsAdmin 
+    then return (IsAdmin :&: oldCtx)
+    else Spock.text "Not authorized."
+
+-- |Redirect the user to a given path if they are logged in.
+authRedirect :: Text -> GuideAction ctx a -> GuideAction ctx a
+authRedirect path action = do
+  user <- getLoggedInUser
+  case user of
+    Just _ -> do
+      Spock.redirect path
+    Nothing -> action
 
 -- TODO: a function to find all links to Hackage that have version in them
 
@@ -330,3 +435,13 @@ installTerminationCatcher :: ThreadId -> IO ()
 installTerminationCatcher thread = void $ do
   installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
   installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing
+
+-- | Create an admin user (with login “admin”, email “admin@guide.aelve.com”
+-- and password specified in the config).
+--
+-- The user won't be added if it exists already.
+createAdminUser :: GuideApp ()
+createAdminUser = do
+  pass <- T.encodeUtf8 . _adminPassword <$> getConfig
+  user <- makeUser "admin" "admin@guide.aelve.com" pass
+  void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

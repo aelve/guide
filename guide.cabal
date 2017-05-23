@@ -12,7 +12,7 @@ maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
 tested-with:         GHC == 8.0.1
-build-type:          Simple
+build-type:          Custom
 extra-source-files:
   CHANGELOG.md
 -- Whatever, this won't ever be installed from a .tar package anyway so I
@@ -44,8 +44,10 @@ executable guide
 
 library
   exposed-modules:
+    Guide.App
     Guide.Main
     Guide.ServerStuff
+    Guide.Session
     Guide.Config
     Guide.State
     Guide.Types
@@ -54,6 +56,7 @@ library
       Guide.Types.Edit
       Guide.Types.Action
       Guide.Types.User
+      Guide.Types.Session
     Guide.Handlers
     Guide.Utils
     Guide.Merge
@@ -68,12 +71,14 @@ library
       Guide.Views.Item
       Guide.Views.Category
       Guide.Views.Utils
+        Guide.Views.Utils.Input
     Guide.Cache
     Guide.SafeCopy
   other-modules:
     Imports
   build-depends:       Spock
                      , Spock-lucid == 0.3.*
+                     , Spock-digestive
                      , acid-state == 0.14.*
                      , aeson == 1.0.*
                      , aeson-pretty
@@ -87,6 +92,7 @@ library
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
+                     , digestive-functors
                      , directory >= 1.2
                      , ekg
                      , ekg-core
@@ -103,6 +109,7 @@ library
                      , haskell-src-meta
                      , http-api-data
                      , http-types
+                     , hvect
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
@@ -122,8 +129,10 @@ library
                      , slave-thread
                      , split
                      , stache-plus == 0.1.*
+                     , stm
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
+                     , text
                      , text-all == 0.3.*
                      , time >= 1.5
                      , transformers

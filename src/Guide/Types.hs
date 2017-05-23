@@ -9,6 +9,7 @@ module Guide.Types
   module Guide.Types.Edit,
   module Guide.Types.Action,
   module Guide.Types.User,
+  module Guide.Types.Session,
 )
 where
 
@@ -17,3 +18,4 @@ import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Action
 import Guide.Types.User
+import Guide.Types.Session
