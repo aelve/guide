@@ -28,14 +28,23 @@ import Data.Default
 import Guide.Utils
 
 
+-- | Site config. Stored in @config.json@.
 data Config = Config {
-  _baseUrl       :: Url,
-  _googleToken   :: Text,
-  _adminPassword :: Text,
-  _prerender     :: Bool,
-  _discussLink   :: Maybe Url }
+  _baseUrl       :: Url,          -- ^ URL where the site is deployed. Used
+                                  --    for generating feeds (which require
+                                  --    absolute URLs)
+  _googleToken   :: Text,         -- ^ Google site verification token. Will
+                                  --    be inserted into all pages
+  _adminPassword :: Text,         -- ^ Password for the admin user
+  _prerender     :: Bool,         -- ^ Whether to prerender all pages when
+                                  --    the app is started
+  _discussLink   :: Maybe Url     -- ^ Link to a place to discuss the site.
+                                  --    Will be placed in the header
+  }
   deriving (Eq, Show)
 
+-- | Default instance: no base URL, no Google token, empty password, no
+-- prerendering, no discussion link.
 instance Default Config where
   def = Config {
     _baseUrl       = "/",
@@ -61,6 +70,8 @@ instance ToJSON Config where
     "prerender"      .= _prerender,
     "discuss-link"   .= _discussLink ]
 
+-- | Read config from @config.json@ (creating a default config if the file
+-- doesn't exist).
 readConfig :: IO Config
 readConfig = do
   let filename = "config.json"
@@ -78,6 +89,7 @@ readConfig = do
       writeConfig cfg
       return cfg
 
+-- | Write a config to @config.json@.
 writeConfig :: Config -> IO ()
 writeConfig cfg = do
   -- Create-and-rename is safer than just rewriting the file
@@ -85,5 +97,6 @@ writeConfig cfg = do
   BSL.writeFile newFile (Aeson.encodePretty cfg)
   renameFile newFile "config.json"
 
+-- | Apply a function to the config.
 modifyConfig :: (Config -> IO Config) -> IO ()
 modifyConfig func = writeConfig =<< func =<< readConfig

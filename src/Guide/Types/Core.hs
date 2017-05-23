@@ -90,6 +90,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 -- Trait
 ----------------------------------------------------------------------------
 
+-- | A trait (pro or con). Traits are stored in items.
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
@@ -109,6 +110,7 @@ instance A.ToJSON Trait where
 -- Item
 ----------------------------------------------------------------------------
 
+-- | Kind of an item (items can be libraries, tools, etc).
 data ItemKind
   = Library {_itemKindHackageName :: Maybe Text}
   | Tool {_itemKindHackageName :: Maybe Text}
@@ -154,20 +156,23 @@ instance A.ToJSON ItemSection where
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
+-- | An item (usually a library). Items are stored in categories.
 data Item = Item {
-  _itemUid         :: Uid Item,
-  _itemName        :: Text,
-  _itemCreated     :: UTCTime,
-  _itemGroup_      :: Maybe Text,
-  _itemDescription :: MarkdownBlock,
-  _itemPros        :: [Trait],
-  _itemProsDeleted :: [Trait],
-  _itemCons        :: [Trait],
-  _itemConsDeleted :: [Trait],
-  _itemEcosystem   :: MarkdownBlock,
-  _itemNotes       :: MarkdownBlockWithTOC,
-  _itemLink        :: Maybe Url,
-  _itemKind        :: ItemKind }
+  _itemUid         :: Uid Item,        -- ^ Item ID
+  _itemName        :: Text,            -- ^ Item title
+  _itemCreated     :: UTCTime,         -- ^ When the item was created
+  _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
+  _itemDescription :: MarkdownBlock,   -- ^ Item summary
+  _itemPros        :: [Trait],         -- ^ Pros (positive traits)
+  _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
+                                       --   it'd be easy to restore them)
+  _itemCons        :: [Trait],         -- ^ Cons (negative traits)
+  _itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
+  _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
+  _itemNotes       :: MarkdownTree,    -- ^ The notes section
+  _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
+  _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
+  }
   deriving (Show, Generic)
 
 deriveSafeCopySorted 11 'extension ''Item
@@ -184,10 +189,11 @@ instance A.ToJSON Item where
 -- Category
 ----------------------------------------------------------------------------
 
+-- | Category status
 data CategoryStatus
-  = CategoryStub
-  | CategoryWIP
-  | CategoryFinished
+  = CategoryStub                -- ^ “Stub” = just created
+  | CategoryWIP                 -- ^ “WIP” = work in progress
+  | CategoryFinished            -- ^ “Finished” = complete or nearly complete
   deriving (Eq, Show, Generic)
 
 deriveSafeCopySimple 2 'extension ''CategoryStatus
@@ -210,27 +216,29 @@ instance Migrate CategoryStatus where
   migrate CategoryMostlyDone_v1 = CategoryFinished
   migrate CategoryFinished_v1 = CategoryFinished
 
+-- | A category
 data Category = Category {
-  _categoryUid :: Uid Category,
-  _categoryTitle :: Text,
-  -- | The “grandcategory” of the category (“meta”, “basics”, “specialised
-  -- needs”, etc)
-  _categoryGroup_ :: Text,
-  -- | Enabled sections in this category. For instance, if this set contains
-  -- 'ItemNotesSection', then notes will be shown for each item.
+  _categoryUid          :: Uid Category,
+  _categoryTitle        :: Text,
+  -- | When the category was created
+  _categoryCreated      :: UTCTime,
+  -- | The “grandcategory” of the category (“meta”, “basics”, etc)
+  _categoryGroup_       :: Text,
+  _categoryStatus       :: CategoryStatus,
+  _categoryNotes        :: MarkdownBlock,
+  -- | Items stored in the category
+  _categoryItems        :: [Item],
+  -- | Items that were deleted from the category. We keep them here to make
+  -- it easier to restore them
+  _categoryItemsDeleted :: [Item],
+  -- | Enabled sections in this category. E.g, if this set contains
+  -- 'ItemNotesSection', then notes will be shown for each item
   _categoryEnabledSections :: Set ItemSection,
-  _categoryCreated :: UTCTime,
-  _categoryStatus :: CategoryStatus,
-  _categoryNotes :: MarkdownBlock,
   -- | All groups of items belonging to the category, as well as their
-  -- colors. We could assign colors to items when we render the category
-  -- (something like “if haven't seen this group yet, assign a new color to
-  -- it and render it with this color”, but this way is easier and also
-  -- allows us to keep the colors of all other groups the same when one item
-  -- has been deleted.
-  _categoryGroups :: Map Text Hue,
-  _categoryItems :: [Item],
-  _categoryItemsDeleted :: [Item] }
+  -- colors. Storing colors explicitly lets us keep colors consistent when
+  -- all items in a group are deleted
+  _categoryGroups :: Map Text Hue
+  }
   deriving (Show, Generic)
 
 deriveSafeCopySorted 11 'extension ''Category
@@ -258,13 +266,17 @@ instance A.ToJSON Category where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_category") }
 
+-- | Category identifier (used in URLs). E.g. for a category with title
+-- “Performance optimization” and UID “t3c9hwzo” the slug would be
+-- @performance-optimization-t3c9hwzo@.
 categorySlug :: Category -> Text
 categorySlug category =
-  format "{}-{}" (makeSlug (category^.title), category^.uid)
+  format "{}-{}" (makeSlug (category^.title)) (category^.uid)
 
 ----------------------------------------------------------------------------
 -- Utils
 ----------------------------------------------------------------------------
 
+-- | A useful predicate; @hasUid x@ compares given object's UID with @x@.
 hasUid :: HasUid a (Uid u) => Uid u -> a -> Bool
 hasUid u x = x^.uid == u

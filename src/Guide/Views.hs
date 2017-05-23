@@ -50,6 +50,7 @@ import qualified Data.Aeson as A
 import Guide.Config
 import Guide.State
 import Guide.Types
+import Guide.Search
 import Guide.Utils
 import Guide.JS (JS(..))
 import qualified Guide.JS as JS
@@ -313,7 +314,7 @@ renderEdits globalState edits = do
   let editBlocks = groupBy (equating getIP) edits
   let ipNum = length $ groupWith getIP edits
   h1_ $ toHtml @Text $
-    "Pending edits (IPs: "%<ipNum>%", blocks: "%<length editBlocks>%")"
+    "Pending edits (IPs: "#|ipNum|#", blocks: "#|length editBlocks|#")"
   for_ editBlocks $ \editBlock -> div_ $ do
     blockNode <- thisNode
     h2_ $ do
@@ -529,18 +530,7 @@ renderHaskellRoot globalState mbSearchQuery =
       onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
       Nothing -> renderCategoryList (globalState^.categories)
-      Just query' -> do
-        let queryWords = T.words query'
-        let rank :: Category -> Int
-            rank cat = sum [
-              length (queryWords `intersect` (cat^..items.each.name)),
-              length (queryWords `intersect` T.words (cat^.title)) ]
-        let rankedCategories
-              | null queryWords = globalState^.categories
-              | otherwise       = filter ((/= 0) . rank) .
-                                  reverse . sortOn rank
-                                    $ globalState^.categories
-        renderSearchResults rankedCategories
+      Just query' -> renderSearchResults (search query' globalState)
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
 
@@ -700,13 +690,39 @@ renderCategoryList allCats = cached CacheCategoryList $ do
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
 
--- | Render a page with search results (just a list of categories).
-renderSearchResults :: Monad m => [Category] -> HtmlT m ()
-renderSearchResults cats = do
-  div_ [id_ "categories-search-results"] $
-    for_ cats $ \category -> do
-      a_ [class_ "category-link", href_ (categoryLink category)] $
-        toHtml (category^.title)
+-- | Render a <div> with search results.
+renderSearchResults :: Monad m => [SearchResult] -> HtmlT m ()
+renderSearchResults rs = do
+  div_ [id_ "search-results"] $
+    mapM_ renderSearchResult rs
+
+-- | Render one search result.
+renderSearchResult :: Monad m => SearchResult -> HtmlT m ()
+renderSearchResult r = do
+  div_ [class_ "search-result"] $
+    case r of
+      SRCategory cat -> do
+        a_ [class_ "category-link", href_ (categoryLink cat)] $
+          toHtml (cat^.title)
+        div_ [class_ "category-description notes-like"] $
+          toHtml (extractPreface $ toMarkdownTree "" $ cat^.notes.mdText)
+      SRItem cat item -> do
+        a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
+          toHtml (cat^.title)
+        span_ [class_ "breadcrumb"] "»"
+        a_ [class_ "item-link", href_ (itemLink cat item)] $
+          toHtml (item^.name)
+        div_ [class_ "description notes-like"] $
+          toHtml (item^.description)
+      SRItemEcosystem cat item -> do
+        a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
+          toHtml (cat^.title)
+        span_ [class_ "breadcrumb"] "»"
+        a_ [class_ "item-link", href_ (itemLink cat item)] $
+          toHtml (item^.name)
+        span_ [class_ "item-link-addition"] "'s ecosystem"
+        div_ [class_ "ecosystem notes-like"] $
+          toHtml (item^.ecosystem)
 
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

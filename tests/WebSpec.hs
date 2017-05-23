@@ -28,7 +28,7 @@ import Selenium
 import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
-import qualified Guide.Server
+import qualified Guide.Main
 import Guide.Config (Config(..))
 
 
@@ -611,7 +611,7 @@ run ts = do
         --
         -- Using 'Slave.fork' in 'Guide.mainWith' ensures that threads started
         -- inside of 'mainWith' will be killed too when the thread dies.
-        tid <- Slave.fork $ Guide.Server.mainWith Config {
+        tid <- Slave.fork $ Guide.Main.mainWith Config {
           _baseUrl       = "/",
           _googleToken   = "some-google-token",
           _adminPassword = "123",

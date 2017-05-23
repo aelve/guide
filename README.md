@@ -47,6 +47,8 @@ it means that there's an extensive comment somewhere else in the code, which you
 
 ### Main modules
 
+THIS SECTION IS OUTDATED
+
 There are 4 main modules – `Guide.hs`, `JS.hs`, `View.hs`, and `Types.hs`.
 
 `Guide.hs` contains:
