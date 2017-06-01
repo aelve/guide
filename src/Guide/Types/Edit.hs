@@ -106,7 +106,6 @@ data Edit
   -- Change trait properties
   | Edit'SetTraitContent {
       editItemUid         :: Uid Item,
-      editCategoryUid     :: Uid Category,
       editTraitUid        :: Uid Trait,
       editTraitContent    :: Text,
       editTraitNewContent :: Text }
