@@ -456,11 +456,11 @@ setItemEcosystem itemId ecosystem' = do
                (oldEcosystem ^. mdText) ecosystem'
   (edit,) <$> use (itemById itemId)
 
-setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
-setTraitContent itemId traitId content' = do
+setTraitContent :: Uid Item -> Uid Category -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
+setTraitContent itemId catId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . content <<.=
                   toMarkdownInline content'
-  let edit = Edit'SetTraitContent itemId traitId
+  let edit = Edit'SetTraitContent  itemId catId traitId
                (oldContent ^. mdText) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
 

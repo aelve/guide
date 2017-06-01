@@ -244,14 +244,14 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Trait
-  Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+  Spock.post (itemVar <//> categoryVar <//> traitVar) $ \itemId catId traitId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
     if modified == original
       then do
         trait <- uncache (CacheItemTraits itemId) $ do
-          (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
+          (edit, trait) <- dbUpdate (SetTraitContent itemId catId traitId content')
           addEdit edit
           return trait
         lucidIO $ renderTrait itemId trait
