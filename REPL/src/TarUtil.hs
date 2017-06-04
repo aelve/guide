@@ -4,7 +4,8 @@ module TarUtil (
                 buildDifferenceMap,
                 buildHackageMap,
                 buildPreHackageMap,
-                loadTar
+                loadTar,
+                parsePath
                 ) where
 
 import qualified Codec.Archive.Tar as Tar
@@ -61,15 +62,16 @@ type HPPathData = (String, DV.Version)
 -- Parses the file path of the cabal file to get version and package name
 parseCabalFilePath :: RP.ReadP HPPathData
 parseCabalFilePath = do
-  package <- RP.munch1 DC.isLetter
+  package <- RP.munch1 phi
   RP.char '/'
   version <- DV.parseVersion
   RP.char '/'
-  name <- RP.munch1 (\l -> DC.isLetter l || l == '-')
+  name <- RP.munch1 phi
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
   pure $ (package, version)
+  where phi l = DC.isLetter l || l == '-'
 
 updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a
 updateMapCompare key value map = case M.lookup key map of
