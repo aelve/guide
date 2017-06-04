@@ -23,9 +23,11 @@ library
                      , split
                      , http-types
                      , bytestring
+                     , Cabal
                      , http-client
                      , filepath
                      , http-client-tls
+                     , utf8-string
                      , pureMD5
                      , aeson
                      , text

@@ -1,28 +1,43 @@
-module TarUtil (getEntries,
-                loadTarIndex,
+{-# LANGUAGE OverloadedStrings #-}
+
+module TarUtil (
+                buildDifferenceMap,
                 buildHackageMap,
-                buildDifferenceMap
+                buildPreHackageMap,
+                loadTar
                 ) where
 
-import qualified Codec.Archive.Tar.Index as TI
 import qualified Codec.Archive.Tar as Tar
 import qualified Data.List.Split as SPLT
 import qualified Data.Char as DC
 import qualified Data.List as DL
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Version as DV
-
-import qualified Data.Map.Strict as Map
-import System.FilePath.Posix(hasTrailingPathSeparator)
-import Control.Monad(guard)
+import qualified Distribution.PackageDescription.Parse as CP
+import qualified Distribution.Package as DP
 
 import qualified Text.ParserCombinators.ReadP as RP
+import qualified Distribution.PackageDescription as DPD
+import qualified Distribution.PackageDescription.Parse as DPDP
+import qualified Data.Map.Strict as M
+import qualified Control.Exception as X
+
+import Data.Maybe
+import Debug.Trace
+import Control.Monad(guard)
+
+import qualified Data.ByteString.Lazy.UTF8 as UTFC
+
+import System.FilePath.Posix(hasTrailingPathSeparator)
+
 
 -- The record for each of the package from hackage
 -- TODO - add another information about the packages
 data HackagePackage = HP {
+--  packageData :: HHPathData
   name :: String,
-  version :: DV.Version
+  version :: DV.Version,
+  author :: String
 } deriving (Eq, Show)
 
 -- The status of the package between two updates
@@ -30,57 +45,115 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 
 -- The map of all the hackage packages with name as the key and HackagePackage
 -- as the value
-type HackageMap = Map.Map String HackagePackage
+type HackageMap = M.Map String HackagePackage
+
+type PreHackageMap = M.Map String DV.Version
 
 -- The map, that shows, which packages have change since the last update
-type HackageUpdateMap = Map.Map String (HackageUpdate, HackagePackage)
+type HackageUpdateMap = M.Map String (HackageUpdate, HackagePackage)
+
+-- This is the data that is extracted from the path to cabal file
+-- Like, when program parses "safeio/0.0.2.0/safeio.cabal"
+-- It gets the version 0.0.2.0 and safeio package name. Also checks, xxx and yy match in 
+-- "xxx/version/yyy.cabal
+type HPPathData = (String, DV.Version)
 
 -- Parses the file path of the cabal file to get version and package name
-parseCabalFilePath :: RP.ReadP HackagePackage
+parseCabalFilePath :: RP.ReadP HPPathData
 parseCabalFilePath = do
   package <- RP.munch1 DC.isLetter
   RP.char '/'
   version <- DV.parseVersion
   RP.char '/'
-  name <- RP.munch1 DC.isLetter
+  name <- RP.munch1 (\l -> DC.isLetter l || l == '-')
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
-  pure $ HP { name = package, version = version}
+  pure $ (package, version)
 
+{-
 -- Update map of the packages with the hackage package
 -- Update when, the version of package is newer than version of package in the
 -- map
 updateMap :: HackagePackage -> HackageMap -> HackageMap
-updateMap hp map = case Map.lookup (name hp) map of
+updateMap hp map = case M.lookup (name hp) map of
   Just oldHp -> if (version hp) > (version oldHp) then updatedMap
                                                   else map
   Nothing -> updatedMap
-  where updatedMap = Map.insert (name hp) hp map
-
-getEntries :: TI.TarIndex -> [HackagePackage]
-getEntries index =  map fst $ map head $ filter (not.null) $ map (goodParse.parse.getPath) entries
-  where entries = TI.toList index
-        getPath = fst
-        parse = RP.readP_to_S parseCabalFilePath
-        goodParse = filter (null.snd)
-        
-loadTarIndex :: FilePath -> IO (Either Tar.FormatError TI.TarIndex)
-loadTarIndex file = do
-  content <- BL.readFile file
-  return $ TI.build $ Tar.read content
-
-
--- convert tarindex to list, then apply parser combinator, throw out all
--- empty parsingresults and then take the first successfull parsing result 
-buildHackageMap :: TI.TarIndex -> HackageMap
-buildHackageMap index = foldr updateMap Map.empty (getEntries index)
+  where updatedMap = M.insert (name hp) hp map
+-}
 
 buildDifferenceMap :: HackageMap -> HackageMap -> HackageUpdateMap
-buildDifferenceMap oldMap newMap = foldr Map.union Map.empty [deletedMap, addedMap, updatedMap]
+buildDifferenceMap oldMap newMap = foldr M.union M.empty [deletedMap, addedMap, updatedMap]
   where
-    deletedMap = Map.map ((,) Removed) $ Map.difference oldMap newMap
-    addedMap = Map.map ((,) Added) $ Map.difference newMap oldMap
-    updatedMap' = Map.intersection newMap oldMap
-    updatedMap = Map.map ((,) Updated) $ Map.differenceWith diff updatedMap' oldMap
+    deletedMap = M.map ((,) Removed) $ M.difference oldMap newMap
+    addedMap = M.map ((,) Added) $ M.difference newMap oldMap
+    updatedMap' = M.intersection newMap oldMap
+    updatedMap = M.map ((,) Updated) $ M.differenceWith diff updatedMap' oldMap
     diff newpack oldpack = if (newpack /= oldpack) then Just newpack else Nothing
+
+createPackage :: DPD.PackageDescription -> HackagePackage
+createPackage pd = HP { name = nm, version = ver, author = auth }
+  where
+    pkg = DPD.package pd
+    nm = DP.unPackageName (DP.pkgName pkg)
+    ver = DP.pkgVersion pkg
+    auth = DPD.author pd
+
+parsePath :: FilePath -> Maybe HPPathData
+parsePath path = case RP.readP_to_S parseCabalFilePath path of 
+    [(pd, _)] -> Just pd
+    _ -> Nothing
+
+parsePackageDescription :: Tar.EntryContent -> Maybe DPD.PackageDescription
+parsePackageDescription (Tar.NormalFile content _) = 
+  case (DPDP.parsePackageDescription (UTFC.toString content)) of 
+    DPDP.ParseOk _ pd -> Just (DPD.packageDescription pd)
+    DPDP.ParseFailed _ -> Nothing
+parsePackageDescription _ = Nothing
+
+parsePackage :: Tar.Entry -> Maybe HackagePackage
+parsePackage entry = do
+  (path, version) <- parsePath $ Tar.entryPath entry
+  pd <- parsePackageDescription $ Tar.entryContent entry
+  return $ createPackage pd
+
+updatePreMap :: HPPathData -> PreHackageMap -> PreHackageMap
+updatePreMap (name, version) map = case M.lookup name map of
+  Just oldVersion -> if version > oldVersion then updatedMap
+                                             else map
+  Nothing -> updatedMap
+  where updatedMap = M.insert name version map
+
+buildPreHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap
+buildPreHackageMap (Tar.Next entry entries) = 
+  case parsePath $ Tar.entryPath entry of
+    Just hp -> updatePreMap hp map
+    Nothing -> map
+  where map = buildPreHackageMap entries
+buildPreHackageMap Tar.Done = M.empty
+buildPrehackageMap (Tar.Fail e) = X.throw e
+
+
+buildHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap -> HackageMap
+buildHackageMap (Tar.Next entry entries) premap = 
+  case update of
+    Just hp -> M.insert (name hp) hp map
+    Nothing -> map
+  where map = buildHackageMap entries premap
+        path = Tar.entryPath entry
+        update :: Maybe HackagePackage
+        update = do
+          (name, version) <- parsePath path
+          preversion <- M.lookup name premap
+          if (preversion == version)  then parsePackage entry
+                                      else Nothing
+
+buildHackageMap Tar.Done _ = M.empty
+buildHackageMap (Tar.Fail e) _ = X.throw e
+
+loadTar :: FilePath -> IO (Tar.Entries Tar.FormatError)
+loadTar file = do
+  content <- BL.readFile file
+  return $ Tar.read content
+

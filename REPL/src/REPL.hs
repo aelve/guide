@@ -19,7 +19,7 @@ module REPL ( {-
               processCycle,
               ProcessBuilderInfo (..)
               ) where 
-import qualified Codec.Archive.Tar.Index as TI
+-- import qualified Codec.Archive.Tar.Index as TI
 import qualified Data.Map.Strict as M
 import qualified Data.Char as DC
 import qualified Data.List as DL
@@ -81,11 +81,14 @@ buildCommand pbi = processCommand
       | chk "unzipclone" = unzipArchive (archiveClone pbi) (tarClone pbi) -- unzips the downloaded gzip archive
       | chk "unzip" = unzipArchive (archive pbi) (tar pbi)  -- unzips the downloaded gzip archive
 
+      | chk "cleanclone" = undefined
+      | chk "clean" = undefined
+
+      | chk "tarparsepreclone" = showPreMap (tarClone pbi) 50 -- loads the tar clone information in the memory
+      | chk "tarparsepre" = showPreMap (tar pbi) 50  -- loads the tar information in the memory
+
       | chk "tarparseclone" = showMap (tarClone pbi) 50 -- loads the tar clone information in the memory
       | chk "tarparse" = showMap (tar pbi) 50  -- loads the tar information in the memory
-
-      | chk "tarshowclone" = showTarContents (tarClone pbi)
-      | chk "tarshow" = showTarContents (tar pbi)
 
       | chk "compare" = showArchiveCompare (archive pbi) (archiveClone pbi) 
 
@@ -102,9 +105,6 @@ buildCommand pbi = processCommand
 
       where pc = map DC.toLower command
             chk val = DL.isPrefixOf val pc
-
-showFirstDirEntries :: TI.TarIndex -> Int -> IO ()
-showFirstDirEntries index count = mapM_ print $ take count (getEntries index)
 
 -- Displays the snapshot of the file
 showFileSnapshot :: FilePath -> IO()
@@ -139,60 +139,59 @@ copyArchive archive1 archive2 = do
 showMap :: FilePath -> Int -> IO()
 showMap path count = do
   putStrLn $ "Displaying " ++ (show count) ++ " entries for " ++ path
-  tarIndexE <- loadTarIndex path
-  case tarIndexE of 
-    Left error -> putStrLn "Whoa. Error loading tar"
-    Right index -> mapM_ (print.snd) $ take count $ M.toList $ buildHackageMap index
+  tar <- loadTar path
+  mapM_ (print.snd) $ take count $ M.toList $ buildHackageMap tar (buildPreHackageMap tar)
+
+showPreMap :: FilePath -> Int -> IO()
+showPreMap path count = do
+  putStrLn $ "Pre displaying " ++ (show count) ++ " entries for " ++ path
+  tar <- loadTar path
+  mapM_ print $ take count $ M.toList $ buildPreHackageMap tar
+
 
 showDiffMap :: FilePath -> FilePath -> IO ()
 showDiffMap newTarFile oldTarFile = do
   putStrLn $ "Displaying difference between " ++ newTarFile ++ " and " ++ oldTarFile
-  newTarIndexE <- loadTarIndex newTarFile
-  oldTarIndexE <- loadTarIndex oldTarFile
-  let newMapE = buildHackageMap <$> newTarIndexE
-  let oldMapE = buildHackageMap <$> oldTarIndexE
-  let diffMapE = buildDifferenceMap <$> oldMapE <*> newMapE
-  case diffMapE of 
-    Right m -> mapM_ (print.snd) $ M.toList m
-    Left _ -> print "Error creating the indexes"
+  newTar <- loadTar newTarFile
+  oldTar <- loadTar oldTarFile
+  let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
+  let oldMap = buildHackageMap oldTar (buildPreHackageMap oldTar)
+  let diffMap = buildDifferenceMap oldMap newMap
+  mapM_ (print.snd) $ M.toList diffMap
 
 showHelp :: ProcessBuilderInfo -> IO()
 showHelp pbi = do
   putStrLn "Available commands: "
 
   putStrLn $ "check - downloads the json length and md5 hash from " ++ (snapshotURL pbi) ++ 
-             ", and compares it with local " ++ (archive pbi)
-  putStrLn $ "checkclone - same for " ++ (archiveClone pbi)
-  putStrLn $ "file - displays the current " ++ (archive pbi) ++ " length and md5 hash"
-  putStrLn $ "fileclone - same for " ++ (archiveClone pbi) ++ " file"
-  putStrLn $ "copyorig - copy the " ++ (archive pbi) ++ " to " ++ (archiveClone pbi)
-  putStrLn $ "cut size - cuts the size bytes from the end of the " ++ (archive pbi) ++ " , for update command"
+             ", and compares it with local " ++ arch
+  putStrLn $ "checkclone - same for " ++ archC
+  putStrLn $ "file - displays the current " ++ arch ++ " length and md5 hash"
+  putStrLn $ "fileclone - same for " ++ archC ++ " file"
+  putStrLn $ "copyorig - copy the " ++ arch ++ " to " ++ archC
+  putStrLn $ "cut size - cuts the size bytes from the end of the " ++ arch ++ " , for update command"
   putStrLn $ "cutclone size - cuts the size bytes from the end of the 01-index.tar.gz, for update command"
-  putStrLn $ "unzip - unzips the " ++ (archive pbi) ++ " in the " ++ (tar pbi) ++ " file"
-  putStrLn $ "unzipclone - unzips the " ++ (archiveClone pbi) ++ " in the " ++ (tarClone pbi) ++ " file"
-  putStrLn $ "compare - compares the " ++ (archive pbi) ++ " with " ++ (archiveClone pbi)
+  putStrLn $ "unzip - unzips the " ++ arch ++ " in the " ++ (tar pbi) ++ " file"
+  putStrLn $ "unzipclone - unzips the " ++ archC ++ " in the " ++ (tarClone pbi) ++ " file"
+  putStrLn $ "clean - deletes the " ++ arch ++ " and " ++ (tar pbi)
+  putStrLn $ "cleanclone - deletes the " ++ archC ++ " and " ++ (tarClone pbi)
+  putStrLn $ "compare - compares the " ++ arch ++ " with " ++ archC
   putStrLn $ "tarparse - loads the map of entries from " ++ (tar pbi) ++ " and displays it" 
   putStrLn $ "tarparseclone - same for " ++ (tarClone pbi)
-  putStrLn $ "tarshow - show sample contents from " ++ (tar pbi)
-  putStrLn $ "tarshowclone - show sample contents from " ++ (tarClone pbi)
+  putStrLn $ "tarparsepre - loads the  premap of entries from " ++ (tar pbi) ++ " and displays it" 
+  putStrLn $ "tarparsepreclone - same for " ++ (tarClone pbi)
   putStrLn $ "tarcmp - compares the entries of " ++ (tar pbi) ++ " and " ++ (tarClone pbi)
-  putStrLn $ "update - updates the current " ++ (archive pbi) ++ " from " ++ (archiveURL pbi)
-  putStrLn $ "updatecut size - cuts the size from " ++ (archive pbi) ++ " and then updates"
+  putStrLn $ "update - updates the current " ++ arch ++ " from " ++ (archiveURL pbi)
+  putStrLn $ "updatecut size - cuts the size from " ++ arch ++ " and then updates"
   putStrLn "exit - exits this repl"
+  where 
+    arch = archive pbi
+    archC = archiveClone pbi 
 
 showArchiveCompare :: FilePath -> FilePath -> IO()
 showArchiveCompare archive1 archive2= do
   val <- compareFiles archive1 archive2
   putStrLn $ "Compare result " ++ archive1 ++ " " ++ archive2 ++ " " ++ (show val)
-
-
-showTarContents :: FilePath -> IO()
-showTarContents archive = do
-  putStrLn $ "Displaying the tar indices" ++ " for " ++ archive
-  tarIndexE <- loadTarIndex archive
-  case tarIndexE of 
-    Left error -> putStrLn "Whoa. Error loading tar"
-    Right index -> showFirstDirEntries index 100 
 
 
 
