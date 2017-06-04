@@ -146,7 +146,7 @@ showPreMap :: FilePath -> Int -> IO()
 showPreMap path count = do
   putStrLn $ "Pre displaying " ++ (show count) ++ " entries for " ++ path
   tar <- loadTar path
-  mapM_ print $ take count $ M.toList $ buildPreHackageMap tar
+  mapM_ print $ take count $ {-filter ((elem '-').fst) $-} M.toList $ buildPreHackageMap tar
 
 
 showDiffMap :: FilePath -> FilePath -> IO ()

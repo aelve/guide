@@ -71,17 +71,13 @@ parseCabalFilePath = do
   RP.eof
   pure $ (package, version)
 
-{-
--- Update map of the packages with the hackage package
--- Update when, the version of package is newer than version of package in the
--- map
-updateMap :: HackagePackage -> HackageMap -> HackageMap
-updateMap hp map = case M.lookup (name hp) map of
-  Just oldHp -> if (version hp) > (version oldHp) then updatedMap
-                                                  else map
+updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a
+updateMapCompare key value map = case M.lookup key map of
+  Just oldValue -> if value > oldValue  then updatedMap
+                                        else map
   Nothing -> updatedMap
-  where updatedMap = M.insert (name hp) hp map
--}
+  where updatedMap = M.insert key value map
+
 
 buildDifferenceMap :: HackageMap -> HackageMap -> HackageUpdateMap
 buildDifferenceMap oldMap newMap = foldr M.union M.empty [deletedMap, addedMap, updatedMap]
@@ -119,11 +115,7 @@ parsePackage entry = do
   return $ createPackage pd
 
 updatePreMap :: HPPathData -> PreHackageMap -> PreHackageMap
-updatePreMap (name, version) map = case M.lookup name map of
-  Just oldVersion -> if version > oldVersion then updatedMap
-                                             else map
-  Nothing -> updatedMap
-  where updatedMap = M.insert name version map
+updatePreMap (name, version) = updateMapCompare name version
 
 buildPreHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap
 buildPreHackageMap (Tar.Next entry entries) = 
@@ -137,13 +129,11 @@ buildPrehackageMap (Tar.Fail e) = X.throw e
 
 buildHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap -> HackageMap
 buildHackageMap (Tar.Next entry entries) premap = 
-  case update of
+  case update $ Tar.entryPath entry of
     Just hp -> M.insert (name hp) hp map
     Nothing -> map
   where map = buildHackageMap entries premap
-        path = Tar.entryPath entry
-        update :: Maybe HackagePackage
-        update = do
+        update path = do
           (name, version) <- parsePath path
           preversion <- M.lookup name premap
           if (preversion == version)  then parsePackage entry
