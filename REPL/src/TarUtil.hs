@@ -5,7 +5,10 @@ module TarUtil (
                 buildHackageMap,
                 buildPreHackageMap,
                 loadTar,
-                parsePath
+                parsePath,
+                HackagePackage (..),
+                HackageMap,
+                HackageUpdateMap
                 ) where
 
 import qualified Codec.Archive.Tar as Tar

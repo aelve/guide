@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     ArchiveUpdate, TarUtil, REPL
+  exposed-modules:     ArchiveUpdate, TarUtil, REPL, Storage
   build-depends:       base >= 4.7 && < 5
                      , directory
                      , containers
@@ -31,11 +31,14 @@ library
                      , pureMD5
                      , aeson
                      , text
+                     , mtl
+                     , safecopy
                      , cereal
                      , unix
                      , exceptions
                      , transformers
                      , zlib
+                     , acid-state
 
   default-language:    Haskell2010
 

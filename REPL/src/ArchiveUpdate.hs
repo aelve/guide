@@ -7,12 +7,12 @@ module ArchiveUpdate (
   FileSnapshotData,
   UpdateArchiveException,
   performArchiveFileUpdate,
-  performArchiveCutUpdate,
   getFileSubstring,
   calcFileData, 
   calcUpdateResult2,
   truncateIfExists,
   unzipFile,
+  removeIfExists,
   compareFiles) where
 
 import Network.HTTP.Client(Request(..), parseUrlThrow, newManager, responseBody, httpLbs)
@@ -136,7 +136,7 @@ calcFileData file = do
 -- archive. ArchiveIsOk - everything is fine.
 -- Update - need to add some information to the end of the file
 -- Reload - need to redownload the whole archive completely
-data UpdateRange = ArchiveIsOk | Reload Range | Update Range deriving (Eq, Show)
+data UpdateRange = ArchiveIsOk | Corrupted | Update Range deriving (Eq, Show)
 
 
 -- The maximum range to download in one request from the hackage
@@ -148,7 +148,7 @@ calcUpdateResult :: HackageSnapshotData -> FileSnapshotData -> UpdateRange
 calcUpdateResult hackage file 
   | hackage == file = ArchiveIsOk -- both are equal
   | lenH > lenF = Update (lenF, lenH - 1) -- need to append a bit
-  | otherwise = Reload (0, lenH - 1) -- delete old file and redownload it
+  | otherwise = Corrupted -- delete old file and redownload it
   where lenH = lengthFile hackage
         lenF = lengthFile file
 
@@ -195,6 +195,7 @@ getFileSubstring :: FilePath -> Int64 -> Int64 -> IO BL.ByteString
 getFileSubstring file from len  = do
   c <- BL.readFile file
   return $ BL.take len $ BL.drop from c
+
 -- unzips the file to the other file
 unzipFile :: FilePath -> FilePath -> IO()
 unzipFile from to = do
@@ -202,56 +203,44 @@ unzipFile from to = do
   fileBody <- (BL.readFile from)
   BL.appendFile to (GZip.decompress fileBody) 
 
-{-
--- The description of the file, that is used to compare archive on the harddisk
--- with the archive in the hackage. It uses length and md5 hash from the pureMD5
--- library
--- Updates the archive with zip stuff
-performSmartUpdate :: FilePath -> URL -> URL -> IO Bool
-performSmartUpdate file json archive = do 
-  (range, snapshot, _) <- calcUpdateResult2 file json
-  case range of
-    ArchiveIsOk -> do
-      putStrLn $ "Archive is up to date"
-      return False
-    (Update range) -> do
-      putStrLn $ "Updating the archive"
-      update range snapshot
-      return True
-    (Reload range) -> do
-      putStrLn $ "Reloading the archive"
-      removeIfExists file
-      update range snapshot
-      return True
-  where 
-    ranges = cropRanges maxRange
-    write2File range = do
-      body <- fetchRangeData archive range
-      print "Start of range: "
-      print $ BL.take 100 body
-      BL.appendFile file body
-      putStrLn $ "\tAppended chunk " ++ (show range)
-    update range snapshot = do
-      mapM_ write2File (ranges range)
-      newFileData <- calcFileData file
-      when (newFileData /= snapshot) $ X.throwIO $ UAE $ "Updated archive corrupted"
--}
 
 -- performs the update, returns True if the the archive was modified
-performArchiveFileUpdate :: URL -> URL -> FilePath -> IO Bool
+
+
+
+performArchiveFileUpdate :: URL -> URL -> FilePath -> IO UpdateRange
 performArchiveFileUpdate snapshotURL archiveURL archive = do
-  (range, snapshot, _) <- calcUpdateResult2 archive snapshotURL
-  putStrLn "Updating"
-  putStrLn $ "Snapshot from " ++ snapshotURL ++ " " ++ (show snapshot)
-  putStrLn $ "Update range " ++ (show range)
-  case range of 
-    ArchiveIsOk -> (putStrLn $ "Archive is up to date") >> return False
-    Update range -> do 
-      putStrLn $ "Updating " ++ archive ++ " from " ++ archiveURL
-      result <- updateArchive archive archiveURL snapshot range
-      putStrLn $ if result then "Update successfull" else "MD5 does not match"
-      return True
-    Reload range -> undefined
+  putStrLn $ "Updating " ++ archive ++ " from " ++ archiveURL
+  (status, snapshot, _) <- calcUpdateResult2 archive snapshotURL
+
+  case status of 
+    ArchiveIsOk ->  (putStrLn $ "Archive is up to date") >> return ArchiveIsOk
+    _ -> cutUpdate modifFunctions
+  where 
+    performUpdate = updateArchive archive archiveURL
+    modifFunctions = [return (), cutting 50000, cutting 500000, cutting 5000000, removing]    
+    cutting val = do
+      putStrLn $ "\tCutting " ++ (show val) ++ " from " ++ archive
+      truncateIfExists archive val
+    removing = do
+      putStrLn $ "\tRemoving " ++ archive
+      removeIfExists archive
+
+    cutUpdate (mf : mfs) = do
+      mf
+      (status, snapshot, _) <- calcUpdateResult2 archive snapshotURL
+      case status of 
+        ArchiveIsOk -> return ArchiveIsOk
+        Corrupted -> cutUpdate mfs 
+        Update range -> do
+          putStrLn $ "\tSnapshot from " ++ snapshotURL ++ " " ++ (show snapshot)
+          putStrLn $ "\tUpdate range " ++ (show range)
+          result <- performUpdate snapshot range
+          if result then return status
+                    else cutUpdate mfs
+    cutUpdate [] = do
+      putStrLn "Failed to update"
+      return Corrupted
 
 updateArchive :: FilePath -> URL -> HackageSnapshotData -> Range -> IO Bool
 updateArchive archive archiveURL snapshot range = do
@@ -267,7 +256,7 @@ write2File archive url range = do
   BL.appendFile archive body
   putStrLn "Append ok"
 
-
+{-
 performArchiveCutUpdateF :: (FilePath -> IO Bool) -> FilePath -> Int64 -> IO Bool
 performArchiveCutUpdateF updateFunc archive cutSize = do
   putStrLn $ "Cutting " ++ (show cutSize) ++ " from " ++ archive ++ " before update"
@@ -276,4 +265,25 @@ performArchiveCutUpdateF updateFunc archive cutSize = do
 
 performArchiveCutUpdate :: URL -> URL -> FilePath -> Int64 -> IO Bool
 performArchiveCutUpdate snapshotURL archiveURL = performArchiveCutUpdateF (performArchiveFileUpdate snapshotURL archiveURL)
+-}
 
+  
+  {-
+  case range of 
+    ArchiveIsOk -> (putStrLn $ "Archive is up to date") >> return ArchiveIsOk
+    Update range -> do 
+      putStrLn $ "Updating " ++ archive ++ " from " ++ archiveURL
+      result <- updateArchive archive archiveURL snapshot range
+      putStrLn $ if result then "Update successfull" else "MD5 does not match"
+      return ArchiveIsOk
+   -}   
+    {-
+    Corrupted -> do
+      putStrLn $ "Reloading " ++ archive ++ " from " ++ archiveURL
+      removeIfExists archive
+      result <- updateArchive archive archiveURL snapshot range
+      putStrLn $ if result then "Update successfull" else "MD5 does not match"
+      return True
+    -}
+    
+ 

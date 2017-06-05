@@ -81,8 +81,8 @@ buildCommand pbi = processCommand
       | chk "unzipclone" = unzipArchive (archiveClone pbi) (tarClone pbi) -- unzips the downloaded gzip archive
       | chk "unzip" = unzipArchive (archive pbi) (tar pbi)  -- unzips the downloaded gzip archive
 
-      | chk "cleanclone" = undefined
-      | chk "clean" = undefined
+      | chk "cleanclone" = removeArchiveFiles (archiveClone pbi) (tarClone pbi)
+      | chk "clean" = removeArchiveFiles (archive pbi) (tar pbi)
 
       | chk "tarparsepreclone" = showPreMap (tarClone pbi) 50 -- loads the tar clone information in the memory
       | chk "tarparsepre" = showPreMap (tar pbi) 50  -- loads the tar information in the memory
@@ -91,10 +91,11 @@ buildCommand pbi = processCommand
       | chk "tarparse" = showMap (tar pbi) 50  -- loads the tar information in the memory
 
       | chk "compare" = showArchiveCompare (archive pbi) (archiveClone pbi) 
-
-      | chk "updatecut" = performArchiveCutUpdate (snapshotURL pbi) (archiveURL pbi) 
-                          (archive pbi) (parseIntEnd command) >> return ()
       | chk "update" = performArchiveFileUpdate (snapshotURL pbi) (archiveURL pbi) (archive pbi) >> return ()
+
+--      | chk "acidupdate" = undefined
+--      | chk "acidquery" = undefined
+
       -- | chk "updatesmart" = undefined
 
       | chk "tarcmp" = showDiffMap (tar pbi) (tarClone pbi)
@@ -182,8 +183,8 @@ showHelp pbi = do
   putStrLn $ "tarparsepreclone - same for " ++ (tarClone pbi)
   putStrLn $ "tarcmp - compares the entries of " ++ (tar pbi) ++ " and " ++ (tarClone pbi)
   putStrLn $ "update - updates the current " ++ arch ++ " from " ++ (archiveURL pbi)
-  putStrLn $ "updatecut size - cuts the size from " ++ arch ++ " and then updates"
   putStrLn "exit - exits this repl"
+
   where 
     arch = archive pbi
     archC = archiveClone pbi 
@@ -192,8 +193,6 @@ showArchiveCompare :: FilePath -> FilePath -> IO()
 showArchiveCompare archive1 archive2= do
   val <- compareFiles archive1 archive2
   putStrLn $ "Compare result " ++ archive1 ++ " " ++ archive2 ++ " " ++ (show val)
-
-
 
 exitREPL :: IO()
 exitREPL = putStrLn "Finished working with hackage REPL" >> exitSuccess
@@ -209,5 +208,25 @@ unzipArchive :: FilePath -> FilePath -> IO()
 unzipArchive archive tar = do
   putStrLn $ "Unzipping " ++ archive ++ " to " ++ tar
   unzipFile archive tar
+
+removeArchiveFiles :: FilePath -> FilePath -> IO()
+removeArchiveFiles archive tar = do
+  putStrLn $ "Removing archive files " ++ archive ++ " " ++ tar
+  removeIfExists archive
+  removeIfExists tar
+
+-- make update of acidic map of the packages
+{-
+updateAcidicMap :: URL -> URL -> FilePath -> IO()
+updateAcidicMap snapU archU arch cutValue = 
+  do  acid <- openLocalState (KeyValue Map.empty)
+      -- update the archive
+      status <- performArchiveCutUpdate snapU archU arch cutValue
+
+      closeAcidState acid
+-}
+
+--rebuildIndex :: URL -> URL -> FilePath -> IO ()
+--rebuildIndex
 
 
