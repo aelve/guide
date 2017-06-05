@@ -29,7 +29,8 @@ export type Kind = {
 };
 
 export type Note = {
-  text : string
+  text : string,
+  html : string
 };
 
 export type Item = {

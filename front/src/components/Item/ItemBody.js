@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import * as T from '../../types';
-import ReactMarkdown from 'react-markdown';
 
 const ItemDescription = (props : T.Item) => {
   return (
     <div className="item-description">
       <strong>Summary</strong>
-      <ReactMarkdown className="notes-like" source={props.description.text} />
+      <div className="notes-like"
+           dangerouslySetInnerHTML={{__html: props.description.html}}/>
     </div>
   )
 }
@@ -21,8 +21,8 @@ const ProsConsWrapper = (props : T.Item) => {
             <ul>
               {props.pros.map(p => 
                 <li key={p.uid}>
-                  <ReactMarkdown className="section normal editable shown noscript-shown" 
-                                  source={p.content.text}/>
+                  <span className="section normal editable shown noscript-shown"
+                        dangerouslySetInnerHTML={{__html: p.content.html}}/>
                 </li>) }
             </ul>
           </div>
@@ -31,8 +31,8 @@ const ProsConsWrapper = (props : T.Item) => {
             <ul>
               {props.cons.map(c => 
                 <li key={c.uid}>
-                  <ReactMarkdown className="section normal editable shown noscript-shown" 
-                                  source={ c.content.text}/>
+                  <span className="section normal editable shown noscript-shown"
+                        dangerouslySetInnerHTML={{__html: c.content.html}}/>
                 </li>) }
             </ul>
           </div>
@@ -69,7 +69,8 @@ const EcosystemWrapper = (props : T.Item) => {
       <div className="item-ecosystem">
         <div className="noscript-shown show normal section">
           <strong>Ecosystem</strong>
-          <div className="notes-like" dangerouslySetInnerHTML={{__html: props.ecosystem.html}}/>
+          <div className="notes-like"
+               dangerouslySetInnerHTML={{__html: props.ecosystem.html}}/>
         </div>
       </div>
     </div>
@@ -84,7 +85,7 @@ const NotesWrapper = (props : T.Item) => {
           <strong>Notes</strong>
         </a>
         <div className="shown collapsed section">
-          <ReactMarkdown source={props.notes.text}/>
+          <div dangerouslySetInnerHTML={{__html: props.notes.html}}/>
         </div>
         <div className="noscript-shown expanded section">
         </div>

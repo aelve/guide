@@ -5,7 +5,6 @@ import * as T from '../types';
 import { fetchData, extractUid, mkLink } from '../utils/index';
 import { If } from 'jsx-control-statements';
 import { Item } from './Item';
-import ReactMarkdown from 'react-markdown';
 
 class Category extends Component {
   state: {
@@ -41,7 +40,7 @@ class Category extends Component {
           <div id={"category-notes-"+this.state.cat.uid} className="category-notes">
           <div className="noscript-shown shown normal section">
             <div className="notes-like">
-              <ReactMarkdown source={this.state.cat.description.text}/>
+              <div dangerouslySetInnerHTML={{__html: this.state.cat.description.html}}/>
             </div>
           </div>
           </div>

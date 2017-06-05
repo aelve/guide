@@ -17,7 +17,7 @@ class Footer extends Component {
     render() {
         return (
             <div className="footer">
-              {footerItem(<div>made by <a href="https.//artyom.me">Artyom</a></div>)}
+              {footerItem(<div>made by <a href="https://artyom.me">Artyom</a></div>)}
               {footerItem(
                  <div><a href="https://github.com/aelve/guide">source</a>
                  /<a href="https://github.com/aelve/guide/issues">issue tracker</a></div>)
