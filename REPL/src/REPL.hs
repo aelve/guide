@@ -33,6 +33,7 @@ import System.Directory(copyFile)
 
 import TarUtil
 import ArchiveUpdate
+import Storage
 
 data ProcessBuilderInfo = PBI {
   archive :: FilePath,
@@ -46,7 +47,12 @@ data ProcessBuilderInfo = PBI {
 parseIntEnd :: (Num a, Read a) => String -> a
 parseIntEnd val | DL.length l > 0 = read (DL.last l)
                 | otherwise = 0
-  where l = words val
+                where l = words val
+
+parseValEnd :: String -> String
+parseValEnd val | DL.length l > 1 = DL.last l
+                | otherwise = ""
+                where l = words val
 
 processCycle :: ProcessBuilderInfo -> IO ()
 processCycle pbi = forever $ do
@@ -93,10 +99,9 @@ buildCommand pbi = processCommand
       | chk "compare" = showArchiveCompare (archive pbi) (archiveClone pbi) 
       | chk "update" = performArchiveFileUpdate (snapshotURL pbi) (archiveURL pbi) (archive pbi) >> return ()
 
---      | chk "acidupdate" = undefined
---      | chk "acidquery" = undefined
-
-      -- | chk "updatesmart" = undefined
+      | chk "acidcompare" = acidCompare (tar pbi)
+      | chk "acidupdate" = acidUpdate (tar pbi)
+      | chk "acidquery" =  acidQuery (parseValEnd command)
 
       | chk "tarcmp" = showDiffMap (tar pbi) (tarClone pbi)
       | chk "exit" = exitREPL
@@ -183,6 +188,9 @@ showHelp pbi = do
   putStrLn $ "tarparsepreclone - same for " ++ (tarClone pbi)
   putStrLn $ "tarcmp - compares the entries of " ++ (tar pbi) ++ " and " ++ (tarClone pbi)
   putStrLn $ "update - updates the current " ++ arch ++ " from " ++ (archiveURL pbi)
+  putStrLn $ "acidcompare - compares the state of " ++ (tar pbi) ++ " with map from acid state"
+  putStrLn $ "acidupdate - updates the acid state with " ++ (tar pbi)
+  putStrLn $ "acidquery name - queries the acid with package"
   putStrLn "exit - exits this repl"
 
   where 
@@ -215,18 +223,24 @@ removeArchiveFiles archive tar = do
   removeIfExists archive
   removeIfExists tar
 
--- make update of acidic map of the packages
-{-
-updateAcidicMap :: URL -> URL -> FilePath -> IO()
-updateAcidicMap snapU archU arch cutValue = 
-  do  acid <- openLocalState (KeyValue Map.empty)
-      -- update the archive
-      status <- performArchiveCutUpdate snapU archU arch cutValue
+acidCompare :: FilePath -> IO()
+acidCompare tarFile = do
+  newTar <- loadTar tarFile
+  let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
+  printAcidDiffMap newMap
 
-      closeAcidState acid
--}
+acidUpdate :: FilePath -> IO()
+acidUpdate tarFile = do
+  newTar <- loadTar tarFile
+  let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
+  updateAcidMap newMap 
 
---rebuildIndex :: URL -> URL -> FilePath -> IO ()
---rebuildIndex
-
-
+acidQuery :: FilePath -> IO()
+acidQuery package = do
+  putStrLn $ "Querying acid with " ++ package
+  value <- queryAcidMap package
+  case value of 
+    Just package -> do
+      putStrLn "Found"
+      putStrLn (show package)
+    Nothing -> putStrLn "Not found"

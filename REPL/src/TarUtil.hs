@@ -8,7 +8,8 @@ module TarUtil (
                 parsePath,
                 HackagePackage (..),
                 HackageMap,
-                HackageUpdateMap
+                HackageUpdateMap,
+                HackageUpdate
                 ) where
 
 import qualified Codec.Archive.Tar as Tar

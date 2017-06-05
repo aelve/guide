@@ -4,10 +4,9 @@
 
 -- This is modified example from AcidState
 module Storage (
-                insertKey,
-                updateMap,
-                lookupKey,
-                compareMap) where
+                printAcidDiffMap,
+                updateAcidMap,
+                queryAcidMap) where
 
 import Data.Typeable
 import Data.Acid
@@ -30,6 +29,7 @@ type Value = HackagePackage
 $(deriveSafeCopy 0 'base ''DV.Version)
 $(deriveSafeCopy 0 'base ''HackagePackage)
 $(deriveSafeCopy 0 'base ''KeyValue)
+$(deriveSafeCopy 0 'base ''HackageUpdate)
 
 insertKey :: Key -> Value -> Update KeyValue ()
 insertKey key value = do 
@@ -49,37 +49,29 @@ compareMap newMap = do
   KeyValue oldMap <- ask
   return (buildDifferenceMap oldMap newMap)
 
-$(makeAcidic ''KeyValue ['insertKey, 'lookupKey])
+$(makeAcidic ''KeyValue ['insertKey, 'lookupKey, 'compareMap, 'updateMap])
 
+printAcidDiffMap :: HackageMap -> IO ()
+printAcidDiffMap newMap = do
+  acid <- openLocalState (KeyValue M.empty)
+  do
+    diffMap <- query acid (CompareMap newMap)
+    putStrLn $ "Printing difference map with acid-state"
+    mapM_ (print.snd) $ M.toList diffMap
+  closeAcidState acid
 
-{-
-main :: IO ()
-main = do acid <- openLocalState (KeyValue Map.empty)
-          updated <- performArchiveCutUpdate snapU archU arch cutValue
+updateAcidMap :: HackageMap -> IO ()
+updateAcidMap newMap = do
+  acid <- openLocalState (KeyValue M.empty)
+  do
+    putStrLn $ "Updating the acid map"
+    update acid (UpdateMap newMap) 
+  closeAcidState acid
 
-          -- load the map from acid
-          -- update the map from acid
-          closeAcidState acid
-       where
-        pbi = defaultPBI
-        archU = (archiveURL pbi)
-        snapU = (snapshotURL pbi)
-        arch = (archive pbi)
-        cutValue = 100000
--}
-          {-
-          case args of
-            [key]
-              -> do mbKey <- query acid (LookupKey key)
-                    case mbKey of
-                      Nothing    -> putStrLn $ key ++ " has no associated value."
-                      Just value -> putStrLn $ key ++ " = " ++ value
-            [key,val]
-              -> do update acid (InsertKey key val)
-                    putStrLn "Done."
-            _ -> do putStrLn "Usage:"
-                    putStrLn "  key               Lookup the value of 'key'."
-                    putStrLn "  key value         Set the value of 'key' to 'value'."
-          closeAcidState acid
-          -}
-
+queryAcidMap :: Key -> IO (Maybe Value)
+queryAcidMap key = do
+  acid <- openLocalState (KeyValue M.empty)
+  val <- query acid (LookupKey key)
+  closeAcidState acid
+  return val
+    
