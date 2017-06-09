@@ -199,7 +199,10 @@ data CategoryStatus
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
 instance A.ToJSON CategoryStatus where
-  toJSON = A.genericToJSON A.defaultOptions
+  toJSON = \case
+    CategoryStub     -> A.toJSON ("Stub" :: Text)
+    CategoryWIP      -> A.toJSON ("WIP" :: Text)
+    CategoryFinished -> A.toJSON ("Finished" :: Text)
 
 data CategoryStatus_v1
   = CategoryStub_v1

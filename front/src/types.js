@@ -49,10 +49,13 @@ export type Item = {
   cons : Array<Trait>
 };
 
+export type CatStatus = "Stub" | "WIP" | "Finished";
+
 export type Cat = {
   uid: string,
-  title : string,
+  title: string,
   group: string,
-  description : Description,
-  items : Array<Item>
+  status: CatStatus,
+  description: Description,
+  items: Array<Item>
 };

@@ -3,8 +3,37 @@
 import React, { Component } from 'react';
 import * as T from '../types';
 import { fetchData, extractUid, mkLink } from '../utils/index';
-import { If } from 'jsx-control-statements';
+import { If, Choose, When } from 'jsx-control-statements';
 import { Item } from './Item';
+
+
+const CategoryStatusBanner = (props : T.Cat) => {
+  const stub = "This category is a stub, contributions are welcome!";
+  const wip  = "This category is a work in progress";
+  function banner(text: string) {
+    return (
+      <div className="category-status-banner">
+        <strong>{text}</strong>
+        <style jsx>{`
+          .category-status-banner {
+            text-align: center;
+            padding: 0.5em;
+            margin: 0px 10%;
+            background-color: #FFF694;
+            border: 2px solid #202020;
+          }
+        `}</style>
+      </div>
+    )
+  }
+  return (
+    <Choose>
+      <When condition={ props.status === "Stub"     }>{ banner(stub) }</When>
+      <When condition={ props.status === "WIP"      }>{ banner(wip)  }</When>
+      <When condition={ props.status === "Finished" }>     <div/>     </When>
+    </Choose>
+  )
+}
 
 class Category extends Component {
   state: {
@@ -36,6 +65,7 @@ class Category extends Component {
               <span className="text-button"><a href="#">edit</a></span>
               <span className="text-button"><a href="#">delete</a></span>
             </h2>
+            <CategoryStatusBanner {...this.state.cat}/>
           </div>
           <div id={"category-notes-"+this.state.cat.uid} className="category-notes">
           <div className="noscript-shown shown normal section">
@@ -59,7 +89,6 @@ class Category extends Component {
             box-sizing: border-box;
             line-height: 19.2px;
             width: 762px;
-            height: 24px;
           }
 
           .category-info span {

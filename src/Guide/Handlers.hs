@@ -92,6 +92,7 @@ apiMethods = Spock.subcomponent "api" $ do
           , "group" A..= (cat^.group_)
           , "description" A..= (cat^.notes)
           , "items" A..= (cat^.items)
+          , "status" A..= (cat^.status)
           ]
     json jsonCat
 
