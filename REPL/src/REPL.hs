@@ -21,9 +21,11 @@ import System.Exit(exitSuccess)
 import System.Directory(copyFile)
 import System.FilePath((</>))
 
-
-import TarUtil
-import ArchiveUpdate
+import Common
+import HackageArchive
+import HackageUpdate
+import FileUtils
+import HttpDownload
 import Storage
 
 -- the constructor short name is really awkward in russian
@@ -156,7 +158,7 @@ showFileSnapshot file = do
 -- Shows the update data for the archive on disk
 showUpdateData :: FilePath -> URL -> IO()
 showUpdateData file json = do
-  (range, snapshot, filesnapshot) <- calcUpdateResult2 file json
+  (range, snapshot, filesnapshot) <- calcUpdateResultIO file json
   putStrLn $ "Update result for file " ++ file
   putStrLn $ "\tHackage snapshot: " ++ (show snapshot)
   putStrLn $ "\tFile snapshot: " ++ (show filesnapshot)

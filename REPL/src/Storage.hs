@@ -17,12 +17,11 @@ import Control.Monad.Reader
 import qualified Data.Map as M
 import qualified Control.Monad.State  as State
 
-import TarUtil
+import HackageArchive
 import qualified Data.Version as DV
 
 data KeyValue = KeyValue !HackageMap
     deriving (Typeable)
-
 
 $(deriveSafeCopy 0 'base ''DV.Version)
 $(deriveSafeCopy 0 'base ''HackagePackage)
