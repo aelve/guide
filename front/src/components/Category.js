@@ -30,7 +30,7 @@ const CategoryStatusBanner = (props : T.Cat) => {
     <Choose>
       <When condition={ props.status === "Stub"     }>{ banner(stub) }</When>
       <When condition={ props.status === "WIP"      }>{ banner(wip)  }</When>
-      <When condition={ props.status === "Finished" }>     <div/>     </When>
+      <When condition={ props.status === "Finished" }><div/></When>
     </Choose>
   )
 }
