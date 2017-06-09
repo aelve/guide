@@ -89,17 +89,17 @@ class Category extends Component {
 
           .category-title {
             font-weight: 600;
-           }
+          }
 
-           .category-info .controls {
-             margin-right: 0.5em;
-             vertical-align: -1px;
-           } 
+          .category-info .controls {
+            margin-right: 0.5em;
+            vertical-align: -1px;
+          }
 
-           .category-info .controls img {
-             opacity: 0.3;
-             height: 20px;
-           }
+          .category-info .controls img {
+            opacity: 0.3;
+            height: 20px;
+          }
 
           `}
         </style>
