@@ -111,6 +111,7 @@ library
                      , http-types
                      , hvect
                      , ilist
+                     , index-project
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 5.*
@@ -145,6 +146,7 @@ library
                      , wai-middleware-static
                      , xml
                      , xss-sanitize
+
   ghc-options:         -Wall -fno-warn-unused-do-bind
   hs-source-dirs:      src
   default-language:    Haskell2010

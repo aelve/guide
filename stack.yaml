@@ -6,6 +6,7 @@ packages:
     git: https://github.com/aelve/stache-plus
     commit: 789aeabbf8069dec80647160f127d047e8f5a330
   extra-dep: true
+- location: 'REPL'
 
 extra-deps:
 - cmark-sections-0.1.0.3
