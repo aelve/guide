@@ -80,7 +80,7 @@ const EcosystemWrapper = (props : T.Item) => {
 const NotesWrapper = (props : T.Item) => {
   return (
     <div className="notes-wrapper">
-      <div className="item-notes">
+      <div className="item-notes notes-like">
         <a href="">
           <strong>Notes</strong>
         </a>
