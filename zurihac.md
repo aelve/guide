@@ -36,7 +36,7 @@ recommend taking one of issues listed below.
   500).
 
 * Improve analytics. Currently we've got lots of useless referrers (like
-  `encrypted.google.com` – see [this analytics screenshot][]). It'd be nice
+  `encrypted.google.com` – see this [analytics screenshot][]). It'd be nice
   if duplicated links were lumped together, Google/Yandex links were parsed
   nicely, etc.
 
