@@ -12,29 +12,30 @@ const ItemDescription = (props : T.Item) => {
 }
 
 const ProsConsWrapper = (props : T.Item) => {
+  const traitsList = list =>
+    <ul className="traitsList">
+      { list.map(t =>
+          <li key={t.uid}>
+            <span className="section normal editable shown noscript-shown"
+                  dangerouslySetInnerHTML={{__html: t.content.html}}/>
+          </li>)
+      }
+      <style jsx>{`
+        ul.traitsList    { padding-left: 1em; }
+        ul.traitsList li { margin: 10px 0px; }
+      `}</style>
+    </ul>;
   return (
     <div className="pros-cons-wrapper">
       <div className="item-traits">
         <div className="traits-groups-container">
           <div className="traits-group">
             <strong>Pros</strong>
-            <ul>
-              {props.pros.map(p => 
-                <li key={p.uid}>
-                  <span className="section normal editable shown noscript-shown"
-                        dangerouslySetInnerHTML={{__html: p.content.html}}/>
-                </li>) }
-            </ul>
+            { traitsList(props.pros) }
           </div>
           <div className="traits-group">
             <strong>Cons</strong>
-            <ul>
-              {props.cons.map(c => 
-                <li key={c.uid}>
-                  <span className="section normal editable shown noscript-shown"
-                        dangerouslySetInnerHTML={{__html: c.content.html}}/>
-                </li>) }
-            </ul>
+            { traitsList(props.cons) }
           </div>
         </div>
       </div>
@@ -50,14 +51,6 @@ const ProsConsWrapper = (props : T.Item) => {
           min-width: 300px;
           padding: 0px 15px;
         }
-
-        .traits-group > ul {
-          padding-left: 1em;
-        }
-
-        .traits-group > ul li {
-          margin: 10px 0px;
-        }          
       `}</style>
     </div>
   )
