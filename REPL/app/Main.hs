@@ -12,17 +12,9 @@ import Control.Monad(forever)
 import System.Directory(copyFile)
 import System.IO (stdout, hFlush)
 import qualified Data.Map.Strict as Map
+import Data.Default
 
-import REPL
-
-defaultPBI :: ProcessBuilderInfo 
-defaultPBI = PBI {
-  archiveURL = "https://hackage.haskell.org/01-index.tar.gz",
-  snapshotURL = "https://hackage.haskell.org/snapshot.json",
-  archive = "01-index.tar.gz",
-  archiveClone = "01-index.tar.gz.orig",
-  tar = "01-index.tar",
-  tarClone = "01-index.orig.tar" }
+import IndexProject
 
 main :: IO ()
-main = processCycle defaultPBI
+main = processCycle def

@@ -38,7 +38,8 @@ import System.IO.Error (isDoesNotExistError)
 import System.Posix(fileSize)
 import System.Posix.Types(FileOffset, COff(..))
 import System.Posix.Files (getFileStatus, setFileSize)
-import System.Directory(removeFile, doesFileExist, copyFile)
+import System.Directory(removeFile, doesFileExist, copyFile, createDirectoryIfMissing)
+import System.FilePath(takeDirectory)
 import Control.Monad(when, forever)
 import qualified Codec.Compression.GZip as GZip
 
@@ -130,7 +131,9 @@ calcFileData file = do
     digest <- calcMD5 file;
     offset <- getFileSize file;
     return $ SnapshotData (show digest) offset
-  else return $ SnapshotData (show $ md5 "") 0
+  else do 
+    createDirectoryIfMissing True $ takeDirectory file
+    return $ SnapshotData (show $ md5 "") 0
 
 -- The action, that is needed to perform to correctly update the downloaded
 -- archive. ArchiveIsOk - everything is fine.

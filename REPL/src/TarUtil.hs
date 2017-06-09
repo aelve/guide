@@ -7,6 +7,7 @@ module TarUtil (
                 loadTar,
                 parsePath,
                 HackagePackage (..),
+                HackageName,
                 HackageMap,
                 HackageUpdateMap,
                 HackageUpdate
@@ -36,11 +37,13 @@ import qualified Data.ByteString.Lazy.UTF8 as UTFC
 import System.FilePath.Posix(hasTrailingPathSeparator)
 
 
+type HackageName = String
+
 -- The record for each of the package from hackage
 -- TODO - add another information about the packages
 data HackagePackage = HP {
 --  packageData :: HHPathData
-  name :: String,
+  name :: HackageName,
   version :: DV.Version,
   author :: String
 } deriving (Eq, Show)
@@ -50,18 +53,18 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 
 -- The map of all the hackage packages with name as the key and HackagePackage
 -- as the value
-type HackageMap = M.Map String HackagePackage
+type HackageMap = M.Map HackageName HackagePackage
 
-type PreHackageMap = M.Map String DV.Version
+type PreHackageMap = M.Map HackageName DV.Version
 
 -- The map, that shows, which packages have change since the last update
-type HackageUpdateMap = M.Map String (HackageUpdate, HackagePackage)
+type HackageUpdateMap = M.Map HackageName (HackageUpdate, HackagePackage)
 
 -- This is the data that is extracted from the path to cabal file
 -- Like, when program parses "safeio/0.0.2.0/safeio.cabal"
 -- It gets the version 0.0.2.0 and safeio package name. Also checks, xxx and yy match in 
 -- "xxx/version/yyy.cabal
-type HPPathData = (String, DV.Version)
+type HPPathData = (HackageName, DV.Version)
 
 -- Parses the file path of the cabal file to get version and package name
 parseCabalFilePath :: RP.ReadP HPPathData

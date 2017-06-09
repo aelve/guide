@@ -1,48 +1,72 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module REPL ( {-
-              showFirstDirEntries,
-              showFileSnapshot,
-              showUpdateData,
-              showFileSubstring,
-              showHelp,
-              showMap,
-              showDiffMap,
-              showTarContents,
-              showArchiveCompare,
-              exitREPL,
-              copyArchive,
-              cutFile,
-              unzipArchive,
-              -}
-              processCycle,
-              ProcessBuilderInfo (..)
+module REPL ( processCycle,
+              updateArchive,
+              updateMapFromTar,
+              queryHackageMap,
+              HackageUpdateInfo (..)
               ) where 
--- import qualified Codec.Archive.Tar.Index as TI
+
 import qualified Data.Map.Strict as M
 import qualified Data.Char as DC
 import qualified Data.List as DL
 import qualified Control.Exception as X
 import Control.Monad(forever)
 import System.IO (stdout, hFlush)
+import Data.Default
 
 import Data.Int(Int64)
 import System.Exit(exitSuccess)
 import System.Directory(copyFile)
+import System.FilePath((</>))
+
 
 import TarUtil
 import ArchiveUpdate
 import Storage
 
-data ProcessBuilderInfo = PBI {
-  archive :: FilePath,
-  archiveClone :: FilePath,
-  tar :: FilePath,
-  tarClone :: FilePath,
-  snapshotURL :: URL,
-  archiveURL :: URL
+-- the constructor short name is really awkward in russian
+data HackageUpdateInfo = IUH { 
+  iuhUpdateDir :: FilePath,
+  iuhSnapshotURL :: URL,
+  iuhArchiveURL :: URL
 } deriving (Eq, Show)
+
+instance Default HackageUpdateInfo where
+  def = defaultIUH
+
+defaultIUH :: HackageUpdateInfo
+defaultIUH = IUH {
+  iuhUpdateDir = "hackagefiles",
+  iuhSnapshotURL = "https://hackage.haskell.org/snapshot.json",
+  iuhArchiveURL = "https://hackage.haskell.org/01-index.tar.gz"
+}
+
+getArchive :: HackageUpdateInfo -> FilePath
+getArchive iuh = (iuhUpdateDir iuh) </> archive
+
+getArchiveClone :: HackageUpdateInfo -> FilePath
+getArchiveClone iuh = (iuhUpdateDir iuh) </> archiveClone
+
+
+getTar :: HackageUpdateInfo -> FilePath
+getTar iuh = (iuhUpdateDir iuh) </> tar
+
+getTarClone :: HackageUpdateInfo -> FilePath
+getTarClone iuh = (iuhUpdateDir iuh) </> tarClone
+
+archive :: FilePath
+archive = "01-index.tar.gz"
+
+archiveClone :: FilePath
+archiveClone = "01-index.tar.gz.orig"
+
+tar :: FilePath
+tar = "01-index.tar"
+
+tarClone :: FilePath
+tarClone = "01-index.orig.tar" 
 
 parseIntEnd :: (Num a, Read a) => String -> a
 parseIntEnd val | DL.length l > 0 = read (DL.last l)
@@ -54,63 +78,73 @@ parseValEnd val | DL.length l > 1 = DL.last l
                 | otherwise = ""
                 where l = words val
 
-processCycle :: ProcessBuilderInfo -> IO ()
-processCycle pbi = forever $ do
+processCycle :: HackageUpdateInfo -> IO ()
+processCycle iuh = forever $ do
   putStr "Input command: "
   hFlush stdout
   command <- getLine
   hFlush stdout
   (processCommand command) `X.catch` eh `X.catch` eh2 `X.catch` eh3
   where 
-    processCommand = buildCommand pbi
+    processCommand = buildCommand iuh
     eh (e :: X.IOException) = putStrLn $ "IO Error: " ++ (show e)
     eh2 (e :: UpdateArchiveException) = putStrLn $ "Parsing error: " ++ (show e) 
     eh3 (e :: X.ErrorCall) = putStrLn $ "Error call: " ++ (show e)
 
-buildCommand :: ProcessBuilderInfo -> (String -> IO())
-buildCommand pbi = processCommand
+
+buildCommand :: HackageUpdateInfo -> (String -> IO())
+buildCommand iuh = processCommand
   where 
     processCommand command
       -- checks the current gzip archive and understands what to download
-      | chk "checkclone" = showUpdateData (archiveClone pbi) (snapshotURL pbi) 
+      | chk "checkclone" = showUpdateData archC snapURL
       -- checks the current gzip archive and understands what to download
-      | chk "check" = showUpdateData (archive pbi) (snapshotURL pbi)     
+      | chk "check" = showUpdateData arch snapURL     
 
-      | chk "fileclone" = showFileSnapshot (archiveClone pbi)
-      | chk "file" = showFileSnapshot (archive pbi)  -- shows the snapshot of hackage file
+      | chk "fileclone" = showFileSnapshot archC
+      | chk "file" = showFileSnapshot arch  -- shows the snapshot of hackage file
       
-      | chk "copyorig" = copyArchive (archive pbi) (archiveClone pbi) -- copies the current archive to the orig place
+      | chk "copyorig" = copyArchive arch archC -- copies the current archive to the orig place
 
-      | chk "cutclone" = cutFile (archiveClone pbi) (parseIntEnd command) 
-      | chk "cut" = cutFile (archive pbi) (parseIntEnd command) -- cuts the end of the gzip file for checking purposes
+      | chk "cutclone" = cutFile archC (parseIntEnd command) 
+      | chk "cut" = cutFile arch (parseIntEnd command) -- cuts the end of the gzip file for checking purposes
 
-      | chk "unzipclone" = unzipArchive (archiveClone pbi) (tarClone pbi) -- unzips the downloaded gzip archive
-      | chk "unzip" = unzipArchive (archive pbi) (tar pbi)  -- unzips the downloaded gzip archive
+      | chk "unzipclone" = unzipArchive archC trFileC -- unzips the downloaded gzip archive
+      | chk "unzip" = unzipArchive arch trFile  -- unzips the downloaded gzip archive
 
-      | chk "cleanclone" = removeArchiveFiles (archiveClone pbi) (tarClone pbi)
-      | chk "clean" = removeArchiveFiles (archive pbi) (tar pbi)
+      | chk "cleanclone" = removeArchiveFiles archC trFileC
+      | chk "clean" = removeArchiveFiles arch trFile
 
-      | chk "tarparsepreclone" = showPreMap (tarClone pbi) 50 -- loads the tar clone information in the memory
-      | chk "tarparsepre" = showPreMap (tar pbi) 50  -- loads the tar information in the memory
+      | chk "tarparsepreclone" = showPreMap trFileC 50 -- loads the tar clone information in the memory
+      | chk "tarparsepre" = showPreMap trFile 50  -- loads the tar information in the memory
 
-      | chk "tarparseclone" = showMap (tarClone pbi) 50 -- loads the tar clone information in the memory
-      | chk "tarparse" = showMap (tar pbi) 50  -- loads the tar information in the memory
+      | chk "tarparseclone" = showMap trFileC 50 -- loads the tar clone information in the memory
+      | chk "tarparse" = showMap trFile 50  -- loads the tar information in the memory
 
-      | chk "compare" = showArchiveCompare (archive pbi) (archiveClone pbi) 
-      | chk "update" = performArchiveFileUpdate (snapshotURL pbi) (archiveURL pbi) (archive pbi) >> return ()
+      | chk "compare" = showArchiveCompare arch archC 
+      | chk "update" = performArchiveFileUpdate snapURL archURL arch >> return ()
 
-      | chk "acidcompare" = acidCompare (tar pbi)
-      | chk "acidupdate" = acidUpdate (tar pbi)
-      | chk "acidquery" =  acidQuery (parseValEnd command)
+      | chk "acidcompare" = printAcidCompare ud trFile
+      | chk "acidupdate" = acidUpdate ud trFile
+      | chk "acidquery" =  printAcidQuery ud (parseValEnd command)
 
-      | chk "tarcmp" = showDiffMap (tar pbi) (tarClone pbi)
+      | chk "tarcmp" = showDiffMap trFile trFileC
       | chk "exit" = exitREPL
 
-      | chk "help" = showHelp pbi
-      | otherwise = showHelp pbi
+      | chk "help" = showHelp iuh
+      | otherwise = showHelp iuh
 
       where pc = map DC.toLower command
             chk val = DL.isPrefixOf val pc
+
+            arch = getArchive iuh
+            archC = getArchiveClone iuh 
+            archURL = iuhArchiveURL iuh
+            snapURL = iuhSnapshotURL iuh
+            trFile = getTar iuh
+            trFileC = getTarClone iuh
+            ud = iuhUpdateDir iuh
+
 
 -- Displays the snapshot of the file
 showFileSnapshot :: FilePath -> IO()
@@ -165,11 +199,11 @@ showDiffMap newTarFile oldTarFile = do
   let diffMap = buildDifferenceMap oldMap newMap
   mapM_ (print.snd) $ M.toList diffMap
 
-showHelp :: ProcessBuilderInfo -> IO()
-showHelp pbi = do
+showHelp :: HackageUpdateInfo -> IO()
+showHelp iuh = do
   putStrLn "Available commands: "
 
-  putStrLn $ "check - downloads the json length and md5 hash from " ++ (snapshotURL pbi) ++ 
+  putStrLn $ "check - downloads the json length and md5 hash from " ++ snapURL ++ 
              ", and compares it with local " ++ arch
   putStrLn $ "checkclone - same for " ++ archC
   putStrLn $ "file - displays the current " ++ arch ++ " length and md5 hash"
@@ -177,25 +211,29 @@ showHelp pbi = do
   putStrLn $ "copyorig - copy the " ++ arch ++ " to " ++ archC
   putStrLn $ "cut size - cuts the size bytes from the end of the " ++ arch ++ " , for update command"
   putStrLn $ "cutclone size - cuts the size bytes from the end of the 01-index.tar.gz, for update command"
-  putStrLn $ "unzip - unzips the " ++ arch ++ " in the " ++ (tar pbi) ++ " file"
-  putStrLn $ "unzipclone - unzips the " ++ archC ++ " in the " ++ (tarClone pbi) ++ " file"
-  putStrLn $ "clean - deletes the " ++ arch ++ " and " ++ (tar pbi)
-  putStrLn $ "cleanclone - deletes the " ++ archC ++ " and " ++ (tarClone pbi)
+  putStrLn $ "unzip - unzips the " ++ arch ++ " in the " ++ trFile ++ " file"
+  putStrLn $ "unzipclone - unzips the " ++ archC ++ " in the " ++ trFileC ++ " file"
+  putStrLn $ "clean - deletes the " ++ arch ++ " and " ++ trFile
+  putStrLn $ "cleanclone - deletes the " ++ archC ++ " and " ++ trFileC
   putStrLn $ "compare - compares the " ++ arch ++ " with " ++ archC
-  putStrLn $ "tarparse - loads the map of entries from " ++ (tar pbi) ++ " and displays it" 
-  putStrLn $ "tarparseclone - same for " ++ (tarClone pbi)
-  putStrLn $ "tarparsepre - loads the  premap of entries from " ++ (tar pbi) ++ " and displays it" 
-  putStrLn $ "tarparsepreclone - same for " ++ (tarClone pbi)
-  putStrLn $ "tarcmp - compares the entries of " ++ (tar pbi) ++ " and " ++ (tarClone pbi)
-  putStrLn $ "update - updates the current " ++ arch ++ " from " ++ (archiveURL pbi)
-  putStrLn $ "acidcompare - compares the state of " ++ (tar pbi) ++ " with map from acid state"
-  putStrLn $ "acidupdate - updates the acid state with " ++ (tar pbi)
+  putStrLn $ "tarparse - loads the map of entries from " ++ trFile ++ " and displays it" 
+  putStrLn $ "tarparseclone - same for " ++ trFileC
+  putStrLn $ "tarparsepre - loads the  premap of entries from " ++ trFile ++ " and displays it" 
+  putStrLn $ "tarparsepreclone - same for " ++ trFileC
+  putStrLn $ "tarcmp - compares the entries of " ++ trFile ++ " and " ++ trFileC
+  putStrLn $ "update - updates the current " ++ arch ++ " from " ++ archURL
+  putStrLn $ "acidcompare - compares the state of " ++ trFile ++ " with map from acid state"
+  putStrLn $ "acidupdate - updates the acid state with " ++ trFile
   putStrLn $ "acidquery name - queries the acid with package"
   putStrLn "exit - exits this repl"
 
   where 
-    arch = archive pbi
-    archC = archiveClone pbi 
+    arch = getArchive iuh
+    archC = getArchiveClone iuh 
+    archURL = iuhArchiveURL iuh
+    snapURL = iuhSnapshotURL iuh
+    trFile = getTar iuh
+    trFileC = getTarClone iuh
 
 showArchiveCompare :: FilePath -> FilePath -> IO()
 showArchiveCompare archive1 archive2= do
@@ -223,24 +261,45 @@ removeArchiveFiles archive tar = do
   removeIfExists archive
   removeIfExists tar
 
-acidCompare :: FilePath -> IO()
-acidCompare tarFile = do
+
+printAcidCompare :: FilePath -> FilePath -> IO()
+printAcidCompare updateDir tarFile = do
   newTar <- loadTar tarFile
   let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
-  printAcidDiffMap newMap
+  printAcidDiffMap updateDir newMap
 
-acidUpdate :: FilePath -> IO()
-acidUpdate tarFile = do
+acidUpdate :: FilePath -> FilePath -> IO()
+acidUpdate updateDir tarFile = do
   newTar <- loadTar tarFile
   let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
-  updateAcidMap newMap 
+  updateAcidMap updateDir newMap 
 
-acidQuery :: FilePath -> IO()
-acidQuery package = do
-  putStrLn $ "Querying acid with " ++ package
-  value <- queryAcidMap package
+printAcidQuery :: FilePath -> HackageName -> IO()
+printAcidQuery updateDir name = do
+  putStrLn $ "Querying acid with " ++ name
+  value <- queryAcidMap updateDir name
   case value of 
     Just package -> do
       putStrLn "Found"
-      putStrLn (show package)
+      print package
     Nothing -> putStrLn "Not found"
+
+updateArchive :: HackageUpdateInfo -> IO()
+updateArchive iuh = performArchiveFileUpdate snapURL archURL arch >> return ()
+  where 
+    arch = getArchive iuh
+    archURL = iuhArchiveURL iuh
+    snapURL = iuhSnapshotURL iuh
+
+updateMapFromTar :: HackageUpdateInfo -> IO()
+updateMapFromTar iuh = acidUpdate (iuhUpdateDir iuh) (getTar iuh)
+
+queryHackageMap :: HackageUpdateInfo -> HackageName -> IO (Maybe HackagePackage)
+queryHackageMap iuh = queryAcidMap (iuhUpdateDir iuh) 
+
+
+
+
+
+
+
