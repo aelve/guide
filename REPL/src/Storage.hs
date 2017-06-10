@@ -20,8 +20,7 @@ import qualified Control.Monad.State  as State
 import HackageArchive
 import qualified Data.Version as DV
 
-data KeyValue = KeyValue !HackageMap
-    deriving (Typeable)
+newtype KeyValue = KeyValue HackageMap deriving (Typeable)
 
 $(deriveSafeCopy 0 'base ''DV.Version)
 $(deriveSafeCopy 0 'base ''HackagePackage)
@@ -53,7 +52,7 @@ printAcidDiffMap path newMap = do
   acid <- openLocalStateFrom path (KeyValue M.empty)
   do
     diffMap <- query acid (CompareMap newMap)
-    putStrLn $ "Printing difference map with acid-state"
+    putStrLn "Printing difference map with acid-state"
     mapM_ (print.snd) $ M.toList diffMap
   closeAcidState acid
 
@@ -61,7 +60,7 @@ updateAcidMap :: FilePath -> HackageMap -> IO ()
 updateAcidMap path newMap = do
   acid <- openLocalStateFrom path (KeyValue M.empty)
   do
-    putStrLn $ "Updating the acid map"
+    putStrLn "Updating the acid map"
     update acid (UpdateMap newMap) 
   closeAcidState acid
 

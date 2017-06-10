@@ -8,8 +8,8 @@ module HackageArchive (
                 HackageName,
                 HackageMap,
                 HackageUpdateMap,
-                HackageUpdate
-                ) where
+                HackageUpdate,
+                parsePath) where
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Data.List.Split as SPLT
@@ -69,7 +69,7 @@ parseCabalFilePath = do
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
-  pure $ (package, version)
+  pure (package, version)
   where phi l = DC.isLetter l || l == '-'
 
 updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a
@@ -87,7 +87,7 @@ buildDifferenceMap oldMap newMap = foldr M.union M.empty [deletedMap, addedMap, 
     addedMap = M.map ((,) Added) $ M.difference newMap oldMap
     updatedMap' = M.intersection newMap oldMap
     updatedMap = M.map ((,) Updated) $ M.differenceWith diff updatedMap' oldMap
-    diff newpack oldpack = if (newpack /= oldpack) then Just newpack else Nothing
+    diff newpack oldpack = if newpack /= oldpack then Just newpack else Nothing
 
 createPackage :: DPD.PackageDescription -> HackagePackage
 createPackage pd = HP { name = nm, version = ver, author = auth }
@@ -104,7 +104,7 @@ parsePath path = case RP.readP_to_S parseCabalFilePath path of
 
 parsePackageDescription :: Tar.EntryContent -> Maybe DPD.PackageDescription
 parsePackageDescription (Tar.NormalFile content _) = 
-  case (DPDP.parsePackageDescription (UTFC.toString content)) of 
+  case DPDP.parsePackageDescription (UTFC.toString content) of 
     DPDP.ParseOk _ pd -> Just (DPD.packageDescription pd)
     DPDP.ParseFailed _ -> Nothing
 parsePackageDescription _ = Nothing
@@ -137,7 +137,7 @@ buildHackageMap (Tar.Next entry entries) premap =
         update path = do
           (name, version) <- parsePath path
           preversion <- M.lookup name premap
-          if (preversion == version)  then parsePackage entry
+          if preversion == version  then parsePackage entry
                                       else Nothing
 buildHackageMap Tar.Done _ = M.empty
 buildHackageMap (Tar.Fail e) _ = X.throw e

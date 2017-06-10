@@ -35,7 +35,7 @@ type FileSnapshotData = SnapshotData
 
 -- Calculates the file size
 getFileSize :: FilePath -> IO Int64
-getFileSize path = getFileStatus path >>= return.fileSize >>= \(COff v) -> return v
+getFileSize path = fileSize <$> getFileStatus path >>= \(COff v) -> return v
 
 -- Calculates the snapshot of the file of the archive
 calcFileData :: FilePath -> IO FileSnapshotData
@@ -51,7 +51,7 @@ calcFileData file = do
 
 -- Calculates the MD5 hash of the file
 calcMD5 :: FilePath -> IO MD5Digest
-calcMD5 file = BL.readFile file >>= return.md5
+calcMD5 file = md5 <$> BL.readFile file
 
 -- Deletes the file it it exists. 
 removeIfExists :: FilePath -> IO ()
@@ -92,9 +92,8 @@ getFileSubstring file from len  = do
 unzipFile :: FilePath -> FilePath -> IO()
 unzipFile from to = do
   removeIfExists to
-  fileBody <- (BL.readFile from)
+  fileBody <- BL.readFile from
   BL.appendFile to (GZip.decompress fileBody) 
-
 
 loadTar :: FilePath -> IO (Tar.Entries Tar.FormatError)
 loadTar file = do
