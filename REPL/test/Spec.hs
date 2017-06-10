@@ -8,6 +8,7 @@ import Text.Megaparsec.Text
 import Data.Either (isRight, either)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
+import System.FilePath((</>))
 import HackageArchive
 import Stackage
 
@@ -30,33 +31,47 @@ testPath text val match = testCase (T.unpack ("Parsing " <> expect match <> " \'
 
 parseStackageTests = testGroup "Stackage parsing tests"
   [
+{-
     testParse parsePackageLine "constraints: abstract-deque ==0.3," True
     , testParse parsePackageLine "constraints: abstract-deque ==0.3" True
     , testParse parsePackageLine "constraints: abstract-deque ==0." False
     , testParse parsePackageLine "constraints: abstract-deque ==" False
     , testParse parsePackageLine "constraints: abst3453#$%#ract-deque ==0.3" False
     , testParse parsePackageLine "constraints: abstract-deque ==0.3," True
-    , testParse parsePackageLine "              ztail ==1.2" True
+-}
+    testParse parsePackageLine "              ztail ==1.2" True
     , testParse parsePackageLine "             adjunctions ==4.3," True
     , testParse parsePackageLine "ztail ==1.2" True
     , testParse parsePackageLine "adjunctions ==4.3," True
 
-    , testParse parseLTSLine "-- Stackage snapshot from: http://www.stackage.org/snapshot/lts-2.10" True
-    , testParse parseLTSLine "-- Stackage snapshot from: http://www.stackage.org/snapshot/lts-2.$10" False
-    , testParse parseLTSLine "-- Please place this file next to your .cabal file as cabal.config" False
-    , testParse parseLTSLine "-- To only use tested packages, uncomment the following line:" False
-    , testParse parseLTSLine "-- remote-repo: stackage-lts-2.10:http://www.stackage.org/lts-2.10" False
-    , testParse parseLTSLine "constraints: abstract-deque ==0.3," False
-    , testParse parseLTSLine "abstract-par ==0.3.3," False
-    , testParse parseLTSLine "zlib-lens ==0.1.2" False
-    , testParse parseLTSLine "-- Stackage snapshot from: http://www.stackage.org/snapshot/nightly-2017-06-10" True
+    , testParse parseLTS "-- Stackage snapshot from: http://www.stackage.org/snapshot/lts-2.10" True
+    , testParse parseLTS "-- Stackage snapshot from: http://www.stackage.org/snapshot/lts-2.$10" True
+    , testParse parseLTS "-- Please place this file next to your .cabal file as cabal.config" False
+    , testParse parseLTS "-- To only use tested packages, uncomment the following line:" False
+    , testParse parseLTS "-- remote-repo: stackage-lts-2.10:http://www.stackage.org/lts-2.10" False
+    , testParse parseLTS "constraints: abstract-deque ==0.3," False
+    , testParse parseLTS "abstract-par ==0.3.3," False
+    , testParse parseLTS "zlib-lens ==0.1.2" False
+    , testParse parseLTS "-- Stackage snapshot from: http://www.stackage.org/snapshot/nightly-2017-06-10" True
   ]
-{-
-parseCabalConfig = (testWorkDir </> "sometestfile.cnf") testGroup "Cabal config parser tests"
+
+parseCabalConfig = testGroup "Cabal config parsing tests"
   [
-    testFileParse parseStackageLTS
+    testStackagePackageLines "sometestfile.cnf"
   ]
--}
+
+testStackagePackageLines file = testFileParse (testWorkingDir </> file) 
+  parseStackageLTS countPackageLines matchWithStackageLTS
+
+
+-- refactor isComment
+countPackageLines :: T.Text -> Int
+countPackageLines text = length $ filter isComment lns
+  where lns = T.lines text
+        isComment ln = not ("--" `T.isInfixOf` ln)
+
+matchWithStackageLTS :: Int -> StackageLTS -> Bool
+matchWithStackageLTS count1 stackage = count1 == (length.snd) stackage
 
 expect :: Bool -> T.Text
 expect True = "expect success"
@@ -75,6 +90,6 @@ testFileParse file p textFunc matchFunc =
     assertBool "Failed" (either (const False) id eVal)
 
 tests :: TestTree
-tests = testGroup "REPL tests" [parseStackageTests, parseTests]
+tests = testGroup "REPL tests" [parseStackageTests, parseTests, parseCabalConfig]
 
 main = defaultMain tests

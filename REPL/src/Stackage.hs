@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Stackage(
-                parseLTSLine, 
-                parsePackageLine) where
+                parseLTS, 
+                parsePackageLine,
+                parseStackageLTS,
+                StackageLTS) where
 
 import qualified Data.Map as M
 import Text.Megaparsec
@@ -31,46 +33,32 @@ type StackageLTS = (LongSnapshotName, [PackageData])
 
 parseStackageLTS :: Parser StackageLTS
 parseStackageLTS = do
-  many (try (manyTill anyChar eol >> notFollowedBy parseLTSLine))
-  ltsName <- parseLTSLine
-  --packages = 
-  pure (ltsName, [])
+  ltsName <- parseLTS
+  manyTill anyChar (string "constraints:")
+  packages <- many parsePackageLine
+  pure (ltsName, packages)
 
-parseLTSLine :: Parser LongSnapshotName
-parseLTSLine = do
-  -- destroy everything 
+parseLTS :: Parser LongSnapshotName
+parseLTS = do
   manyTill anyChar (string "http://www.stackage.org/snapshot/")
   name <- some (letterChar <|> digitChar <|> char '.' <|> char '-')
-  space
-  void eol <|> eof 
   pure name
 
 parsePackageLine :: Parser PackageData
 parsePackageLine = do
-  packageData <- try parsePackageConst <|> parsePackageEmpty
-  space 
-  manyTill anyChar (void eol <|> eof)
-  pure packageData
-
-parsePackageConst :: Parser PackageData
-parsePackageConst = do
-  manyTill anyChar (char ':') -- chop the 'constraints:' in the beginning
-  parsePackageEmpty
- 
-parsePackageEmpty :: Parser PackageData
-parsePackageEmpty = do
-  space  
-  parsePackageData
-
-parsePackageData :: Parser PackageData
-parsePackageData = do
+  space
   name <- some (letterChar <|> digitChar <|> char '-')
   space
-  string "=="
+  version <- parseVersionVer
+  many (char ',') 
   space
-  version <- parseVersion 
-  many (char ',')
   pure (name, version)
+
+-- unfortunately the cabal.config does not provide versions for several packages
+-- And writes tehn in form 'binary installed'
+-- Don't know what to do with this situation now
+parseVersionVer :: Parser DV.Version
+parseVersionVer = (string "==" >> parseVersion) <|> (string "installed" >> return (DV.Version [6,6,6] []))
 
 parseVersion :: Parser DV.Version
 parseVersion = do 
