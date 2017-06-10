@@ -512,9 +512,11 @@ renderDiff old new =
         mapM_ renderChunk diffRight
         toHtml (mconcat (take 10 diffContextBelow)) >> " [...]"
     --
-    renderChunk (Diff.Added   x) = ins_ (toHtml (showNewlines x))
-    renderChunk (Diff.Deleted x) = del_ (toHtml (showNewlines x))
-    renderChunk (Diff.Plain   x) = toHtml x
+    renderChunk (Diff.Added   "") = ins_ [class_ "empty-chunk"] ""
+    renderChunk (Diff.Added    x) = ins_ (toHtml (showNewlines x))
+    renderChunk (Diff.Deleted "") = del_ [class_ "empty-chunk"] ""
+    renderChunk (Diff.Deleted  x) = del_ (toHtml (showNewlines x))
+    renderChunk (Diff.Plain    x) = toHtml x
     --
     showNewlines x =
       let

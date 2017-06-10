@@ -77,6 +77,12 @@ textarea:focus {
   white-space: pre-wrap;
 }
 
+#edits .empty-chunk {
+  padding-right: 5px;
+  border: 1px dashed black;
+  border-radius: 4px;
+}
+
 #stats table {
   border-collapse: collapse;
   border-spacing: 0;

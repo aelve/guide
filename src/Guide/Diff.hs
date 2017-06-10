@@ -65,8 +65,9 @@ diffR = concatMap hunkToChunk . toList
     hunkToChunk (v, PV.Inserted)  = [Added (tconcat v)]
     hunkToChunk (v, PV.Replaced)  = [Added (tconcat v)]
     hunkToChunk (v, PV.Unchanged) = map Plain (toList v)
-    hunkToChunk (_, PV.Deleted)   = []  -- because it's not present
-                                        -- in the right part
+    -- it's useful to report deleted things as well because then we can mark
+    -- them with tiny rectangles like “insert here”
+    hunkToChunk (_, PV.Deleted)   = [Added ""]
 
 -- | Create a diff for the left (original) part. We only want to highlight
 -- parts which were deleted or replaced.
@@ -83,8 +84,7 @@ diffL = concatMap hunkToChunk
     hunkToChunk (v, PV.Inserted)  = [Deleted (tconcat v)]
     hunkToChunk (v, PV.Replaced)  = [Deleted (tconcat v)]
     hunkToChunk (v, PV.Unchanged) = map Plain (toList v)
-    hunkToChunk (_, PV.Deleted)   = []  -- because it's not present
-                                        -- in the left part
+    hunkToChunk (_, PV.Deleted)   = [Deleted ""]
 
 -- | In a bunch of chunks, find only the part that was changed
 trimDiff
