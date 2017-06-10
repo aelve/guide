@@ -59,7 +59,9 @@ library
       Guide.Types.Session
     Guide.Handlers
     Guide.Utils
-    Guide.Merge
+    Guide.Diff
+      Guide.Diff.Tokenize
+      Guide.Diff.Merge
     Guide.Markdown
     Guide.Search
     Guide.JS

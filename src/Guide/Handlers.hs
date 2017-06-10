@@ -38,7 +38,7 @@ import Guide.App
 import Guide.ServerStuff
 import Guide.Config
 import Guide.Cache
-import Guide.Merge
+import Guide.Diff (merge)
 import Guide.Markdown
 import Guide.State
 import Guide.Types

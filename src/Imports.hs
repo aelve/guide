@@ -16,6 +16,7 @@ where
 import BasePrelude as X hiding (Category, GeneralCategory, lazy, (&))
 -- Lists
 import Data.List.Index as X
+import Data.List.Extra as X (takeEnd, dropEnd)
 -- Lenses
 import Lens.Micro.Platform as X
 -- Monads and monad transformers

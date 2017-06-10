@@ -55,6 +55,8 @@ import Guide.Utils
 import Guide.JS (JS(..))
 import qualified Guide.JS as JS
 import Guide.Markdown
+import Guide.Diff hiding (DiffChunk)
+import qualified Guide.Diff as Diff
 import Guide.Cache
 import Guide.Views.Utils
 
@@ -199,7 +201,8 @@ renderAdmin globalState = do
     div_ [id_ "stats"] $
       renderStats globalState (globalState ^. actions)
     div_ [id_ "edits"] $
-      renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
+      renderEdits globalState $
+        take 20 $ (map (,Nothing) (globalState ^. pendingEdits))
 
 -- | Render statistics on the admin page.
 renderStats
@@ -396,10 +399,10 @@ renderEdit globalState edit = do
       " to category " >> printCategory catId
     Edit'AddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
+      pre_ $ code_ $ toHtml content'
     Edit'AddCon itemId _traitId content' -> do
       p_ $ "added con to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
+      pre_ $ code_ $ toHtml content'
 
     -- Change category properties
     Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
@@ -416,10 +419,7 @@ renderEdit globalState edit = do
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of category " >> printCategory catId
-      table_ $ tr_ $ do
-        unless (T.null oldNotes) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
+      renderDiff oldNotes newNotes
     Edit'ChangeCategoryEnabledSections catId toEnable toDisable -> do
       let sectName ItemProsConsSection  = "pros/cons"
           sectName ItemEcosystemSection = "ecosystem"
@@ -453,34 +453,22 @@ renderEdit globalState edit = do
     Edit'SetItemDescription itemId oldDescr newDescr -> do
       p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldDescr) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldDescr)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newDescr)
+      renderDiff oldDescr newDescr
     Edit'SetItemNotes itemId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldNotes) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
+      renderDiff oldNotes newNotes
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
       p_ $ (if T.null oldEcosystem then "added" else "changed") >>
            " ecosystem of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldEcosystem) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldEcosystem)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newEcosystem)
+      renderDiff oldEcosystem newEcosystem
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ (if T.null oldContent then "added" else "changed") >>
            " trait of item " >> printItem itemId >>
            " from category " >> printCategory (findItem itemId ^. _1.uid)
-      table_ $ tr_ $ do
-        unless (T.null oldContent) $
-          td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline oldContent))
-        td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline newContent))
+      renderDiff oldContent newContent
 
     -- Delete
     Edit'DeleteCategory catId _pos -> p_ $ do
@@ -492,7 +480,7 @@ renderEdit globalState edit = do
     Edit'DeleteTrait itemId traitId _pos -> do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "deleted trait from item " >> quote (toHtml (item^.name))
-      blockquote_ $ p_ $ toHtml (trait^.content)
+      pre_ $ code_ $ toHtml $ trait^.content
 
     -- Other
     Edit'MoveItem itemId direction -> p_ $ do
@@ -502,7 +490,41 @@ renderEdit globalState edit = do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "moved trait of item " >> quote (toHtml (item^.name)) >>
            if direction then " up" else " down"
-      blockquote_ $ p_ $ toHtml (trait^.content)
+      pre_ $ code_ $ toHtml $ trait^.content
+
+renderDiff :: Monad m => Text -> Text -> HtmlT m ()
+renderDiff old new =
+    table_ $ tr_ $
+      if | T.null old -> renderOne new
+         | T.null new -> renderOne old
+         | otherwise  -> renderBoth
+  where
+    cell = td_ . pre_ . code_
+    renderOne s = cell (toHtml s)
+    renderBoth = do
+      let Diff{..} = diff old new
+      cell $ do
+        "[...] " >> toHtml (mconcat (takeEnd 10 diffContextAbove))
+        mapM_ renderChunk diffLeft
+        toHtml (mconcat (take 10 diffContextBelow)) >> " [...]"
+      cell $ do
+        "[...] " >> toHtml (mconcat (takeEnd 10 diffContextAbove))
+        mapM_ renderChunk diffRight
+        toHtml (mconcat (take 10 diffContextBelow)) >> " [...]"
+    --
+    renderChunk (Diff.Added   x) = ins_ (toHtml (showNewlines x))
+    renderChunk (Diff.Deleted x) = del_ (toHtml (showNewlines x))
+    renderChunk (Diff.Plain   x) = toHtml x
+    --
+    showNewlines x =
+      let
+        (pref, x')  = T.span   (== '\n') x
+        (x'', suff) = tSpanEnd (== '\n') x'
+      in
+        T.replicate (T.length pref) "⏎\n" <> x'' <>
+        T.replicate (T.length suff) "⏎\n"
+    --
+    tSpanEnd p = over both T.reverse . swap . T.span p . T.reverse
 
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
