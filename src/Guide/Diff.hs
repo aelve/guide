@@ -71,7 +71,7 @@ diff (tokenize -> orig) (tokenize -> edit) =
 -- | Create a diff for the right (edited) part. We only want to highlight
 -- parts which were inserted or replaced.
 diffR :: PV.Hunks Text -> [DiffChunk]
-diffR = concatMap hunkToChunk . toList
+diffR = removeExtraAdded . concatMap hunkToChunk
   where
     hunkToChunk (v, PV.Inserted)  = [Added (tconcat v)]
     hunkToChunk (v, PV.Replaced)  = [Added (tconcat v)]
@@ -79,6 +79,14 @@ diffR = concatMap hunkToChunk . toList
     -- it's useful to report deleted things as well because then we can mark
     -- them with tiny rectangles like “insert here”
     hunkToChunk (_, PV.Deleted)   = [Added ""]
+    -- however, we don't need them if there's already an addition marked there
+    removeExtraAdded (Added "" : Added x : xs) =
+      removeExtraAdded (Added x : xs)
+    removeExtraAdded (Added x : Added "" : xs) =
+      removeExtraAdded (Added x : xs)
+    removeExtraAdded (x : xs) =
+      x : removeExtraAdded xs
+    removeExtraAdded [] = []
 
 -- | Create a diff for the left (original) part. We only want to highlight
 -- parts which were deleted or replaced.
@@ -86,7 +94,7 @@ diffR = concatMap hunkToChunk . toList
 -- This function should receive a diff that goes in reverse (i.e. from edited
 -- text to original text)
 diffL :: PV.Hunks Text -> [DiffChunk]
-diffL = concatMap hunkToChunk
+diffL = removeExtraDeleted . concatMap hunkToChunk
   where
     -- Since the diff is edit→orig, this code might make not much sense at
     -- first. When something was “inserted” to original text when going
@@ -96,6 +104,13 @@ diffL = concatMap hunkToChunk
     hunkToChunk (v, PV.Replaced)  = [Deleted (tconcat v)]
     hunkToChunk (v, PV.Unchanged) = map Plain (toList v)
     hunkToChunk (_, PV.Deleted)   = [Deleted ""]
+    removeExtraDeleted (Deleted "" : Deleted x : xs) =
+      removeExtraDeleted (Deleted x : xs)
+    removeExtraDeleted (Deleted x : Deleted "" : xs) =
+      removeExtraDeleted (Deleted x : xs)
+    removeExtraDeleted (x : xs) =
+      x : removeExtraDeleted xs
+    removeExtraDeleted [] = []
 
 -- | In a bunch of chunks, find only the part that was changed
 trimDiff

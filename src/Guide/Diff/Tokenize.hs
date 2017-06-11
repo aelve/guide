@@ -29,6 +29,16 @@ break' = split . dropInitBlank . dropFinalBlank . dropInnerBlanks . whenElt $
 
 -- | Consolidate some of the things into tokens.
 consolidate :: [Text] -> [Text]
+-- a word followed by a space, dot, or comma (this is needed to prevent
+-- spaces from being detected as “unchanged parts” and also to make diffs
+-- faster)
+consolidate (w:c:r)
+  | T.all (\t -> isLetter t || t == '\'') w && c `elem` [" ",".",","] =
+      (w <> c) : consolidate r
+-- glue newlines to ends of their lines
+consolidate (w:"\n":r)
+  | not ("\n" `T.isSuffixOf` w) =
+      (w <> "\n") : consolidate r
 -- spaces
 consolidate s@(" ":_) =
   let (l, r) = span (== " ") s
@@ -59,24 +69,14 @@ consolidate s@("https":":":"/":"/":_) =
   in  T.concat l : consolidate r
 consolidate ("(":"@":"hk":")":xs) = "(" : "@hk" : ")" : consolidate xs
 
+-- Haskell operators
+consolidate (op -> (x, xs))
+  | not (T.null x) = x : consolidate xs
 -- Haskell tokens
-consolidate (":":":":xs) = "::" : consolidate xs
-consolidate (".":".":xs) = ".." : consolidate xs
 consolidate ("[":"]":xs) = "[]" : consolidate xs
 consolidate ("(":")":xs) = "()" : consolidate xs
 consolidate ("[":"|":xs) = "[|" : consolidate xs
 consolidate ("|":"]":xs) = "|]" : consolidate xs
--- Haskell operators
-consolidate (op -> ("++" , xs)) = "++"  : consolidate xs
-consolidate (op -> ("<>" , xs)) = "<>"  : consolidate xs
-consolidate (op -> ("!!" , xs)) = "!!"  : consolidate xs
-consolidate (op -> (">>" , xs)) = ">>"  : consolidate xs
-consolidate (op -> ("&&" , xs)) = "&&"  : consolidate xs
-consolidate (op -> ("||" , xs)) = "||"  : consolidate xs
-consolidate (op -> ("<$>", xs)) = "<$>" : consolidate xs
-consolidate (op -> ("<*>", xs)) = "<*>" : consolidate xs
-consolidate (op -> (">>=", xs)) = ">>=" : consolidate xs
-consolidate (op -> ("=<<", xs)) = "=<<" : consolidate xs
 
 -- the rest
 consolidate (x:xs) = x : consolidate xs
