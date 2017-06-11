@@ -201,8 +201,7 @@ renderAdmin globalState = do
     div_ [id_ "stats"] $
       renderStats globalState (globalState ^. actions)
     div_ [id_ "edits"] $
-      renderEdits globalState $
-        take 20 $ (map (,Nothing) (globalState ^. pendingEdits))
+      renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
 
 -- | Render statistics on the admin page.
 renderStats
