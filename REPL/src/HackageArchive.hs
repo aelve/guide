@@ -1,9 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TemplateHaskell    #-}
 
 module HackageArchive (
                 buildDifferenceMap,
                 buildHackageMap,
                 buildPreHackageMap,
+                
+                updatePersistentMap,
+                printPersistentDiffMap,
+                queryPersistentMap,
+
                 HackagePackage (..),
                 HackageName,
                 HackageMap,
@@ -26,11 +34,18 @@ import qualified Distribution.PackageDescription.Parse as DPDP
 import qualified Data.Map.Strict as M
 import qualified Control.Exception as X
 
+import Data.Typeable
+import Data.Acid
+import Data.Acid.Advanced
+import Data.SafeCopy
+import Control.Monad.Reader
+
 import Data.Maybe
 import Debug.Trace
 import Control.Monad(guard)
 
 import qualified Data.ByteString.Lazy.UTF8 as UTFC
+import qualified Control.Monad.State  as State
 
 import System.FilePath.Posix(hasTrailingPathSeparator)
 import Common
@@ -40,9 +55,8 @@ type HackageName = String
 -- The record for each of the package from hackage
 -- TODO - add another information about the packages
 data HackagePackage = HP {
---  packageData :: HHPathData
   name :: HackageName,
-  version :: DV.Version,
+  pVersion :: DV.Version,
   author :: String
 } deriving (Eq, Show)
 
@@ -52,8 +66,7 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 -- The map of all the hackage packages with name as the key and HackagePackage
 -- as the value
 type HackageMap = M.Map HackageName HackagePackage
-
-type PreHackageMap = M.Map HackageName DV.Version
+type PreHackageMap = M.Map HackageName PackageVersion
 
 -- The map, that shows, which packages have change since the last update
 type HackageUpdateMap = M.Map HackageName (HackageUpdate, HackagePackage)
@@ -69,7 +82,7 @@ parseCabalFilePath = do
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
-  pure (package, version)
+  pure (package, Specified version)
   where phi l = DC.isLetter l || l == '-'
 
 updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a
@@ -90,7 +103,7 @@ buildDifferenceMap oldMap newMap = foldr M.union M.empty [deletedMap, addedMap, 
     diff newpack oldpack = if newpack /= oldpack then Just newpack else Nothing
 
 createPackage :: DPD.PackageDescription -> HackagePackage
-createPackage pd = HP { name = nm, version = ver, author = auth }
+createPackage pd = HP { name = nm, pVersion = ver, author = auth }
   where
     pkg = DPD.package pd
     nm = DP.unPackageName (DP.pkgName pkg)
@@ -143,3 +156,56 @@ buildHackageMap Tar.Done _ = M.empty
 buildHackageMap (Tar.Fail e) _ = X.throw e
 
 
+-- The stuff needed for acid serialization
+newtype KeyValue = KeyValue HackageMap deriving (Typeable)
+
+$(deriveSafeCopy 0 'base ''DV.Version)
+$(deriveSafeCopy 0 'base ''HackagePackage)
+$(deriveSafeCopy 0 'base ''KeyValue)
+$(deriveSafeCopy 0 'base ''HackageUpdate)
+
+insertKey :: HackageName -> HackagePackage -> Update KeyValue ()
+insertKey key value = do 
+  KeyValue hackageMap <- State.get
+  State.put (KeyValue (M.insert key value hackageMap))
+
+updateMap :: HackageMap -> Update KeyValue ()
+updateMap newMap = State.put (KeyValue newMap)
+
+lookupKey :: HackageName -> Query KeyValue (Maybe HackagePackage)
+lookupKey key = do
+  KeyValue m <- ask
+  return (M.lookup key m)
+
+compareMap :: HackageMap -> Query KeyValue HackageUpdateMap
+compareMap newMap = do
+  KeyValue oldMap <- ask
+  return (buildDifferenceMap oldMap newMap)
+
+$(makeAcidic ''KeyValue ['insertKey, 'lookupKey, 'compareMap, 'updateMap])
+
+
+updatePersistentMap :: FilePath -> HackageMap -> IO ()
+updatePersistentMap path newMap = do
+  acid <- openLocalStateFrom path (KeyValue M.empty)
+  do
+    putStrLn "Updating the persistent map"
+    update acid (UpdateMap newMap) 
+  closeAcidState acid
+
+printPersistentDiffMap :: FilePath -> HackageMap -> IO ()
+printPersistentDiffMap path newMap = do
+  acid <- openLocalStateFrom path (KeyValue M.empty)
+  do
+    diffMap <- query acid (CompareMap newMap)
+    putStrLn "Printing difference map with persistent map"
+    mapM_ (print.snd) $ M.toList diffMap
+  closeAcidState acid
+
+queryPersistentMap :: FilePath -> HackageName -> IO (Maybe HackagePackage)
+queryPersistentMap path name = do
+  acid <- openLocalStateFrom path (KeyValue M.empty)
+  val <- query acid (LookupKey name)
+  closeAcidState acid
+  return val
+  

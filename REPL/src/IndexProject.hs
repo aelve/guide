@@ -1,12 +1,12 @@
-module IndexProject(HackageUpdateInfo(..), 
-                    HackageName(..),
-                    processCycle,
-                    updateHackageMap,
-                    queryHackageMap
+module IndexProject(
+                    processREPLCycle
                     ) where
 
-import REPL (HackageUpdateInfo(..), processCycle, updateArchive, updateMapFromTar, queryHackageMap)
-import HackageArchive (HackageName (..), HackagePackage(..))
+import REPL (processREPLCycle)
+--import HackageArchive (HackageName (..), HackagePackage(..))
 
-updateHackageMap :: HackageUpdateInfo -> IO ()
-updateHackageMap iuh = updateArchive iuh >> updateMapFromTar iuh
+
+--HackageUpdateInfo(..), 
+--                    HackageName(..),
+--updateHackageMap :: HackageUpdateInfo -> IO ()
+--updateHackageMap iuh = updateArchive iuh >> updateMapFromTar iuh

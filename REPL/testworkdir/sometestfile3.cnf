@@ -1,0 +1,12 @@
+-- Stackage snapshot from: http://www.stackage.org/snapshot/lts-2.10ZZZ
+-- Please place this file next to your .cabal file as cabal.config
+-- To only use tested packages, uncomment the following line:
+-- remote-repo: stackage-lts-2.10:http://www.stackage.org/lts-2.10
+constraints: abstract-deque ==0.3,
+
+
+
+
+
+
+   

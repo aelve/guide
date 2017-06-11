@@ -31,14 +31,6 @@ testPath text val match = testCase (T.unpack ("Parsing " <> expect match <> " \'
 
 parseStackageTests = testGroup "Stackage parsing tests"
   [
-{-
-    testParse parsePackageLine "constraints: abstract-deque ==0.3," True
-    , testParse parsePackageLine "constraints: abstract-deque ==0.3" True
-    , testParse parsePackageLine "constraints: abstract-deque ==0." False
-    , testParse parsePackageLine "constraints: abstract-deque ==" False
-    , testParse parsePackageLine "constraints: abst3453#$%#ract-deque ==0.3" False
-    , testParse parsePackageLine "constraints: abstract-deque ==0.3," True
--}
     testParse parsePackageLine "              ztail ==1.2" True
     , testParse parsePackageLine "             adjunctions ==4.3," True
     , testParse parsePackageLine "ztail ==1.2" True
@@ -57,18 +49,27 @@ parseStackageTests = testGroup "Stackage parsing tests"
 
 parseCabalConfig = testGroup "Cabal config parsing tests"
   [
-    testStackagePackageLines "sometestfile.cnf"
+    testStackagePackageLines parseStackageLTS "sometestfile.cnf"
+    , testStackagePackageLines parseStackageLTS "sometestfile2.cnf"
+    , testFileJustParse parseStackageLTS "sometestfile3.cnf" True
   ]
 
-testStackagePackageLines file = testFileParse (testWorkingDir </> file) 
-  parseStackageLTS countPackageLines matchWithStackageLTS
+-- Well this is code duplication. Somehow need to use testParse function here
 
+testFileJustParse :: Parser a -> FilePath -> Bool -> TestTree
+testFileJustParse p file match = testCase ("Testing file: " ++ file) $ do 
+  fileText <- TIO.readFile (testWorkingDir </> file)
+  assertBool "Failed" (isRight (runParser p "" fileText) == match)
 
--- refactor isComment
+testStackagePackageLines :: Parser StackageLTS -> FilePath -> TestTree
+testStackagePackageLines p file = testFileParse (testWorkingDir </> file) 
+  p countPackageLines matchWithStackageLTS
+
 countPackageLines :: T.Text -> Int
-countPackageLines text = length $ filter isComment lns
+countPackageLines text = length $ filter isPackageLine lns
   where lns = T.lines text
-        isComment ln = not ("--" `T.isInfixOf` ln)
+        isPackageLine ln = not ("--" `T.isInfixOf` ln) 
+          && (("installed" `T.isInfixOf` ln) || ("==" `T.isInfixOf` ln))
 
 matchWithStackageLTS :: Int -> StackageLTS -> Bool
 matchWithStackageLTS count1 stackage = count1 == (length.snd) stackage

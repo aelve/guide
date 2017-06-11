@@ -15,7 +15,9 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  other-modules:     Common, FileUtils, HttpDownload, HackageUpdate, REPL, Storage
+  other-modules:     Common, FileUtils, HttpDownload, HackageUpdate, REPL
+                     , HackageCommands, StackageUpdate, StackageCommands
+                     
   exposed-modules:   IndexProject, HackageArchive, Stackage
   build-depends:       base >= 4.7 && < 5
                      , directory
@@ -42,6 +44,7 @@ library
                      , transformers
                      , zlib
                      , acid-state
+                     , unordered-containers
 
   default-language:    Haskell2010
 

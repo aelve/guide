@@ -2,7 +2,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module HackageUpdate (
                       performArchiveFileUpdate, 
-                      calcUpdateResultIO) where
+                      calcUpdateResultIO, 
+                      UpdateResult(..)) where
 
 import Data.Aeson.Types
 import qualified Data.Aeson as A
@@ -67,7 +68,7 @@ calcUpdateResultIO file json = do
 parseSnapshotJSONThrow :: BL.ByteString -> IO HackageSnapshotData
 parseSnapshotJSONThrow body = case A.decode body of 
   (Just snapshot) -> return snapshot
-  Nothing -> X.throwIO $ UAE "Could not decode JSON"
+  Nothing -> X.throwIO $ UAE "Could not decode hackage JSON"
 
 -- Returns the snapshot of archive from the hackage
 fetchSnapshot :: URL -> IO HackageSnapshotData

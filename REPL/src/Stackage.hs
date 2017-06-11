@@ -19,21 +19,11 @@ import Control.Applicative(empty)
 import Common
 
 type ConstraintMap = M.Map PackageName PackageData
-type ShortSnapshotName = String
-type LongSnapshotName = String
-type StackageSnapshot = (ShortSnapshotName, LongSnapshotName)
-
-shortName :: StackageSnapshot -> String
-shortName = fst
-
-longName :: StackageSnapshot -> String
-longName = snd
-
-type StackageLTS = (LongSnapshotName, [PackageData])
 
 parseStackageLTS :: Parser StackageLTS
 parseStackageLTS = do
   ltsName <- parseLTS
+  eol
   manyTill anyChar (string "constraints:")
   packages <- many parsePackageLine
   pure (ltsName, packages)
@@ -52,7 +42,7 @@ parsePackageLine = do
   version <- parseVersionVer
   many (char ',') 
   space
-  pure (name, version)
+  pure (name, Specified version)
 
 -- unfortunately the cabal.config does not provide versions for several packages
 -- And writes tehn in form 'binary installed'

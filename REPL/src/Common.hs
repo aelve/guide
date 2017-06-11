@@ -1,15 +1,27 @@
 module Common(URL,
               PackageName,
+              PackageVersion(..),
               PackageData,
               SnapshotData(..),
               UpdateArchiveException(..),
+              UpdateInfo(..),
               HackageUpdateInfo(..),
               getArchive,
               getArchiveClone,
               getTar,
               getTarClone,
               parseIntEnd,
-              parseValEnd) where
+              parseValEnd,
+              
+              ShortSnapshotName,
+              LongSnapshotName,
+              shortName,
+              longName,
+              getSnapshotURL,
+              StackageSnapshot,
+              StackageSnapshots(..), 
+              StackageLTS, 
+              StackageUpdateInfo(..)) where
 
 import qualified Control.Exception as X
 import qualified Data.ByteString.Lazy as BL
@@ -23,7 +35,22 @@ import System.FilePath((</>))
 
 type URL = String 
 type PackageName = String
-type PackageData = (PackageName, DV.Version)
+data PackageVersion = Installed | Specified DV.Version deriving (Eq, Ord, Show)
+type PackageData = (PackageName, PackageVersion)
+
+data UpdateInfo = UI {
+  iuh :: HackageUpdateInfo,
+  sui :: StackageUpdateInfo
+} deriving (Eq, Show)
+
+instance Default UpdateInfo where
+  def = defaultUI
+
+defaultUI :: UpdateInfo
+defaultUI = UI { 
+  iuh = defaultIUH, 
+  sui = defaultSUI 
+} 
 
 data SnapshotData = SnapshotData { 
   md5Hash :: String,
@@ -41,6 +68,7 @@ data HackageUpdateInfo = IUH {
   iuhSnapshotURL :: URL,
   iuhArchiveURL :: URL
 } deriving (Eq, Show)
+
 
 instance Default HackageUpdateInfo where
   def = defaultIUH
@@ -86,3 +114,35 @@ parseValEnd :: String -> String
 parseValEnd val | DL.length l > 1 = DL.last l
                 | otherwise = ""
                 where l = words val
+
+
+-- Stackage stuff
+type ShortSnapshotName = String
+type LongSnapshotName = String
+type StackageSnapshot = (ShortSnapshotName, LongSnapshotName)
+newtype StackageSnapshots = SSS [StackageSnapshot] deriving (Eq, Show)
+
+shortName :: StackageSnapshot -> String
+shortName = fst
+
+longName :: StackageSnapshot -> String
+longName = snd
+
+type StackageLTS = (LongSnapshotName, [PackageData])
+
+getLTSURL :: StackageUpdateInfo -> LongSnapshotName -> URL
+getLTSURL sui name = suiStackageURL sui </> name </> "cabal.config"
+
+getSnapshotURL :: StackageUpdateInfo -> URL
+getSnapshotURL sui = suiStackageURL sui </> "download/lts-snapshots.json"
+
+data StackageUpdateInfo = SUI { 
+  suiUpdateDir :: FilePath, 
+  suiStackageURL :: URL
+} deriving (Eq, Show)
+
+defaultSUI :: StackageUpdateInfo
+defaultSUI = SUI {
+  suiUpdateDir = "stackagefiles", 
+  suiStackageURL = "https://www.stackage.org/"
+}
