@@ -22,6 +22,7 @@ where
 import Imports
 
 -- Vector
+import qualified Data.Vector as V
 import Data.Vector (Vector)
 -- Diffing
 import qualified Data.Patch as PV
@@ -46,15 +47,25 @@ data DiffChunk
   | Plain   Text      -- ^ This part should be rendered as not modified
   deriving (Eq, Show)
 
+flip makeLensesFor ''Diff
+  [ ("diffContextAbove", "_diffContextAbove")
+  , ("diffContextBelow", "_diffContextBelow") ]
+
 diff
   :: Text    -- ^ Original text
   -> Text    -- ^ Edited text
   -> Diff
 diff (tokenize -> orig) (tokenize -> edit) =
-    trimDiff (diffL (PV.hunks diffBA edit))
-             (diffR (PV.hunks diffAB orig))
+    trimDiff (diffL (PV.hunks diffBA (V.fromList edit')))
+             (diffR (PV.hunks diffAB (V.fromList orig')))
+      & _diffContextAbove %~ (prefix <>)
+      & _diffContextBelow %~ (<> suffix)
   where
-    diffAB = PV.diff orig edit
+    -- we find common parts in advance because diffs are O(mn) and removing
+    -- big unchanged parts in advance helps us
+    (prefix, (orig', edit'), suffix) = commonParts orig edit
+    -- then we compute orig→edit and edit→orig diffs
+    diffAB = PV.diff (V.fromList orig') (V.fromList edit')
     diffBA = PV.inverse diffAB
 
 -- | Create a diff for the right (edited) part. We only want to highlight

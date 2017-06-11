@@ -16,14 +16,11 @@ import Imports
 -- Text
 import qualified Data.Text.All as T
 import Data.List.Split
--- Vector
-import qualified Data.Vector as V
-import Data.Vector (Vector)
 
 
 -- | Break text into tokens.
-tokenize :: Text -> Vector Text
-tokenize = V.fromList . consolidate . map T.toStrict . break' . T.toString
+tokenize :: Text -> [Text]
+tokenize = consolidate . map T.toStrict . break' . T.toString
 
 -- | Break a string into words, spaces, and special characters.
 break' :: String -> [String]

@@ -15,6 +15,8 @@ import Imports
 
 -- Text
 import qualified Data.Text.All as T
+-- Vector
+import qualified Data.Vector as V
 -- Diffing
 import qualified Data.Patch as PV
 
@@ -27,7 +29,9 @@ merge
   -> Text    -- ^ Variant A (preferred)
   -> Text    -- ^ Variant B
   -> Text    -- ^ Merged text
-merge (tokenize -> orig) (tokenize -> a) (tokenize -> b) =
+merge (V.fromList . tokenize -> orig)
+      (V.fromList . tokenize -> a)
+      (V.fromList . tokenize -> b) =
     T.concat . toList $ PV.apply (pa <> pb') orig
   where
     -- 1. diff
