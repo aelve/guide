@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module StackageUpdate(fetchStackageSnapshots) where
+module StackageUpdate(fetchStackageSnapshots, fetchLTS) where
 
 import Data.Traversable
 import Data.Aeson.Types
@@ -12,9 +12,11 @@ import qualified Control.Exception as X
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as HM
 import Network.HTTP.Client(parseUrlThrow)
-
+import System.FilePath(takeDirectory)
+import System.Directory(createDirectoryIfMissing)
 import Common
 import HttpDownload
+import FileUtils
 
 instance FromJSON StackageSnapshots where
   parseJSON = withObject "snapshots" $ \o ->
@@ -33,17 +35,10 @@ parseSnapshotJSONThrow body = case A.decode body of
 fetchStackageSnapshots :: URL -> IO StackageSnapshots
 fetchStackageSnapshots url = parseUrlThrow url >>= fetchResponseData >>= parseSnapshotJSONThrow
 
-{-
-parseReferers :: Value -> Parser StackageSnapshots
-parseReferers = withObject "referers" $ \o ->
-    -- Now we have 'o', which is a HashMap. We can use HM.toList to turn it
-    -- into a list of pairs (domain, referer) and then parse each referer:
-    for (HM.toList o) $ \(domain, referer) -> do
-      -- accesses :: [(Text, Int)]
-      accesses <- HM.toList <$> parseJSON referer
-      -- accesses' :: [(String, Int)]
-      let accesses' = map (\(page, n) -> (T.unpack page, n)) accesses
-      return $ Referer {
-        domain       = T.unpack domain,
-        pathAccesses = accesses' }
--}
+fetchLTS :: FilePath -> URL -> IO ()
+fetchLTS file url = do
+  putStrLn $ "Getting LTS " ++ url ++ " to " ++ file
+  removeIfExists file
+  createDirectoryIfMissing True (takeDirectory file)
+  writeAll2File url file
+

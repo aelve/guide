@@ -14,6 +14,7 @@ import System.Exit(exitSuccess)
 import Common
 import qualified HackageCommands as HC
 import qualified StackageCommands as SC
+--import qualified HttpDownload as HD
 
 processREPLCycle :: UpdateInfo -> IO ()
 processREPLCycle ui = forever $ do
@@ -81,7 +82,10 @@ buildCommand ui = processCommand
       | chk "system-compare" = HC.showArchiveCompare arch archC 
       -- shows diff map between tar and tar.orig archives
       | chk "system-tarcmp" = HC.showDiffMap trFile trFileC
+      | chk "ltsupdate" = let lts = parseValEnd command in 
+        SC.updateLTSFile (getLTSGithubURL (sui ui) lts) (getLTSFile (sui ui) lts)
 
+      | chk "urlsize" = HD.calculateContentSize (parseValEnd command) >>= print
       | otherwise = showHelp ui
 
       where pc = map DC.toLower command

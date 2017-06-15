@@ -5,13 +5,19 @@ module HttpDownload(
                     fetchResponseData,
                     fetchRangeData,
                     Range,
-                    cropRanges) where
+                    calculateContentSize,
+                    cropRanges,
+                    write2File,
+                    writeAll2File) where
 import Data.Int(Int64)
 
 import qualified Data.ByteString.Lazy as BL
-import Network.HTTP.Client(Request(..), parseUrlThrow, newManager, responseBody, httpLbs)
+import qualified Data.ByteString as BS
+import Data.ByteString.Char8 (readInteger)
+import Network.HTTP.Client(Request(..), parseUrlThrow, newManager, responseBody, httpLbs, responseHeaders)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types.Header
+import qualified Control.Exception as X
 
 import Common
 
@@ -44,4 +50,39 @@ fetchResponseData req = responseBody <$> (newManager tlsManagerSettings >>= http
 -- Returns the bytes from the range request
 fetchRangeData :: URL -> Range -> IO BL.ByteString
 fetchRangeData url range = createRangeRequest url range >>= fetchResponseData
+
+makeHeadRequest :: Request -> Request
+makeHeadRequest r = r {
+  method = "HEAD"
+}
+
+getContentLength :: ResponseHeaders -> Maybe BS.ByteString
+getContentLength = lookup hContentLength
+
+-- Try to calculate the size of the resource based on the head request
+calculateContentSize :: URL -> IO Int64
+calculateContentSize url = do 
+  request <- makeHeadRequest <$> parseUrlThrow url 
+  response <- newManager tlsManagerSettings >>= httpLbs request
+  print response
+  case (getContentLength.responseHeaders) response >>= readInteger of
+    Just (size, _) -> return $ fromIntegral size
+    _ -> X.throwIO $ UAE $ "Content size not parsed from " ++ url
+
+
+write2File :: FilePath -> URL -> Range -> IO() 
+write2File archive url range = do
+  putStrLn $ "\tGetting range " ++ show range ++ " from " ++ url
+  body <- fetchRangeData url range
+  putStrLn $ "\tGot range " ++ show (BL.take 50 body)
+  BL.appendFile archive body
+  putStrLn "Append ok"
+
+
+writeAll2File :: FilePath -> URL -> IO()
+writeAll2File archive url = do
+  putStrLn $ "\tGetting body from " ++ url
+  body <- parseUrlThrow url >>= fetchResponseData
+  BL.appendFile archive body
+  putStrLn "Write ok"
 

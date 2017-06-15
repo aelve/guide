@@ -18,6 +18,10 @@ module Common(URL,
               shortName,
               longName,
               getSnapshotURL,
+              getLTSGithubURL,
+              getLTSFilesDir,
+              getLTSStackageURL,
+              getLTSFile,
               StackageSnapshot,
               StackageSnapshots(..), 
               StackageLTS, 
@@ -130,19 +134,30 @@ longName = snd
 
 type StackageLTS = (LongSnapshotName, [PackageData])
 
-getLTSURL :: StackageUpdateInfo -> LongSnapshotName -> URL
-getLTSURL sui name = suiStackageURL sui </> name </> "cabal.config"
+getLTSStackageURL :: StackageUpdateInfo -> LongSnapshotName -> URL
+getLTSStackageURL sui name = suiStackageURL sui </> name </> "cabal.config"
 
 getSnapshotURL :: StackageUpdateInfo -> URL
 getSnapshotURL sui = suiStackageURL sui </> "download/lts-snapshots.json"
 
+getLTSGithubURL :: StackageUpdateInfo -> LongSnapshotName -> URL
+getLTSGithubURL sui name = suiLTSURL sui </> (name ++ ".yaml") 
+
+getLTSFilesDir :: StackageUpdateInfo -> FilePath
+getLTSFilesDir sui = suiUpdateDir sui </> "ltsfiles"
+
+getLTSFile :: StackageUpdateInfo -> String -> FilePath
+getLTSFile sui lts = getLTSFilesDir sui </> (lts ++ ".yaml")
+
 data StackageUpdateInfo = SUI { 
   suiUpdateDir :: FilePath, 
-  suiStackageURL :: URL
+  suiStackageURL :: URL,
+  suiLTSURL :: URL
 } deriving (Eq, Show)
 
 defaultSUI :: StackageUpdateInfo
 defaultSUI = SUI {
   suiUpdateDir = "stackagefiles", 
-  suiStackageURL = "https://www.stackage.org/"
+  suiStackageURL = "https://www.stackage.org/",
+  suiLTSURL = "https://raw.githubusercontent.com/fpco/lts-haskell/master/"
 }

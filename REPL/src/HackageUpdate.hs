@@ -115,12 +115,3 @@ updateArchive archive archiveURL snapshot range = do
   mapM_  (write2File archive archiveURL) (cropRanges maxRange range)
   newFileData <- calcFileData archive
   return (newFileData == snapshot)
-
-write2File :: FilePath -> URL -> Range -> IO() 
-write2File archive url range = do
-  putStrLn $ "\tGetting range " ++ show range ++ " from " ++ url
-  body <- fetchRangeData url range
-  putStrLn $ "\tGot range " ++ show (BL.take 50 body)
-  BL.appendFile archive body
-  putStrLn "Append ok"
-
