@@ -40,5 +40,5 @@ fetchLTS file url = do
   putStrLn $ "Getting LTS " ++ url ++ " to " ++ file
   removeIfExists file
   createDirectoryIfMissing True (takeDirectory file)
-  writeAll2File url file
+  writeAll2File file url
 

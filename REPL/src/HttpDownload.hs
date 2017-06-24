@@ -18,6 +18,9 @@ import Network.HTTP.Client(Request(..), parseUrlThrow, newManager, responseBody,
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types.Header
 import qualified Control.Exception as X
+import System.Posix.Files(touchFile)
+import System.Directory(doesFileExist)
+import Control.Monad(unless)
 
 import Common
 
@@ -77,7 +80,6 @@ write2File archive url range = do
   putStrLn $ "\tGot range " ++ show (BL.take 50 body)
   BL.appendFile archive body
   putStrLn "Append ok"
-
 
 writeAll2File :: FilePath -> URL -> IO()
 writeAll2File archive url = do

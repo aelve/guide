@@ -83,9 +83,9 @@ buildCommand ui = processCommand
       -- shows diff map between tar and tar.orig archives
       | chk "system-tarcmp" = HC.showDiffMap trFile trFileC
       | chk "ltsupdate" = let lts = parseValEnd command in 
-        SC.updateLTSFile (getLTSGithubURL (sui ui) lts) (getLTSFile (sui ui) lts)
+        SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
 
-      | chk "urlsize" = HD.calculateContentSize (parseValEnd command) >>= print
+      -- | chk "urlsize" = HD.calculateContentSize (parseValEnd command) >>= print
       | otherwise = showHelp ui
 
       where pc = map DC.toLower command
@@ -123,9 +123,7 @@ showHelp ui = do
   putStrLn $ "cmppersist - compares the state of " ++ trFile ++ " with map from persistent storage"
   putStrLn $ "tarpersist - updates the persistent storage with " ++ trFile
   putStrLn "querypersist name - queries the persistent storage with package"
-
   putStrLn $ "snapshots - show the stackage snapshots from " ++ snapshotsURL
-
   putStrLn "exit - exits this repl"
   putStrLn "help - shows this help"
 
