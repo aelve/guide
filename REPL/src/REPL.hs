@@ -10,6 +10,7 @@ import Data.List(isPrefixOf)
 import Control.Monad(forever, void)
 import System.IO (stdout, hFlush)
 import System.Exit(exitSuccess)
+import Network.HTTP.Client(HttpException)
 
 import Common
 import qualified HackageCommands as HC
@@ -22,12 +23,13 @@ processREPLCycle ui = forever $ do
   hFlush stdout
   command <- getLine
   hFlush stdout
-  processCommand command `X.catch` eh `X.catch` eh2 `X.catch` eh3
+  processCommand command `X.catch` eh `X.catch` eh2 `X.catch` eh3 `X.catch` eh4
   where 
     processCommand = buildCommand ui
     eh (e :: X.IOException) = putStrLn $ "IO Error: " ++ show e
     eh2 (e :: UpdateArchiveException) = putStrLn $ "Parsing error: " ++ show e 
     eh3 (e :: X.ErrorCall) = putStrLn $ "Error call: " ++ show e
+    eh4 (e :: HttpException) = putStrLn $ "Http exception: " ++ show e
 
 buildCommand :: UpdateInfo -> (String -> IO())
 buildCommand ui = processCommand
@@ -60,6 +62,13 @@ buildCommand ui = processCommand
 
       -- shows the snapshots from stackage
       | chk "snapshots" = SC.showSnapshots snapshotsURL
+
+      | chk "ltsupdate" = let lts = parseValEnd command in 
+        SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
+
+      | chk "ltsallupdate" = 
+          SC.updateAllLTSFiles (getLTSFilesDir (sui ui)) (suiLTSURL (sui ui)) snapshotsURL
+
       -- exits the REPL
       | chk "exit" = exitREPL
       | chk "quit" = exitREPL
@@ -82,8 +91,6 @@ buildCommand ui = processCommand
       | chk "system-compare" = HC.showArchiveCompare arch archC 
       -- shows diff map between tar and tar.orig archives
       | chk "system-tarcmp" = HC.showDiffMap trFile trFileC
-      | chk "ltsupdate" = let lts = parseValEnd command in 
-        SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
 
       -- | chk "urlsize" = HD.calculateContentSize (parseValEnd command) >>= print
       | otherwise = showHelp ui
