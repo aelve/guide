@@ -66,7 +66,7 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 -- The map of all the hackage packages with name as the key and HackagePackage
 -- as the value
 type HackageMap = M.Map HackageName HackagePackage
-type PreHackageMap = M.Map HackageName PackageVersion
+type PreHackageMap = M.Map HackageName DV.Version
 
 -- The map, that shows, which packages have change since the last update
 type HackageUpdateMap = M.Map HackageName (HackageUpdate, HackagePackage)
@@ -82,7 +82,7 @@ parseCabalFilePath = do
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
-  pure (package, Specified version)
+  pure (package, version)
   where phi l = DC.isLetter l || l == '-'
 
 updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a

@@ -67,8 +67,15 @@ buildCommand ui = processCommand
         SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
 
       | chk "ltsallupdate" = 
-          SC.updateAllLTSFiles (getLTSFilesDir (sui ui)) (suiLTSURL (sui ui)) snapshotsURL
+        SC.updateAllLTSFiles (getLTSFilesDir (sui ui)) (suiLTSURL (sui ui)) snapshotsURL
 
+      | chk "ltsshowcont" = let lts = parseValEnd command in
+        SC.showLTSContents  (getLTSFile (sui ui) lts)
+
+        
+      -- | chk "ltspersist" = 
+      --    SC.updateLT
+        
       -- exits the REPL
       | chk "exit" = exitREPL
       | chk "quit" = exitREPL

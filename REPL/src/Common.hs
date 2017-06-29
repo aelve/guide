@@ -1,7 +1,7 @@
 module Common(URL,
               PackageName,
-              PackageVersion(..),
               PackageData,
+              PackageDatum(..),
               SnapshotData(..),
               UpdateArchiveException(..),
               UpdateInfo(..),
@@ -39,8 +39,7 @@ import System.FilePath((</>))
 
 type URL = String 
 type PackageName = String
-data PackageVersion = Installed | Specified DV.Version deriving (Eq, Ord, Show)
-type PackageData = (PackageName, PackageVersion)
+type PackageData = (PackageName, DV.Version)
 
 data UpdateInfo = UI {
   iuh :: HackageUpdateInfo,
@@ -125,6 +124,7 @@ type ShortSnapshotName = String
 type LongSnapshotName = String
 type StackageSnapshot = (ShortSnapshotName, LongSnapshotName)
 newtype StackageSnapshots = SSS [StackageSnapshot] deriving (Eq, Show)
+newtype PackageDatum = PD [PackageData] deriving (Eq, Show)
 
 shortName :: StackageSnapshot -> String
 shortName = fst
