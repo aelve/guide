@@ -72,7 +72,7 @@ buildCommand ui = processCommand
       | chk "ltsshowcont" = let lts = parseValEnd command in
         SC.showLTSContents  (getLTSFile (sui ui) lts)
 
-        
+
       -- | chk "ltspersist" = 
       --    SC.updateLT
         
@@ -111,7 +111,7 @@ buildCommand ui = processCommand
             snapURL = (iuhSnapshotURL.iuh) ui
             trFile = (getTar.iuh) ui
             trFileC = (getTarClone.iuh) ui
-            ud = (iuhUpdateDir.iuh) ui
+            ud = (getArchivePersistDir.iuh) ui
 
             snapshotsURL = (getSnapshotURL.sui) ui
 

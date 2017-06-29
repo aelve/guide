@@ -9,9 +9,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Version as DV
 
 import Common
-
+{-
 type StackageName = String
-
 type StackageVersionLTS = M.Map LongSnapshotName DV.Version
 
 data StackagePackage = SP {
@@ -20,3 +19,4 @@ data StackagePackage = SP {
 } deriving (Eq, Show)
 
 type StackageMap = M.Map StackageName StackagePackage
+-}

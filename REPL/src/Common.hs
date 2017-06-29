@@ -9,6 +9,7 @@ module Common(URL,
               getArchive,
               getArchiveClone,
               getTar,
+              getArchivePersistDir,
               getTarClone,
               parseIntEnd,
               parseValEnd,
@@ -94,6 +95,9 @@ tar = "01-index.tar"
 
 tarClone :: FilePath
 tarClone = "01-index.orig.tar" 
+
+getArchivePersistDir :: HackageUpdateInfo -> FilePath
+getArchivePersistDir iuh = iuhUpdateDir iuh </> "persist"
 
 getArchive :: HackageUpdateInfo -> FilePath
 getArchive iuh = iuhUpdateDir iuh </> archive

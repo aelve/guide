@@ -68,6 +68,8 @@ parseYamlFileThrow body = case Y.decode body of
   (Just datum) -> return datum
   Nothing -> X.throwIO $ UAE "Could not decode package data yaml"
 
+
+
 -- This is the data, that is extracted from the yaml file
 instance FromJSON PackageDatum where
   parseJSON = withObject "bigfatyaml" $ \o -> do

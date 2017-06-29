@@ -18,6 +18,7 @@ cabal-dev
 cabal.sandbox.config
 cabal.config
 stackagefiles
+hackagefiles
 TAGS
 .DS_Store
 *~
