@@ -31,6 +31,9 @@ module Guide.Utils
   makeSlug,
   (//),
 
+  -- * Referrers
+  toReferrerView,
+  
   -- * IP
   sockAddrToIP,
 
@@ -214,6 +217,57 @@ appends backslashes (@\@) and not slashes (@/@).
 (//) :: Url -> Text -> Url
 (//) x y = fromMaybe x (T.stripSuffix "/" x) <> "/" <>
            fromMaybe y (T.stripPrefix "/" y)
+----------------------------------------------------------------------------
+-- ReferrerView
+----------------------------------------------------------------------------
+
+data SearchEngine
+  = Google
+  | Yandex
+  | Yahoo
+  | Bing
+  | Ecosia
+  | DuckDuckGo
+  deriving (Show, Eq)
+
+data ReferrerView
+  = RefSearchEngine SearchEngine (Maybe Text)
+  -- ^ engine + keyword
+  | RefUrl Url
+  -- ^ some url
+  deriving (Eq)
+
+showKeyword :: Maybe Text -> String
+showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
+showKeyword _ = ""
+
+toSearchEngine :: Text -> Maybe SearchEngine
+toSearchEngine t
+  | "google" `elem` lst = Just Google
+  | "yandex" `elem` lst = Just Yandex
+  | "yahoo"  `elem` lst = Just Yahoo
+  | "bing"   `elem` lst = Just Bing
+  | "ecosia" `elem` lst = Just Ecosia
+  | "duckduckgo" `elem` lst = Just DuckDuckGo
+  | otherwise = Nothing
+  where lst = T.splitOn "." t
+
+instance Show ReferrerView where
+  show (RefSearchEngine searchEngine keyword)
+    = show searchEngine <> showKeyword keyword
+  show (RefUrl url) = T.toString url
+
+-- TODO: getQuery url :: Url -> Maybe Text
+
+toReferrerView :: Url -> ReferrerView
+toReferrerView url
+  = case toSearchEngine domain of
+      Just se -> RefSearchEngine se Nothing -- (getQuery url)
+      Nothing -> RefUrl url
+  where
+    uri = URI.parseURI $ T.toString url
+    uriAuth = fromJust $ uri >>= URI.uriAuthority
+    domain = T.pack $ URI.uriRegName uriAuth
 
 ----------------------------------------------------------------------------
 -- IP

@@ -60,7 +60,6 @@ import qualified Guide.Diff as Diff
 import Guide.Cache
 import Guide.Views.Utils
 
-
 {- Note [autosize]
 ~~~~~~~~~~~~~~~~~~
 
@@ -279,7 +278,7 @@ renderStats globalState acts = do
                      $ rawVisits
       for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
         tr_ $ do
-          td_ (toHtml r)
+          td_ (toHtml $ show (toReferrerView r))
           td_ (toHtml (show n))
           td_ (toHtml (show u))
   table_ $ do
