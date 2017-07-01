@@ -15,7 +15,6 @@ import Network.HTTP.Client(HttpException)
 import Common
 import qualified HackageCommands as HC
 import qualified StackageCommands as SC
---import qualified HttpDownload as HD
 
 processREPLCycle :: UpdateInfo -> IO ()
 processREPLCycle ui = forever $ do
@@ -61,22 +60,23 @@ buildCommand ui = processCommand
       | chk "querypersist" =  HC.showPersistentQuery ud (parseValEnd command)
 
       -- shows the snapshots from stackage
-      | chk "snapshots" = SC.showSnapshots snapshotsURL
-
+      | chk "ltssnapshots" = SC.showSnapshots snapshotsURL
+      -- gets all the lts snapshots from the stackage, updates the lts files according to them
+      | chk "ltsallupdate" = 
+        SC.updateAllLTSFiles ltsFileDir ltsURL snapshotsURL
+      -- shows contents of the lts file
+      | chk "ltsshowcont" = let lts = parseValEnd command in
+        SC.showLTSContents  (getLTSFile (sui ui) lts)      
+      | chk "ltsshowmap" = SC.showStackageMapContents ltsFileDir ltsURL snapshotsURL 20
+      -- gets all the lts snapshots from the stackage, updates the lts files according to them
+      -- and then updates the persistent storage
+      | chk "ltsupdatepersist" = SC.updatePersistentMapFromLTS sud ltsFileDir ltsURL snapshotsURL
+      -- queries the persistent map of the stackage packages
+      | chk "ltsquerypersist" =  SC.showPersistentQuery sud (parseValEnd command)
+      -- updates the specified lts package from github
       | chk "ltsupdate" = let lts = parseValEnd command in 
         SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
 
-      | chk "ltsallupdate" = 
-        SC.updateAllLTSFiles ltsFileDir ltsURL snapshotsURL
-
-      | chk "ltsshowcont" = let lts = parseValEnd command in
-        SC.showLTSContents  (getLTSFile (sui ui) lts)
-      
-      | chk "ltsshowmap" = SC.showStackageMapContents ltsFileDir ltsURL snapshotsURL 20
-
-      -- | chk "ltspersist" = 
-      --    SC.updateLT
-        
       -- exits the REPL
       | chk "exit" = exitREPL
       | chk "quit" = exitREPL
@@ -121,6 +121,8 @@ buildCommand ui = processCommand
             persistCommand = HC.updatePersistentFromTar ud trFile
             ltsFileDir = getLTSFilesDir (sui ui)
             ltsURL = suiLTSURL (sui ui)
+            sud = (getLTSPersistDir.sui) ui
+
 
 
 showHelp :: UpdateInfo -> IO()

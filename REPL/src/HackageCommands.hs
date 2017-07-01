@@ -133,8 +133,7 @@ updatePersistentFromTar updateDir tarFile = do
   let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
   updatePersistentMap updateDir newMap 
 
-
-showPersistentQuery :: FilePath -> HackageName -> IO()
+showPersistentQuery :: FilePath -> PackageName -> IO()
 showPersistentQuery updateDir name = do
   putStrLn $ "Querying storage hackage map with " ++ name
   value <- queryPersistentMap updateDir name

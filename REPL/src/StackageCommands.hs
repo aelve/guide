@@ -2,9 +2,10 @@ module StackageCommands(
                         showSnapshots,
                         showLTSContents,
                         showStackageMapContents,
+                        showPersistentQuery,
                         updateLTSFile, 
                         updateAllLTSFiles,
-                        updatePersistentFromLTS) where
+                        updatePersistentMapFromLTS) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as M
@@ -31,14 +32,10 @@ updateLTSFile :: FilePath -> URL -> IO ()
 updateLTSFile = fetchLTS 
 
 -- updates all of the lts files from the snapshot file at stackage
-
 updateAllLTSFiles :: FilePath -> URL -> URL -> IO ()
 updateAllLTSFiles ltsDir ltsURL snapshotsURL = do
     snapshots <- fetchStackageSnapshots snapshotsURL
     fetchAllLTSFiles ltsDir ltsURL (filterNormal snapshots)
-
-updatePersistentFromLTS :: FilePath -> FilePath -> IO()
-updatePersistentFromLTS updateDir ltsDir = undefined
 
 showStackageMapContents :: FilePath -> URL -> URL -> Int -> IO()
 showStackageMapContents ltsDir ltsURL snapshotsURL count = do
@@ -50,3 +47,23 @@ showStackageMapContents ltsDir ltsURL snapshotsURL count = do
     map <- generateStackageMap ltsDir (filterNormal snapshots)
     putStrLn $ "Printing " ++ show count ++ " packages"
     mapM_ print $ take count $ M.toList map
+
+updatePersistentMapFromLTS :: FilePath -> FilePath -> URL -> URL -> IO()
+updatePersistentMapFromLTS updateDir ltsDir ltsURL snapshotsURL  = do
+    putStrLn "Fetching snapshot lists"
+    snapshots <- fetchStackageSnapshots snapshotsURL
+    putStrLn "Downloading YAML files"
+    fetchAllLTSFiles ltsDir ltsURL (filterNormal snapshots)
+    putStrLn "Generating stackage map"
+    map <- generateStackageMap ltsDir (filterNormal snapshots)
+    updatePersistentMap updateDir map 
+
+showPersistentQuery :: FilePath -> PackageName -> IO()
+showPersistentQuery updateDir name = do
+  putStrLn $ "Querying storage stackage map with " ++ name
+  value <- queryPersistentMap updateDir name
+  case value of 
+    Just package -> do
+      putStrLn "Found"
+      print package
+    Nothing -> putStrLn "Not found"

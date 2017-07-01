@@ -23,6 +23,7 @@ module Common(URL,
               getLTSFilesDir,
               getLTSStackageURL,
               getLTSFile,
+              getLTSPersistDir,
               StackageSnapshot,
               StackageSnapshots(..), 
               getNormalSnapshots,
@@ -101,6 +102,7 @@ tarClone = "01-index.orig.tar"
 getArchivePersistDir :: HackageUpdateInfo -> FilePath
 getArchivePersistDir iuh = iuhUpdateDir iuh </> "persist"
 
+
 getArchive :: HackageUpdateInfo -> FilePath
 getArchive iuh = iuhUpdateDir iuh </> archive
 
@@ -170,6 +172,9 @@ data StackageUpdateInfo = SUI {
   suiStackageURL :: URL,
   suiLTSURL :: URL
 } deriving (Eq, Show)
+
+getLTSPersistDir :: StackageUpdateInfo -> FilePath
+getLTSPersistDir sui = suiUpdateDir sui </> "persist"
 
 defaultSUI :: StackageUpdateInfo
 defaultSUI = SUI {

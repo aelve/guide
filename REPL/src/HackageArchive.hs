@@ -13,7 +13,6 @@ module HackageArchive (
                 queryPersistentMap,
 
                 HackagePackage (..),
-                HackageName,
                 HackageMap,
                 HackageUpdateMap,
                 HackageUpdate,
@@ -50,12 +49,10 @@ import qualified Control.Monad.State  as State
 import System.FilePath.Posix(hasTrailingPathSeparator)
 import Common
 
-type HackageName = String
-
 -- The record for each of the package from hackage
 -- TODO - add another information about the packages
 data HackagePackage = HP {
-  name :: HackageName,
+  name :: PackageName,
   pVersion :: DV.Version,
   author :: String
 } deriving (Eq, Show)
@@ -65,11 +62,11 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 
 -- The map of all the hackage packages with name as the key and HackagePackage
 -- as the value
-type HackageMap = M.Map HackageName HackagePackage
-type PreHackageMap = M.Map HackageName DV.Version
+type HackageMap = M.Map PackageName HackagePackage
+type PreHackageMap = M.Map PackageName DV.Version
 
 -- The map, that shows, which packages have change since the last update
-type HackageUpdateMap = M.Map HackageName (HackageUpdate, HackagePackage)
+type HackageUpdateMap = M.Map PackageName (HackageUpdate, HackagePackage)
 
 -- Parses the file path of the cabal file to get version and package name
 parseCabalFilePath :: RP.ReadP PackageData
@@ -164,7 +161,7 @@ $(deriveSafeCopy 0 'base ''HackagePackage)
 $(deriveSafeCopy 0 'base ''KeyValue)
 $(deriveSafeCopy 0 'base ''HackageUpdate)
 
-insertKey :: HackageName -> HackagePackage -> Update KeyValue ()
+insertKey :: PackageName -> HackagePackage -> Update KeyValue ()
 insertKey key value = do 
   KeyValue hackageMap <- State.get
   State.put (KeyValue (M.insert key value hackageMap))
@@ -172,7 +169,7 @@ insertKey key value = do
 updateMap :: HackageMap -> Update KeyValue ()
 updateMap newMap = State.put (KeyValue newMap)
 
-lookupKey :: HackageName -> Query KeyValue (Maybe HackagePackage)
+lookupKey :: PackageName -> Query KeyValue (Maybe HackagePackage)
 lookupKey key = do
   KeyValue m <- ask
   return (M.lookup key m)
@@ -202,7 +199,7 @@ printPersistentDiffMap path newMap = do
     mapM_ (print.snd) $ M.toList diffMap
   closeAcidState acid
 
-queryPersistentMap :: FilePath -> HackageName -> IO (Maybe HackagePackage)
+queryPersistentMap :: FilePath -> PackageName -> IO (Maybe HackagePackage)
 queryPersistentMap path name = do
   acid <- openLocalStateFrom path (KeyValue M.empty)
   val <- query acid (LookupKey name)
