@@ -1,9 +1,9 @@
 module Client where
 
-import App.Events (AppEffects, Event(..), foldp)
-import App.Routes (match)
-import App.State (State, init)
-import App.View.Layout (view)
+import Guide.Events (AppEffects, Event(..), foldp)
+import Guide.Routes (match)
+import Guide.State (State, init)
+import Guide.View.Layout (view)
 import Control.Applicative (pure)
 import Control.Bind ((=<<), discard, bind)
 import Control.Monad.Eff (Eff)

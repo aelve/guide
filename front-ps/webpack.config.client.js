@@ -1,4 +1,4 @@
-const appConfig = require('./src/App/Config.js').config
+const appConfig = require('./src/Guide/Config.js').config
 const spawn = require('child_process').spawn
 const path = require('path')
 const webpack = require('webpack')
@@ -8,7 +8,9 @@ const entries = [path.join(__dirname, 'support/client.entry.js')]
 
 const plugins = [
   new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    '$PRODUCTION': isProd,
+    '$SERVER': false
   }),
 ]
 
@@ -36,6 +38,7 @@ const config = {
     filename: 'bundle.js',
     publicPath: appConfig.public_path
   },
+  plugins: plugins,
   module: {
     loaders: [
       {
@@ -52,7 +55,6 @@ const config = {
       }
     ],
   },
-  plugins: plugins,
   resolveLoader: {
     modules: [
       path.join(__dirname, 'node_modules')

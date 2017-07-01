@@ -1,4 +1,4 @@
-module App.View.NotFound where
+module Guide.View.NotFound where
 
 import Data.Function (($))
 import Pux.DOM.HTML (HTML)

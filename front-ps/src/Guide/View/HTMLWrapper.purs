@@ -1,6 +1,6 @@
-module App.View.HTMLWrapper where
+module Guide.View.HTMLWrapper where
 
-import App.Config (config)
+import Guide.Config (config)
 import Control.Bind (discard)
 import Data.Function (($))
 import Data.Monoid (mempty)

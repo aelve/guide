@@ -9,7 +9,9 @@ const plugins = [
     'XMLHttpRequest': 'xhr2'
   }),
   new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    '$PRODUCTION': isProd,
+    '$SERVER': true
   })
 ]
 

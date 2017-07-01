@@ -1,11 +1,11 @@
 module Server where
 
 import Prelude
-import App.Events (AppEffects, Event(..), foldp)
-import App.Routes (Route(..), match)
-import App.State (State(..), init)
-import App.View.HTMLWrapper (htmlWrapper)
-import App.View.Layout (view)
+import Guide.Events (AppEffects, Event(..), foldp)
+import Guide.Routes (Route(..), match)
+import Guide.State (State(..), init)
+import Guide.View.HTMLWrapper (htmlWrapper)
+import Guide.View.Layout (view)
 import Control.IxMonad (ibind)
 import Control.Monad.Aff.Class (liftAff, class MonadAff)
 import Control.Monad.Eff (Eff)

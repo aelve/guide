@@ -1,7 +1,7 @@
-module App.State where
+module Guide.State where
 
-import App.Config (config)
-import App.Routes (Route, match)
+import Guide.Config (config)
+import Guide.Routes (Route, match)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Newtype (class Newtype)
