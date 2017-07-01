@@ -1,0 +1,20 @@
+{
+  "name": "pux-starter-app",
+  "homepage": "https://github.com/alexmingoia/pux-starter-app",
+  "authors": [
+    "Alex Mingoia <talk@alexmingoia.com>"
+  ],
+  "description": "Starter Pux application using webpack with hot-reloading.",
+  "main": "support/entry.client.js",
+  "license": "BSD3",
+  "dependencies": {
+    "purescript-pux": "^9.0.0",
+    "purescript-node-process": "^4.0.0",
+    "purescript-foreign-generic": "^4.1.0",
+    "purescript-css": "^3.0.0",
+    "purescript-node-fs": "^4.0.0",
+    "purescript-aff": "^3.0.0",
+    "purescript-affjax": "^4.0.0",
+    "purescript-hyper": "^0.7.3"
+  }
+}
