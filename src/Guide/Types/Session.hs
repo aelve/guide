@@ -30,10 +30,11 @@ import Data.Time.Clock ( UTCTime(..) )
 import qualified Data.Text as T
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 
-import Guide.SafeCopy
 import Guide.Utils
 import Guide.Types.User
+
 
 type SpockSession conn st = Spock.Session conn GuideData st
 

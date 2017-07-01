@@ -75,12 +75,11 @@ library
       Guide.Views.Utils
         Guide.Views.Utils.Input
     Guide.Cache
-    Guide.SafeCopy
   other-modules:
     Imports
   build-depends:       Spock
-                     , Spock-lucid == 0.3.*
                      , Spock-digestive
+                     , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
                      , aeson == 1.0.*
                      , aeson-pretty
@@ -126,6 +125,7 @@ library
                      , random >= 1.1
                      , reroute
                      , safecopy
+                     , safecopy-migrate
                      , scrypt
                      , shortcut-links >= 0.4.2
                      , slave-thread
@@ -138,7 +138,6 @@ library
                      , text-all == 0.3.*
                      , time >= 1.5
                      , transformers
-                     , uniplate
                      , unix
                      , utf8-string
                      , vector

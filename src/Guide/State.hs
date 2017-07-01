@@ -98,12 +98,12 @@ import qualified Data.Text.All as T
 import Data.IP
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 import Data.Acid as Acid
 --
 import Web.Spock.Internal.SessionManager (SessionId)
 
 import Guide.Utils
-import Guide.SafeCopy
 import Guide.Markdown
 import Guide.Types.Core
 import Guide.Types.Edit

@@ -67,8 +67,8 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 
-import Guide.SafeCopy
 import Guide.Markdown
 import Guide.Utils
 import Guide.Types.Hue

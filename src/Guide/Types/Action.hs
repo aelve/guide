@@ -28,9 +28,9 @@ import Imports
 import Data.IP
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 
 import Guide.Utils
-import Guide.SafeCopy
 import Guide.Types.Core
 import Guide.Types.Edit
 

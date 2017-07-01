@@ -6,6 +6,10 @@ packages:
     git: https://github.com/aelve/stache-plus
     commit: 789aeabbf8069dec80647160f127d047e8f5a330
   extra-dep: true
+- location:
+    git: https://github.com/aelve/safecopy-migrate
+    commit: 26e5f8c7f62ebce66ef19e5bd573af21c16fe2b1
+  extra-dep: true
 
 extra-deps:
 - cmark-sections-0.1.0.3

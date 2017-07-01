@@ -18,15 +18,17 @@ module Guide.Types.User
 )
 where
 
+
 import Imports
 
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 -- scrypt
 import Crypto.Scrypt (Pass (..), EncryptedPass (..), encryptPassIO', getEncryptedPass, verifyPass')
 
 import Guide.Utils
-import Guide.SafeCopy
+
 
 data User = User {
   -- | Unique, pseudorandom identifier for user.
