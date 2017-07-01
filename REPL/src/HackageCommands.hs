@@ -148,3 +148,4 @@ showPersistentTarCompare updateDir tarFile = do
   newTar <- loadTar tarFile
   let newMap = buildHackageMap newTar (buildPreHackageMap newTar)
   printPersistentDiffMap updateDir newMap
+

@@ -15,10 +15,9 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  other-modules:     Common, FileUtils, HttpDownload, HackageUpdate, REPL
-                     , HackageCommands, StackageUpdate, StackageCommands, StackageArchive
+  other-modules:     Common, FileUtils, HttpDownload, HackageUpdate, REPL, StackageUpdate
                      
-  exposed-modules:   IndexProject, HackageArchive
+  exposed-modules:   IndexProject, HackageArchive, StackageArchive, HackageCommands, StackageCommands, AllCommands
   build-depends:       base >= 4.7 && < 5
                      , directory
                      , containers

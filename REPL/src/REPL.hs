@@ -15,6 +15,7 @@ import Network.HTTP.Client(HttpException)
 import Common
 import qualified HackageCommands as HC
 import qualified StackageCommands as SC
+import qualified AllCommands as AC
 
 processREPLCycle :: UpdateInfo -> IO ()
 processREPLCycle ui = forever $ do
@@ -34,6 +35,8 @@ buildCommand :: UpdateInfo -> (String -> IO())
 buildCommand ui = processCommand
   where 
     processCommand command
+      -- updates all
+      | chk "allupdate" = AC.totalUpdate ui
       -- checks the current hackage gzip archive and understands what to download
       | chk "check" = HC.showUpdateData arch snapURL     
       -- updates the gzip archive file, unpacks it to tar and loads in the permanent storage
@@ -119,6 +122,7 @@ buildCommand ui = processCommand
             updateCommand = HC.updateArchive snapURL archURL arch 
             unzipCommand = HC.unzipArchive arch trFile 
             persistCommand = HC.updatePersistentFromTar ud trFile
+
             ltsFileDir = getLTSFilesDir (sui ui)
             ltsURL = suiLTSURL (sui ui)
             sud = (getLTSPersistDir.sui) ui
