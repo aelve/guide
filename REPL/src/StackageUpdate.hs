@@ -55,13 +55,13 @@ fetchLTS file url = do
   writeAll2File file url
 
 fetchAllLTSFiles :: FilePath -> URL -> StackageSnapshots -> IO()
-fetchAllLTSFiles dir url (SSS snapshots) = do
+fetchAllLTSFiles dir url (SSS ss) = do
   putStrLn $ "Getting all LTS from " ++ url ++ " to directory " ++ dir
   createDirectoryIfMissing True dir
-  
-  mapM_ (\(_, l) -> fetchLTS (mkyml dir l) (mkyml url l)) $ filter (\(_, l) -> DL.isPrefixOf "lts" l) snapshots
+  mapM_ (\(_, l) -> fetchLTS (mkyml dir l) (mkyml url l)) ss
   where 
     mkyml pth l = pth </> (l ++ ".yaml")
+    
 
 parseYamlFileThrow :: BS.ByteString -> IO PackageDatum
 parseYamlFileThrow body = case Y.decode body of

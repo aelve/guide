@@ -67,11 +67,12 @@ buildCommand ui = processCommand
         SC.updateLTSFile (getLTSFile (sui ui) lts) (getLTSGithubURL (sui ui) lts) 
 
       | chk "ltsallupdate" = 
-        SC.updateAllLTSFiles (getLTSFilesDir (sui ui)) (suiLTSURL (sui ui)) snapshotsURL
+        SC.updateAllLTSFiles ltsFileDir ltsURL snapshotsURL
 
       | chk "ltsshowcont" = let lts = parseValEnd command in
         SC.showLTSContents  (getLTSFile (sui ui) lts)
-
+      
+      | chk "ltsshowmap" = SC.showStackageMapContents ltsFileDir ltsURL snapshotsURL 20
 
       -- | chk "ltspersist" = 
       --    SC.updateLT
@@ -118,6 +119,8 @@ buildCommand ui = processCommand
             updateCommand = HC.updateArchive snapURL archURL arch 
             unzipCommand = HC.unzipArchive arch trFile 
             persistCommand = HC.updatePersistentFromTar ud trFile
+            ltsFileDir = getLTSFilesDir (sui ui)
+            ltsURL = suiLTSURL (sui ui)
 
 
 showHelp :: UpdateInfo -> IO()

@@ -25,6 +25,8 @@ module Common(URL,
               getLTSFile,
               StackageSnapshot,
               StackageSnapshots(..), 
+              getNormalSnapshots,
+              filterNormal,
               StackageLTS, 
               StackageUpdateInfo(..)) where
 
@@ -128,6 +130,16 @@ type ShortSnapshotName = String
 type LongSnapshotName = String
 type StackageSnapshot = (ShortSnapshotName, LongSnapshotName)
 newtype StackageSnapshots = SSS [StackageSnapshot] deriving (Eq, Show)
+
+filterNormal :: StackageSnapshots -> StackageSnapshots
+filterNormal (SSS ss) = SSS (filter (\(_, l) -> DL.isPrefixOf "lts" l) ss)
+
+getSnapshots :: StackageSnapshots -> [StackageSnapshot] 
+getSnapshots (SSS ss) = ss
+
+getNormalSnapshots :: StackageSnapshots -> [StackageSnapshot]
+getNormalSnapshots = getSnapshots.filterNormal
+
 newtype PackageDatum = PD [PackageData] deriving (Eq, Show)
 
 shortName :: StackageSnapshot -> String
