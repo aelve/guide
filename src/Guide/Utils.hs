@@ -32,8 +32,10 @@ module Guide.Utils
   (//),
 
   -- * Referrers
+  ReferrerView (..),
   toReferrerView,
-  
+  eqKeyOrUrl,
+
   -- * IP
   sockAddrToIP,
 
@@ -116,7 +118,6 @@ import Data.Generics.Uniplate.Data (transform)
 -- needed for 'sanitiseUrl'
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
-
 
 ----------------------------------------------------------------------------
 -- Lists
@@ -217,6 +218,7 @@ appends backslashes (@\@) and not slashes (@/@).
 (//) :: Url -> Text -> Url
 (//) x y = fromMaybe x (T.stripSuffix "/" x) <> "/" <>
            fromMaybe y (T.stripPrefix "/" y)
+
 ----------------------------------------------------------------------------
 -- ReferrerView
 ----------------------------------------------------------------------------
@@ -228,18 +230,7 @@ data SearchEngine
   | Bing
   | Ecosia
   | DuckDuckGo
-  deriving (Show, Eq)
-
-data ReferrerView
-  = RefSearchEngine SearchEngine (Maybe Text)
-  -- ^ engine + keyword
-  | RefUrl Url
-  -- ^ some url
-  deriving (Eq)
-
-showKeyword :: Maybe Text -> String
-showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
-showKeyword _ = ""
+  deriving (Show, Eq, Ord)
 
 toSearchEngine :: Text -> Maybe SearchEngine
 toSearchEngine t
@@ -252,22 +243,47 @@ toSearchEngine t
   | otherwise = Nothing
   where lst = T.splitOn "." t
 
+data ReferrerView
+  = RefSearchEngine {searchEngine :: SearchEngine, keyword :: Maybe Text}
+  | RefUrl Url
+  deriving (Eq)
+
+instance Ord ReferrerView where
+  compare (RefUrl u1) (RefUrl u2) = compare u1 u2
+  compare (RefUrl _) _ = LT
+  compare _ (RefUrl _) = GT
+  compare (RefSearchEngine se1 k1) (RefSearchEngine se2 k2)
+    | se1 > se2 = GT
+    | se1 < se2 = LT
+    | se1 == se2 = compare k1 k2
+  compare (RefSearchEngine _ _) (RefSearchEngine _ _) = EQ
+
 instance Show ReferrerView where
   show (RefSearchEngine searchEngine keyword)
     = show searchEngine <> showKeyword keyword
   show (RefUrl url) = T.toString url
 
--- TODO: getQuery url :: Url -> Maybe Text
+showKeyword :: Maybe Text -> String
+showKeyword (Just "") = ""
+showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
+showKeyword _ = ""
 
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
   = case toSearchEngine domain of
-      Just se -> RefSearchEngine se Nothing -- (getQuery url)
+      Just se -> RefSearchEngine se keyword
       Nothing -> RefUrl url
   where
     uri = URI.parseURI $ T.toString url
     uriAuth = fromJust $ uri >>= URI.uriAuthority
     domain = T.pack $ URI.uriRegName uriAuth
+    keyword = T.pack . URI.uriQuery <$> uri
+    -- ^ I need to change this. It doesn't parse the keyword correctly
+
+eqKeyOrUrl :: ReferrerView -> ReferrerView -> Bool
+eqKeyOrUrl (RefUrl u1) (RefUrl u2) = u1 == u2
+eqKeyOrUrl (RefSearchEngine _ k1) (RefSearchEngine _ k2) = k1 == k2
+eqKeyOrUrl _ _ = False
 
 ----------------------------------------------------------------------------
 -- IP

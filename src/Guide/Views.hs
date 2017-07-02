@@ -271,14 +271,17 @@ renderStats globalState acts = do
           rawVisits = [(r, actionIP d) |
                        (_, d) <- acts',
                        Just (ExternalReferrer r) <- [actionReferrer d]]
-      let visits :: [(Url, (Int, Int))]
-          visits = map (over _2 (length &&& length.ordNub)) .
-                   map (fst.head &&& map snd) .
-                   groupWith fst
-                     $ rawVisits
+      let sortRefs :: [(Url, Maybe IP)] -> [(ReferrerView, [Maybe IP])]
+          sortRefs = map (fst.head &&& map snd)
+                  . groupBy (eqKeyOrUrl `on` fst)
+                  . sortBy (comparing fst)
+                  . map (over _1 toReferrerView)
+      let visits :: [(ReferrerView, (Int, Int))]
+          visits = map (over _2 (length &&& length.ordNub))
+                   . sortRefs $ rawVisits
       for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
         tr_ $ do
-          td_ (toHtml $ show (toReferrerView r))
+          td_ (toHtml $ show r)
           td_ (toHtml (show n))
           td_ (toHtml (show u))
   table_ $ do
