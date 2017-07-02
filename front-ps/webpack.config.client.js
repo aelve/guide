@@ -4,9 +4,10 @@ const path = require('path')
 const webpack = require('webpack')
 const isProd = process.env.NODE_ENV === 'production'
 
-const entries = [path.join(__dirname, 'support/client.entry.js')]
+const entries = [ path.join(__dirname, 'src/index.client.js')]
 
 const plugins = [
+  new webpack.ProgressPlugin(),
   new webpack.DefinePlugin({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     '$PRODUCTION': isProd,

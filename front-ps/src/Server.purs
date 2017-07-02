@@ -1,25 +1,26 @@
 module Server where
 
 import Prelude
-import Guide.Events (AppEffects, Event(..), foldp)
-import Guide.Routes (Route(..), match)
-import Guide.State (State(..), init)
-import Guide.View.HTMLWrapper (htmlWrapper)
-import Guide.View.Layout (view)
+
 import Control.IxMonad (ibind)
 import Control.Monad.Aff.Class (liftAff, class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff, class MonadEff)
 import Control.Monad.Eff.Console (CONSOLE)
-import Data.Int (fromString)
 import Data.Foreign.Generic (defaultOptions, genericEncodeJSON)
+import Data.Int (fromString)
 import Data.Maybe (fromMaybe)
 import Data.Newtype (un)
-import Hyper.Node.Server (runServer, defaultOptionsWithLogging)
-import Hyper.Port (Port(Port))
+import Guide.Events (AppEffects, Event(..), foldp)
+import Guide.Routes (Route(..), match)
+import Guide.State (State(..), init)
+import Guide.View.HTMLWrapper (htmlWrapper)
+import Guide.View.Layout (view)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Node.FileServer (fileServer)
+import Hyper.Node.Server (runServer, defaultOptionsWithLogging)
+import Hyper.Port (Port(Port))
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusNotFound, statusOK)
@@ -55,7 +56,11 @@ appHandler = do
     }
 
   -- | Inject initial state used to bootstrap app in support/client.entry.js
+  -- _ <- liftEff $ log "XXX Before"
+  -- _ <- traceAnyM app.state
   state <- lift' $ liftAff $ waitState (\(State st) -> st.loaded) app
+  -- _ <- traceAnyM "XXX After"
+  -- _ <- traceAny state
   let state_json = "window.__puxInitialState = "
                  <> (genericEncodeJSON (defaultOptions { unwrapSingleConstructors = true }) state)
                  <> ";"

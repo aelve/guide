@@ -16,5 +16,8 @@
     "purescript-aff": "^3.0.0",
     "purescript-affjax": "^4.0.0",
     "purescript-hyper": "^0.7.3"
+  },
+  "devDependencies": {
+    "purescript-debug": "3.0.0"
   }
 }

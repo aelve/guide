@@ -3,8 +3,10 @@ const webpack = require('webpack')
 const nodeExternals = require('webpack-node-externals')
 const isProd = process.env.NODE_ENV === 'production'
 
-const entries = [path.join(__dirname, 'support', 'server.entry.js')]
+const entries = [ path.join(__dirname, 'src', 'index.server.js')
+  ]
 const plugins = [
+  new webpack.ProgressPlugin(),
   new webpack.ProvidePlugin({
     'XMLHttpRequest': 'xhr2'
   }),

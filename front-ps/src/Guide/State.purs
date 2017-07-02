@@ -11,16 +11,21 @@ newtype State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
+  , errors :: Array String
+  , users :: String
   }
 
-derive instance genericState :: Generic State _
+derive instance gState :: Generic State _
 derive instance newtypeState :: Newtype State _
-
-instance showState :: Show State where show = genericShow
+instance showState :: Show State where
+  show = genericShow
 
 init :: String -> State
 init url = State
   { title: config.title
   , route: match url
   , loaded: false
+  , errors: []
+  -- playground
+  , users: ""
   }

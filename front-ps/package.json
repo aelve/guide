@@ -12,7 +12,7 @@
   "scripts": {
     "postinstall": "bower cache clean && bower install",
     "clean": "rimraf static/dist && rimraf dist",
-    "build": "npm run clean && webpack --config ./webpack.config.client.js --progress --profile --colors && webpack --config ./webpack.config.server.js --progress --profile --colors",
+    "build": "npm run clean && webpack --config ./webpack.config.client.js --progress && webpack --config ./webpack.config.server.js --progress",
     "watch": "npm run clean && node ./webpack.config.client.js",
     "serve": "npm run build && node ./dist/server.js",
     "start": "npm run watch",
@@ -29,7 +29,9 @@
   },
   "dependencies": {
     "bower": "^1.7.9",
+    "es6-promise": "^4.1.1",
     "express": "^4.13.4",
+    "isomorphic-fetch": "^2.2.1",
     "preact": "^8.1.0",
     "preact-compat": "^3.16.0",
     "purescript": "^0.11.5",
