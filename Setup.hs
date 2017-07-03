@@ -6,11 +6,11 @@ main = do
   defaultMainWithHooks hooks
 
 buildJS hooks = do
-  let originalpreBuild = preBuild hooks  
+  let originalPostBuild = postBuild hooks
   return $ hooks {
-    preBuild = \args flags -> do
+    postBuild = \args flags pkgDesc localBuildInfo  -> do
       let npmbuild = proc "sh" ["./scripts/buildjs.sh"]
       (_, _, _, buildHandle) <- createProcess npmbuild
       waitForProcess buildHandle
-      originalpreBuild args flags
+      originalPostBuild args flags pkgDesc localBuildInfo
   }
