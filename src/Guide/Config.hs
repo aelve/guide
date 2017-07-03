@@ -27,6 +27,7 @@ import Data.Default
 
 import Guide.Utils
 
+import qualified Guide.Types.Oauth2 as Oauth2
 
 -- | Site config. Stored in @config.json@.
 data Config = Config {
@@ -36,6 +37,7 @@ data Config = Config {
   _googleToken   :: Text,         -- ^ Google site verification token. Will
                                   --    be inserted into all pages
   _adminPassword :: Text,         -- ^ Password for the admin user
+  _githubOauthConfig :: [Oauth2.GithubEndpoint],
   _prerender     :: Bool,         -- ^ Whether to prerender all pages when
                                   --    the app is started
   _discussLink   :: Maybe Url     -- ^ Link to a place to discuss the site.
@@ -50,6 +52,7 @@ instance Default Config where
     _baseUrl       = "/",
     _googleToken   = "",
     _adminPassword = "",
+    _githubOauthConfig = [Oauth2.oauth2def "/"],
     _prerender     = False,
     _discussLink   = Nothing }
 
