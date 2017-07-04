@@ -1,2 +1,2 @@
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
+// add anything which might be shared by client- and server-side
+require('preact/devtools');
