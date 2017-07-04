@@ -1,31 +1,39 @@
 module Guide.State where
 
+import Prelude
+
+import Data.Generic (class Generic, gShow)
+import Data.Newtype (class Newtype)
 import Guide.Config (config)
 import Guide.Routes (Route, match)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
-import Data.Newtype (class Newtype)
-import Data.Show (class Show)
+import Guide.Types (Users)
+import Network.RemoteData (RemoteData(..))
 
 newtype State = State
   { title :: String
+  , hello :: String
   , route :: Route
   , loaded :: Boolean
   , errors :: Array String
-  , users :: String
+  , users :: RemoteData String Users
+  , countHomeRoute :: Int
+  , countPGRoute :: Int
   }
 
-derive instance gState :: Generic State _
+derive instance gState :: Generic State
 derive instance newtypeState :: Newtype State _
 instance showState :: Show State where
-  show = genericShow
+  show = gShow
 
 init :: String -> State
 init url = State
   { title: config.title
+  , hello: "world"
   , route: match url
   , loaded: false
   , errors: []
   -- playground
-  , users: ""
+  , users: NotAsked
+  , countHomeRoute: 0
+  , countPGRoute: 0
   }

@@ -15,7 +15,9 @@
     "purescript-node-fs": "^4.0.0",
     "purescript-aff": "^3.0.0",
     "purescript-affjax": "^4.0.0",
-    "purescript-hyper": "^0.7.3"
+    "purescript-hyper": "^0.7.3",
+    "purescript-remotedata": "https://github.com/sectore/purescript-remotedata.git#feature/refreshing-state",
+    "purescript-argonaut-generic-codecs": "^6.0.4"
   },
   "devDependencies": {
     "purescript-debug": "3.0.0"

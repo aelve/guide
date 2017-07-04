@@ -2,27 +2,23 @@ module Guide.Types where
 
 import Prelude
 
-import Data.Foreign.Class (class Decode, class Encode)
-import Data.Foreign.Generic (defaultOptions, genericDecode, genericEncode)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
-import Lib.IsomorphicFetch (URI)
 
-newtype User = User {
-  login :: String,
-  avatar_url :: URI,
-  html_url :: URI
-}
+newtype User = User
+  { id :: Int
+  , name :: String
+  , email :: String
+  }
 
-derive instance gUser :: Generic User _
+derive instance gUser :: Generic User
 derive instance newtypeUser :: Newtype User _
 derive instance eqUser :: Eq User
 instance showUser :: Show User where
-  show = genericShow
-instance decodeUser :: Decode User where
-  decode = genericDecode $ defaultOptions { unwrapSingleConstructors = true }
-instance encodeUser :: Encode User where
-  encode = genericEncode $ defaultOptions { unwrapSingleConstructors = true }
+  show = gShow
 
-type Users = Array User
+newtype Users = Users (Array User)
+derive instance gUsers :: Generic Users
+derive instance newtypeUsers :: Newtype Users _
+instance showUsers :: Show Users where
+  show = gShow

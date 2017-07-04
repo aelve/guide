@@ -2,16 +2,24 @@ module Guide.Events where
 
 import Prelude
 
-import Control.Monad.Aff (attempt)
-import Control.Monad.Eff.Exception (Error)
+import Control.Monad.Eff.Class (liftEff)
+import DOM (DOM)
+import DOM.Event.Event (preventDefault)
+import DOM.HTML (window)
+import DOM.HTML.History (DocumentTitle(..), URL(..), pushState)
+import DOM.HTML.Types (HISTORY)
+import DOM.HTML.Window (history)
 import Data.Array ((:))
 import Data.Either (Either(..))
+import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..))
-import Guide.Http (fetchGithubUsers)
+import Guide.Http (fetchUsers)
 import Guide.Routes (Route(..), match)
 import Guide.State (State(..))
+import Guide.Types (Users)
 import Lib.IsomorphicFetch (FETCH)
 import Network.HTTP.Affjax (AJAX)
+import Network.RemoteData (RemoteData(..), isNotAsked)
 import Pux (EffModel, noEffects, onlyEffects)
 import Pux.DOM.Events (DOMEvent)
 
@@ -20,35 +28,56 @@ data Event
   = PageView Route
   | Navigate String DOMEvent
   -- playground
-  | RequestGithubUsers
-  | ReceiveGithubUsers (Either Error String)
+  | RequestUsers
+  | ReceiveUsers (Either String Users)
 
-type AppEffects eff = (ajax :: AJAX, fetch :: FETCH | eff)
+type AppEffects eff =
+  ( ajax :: AJAX
+  , fetch :: FETCH
+  , dom :: DOM
+  , history :: HISTORY
+  | eff
+  )
 
 foldp :: ∀ eff. Event -> State -> EffModel State Event (AppEffects eff)
 
 -- Playground
 
-foldp RequestGithubUsers state = onlyEffects state
-  [ attempt (fetchGithubUsers 4) >>= pure <<< Just <<< ReceiveGithubUsers
-  ]
+foldp RequestUsers (State st) =
+  { state: State $ st { users = case st.users of
+                                  Success users -> Refreshing users
+                                  _ -> Loading
+                      }
+  , effects:
+    [ fetchUsers >>= pure <<< Just <<< ReceiveUsers
+    ]
+  }
 
-foldp (ReceiveGithubUsers (Right users)) (State st) = noEffects $
+foldp (ReceiveUsers (Right users)) (State st) = noEffects $
   State $
     st  { loaded = true
-        , users = users
+        , users = (Success users)
         }
 
-foldp (ReceiveGithubUsers (Left error)) s@(State st) = noEffects $
+foldp (ReceiveUsers (Left error)) s@(State st) = noEffects $
   State $
     st  { loaded = true
         , errors = (show error) : st.errors
+        , users = Failure error
         }
 
 -- Routing
 foldp (Navigate url ev) state = onlyEffects state
-  [ -- TODO (sectore): Update history (on client side only)
-    pure <<< Just $ PageView (match url)
+  -- TODO (sectore):
+  -- Check if we can update history on client side only
+  -- Currently we do have to declare `DOM` + `HISTORY` effects
+  -- by handling `Navigate` Action in foldp
+  [ do
+      liftEff do
+          preventDefault ev
+          h <- history =<< window
+          pushState (toForeign {}) (DocumentTitle "") (URL url) h
+      pure <<< Just $ PageView (match url)
   ]
 
 foldp (PageView route) (State st) =
@@ -56,15 +85,19 @@ foldp (PageView route) (State st) =
 
 routeEffects :: ∀ fx. Route -> State -> EffModel State Event (AppEffects fx)
 routeEffects Home s@(State st) = noEffects $
-  State $ st { loaded = true }
+  State $ st { loaded = true, countHomeRoute = st.countHomeRoute + 1 }
 
 routeEffects Haskell s@(State st) = noEffects $
   State $ st { loaded = true }
 
 routeEffects Playground s@(State st) =
-  { state: State $ st { loaded = false }
+  { state: State $ st { loaded = false, countPGRoute = st.countPGRoute + 1 }
   , effects: [
-      attempt (fetchGithubUsers 2) >>= pure <<< Just <<< ReceiveGithubUsers
+      -- fetch users only once
+      if isNotAsked st.users then
+        pure $ Just RequestUsers
+      else
+        pure Nothing
   ]}
 
 routeEffects (NotFound url) s@(State st) = noEffects $

@@ -13,7 +13,7 @@
     "postinstall": "bower cache clean && bower install",
     "clean": "rimraf static/dist && rimraf dist",
     "build": "npm run clean && webpack --config ./webpack.config.client.js --progress && webpack --config ./webpack.config.server.js --progress",
-    "watch": "npm run clean && node ./webpack.config.client.js",
+    "watch": "npm run clean && PORT=3333 node ./server.js",
     "serve": "npm run build && node ./dist/server.js",
     "start": "npm run watch",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -43,5 +43,6 @@
     "webpack-hot-middleware": "^2.12.2",
     "webpack-node-externals": "^1.5.4",
     "xhr2": "^0.1.3"
-  }
+  },
+  "devDependencies": {}
 }

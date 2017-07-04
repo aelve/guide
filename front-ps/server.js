@@ -4,7 +4,6 @@ var webpack = require('webpack');
 var express = require('express');
 var config = require('./webpack.config.client');
 
-const port = 8080;
 const compiler = webpack(require('./webpack.config.server.js'))
   const client = webpack(config);
   let server = null;

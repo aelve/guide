@@ -7,7 +7,8 @@ import Control.Monad.Aff.Class (liftAff, class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff, class MonadEff)
 import Control.Monad.Eff.Console (CONSOLE)
-import Data.Foreign.Generic (defaultOptions, genericEncodeJSON)
+import Data.Argonaut.Generic.Aeson (options)
+import Data.Argonaut.Generic.Encode (genericEncodeJson)
 import Data.Int (fromString)
 import Data.Maybe (fromMaybe)
 import Data.Newtype (un)
@@ -56,13 +57,9 @@ appHandler = do
     }
 
   -- | Inject initial state used to bootstrap app in support/client.entry.js
-  -- _ <- liftEff $ log "XXX Before"
-  -- _ <- traceAnyM app.state
   state <- lift' $ liftAff $ waitState (\(State st) -> st.loaded) app
-  -- _ <- traceAnyM "XXX After"
-  -- _ <- traceAny state
   let state_json = "window.__puxInitialState = "
-                 <> (genericEncodeJSON (defaultOptions { unwrapSingleConstructors = true }) state)
+                 <> (show $ genericEncodeJson options state)
                  <> ";"
 
   -- | Set proper response status
