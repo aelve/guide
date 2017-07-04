@@ -81,7 +81,6 @@ $(deriveSafeCopy 0 'base ''StackagePackage)
 $(deriveSafeCopy 0 'base ''DV.Version)
 $(deriveSafeCopy 0 'base ''KeyValue)
 
-
 insertKey :: PackageName -> StackagePackage -> Update KeyValue ()
 insertKey key value = do 
   KeyValue stackageMap <- State.get

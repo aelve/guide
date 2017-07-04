@@ -10,7 +10,7 @@ import qualified Data.Text as T
 import Data.Monoid ((<>))
 import System.FilePath((</>))
 import HackageArchive
-import Stackage
+import Common
 
 import qualified Data.Text.IO as TIO
 
@@ -29,6 +29,7 @@ testPath :: T.Text -> T.Text -> Bool -> TestTree
 testPath text val match = testCase (T.unpack ("Parsing " <> expect match <> " \'" <> text <> "\'")) $
   assertBool "Failed" $ ((fst <$> parsePath (T.unpack text)) == Just (T.unpack val)) == match
 
+{-
 parseStackageTests = testGroup "Stackage parsing tests"
   [
     testParse parsePackageLine "              ztail ==1.2" True
@@ -53,6 +54,7 @@ parseCabalConfig = testGroup "Cabal config parsing tests"
     , testStackagePackageLines parseStackageLTS "sometestfile2.cnf"
     , testFileJustParse parseStackageLTS "sometestfile3.cnf" True
   ]
+-}
 
 -- Well this is code duplication. Somehow need to use testParse function here
 
@@ -91,6 +93,6 @@ testFileParse file p textFunc matchFunc =
     assertBool "Failed" (either (const False) id eVal)
 
 tests :: TestTree
-tests = testGroup "REPL tests" [parseStackageTests, parseTests, parseCabalConfig]
+tests = testGroup "REPL tests" [parseTests]
 
 main = defaultMain tests

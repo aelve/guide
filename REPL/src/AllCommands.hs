@@ -1,42 +1,89 @@
-module AllCommands(totalUpdate) where
+module AllCommands(
+                  UpdateInfo(..), 
+                  CombinedPackage (..),
+                  queryCombinedData,
+                  allCommands, updateAllCommand) where
+
+import Data.Default
 
 import Common
 import qualified HackageCommands as HC
 import qualified StackageCommands as SC
 import qualified HackageArchive as HA
+import qualified StackageArchive as SA
+import REPL
 
-totalUpdate :: UpdateInfo -> IO()
-totalUpdate ui = do
-    putStrLn "Total update of a system!"
+data UpdateInfo = UI {
+  iuh :: HC.HackageUpdateInfo,
+  sui :: SC.StackageUpdateInfo
+} deriving (Eq, Show)
 
-    putStrLn "Stackage update..."
-    SC.updatePersistentMapFromLTS sud ltsFileDir ltsURL snapshotsURL
+instance Default UpdateInfo where
+  def = defaultUI
 
-    putStrLn "Hackage update..."
-    HC.updateTotalArchive updateCommand unzipCommand persistCommand
+defaultUI :: UpdateInfo
+defaultUI = UI { 
+  iuh = def, 
+  sui = def 
+} 
 
-    where 
-        sud = (getLTSPersistDir.sui) ui
-        ltsFileDir = getLTSFilesDir (sui ui)
-        ltsURL = suiLTSURL (sui ui)
-        snapshotsURL = (getSnapshotURL.sui) ui
+newtype CombinedPackage =  CP (HA.HackagePackage, Maybe SA.StackagePackage) deriving (Eq)
 
-        arch = (getArchive.iuh) ui
-        archURL = (iuhArchiveURL.iuh) ui
-        snapURL = (iuhSnapshotURL.iuh) ui
-        trFile = (getTar.iuh) ui
-        ud = (getArchivePersistDir.iuh) ui
+instance Show CombinedPackage where
+  show (CP (hp, Just sp)) = HA.name hp ++ " " ++ show (HA.pVersion hp) ++ " present in stackage" 
+  show (CP (hp, Nothing)) = HA.name hp ++ " " ++ show (HA.pVersion hp) ++ " not in stackage" 
 
-        updateCommand = HC.updateArchive snapURL archURL arch 
-        unzipCommand = HC.unzipArchive arch trFile 
-        persistCommand = HC.updatePersistentFromTar ud trFile
-{-
-queryCombinedData :: UpdateInfo -> PackageName -> IO()
+
+queryCombinedData :: UpdateInfo -> PackageName -> IO (Maybe CombinedPackage)
 queryCombinedData ui package = do
-    value <- HA.queryPersistentMap hUpdateDir package
-    return ()
+    hp <- HA.queryPersistentMap hUpdateDir package
+    sp <- SA.queryPersistentMap sUpdateDir package
+    return $ hp >>= \p -> Just $ CP (p, sp)
     where
-        sUpdateDir = (getLTSPersistDir.sui) ui
-        hUpdateDir = (getArchivePersistDir.iuh) ui
+        sUpdateDir = (SC.getLTSPersistDir.sui) ui
+        hUpdateDir = (HC.getArchivePersistDir.iuh) ui
 
--}
+
+-- This method just shows the result of querying by queryCombinedData method
+showQueryCombinedData :: UpdateInfo -> PackageName -> IO ()
+showQueryCombinedData ui package = do
+    putStrLn $ "Querying package " ++ package
+    query <- queryCombinedData ui package
+    print query
+
+showQueryCombinedDataCommand :: REPLCommand UpdateInfo
+showQueryCombinedDataCommand = RC {
+  cTag = "all",
+  cMatch = isPrefixCommand "query",
+  cExec = \ui commandStr -> let package = parseValEnd commandStr in showQueryCombinedData ui package,
+  cDescription = const "query package - queries package in stackage and hackage archives"
+}
+
+updateAllCommand :: REPLCommand UpdateInfo
+updateAllCommand = RC {
+  cTag = "all",
+  cMatch = isTrimCommand "allupdate",
+  cExec = \ui _ ->  cExec SC.updatePersistentMapFromLTSCommand (sui ui) "" >> 
+                    cExec HC.updateAllHackageCommand (iuh ui) "",
+  cDescription = const "allupdate - updates stackage and hackage"
+}
+
+transformH :: REPLCommand HC.HackageUpdateInfo -> REPLCommand UpdateInfo
+transformH hCommand = RC {
+  cTag = cTag hCommand, -- same as in the hackage command
+  cMatch = cMatch hCommand,
+  cExec = \ui commandStr -> cExec hCommand (iuh ui) commandStr,
+  cDescription = cDescription hCommand . iuh  
+}
+
+transformS :: REPLCommand SC.StackageUpdateInfo -> REPLCommand UpdateInfo
+transformS sCommand = RC {
+  cTag = cTag sCommand, -- same as in the hackage command
+  cMatch = cMatch sCommand,
+  cExec = \ui commandStr -> cExec sCommand (sui ui) commandStr,
+  cDescription = cDescription sCommand . sui  
+}
+
+allCommands :: [REPLCommand UpdateInfo]
+allCommands = updateAllCommand : showQueryCombinedDataCommand :
+  map transformH HC.hackageCommands ++ map transformS SC.stackageCommands
