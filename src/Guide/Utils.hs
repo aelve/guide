@@ -118,7 +118,9 @@ import Data.Generics.Uniplate.Data (transform)
 -- needed for 'sanitiseUrl'
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
-
+-- needed for parsing urls
+import qualified Data.ByteString.Char8 as C8
+import Network.HTTP.Types (Query, parseQuery)
 ----------------------------------------------------------------------------
 -- Lists
 ----------------------------------------------------------------------------
@@ -268,6 +270,21 @@ showKeyword (Just "") = ""
 showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
 showKeyword _ = ""
 
+extractQueryList :: Url -> Query
+extractQueryList url
+  = parseQuery . fromJust
+  $ C8.pack . URI.uriQuery
+  <$> URI.parseURI (T.toString url)
+
+extractKeyword :: Url -> String
+extractKeyword url = do
+  let queryList = extractQueryList url
+  e <- lst
+  case lookup e queryList of
+    Just r -> C8.unpack . fromJust $ r
+    Nothing -> ""
+  where lst = ["q", "p", "text"]
+
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
   = case toSearchEngine domain of
@@ -277,8 +294,7 @@ toReferrerView url
     uri = URI.parseURI $ T.toString url
     uriAuth = fromJust $ uri >>= URI.uriAuthority
     domain = T.pack $ URI.uriRegName uriAuth
-    keyword = T.pack . URI.uriQuery <$> uri
-    -- ^ I need to change this. It doesn't parse the keyword correctly
+    keyword =  Just . T.pack . extractKeyword $ url
 
 eqKeyOrUrl :: ReferrerView -> ReferrerView -> Bool
 eqKeyOrUrl (RefUrl u1) (RefUrl u2) = u1 == u2
