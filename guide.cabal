@@ -70,6 +70,7 @@ library
       Guide.Views.Utils
     Guide.Cache
     Guide.SafeCopy
+    Guide.Api.ClientTypes
   other-modules:
     Imports
   build-depends:       Spock

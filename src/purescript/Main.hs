@@ -9,7 +9,7 @@ import Data.Proxy (Proxy (..))
 import Language.PureScript.Bridge (BridgeBuilder, Language( Haskell ), SumType,
                                     PSType, TypeInfo (..), (<|>), (^==), buildBridge,
                                     defaultBridge, typeName, mkSumType, writePSTypes)
-import Guide.Types.Core (Category)
+import Guide.Api.ClientTypes (CCategoryDetail, CGrandCategory)
 
 path :: FilePath
 path = "front-ps/src/Generated"
@@ -27,7 +27,8 @@ bridge = defaultBridge
 
 clientTypes :: [SumType  'Haskell]
 clientTypes =
-  [ mkSumType (Proxy :: Proxy Category)
+  [ mkSumType (Proxy :: Proxy CGrandCategory)
+  , mkSumType (Proxy :: Proxy CCategoryDetail)
   ]
 
 main :: IO ()

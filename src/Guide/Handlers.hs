@@ -26,8 +26,6 @@ import qualified Text.Atom.Feed  as Atom
 -- Text
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
--- JSON
-import qualified Data.Aeson as A
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -43,9 +41,9 @@ import Guide.Merge
 import Guide.Markdown
 import Guide.State
 import Guide.Types
+import Guide.Api.ClientTypes (mkCGrandCategory, mkCCategoryDetail)
 import Guide.Utils
 import Guide.Views
-import Guide.Views.Utils (categoryLink)
 
 
 methods :: SpockM () () ServerState ()
@@ -61,40 +59,11 @@ apiMethods = Spock.subcomponent "api" $ do
   middleware simpleCors
   Spock.get "all-categories" $ do
     grands <- groupWith (view group_) <$> dbQuery GetCategories
-    let jsonCat cat = M.fromList [
-          ("title" :: Text,
-             cat^.title),
-          ("link" :: Text,
-             categoryLink cat),
-          ("uid" :: Text,
-             uidToText (cat^.uid))
-          ]
-    let jsonGrand grand = A.object
-          [ "title" A..=
-                (grand^?!_head.group_)
-          , "finished" A..=
-                map jsonCat
-                (filter ((== CategoryFinished) . view status) grand)
-          , "wip" A..=
-                map jsonCat
-                (filter ((== CategoryWIP) . view status) grand)
-          , "stubs" A..=
-                map jsonCat
-                (filter ((== CategoryStub) . view status) grand)
-          ]
-    json (map jsonGrand grands)
+    json $ fmap mkCGrandCategory grands
 
   Spock.get categoryVar $ \catId -> do
     cat <- dbQuery (GetCategory catId)
-    let jsonCat = A.object
-          [ "uid" A..= (cat^.uid)
-          , "title" A..= (cat^.title)
-          , "group" A..= (cat^.group_)
-          , "description" A..= (cat^.notes)
-          , "items" A..= (cat^.items)
-          , "status" A..= (cat^.status)
-          ]
-    json jsonCat
+    json $ mkCCategoryDetail cat
 
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
