@@ -3,6 +3,8 @@ bower_components/
 output/
 dist/
 static/dist/
+src/Generated
+# ^ generated types by `purescript-bridge`
 .psci_modules
 npm-debug.log
 **DS_Store

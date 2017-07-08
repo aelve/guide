@@ -13,3 +13,4 @@ extra-deps:
 - edit-distance-vector-1.0.0.4
 - patches-vector-0.1.5.4
 - fmt-0.2.0.0
+- purescript-bridge-0.11.0.0

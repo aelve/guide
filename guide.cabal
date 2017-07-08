@@ -198,3 +198,26 @@ test-suite tests
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
+
+executable guide-hs2ps
+  hs-source-dirs:      src/purescript
+  main-is:             Main.hs
+
+ build-depends:       base
+                    , guide
+                    , purescript-bridge
+ default-language:    Haskell2010
+ ghc-options:         -Wall -fno-warn-unused-do-bind
+ default-extensions:  MultiWayIf
+                    , ViewPatterns
+                    , RecordWildCards
+                    , TupleSections
+                    , LambdaCase
+                    , RankNTypes
+                    , MultiParamTypeClasses
+                    , FunctionalDependencies
+                    , TemplateHaskell
+                    , DeriveFunctor
+                    , DeriveTraversable
+                    , DeriveGeneric
+                    , OverloadedStrings
