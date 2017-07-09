@@ -34,7 +34,6 @@ module Guide.Utils
   -- * Referrers
   ReferrerView (..),
   toReferrerView,
-  eqKeyOrUrl,
 
   -- * IP
   sockAddrToIP,
@@ -260,12 +259,10 @@ showKeyword (Just "") = ""
 showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
 showKeyword _ = ""
 
-toBS :: String -> ByteString
-toBS = encodeUtf8 . T.pack
-
 extractQuery :: Url -> Maybe Query
 extractQuery url = getQuery <$> parse url
   where
+    toBS = encodeUtf8 . T.pack
     getQuery = parseQuery . toBS . URI.uriQuery
     parse = URI.parseURI . T.toString
 
@@ -287,11 +284,6 @@ toReferrerView url
     uriAuth = fromJust $ uri >>= URI.uriAuthority
     domain = T.pack $ URI.uriRegName uriAuth
     keyword =  extractKeyword url
-
-eqKeyOrUrl :: ReferrerView -> ReferrerView -> Bool
-eqKeyOrUrl (RefUrl u1) (RefUrl u2) = u1 == u2
-eqKeyOrUrl (RefSearchEngine _ k1) (RefSearchEngine _ k2) = k1 == k2
-eqKeyOrUrl _ _ = False
 
 ----------------------------------------------------------------------------
 -- IP

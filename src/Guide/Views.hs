@@ -237,7 +237,8 @@ renderStats globalState acts = do
       th_ "Visits"
       th_ "Unique visitors"
     tbody_ $ do
-      let rawVisits :: [(Uid Category, Maybe IP)]
+      let rawVisits :: [(Uid Category, Maybe IP
+                        )]
           rawVisits = [(catId, actionIP d) |
                        (Action'CategoryVisit catId, d) <- acts']
       let visits :: [(Uid Category, (Int, Int))]
@@ -273,7 +274,7 @@ renderStats globalState acts = do
                        Just (ExternalReferrer r) <- [actionReferrer d]]
       let sortRefs :: [(Url, Maybe IP)] -> [(ReferrerView, [Maybe IP])]
           sortRefs = map (fst.head &&& map snd)
-                  . groupBy (eqKeyOrUrl `on` fst)
+                  . groupBy ((==) `on` fst)
                   . sortBy (comparing fst)
                   . map (over _1 toReferrerView)
       let visits :: [(ReferrerView, (Int, Int))]
