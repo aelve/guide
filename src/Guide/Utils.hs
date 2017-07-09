@@ -118,8 +118,8 @@ import Data.Generics.Uniplate.Data (transform)
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
 -- needed for parsing urls
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import Network.HTTP.Types (Query,  parseQuery)
+import Network.HTTP.Types (Query, parseQuery)
+
 ----------------------------------------------------------------------------
 -- Lists
 ----------------------------------------------------------------------------
@@ -269,15 +269,14 @@ showKeyword _ = ""
 extractQuery :: Url -> Maybe Query
 extractQuery url = getQuery <$> parse url
   where
-    toBS = encodeUtf8 . T.pack
-    getQuery = parseQuery . toBS . URI.uriQuery
+    getQuery = parseQuery . T.toByteString . URI.uriQuery
     parse = URI.parseURI . T.toString
 
 extractKeyword :: Url -> Maybe Text
 extractKeyword url
   = case extractQuery url of
-      Just query -> decodeUtf8 <$> lookupQuery query
-      Nothing -> Nothing
+      Just query -> T.toStrict <$> lookupQuery query
+      Nothing    -> Nothing
   where
     lookupQuery = join . (lookup "q" <> lookup "p" <> lookup "text")
 
@@ -289,8 +288,8 @@ toReferrerView url
   where
     uri = URI.parseURI $ T.toString url
     uriAuth = fromJust $ uri >>= URI.uriAuthority
-    domain = T.pack $ URI.uriRegName uriAuth
-    keyword =  extractKeyword url
+    domain = T.toStrict $ URI.uriRegName uriAuth
+    keyword = extractKeyword url
 
 ----------------------------------------------------------------------------
 -- IP
@@ -325,7 +324,7 @@ instance SafeCopy (Uid a) where
   kind = base
 
 instance IsString (Uid a) where
-  fromString = Uid . T.pack
+  fromString = Uid . T.toStrict
 
 -- | Generate a random text of given length from characters @a-z@ and digits.
 randomText :: MonadIO m => Int -> m Text
@@ -339,7 +338,7 @@ randomText n = liftIO $ do
         return $ if i < 10 then toEnum (fromEnum '0' + i)
                            else toEnum (fromEnum 'a' + i - 10)
   xs <- replicateM (n-1) randomChar
-  return (T.pack (x:xs))
+  return (T.toStrict (x:xs))
 
 -- For probability tables, see
 -- https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
@@ -394,7 +393,7 @@ includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
-  bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+  bytes $ T.toByteString (XML.ppElement (Atom.xmlFeed feed))
 
 -- | Get details of the request:
 --

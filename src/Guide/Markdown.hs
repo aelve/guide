@@ -97,9 +97,9 @@ renderMD :: [MD.Node] -> ByteString
 renderMD ns
   -- See https://github.com/jgm/cmark/issues/147
   | any isInlineNode ns =
-      T.encodeUtf8 . sanitize . T.concat . map (nodeToHtml []) $ ns
+      T.toByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
   | otherwise =
-      T.encodeUtf8 . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+      T.toByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
@@ -301,11 +301,11 @@ instance Show MarkdownTree where
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
     "text" A..= (md^.mdText),
-    "html" A..= T.decodeUtf8 (md^.mdHtml) ]
+    "html" A..= T.toStrict (md^.mdHtml) ]
 instance A.ToJSON MarkdownBlock where
   toJSON md = A.object [
     "text" A..= (md^.mdText),
-    "html" A..= T.decodeUtf8 (md^.mdHtml) ]
+    "html" A..= T.toStrict (md^.mdHtml) ]
 instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
     "text" A..= (md^.mdText) ]
