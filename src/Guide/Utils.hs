@@ -252,7 +252,8 @@ toSearchEngine t
 
 -- | A (lossy) representation of referrers that is better for analytics.
 data ReferrerView
-  = RefSearchEngine {searchEngine :: SearchEngine, keyword :: Maybe Text}
+  = RefSearchEngine { searchEngine :: SearchEngine
+                    , keyword      :: Text }  -- No keyword = empty keyword
   | RefUrl Url
   deriving (Eq, Ord)
 
@@ -261,10 +262,9 @@ instance Show ReferrerView where
     = show searchEngine <> showKeyword keyword
   show (RefUrl url) = T.toString url
 
-showKeyword :: Maybe Text -> String
-showKeyword (Just "") = ""
-showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
-showKeyword _ = ""
+showKeyword :: Text -> String
+showKeyword "" = ""
+showKeyword kw = " (\"" <> T.toString kw <> "\")"
 
 extractQuery :: Url -> Maybe Query
 extractQuery url = getQuery <$> parse url
@@ -289,7 +289,7 @@ extractKeyword url
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
   = case toSearchEngine =<< domain of
-      Just se -> RefSearchEngine se keyword
+      Just se -> RefSearchEngine se (fromMaybe "" keyword)
       Nothing -> RefUrl url
   where
     uri = URI.parseURI $ T.toString url
