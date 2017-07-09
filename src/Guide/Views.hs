@@ -269,22 +269,21 @@ renderStats globalState acts = do
       th_ "Unique visitors"
     tbody_ $ do
       let rawVisits :: [(Url, Maybe IP)]
-          rawVisits = [(r, actionIP d) |
-                       (_, d) <- acts',
-                       Just (ExternalReferrer r) <- [actionReferrer d]]
+          rawVisits = [(r, actionIP d)
+                         | d <- map snd acts'
+                         , Just (ExternalReferrer r) <- [actionReferrer d]]
       let sortRefs :: [(Url, Maybe IP)] -> [(ReferrerView, [Maybe IP])]
           sortRefs = map (fst.head &&& map snd)
-                  . groupBy ((==) `on` fst)
-                  . sortBy (comparing fst)
-                  . map (over _1 toReferrerView)
+                   . groupWith fst
+                   . map (over _1 toReferrerView)
       let visits :: [(ReferrerView, (Int, Int))]
           visits = map (over _2 (length &&& length.ordNub))
-                   . sortRefs $ rawVisits
+                       (sortRefs rawVisits)
       for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
         tr_ $ do
-          td_ (toHtml $ show r)
-          td_ (toHtml (show n))
-          td_ (toHtml (show u))
+          td_ (toHtml (show r))  -- referrer
+          td_ (toHtml (show n))  -- visitors
+          td_ (toHtml (show u))  -- unique visitors
   table_ $ do
     thead_ $ tr_ $ do
       th_ "Action"
