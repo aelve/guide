@@ -188,7 +188,7 @@ mainWith config = do
       return cfg {
         spc_maxRequestSize = Just (1024*1024) }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ do
+    runSpock 3080 $ spock spockConfig $ do
       middleware (EKG.metrics waiMetrics)
       middleware (staticPolicy (addBase "static"))
       -- Javascript
@@ -269,10 +269,10 @@ mainWith config = do
         -- take them and inject into the page. We don't want to duplicate
         -- rendering on server side and on client side.
         methods
-      
+
       Spock.subcomponent "auth" $ do
         Spock.get "login" $ lucidWithConfig renderLogin
-        
+
         Spock.get "register" $ lucidWithConfig renderRegister
 
 adminHook :: ActionCtxT ctx (WebStateM () () ServerState) ()
