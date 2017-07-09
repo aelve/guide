@@ -248,17 +248,7 @@ toSearchEngine t
 data ReferrerView
   = RefSearchEngine {searchEngine :: SearchEngine, keyword :: Maybe Text}
   | RefUrl Url
-  deriving (Eq)
-
-instance Ord ReferrerView where
-  compare (RefUrl u1) (RefUrl u2) = compare u1 u2
-  compare (RefUrl _) _ = LT
-  compare _ (RefUrl _) = GT
-  compare (RefSearchEngine se1 k1) (RefSearchEngine se2 k2)
-    | se1 > se2 = GT
-    | se1 < se2 = LT
-    | se1 == se2 = compare k1 k2
-  compare (RefSearchEngine _ _) (RefSearchEngine _ _) = EQ
+  deriving (Eq, Ord)
 
 instance Show ReferrerView where
   show (RefSearchEngine searchEngine keyword)
