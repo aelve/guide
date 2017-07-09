@@ -272,13 +272,19 @@ extractQuery url = getQuery <$> parse url
     getQuery = parseQuery . T.toByteString . URI.uriQuery
     parse = URI.parseURI . T.toString
 
+-- TODO: different search engines have different parameters, we should use
+-- right ones instead of just trying “whatever fits”
 extractKeyword :: Url -> Maybe Text
 extractKeyword url
   = case extractQuery url of
       Just query -> T.toStrict <$> lookupQuery query
       Nothing    -> Nothing
   where
-    lookupQuery = join . (lookup "q" <> lookup "p" <> lookup "text")
+    lookupQuery :: [(ByteString, Maybe ByteString)] -> Maybe ByteString
+    lookupQuery query = join $
+      lookup "q"    query <|>     -- Google, Bing, Ecosia, DDG
+      lookup "p"    query <|>     -- Yahoo
+      lookup "text" query         -- Yandex
 
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
