@@ -6,7 +6,7 @@ import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
 import Guide.Config (config)
 import Guide.Routes (Route, match)
-import Guide.Types (Users)
+import Guide.Types (CGrandCategories, Users)
 import Network.RemoteData (RemoteData(..))
 
 newtype State = State
@@ -16,6 +16,7 @@ newtype State = State
   , loaded :: Boolean
   , errors :: Array String
   , users :: RemoteData String Users
+  , grandCategories :: RemoteData String CGrandCategories
   , countHomeRoute :: Int
   , countPGRoute :: Int
   }
@@ -32,6 +33,7 @@ init url = State
   , route: match url
   , loaded: false
   , errors: []
+  , grandCategories: NotAsked
   -- playground
   , users: NotAsked
   , countHomeRoute: 0

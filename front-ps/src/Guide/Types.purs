@@ -5,6 +5,10 @@ import Prelude
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
 
+import Guide.Api.ClientTypes (CGrandCategory(..))
+
+type CGrandCategories = Array CGrandCategory
+
 newtype User = User
   { id :: Int
   , name :: String

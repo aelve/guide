@@ -9,7 +9,7 @@ import Data.Argonaut.Generic.Aeson (options)
 import Data.Argonaut.Generic.Decode (genericDecodeJson)
 import Data.Either (Either(..), either)
 import Data.Generic (class Generic)
-import Guide.Types (Users)
+import Guide.Types (CGrandCategories, Users)
 import Lib.IsomorphicFetch (FETCH, fetch)
 
 decodeJson :: forall a. (Generic a) => Json -> Either String a
@@ -21,4 +21,9 @@ decodeJson' = either (Left <<< error) pure <<< decodeJson
 fetchUsers :: forall eff. Aff (fetch :: FETCH | eff) (Either String Users)
 fetchUsers = do
   res <- attempt $ fetch "https://jsonplaceholder.typicode.com/users"
+  pure $ either (Left <<< show) decodeJson res
+
+fetchGrandCategories :: forall eff. Aff (fetch :: FETCH | eff) (Either String CGrandCategories)
+fetchGrandCategories = do
+  res <- attempt $ fetch "http://localhost:3080/haskell/api/all-categories"
   pure $ either (Left <<< show) decodeJson res

@@ -13,10 +13,10 @@ import Data.Array ((:))
 import Data.Either (Either(..))
 import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..))
-import Guide.Http (fetchUsers)
+import Guide.Http (fetchUsers, fetchGrandCategories)
 import Guide.Routes (Route(..), match)
 import Guide.State (State(..))
-import Guide.Types (Users)
+import Guide.Types (CGrandCategories, Users)
 import Lib.IsomorphicFetch (FETCH)
 import Network.HTTP.Affjax (AJAX)
 import Network.RemoteData (RemoteData(..), isNotAsked)
@@ -27,6 +27,9 @@ data Event
   -- Routing
   = PageView Route
   | Navigate String DOMEvent
+  -- API
+  | RequestGrandCategories
+  | ReceiveGrandCategories (Either String CGrandCategories)
   -- playground
   | RequestUsers
   | ReceiveUsers (Either String Users)
@@ -41,7 +44,30 @@ type AppEffects eff =
 
 foldp :: ∀ eff. Event -> State -> EffModel State Event (AppEffects eff)
 
--- Playground
+-- Api
+
+foldp RequestGrandCategories (State st) =
+  { state: State $ st { grandCategories = case st.grandCategories of
+                                  Success cats -> Refreshing cats
+                                  _ -> Loading
+                      }
+  , effects:
+    [ fetchGrandCategories >>= pure <<< Just <<< ReceiveGrandCategories
+    ]
+  }
+
+foldp (ReceiveGrandCategories (Right cats)) (State st) = noEffects $
+  State $
+    st  { loaded = true
+        , grandCategories = (Success cats)
+        }
+
+foldp (ReceiveGrandCategories (Left error)) s@(State st) = noEffects $
+  State $
+    st  { loaded = true
+        , errors = (show error) : st.errors
+        , grandCategories = Failure error
+        }
 
 foldp RequestUsers (State st) =
   { state: State $ st { users = case st.users of
@@ -87,8 +113,15 @@ routeEffects :: ∀ fx. Route -> State -> EffModel State Event (AppEffects fx)
 routeEffects Home s@(State st) = noEffects $
   State $ st { loaded = true, countHomeRoute = st.countHomeRoute + 1 }
 
-routeEffects Haskell s@(State st) = noEffects $
-  State $ st { loaded = true }
+routeEffects Haskell s@(State st) =
+  { state: State $ st { loaded = false }
+  , effects: [
+      -- fetch grandCategories only once
+      if isNotAsked st.grandCategories then
+        pure $ Just RequestGrandCategories
+      else
+        pure Nothing
+  ]}
 
 routeEffects Playground s@(State st) =
   { state: State $ st { loaded = false, countPGRoute = st.countPGRoute + 1 }

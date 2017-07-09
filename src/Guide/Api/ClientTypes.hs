@@ -7,6 +7,7 @@
 {- |
   API's client types (e.g. generated to and used by PureScript)
 -}
+
 module Guide.Api.ClientTypes
   ( CCategoryDetail(..)
   , CCategoryOverview(..)

@@ -25,7 +25,8 @@ import Data.SafeCopy hiding (kind)
 
 
 data Hue = NoHue | Hue Int
-  deriving (Eq, Ord)
+  deriving (Generic, Eq, Ord)
+  -- generic deriving ^ is needed by purescript-bridge
 
 deriveSafeCopySimple 1 'extension ''Hue
 
