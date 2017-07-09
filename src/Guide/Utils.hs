@@ -233,7 +233,13 @@ data SearchEngine
   | DuckDuckGo
   deriving (Show, Eq, Ord)
 
-toSearchEngine :: Text -> Maybe SearchEngine
+-- | Check whether a domain is one of known search engines.
+--
+-- TODO: this gives some false positives, e.g. @google.wordpress.com@ or
+-- @blog.google@ will be erroneously detected as search engines.
+toSearchEngine
+  :: Text                 -- ^ Domain
+  -> Maybe SearchEngine
 toSearchEngine t
   | "google" `elem` lst = Just Google
   | "yandex" `elem` lst = Just Yandex
@@ -244,6 +250,7 @@ toSearchEngine t
   | otherwise = Nothing
   where lst = T.splitOn "." t
 
+-- | A (lossy) representation of referrers that is better for analytics.
 data ReferrerView
   = RefSearchEngine {searchEngine :: SearchEngine, keyword :: Maybe Text}
   | RefUrl Url
