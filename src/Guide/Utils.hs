@@ -119,8 +119,8 @@ import Data.Generics.Uniplate.Data (transform)
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
 -- needed for parsing urls
-import qualified Data.ByteString.Char8 as C8
-import Network.HTTP.Types (Query, parseQuery)
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import Network.HTTP.Types (Query,  parseQuery)
 ----------------------------------------------------------------------------
 -- Lists
 ----------------------------------------------------------------------------
@@ -270,20 +270,22 @@ showKeyword (Just "") = ""
 showKeyword (Just keyword) = " (\"" <> T.toString keyword <> "\")"
 showKeyword _ = ""
 
-extractQueryList :: Url -> Query
-extractQueryList url
-  = parseQuery . fromJust
-  $ C8.pack . URI.uriQuery
-  <$> URI.parseURI (T.toString url)
+toBS :: String -> ByteString
+toBS = encodeUtf8 . T.pack
 
-extractKeyword :: Url -> String
-extractKeyword url = do
-  let queryList = extractQueryList url
-  e <- lst
-  case lookup e queryList of
-    Just r -> C8.unpack . fromJust $ r
-    Nothing -> ""
-  where lst = ["q", "p", "text"]
+extractQuery :: Url -> Maybe Query
+extractQuery url = getQuery <$> parse url
+  where
+    getQuery = parseQuery . toBS . URI.uriQuery
+    parse = URI.parseURI . T.toString
+
+extractKeyword :: Url -> Maybe Text
+extractKeyword url
+  = case extractQuery url of
+      Just query -> decodeUtf8 <$> lookupQuery query
+      Nothing -> Nothing
+  where
+    lookupQuery = join . (lookup "q" <> lookup "p" <> lookup "text")
 
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
@@ -294,7 +296,7 @@ toReferrerView url
     uri = URI.parseURI $ T.toString url
     uriAuth = fromJust $ uri >>= URI.uriAuthority
     domain = T.pack $ URI.uriRegName uriAuth
-    keyword =  Just . T.pack . extractKeyword $ url
+    keyword =  extractKeyword url
 
 eqKeyOrUrl :: ReferrerView -> ReferrerView -> Bool
 eqKeyOrUrl (RefUrl u1) (RefUrl u2) = u1 == u2
