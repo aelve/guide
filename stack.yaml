@@ -12,6 +12,7 @@ packages:
   extra-dep: true
 
 extra-deps:
+- text-all-0.4.1.0
 - cmark-sections-0.1.0.3
 - patches-vector-0.1.5.4
 - fmt-0.2.0.0

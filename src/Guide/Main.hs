@@ -232,20 +232,20 @@ guideApp waiMetrics = do
               guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
             |]
         js <- getJS
-        Spock.bytes $ T.encodeUtf8 (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
+        Spock.bytes $ T.toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
-        Spock.bytes $ T.encodeUtf8 (T.pack (styleToCss pygments))
+        Spock.bytes $ T.toByteString (styleToCss pygments)
       Spock.get "/css.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
-        Spock.bytes $ T.encodeUtf8 css
+        Spock.bytes $ T.toByteString css
       Spock.get "/admin.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
         admincss <- liftIO $ T.readFile "static/admin.css"
-        Spock.bytes $ T.encodeUtf8 (css <> admincss)
+        Spock.bytes $ T.toByteString (css <> admincss)
 
       -- Main page
       Spock.get root $
@@ -331,7 +331,8 @@ loginAction = do
       formHtml <- protectForm loginFormView v
       lucidWithConfig $ renderRegister formHtml
     (v, Just Login {..}) -> do
-      loginAttempt <- dbQuery $ LoginUser loginEmail (T.encodeUtf8 loginUserPassword)
+      loginAttempt <- dbQuery $
+        LoginUser loginEmail (T.toByteString loginUserPassword)
       case loginAttempt of
         Just user -> do
           modifySession (sessionUserID .~ Just (user ^. userID))
@@ -354,7 +355,8 @@ signupAction = do
       formHtml <- protectForm registerFormView v
       lucidWithConfig $ renderRegister formHtml
     (v, Just UserRegistration {..}) -> do
-      user <- makeUser registerUserName registerUserEmail (T.encodeUtf8 registerUserPassword)
+      user <- makeUser registerUserName registerUserEmail
+                       (T.toByteString registerUserPassword)
       success <- dbUpdate $ CreateUser user
       if success
         then do
@@ -442,6 +444,6 @@ installTerminationCatcher thread = void $ do
 -- The user won't be added if it exists already.
 createAdminUser :: GuideApp ()
 createAdminUser = do
-  pass <- T.encodeUtf8 . _adminPassword <$> getConfig
+  pass <- T.toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

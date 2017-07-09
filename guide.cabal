@@ -135,7 +135,7 @@ library
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
                      , text
-                     , text-all == 0.3.*
+                     , text-all >= 0.4.1.0 && < 0.5
                      , time >= 1.5
                      , transformers
                      , unix
@@ -189,7 +189,7 @@ test-suite tests
                      , quickcheck-text < 0.2
                      , slave-thread
                      , tagsoup < 1
-                     , text-all < 0.4
+                     , text-all
                      , transformers
                      , webdriver >= 0.8.4 && < 0.9
   hs-source-dirs:      tests

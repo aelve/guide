@@ -31,6 +31,10 @@ module Guide.Utils
   makeSlug,
   (//),
 
+  -- * Referrers
+  ReferrerView (..),
+  toReferrerView,
+
   -- * IP
   sockAddrToIP,
 
@@ -93,7 +97,8 @@ import Language.Haskell.TH
 -- needed for 'sanitiseUrl'
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
-
+-- needed for parsing urls
+import Network.HTTP.Types (Query, parseQuery)
 
 ----------------------------------------------------------------------------
 -- Lists
@@ -196,6 +201,83 @@ appends backslashes (@\@) and not slashes (@/@).
            fromMaybe y (T.stripPrefix "/" y)
 
 ----------------------------------------------------------------------------
+-- ReferrerView
+----------------------------------------------------------------------------
+
+data SearchEngine
+  = Google
+  | Yandex
+  | Yahoo
+  | Bing
+  | Ecosia
+  | DuckDuckGo
+  deriving (Show, Eq, Ord)
+
+-- | Check whether a domain is one of known search engines.
+--
+-- TODO: this gives some false positives, e.g. @google.wordpress.com@ or
+-- @blog.google@ will be erroneously detected as search engines.
+toSearchEngine
+  :: Text                 -- ^ Domain
+  -> Maybe SearchEngine
+toSearchEngine t
+  | "google" `elem` lst = Just Google
+  | "yandex" `elem` lst = Just Yandex
+  | "yahoo"  `elem` lst = Just Yahoo
+  | "bing"   `elem` lst = Just Bing
+  | "ecosia" `elem` lst = Just Ecosia
+  | "duckduckgo" `elem` lst = Just DuckDuckGo
+  | otherwise = Nothing
+  where lst = T.splitOn "." t
+
+-- | A (lossy) representation of referrers that is better for analytics.
+data ReferrerView
+  = RefSearchEngine { searchEngine :: SearchEngine
+                    , keyword      :: Text }  -- No keyword = empty keyword
+  | RefUrl Url
+  deriving (Eq, Ord)
+
+instance Show ReferrerView where
+  show (RefSearchEngine searchEngine keyword)
+    = show searchEngine <> showKeyword keyword
+  show (RefUrl url) = T.toString url
+
+showKeyword :: Text -> String
+showKeyword "" = ""
+showKeyword kw = " (\"" <> T.toString kw <> "\")"
+
+extractQuery :: Url -> Maybe Query
+extractQuery url = getQuery <$> parse url
+  where
+    getQuery = parseQuery . T.toByteString . URI.uriQuery
+    parse = URI.parseURI . T.toString
+
+-- TODO: different search engines have different parameters, we should use
+-- right ones instead of just trying “whatever fits”
+extractKeyword :: Url -> Maybe Text
+extractKeyword url
+  = case extractQuery url of
+      Just query -> T.toStrict <$> lookupQuery query
+      Nothing    -> Nothing
+  where
+    lookupQuery :: [(ByteString, Maybe ByteString)] -> Maybe ByteString
+    lookupQuery query = join $
+      lookup "q"    query <|>     -- Google, Bing, Ecosia, DDG
+      lookup "p"    query <|>     -- Yahoo
+      lookup "text" query         -- Yandex
+
+toReferrerView :: Url -> ReferrerView
+toReferrerView url
+  = case toSearchEngine =<< domain of
+      Just se -> RefSearchEngine se (fromMaybe "" keyword)
+      Nothing -> RefUrl url
+  where
+    uri = URI.parseURI $ T.toString url
+    uriAuth = URI.uriAuthority =<< uri
+    domain = T.toStrict . URI.uriRegName <$> uriAuth
+    keyword = extractKeyword url
+
+----------------------------------------------------------------------------
 -- IP
 ----------------------------------------------------------------------------
 
@@ -228,7 +310,7 @@ instance SafeCopy (Uid a) where
   kind = base
 
 instance IsString (Uid a) where
-  fromString = Uid . T.pack
+  fromString = Uid . T.toStrict
 
 -- | Generate a random text of given length from characters @a-z@ and digits.
 randomText :: MonadIO m => Int -> m Text
@@ -242,7 +324,7 @@ randomText n = liftIO $ do
         return $ if i < 10 then toEnum (fromEnum '0' + i)
                            else toEnum (fromEnum 'a' + i - 10)
   xs <- replicateM (n-1) randomChar
-  return (T.pack (x:xs))
+  return (T.toStrict (x:xs))
 
 -- For probability tables, see
 -- https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
@@ -297,7 +379,7 @@ includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
-  bytes $ T.encodeUtf8 (T.pack (XML.ppElement (Atom.xmlFeed feed)))
+  bytes $ T.toByteString (XML.ppElement (Atom.xmlFeed feed))
 
 -- | Get details of the request:
 --

@@ -70,7 +70,6 @@ import qualified Data.Map as M
 -- import Data.Tree
 -- Text
 import qualified Data.Text.All as T
-import qualified Data.Text.Lazy.All as TL
 -- digestive-functors
 import Text.Digestive (View)
 -- import NeatInterpolation
@@ -87,6 +86,7 @@ import qualified System.FilePath.Find as F
 -- Mustache (templates)
 import Text.Mustache.Plus
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Text as A
 import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Semigroup as Semigroup
@@ -297,7 +297,7 @@ mustache f v = do
             then return (A.String "selected")
             else return A.Null),
         ("js", \[x] -> return $
-            A.String . T.toStrict . TL.decodeUtf8 . A.encode $ x),
+            A.String . T.toStrict . A.encodeToLazyText $ x),
         ("trace", \xs -> do
             mapM_ (BS.putStrLn . A.encodePretty) xs
             return A.Null) ]
