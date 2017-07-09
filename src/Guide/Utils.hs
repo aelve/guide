@@ -288,13 +288,13 @@ extractKeyword url
 
 toReferrerView :: Url -> ReferrerView
 toReferrerView url
-  = case toSearchEngine domain of
+  = case toSearchEngine =<< domain of
       Just se -> RefSearchEngine se keyword
       Nothing -> RefUrl url
   where
     uri = URI.parseURI $ T.toString url
-    uriAuth = fromJust $ uri >>= URI.uriAuthority
-    domain = T.toStrict $ URI.uriRegName uriAuth
+    uriAuth = URI.uriAuthority =<< uri
+    domain = T.toStrict . URI.uriRegName <$> uriAuth
     keyword = extractKeyword url
 
 ----------------------------------------------------------------------------
