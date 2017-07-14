@@ -247,8 +247,8 @@ categoryLink :: Category -> Url
 categoryLink category = format "/haskell/{}" (categorySlug category)
 
 fromCategorySlug :: Text -> (Text, Uid Category)
-fromCategorySlug s = let (title, catUid) = T.breakOnEnd "-" s
-                     in  (T.dropEnd 1 title, Uid catUid)
+fromCategorySlug s = let (title', catUid) = T.breakOnEnd "-" s
+                     in  (T.dropEnd 1 title', Uid catUid)
 
 itemLink :: Category -> Item -> Url
 itemLink category item =
