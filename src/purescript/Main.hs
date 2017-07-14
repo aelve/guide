@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
+
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main
   ( main
@@ -13,9 +15,9 @@ import Language.PureScript.Bridge (BridgeBuilder, BridgePart, Language( Haskell 
                                     PSType, TypeInfo (..), (<|>), (^==), buildBridge,
                                     defaultBridge, typeName, mkSumType, writePSTypes)
 import Language.PureScript.Bridge.PSTypes (psString)
-import Guide.Api.ClientTypes (CCategoryDetail, CGrandCategory, CCategoryOverview)
+import Guide.Api.ClientTypes (CCategoryDetail, CCategoryOverview, CGrandCategory, CItem, CTrait, CMarkdown)
 import Guide.Types.Hue (Hue)
-import Guide.Types.Core (CategoryStatus, Item, ItemKind, Trait)
+import Guide.Types.Core (CategoryStatus, ItemKind)
 
 path :: FilePath
 path = "front-ps/src/Generated"
@@ -33,18 +35,10 @@ uidBridge = typeName ^== "Uid" >> pure psString
 byteStringBridge :: BridgePart
 byteStringBridge = typeName ^== "ByteString" >> pure psString
 
-markdownBlockBridge :: BridgePart
-markdownBlockBridge = typeName ^== "MarkdownBlock" >> pure psString
-
-markdownTreeBridge :: BridgePart
-markdownTreeBridge = typeName ^== "MarkdownTree" >> pure psString
-
-markdownInlineBridge :: BridgePart
-markdownInlineBridge = typeName ^== "MarkdownInline" >> pure psString
-
 -- TODO (sectore) Can we use PureScript's `Data.Date` here?
 utcTimeBridge :: BridgePart
 utcTimeBridge = typeName ^== "UTCTime" >> pure psString
+
 
 bridge :: BridgeBuilder PSType
 bridge = defaultBridge
@@ -52,9 +46,6 @@ bridge = defaultBridge
   <|> uidBridge
   <|> byteStringBridge
   <|> utcTimeBridge
-  <|> markdownBlockBridge
-  <|> markdownTreeBridge
-  <|> markdownInlineBridge
 
 clientTypes :: [SumType  'Haskell]
 clientTypes =
@@ -63,9 +54,10 @@ clientTypes =
   , mkSumType (Proxy :: Proxy CCategoryOverview)
   , mkSumType (Proxy :: Proxy Hue)
   , mkSumType (Proxy :: Proxy CategoryStatus)
-  , mkSumType (Proxy :: Proxy Item)
+  , mkSumType (Proxy :: Proxy CItem)
   , mkSumType (Proxy :: Proxy ItemKind)
-  , mkSumType (Proxy :: Proxy Trait)
+  , mkSumType (Proxy :: Proxy CTrait)
+  , mkSumType (Proxy :: Proxy CMarkdown)
   ]
 
 main :: IO ()

@@ -41,7 +41,7 @@ import Guide.Merge
 import Guide.Markdown
 import Guide.State
 import Guide.Types
-import Guide.Api.ClientTypes (mkCGrandCategory, mkCCategoryDetail)
+import Guide.Api.ClientTypes (toCGrandCategory, toCCategoryDetail)
 import Guide.Utils
 import Guide.Views
 
@@ -59,11 +59,11 @@ apiMethods = Spock.subcomponent "api" $ do
   middleware simpleCors
   Spock.get "all-categories" $ do
     grands <- groupWith (view group_) <$> dbQuery GetCategories
-    json $ fmap mkCGrandCategory grands
+    json $ fmap toCGrandCategory grands
 
   Spock.get categoryVar $ \catId -> do
     cat <- dbQuery (GetCategory catId)
-    json $ mkCCategoryDetail cat
+    json $ toCCategoryDetail cat
 
 renderMethods :: SpockM () () ServerState ()
 renderMethods = Spock.subcomponent "render" $ do
