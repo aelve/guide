@@ -45,3 +45,21 @@ a:link    {color: #008ACE; text-decoration: none;}
 a:visited {color: #B40EB4; text-decoration: none;}
 a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
+
+del {
+  text-decoration: none;
+  background-color: rgba(240, 16, 27, 0.38)
+}
+ins {
+  text-decoration: none;
+  background-color: rgba(16, 240, 27, 0.38)
+}
+
+.category-status-banner {
+  background-color: #FFF694;
+  text-align: center;
+  border: 2px solid #202020;
+  padding: 0.5em;
+  margin-left: 10%;
+  margin-right: 10%;
+}

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 {- |
 Views for user registration.
@@ -10,19 +10,69 @@ module Guide.Views.Auth.Register where
 
 import Imports
 
+-- digestive-functors
+import Text.Digestive
+-- lucid
 import Lucid hiding (for_)
 
 import Guide.Views.Page
+import Guide.Views.Utils
 import Guide.Config
+import Guide.Types.User
 
+-- | Fields used by this form/view.
+data UserRegistration = UserRegistration {
+  registerUserName  :: Text,
+  registerUserEmail :: Text,
+  registerUserPassword :: Text,
+  registerUserPasswordValidation :: Text }
 
-registerContent :: (MonadIO m) => HtmlT m ()
-registerContent =
-  div_ ""
+-- | Creates a digestive functor over the fields in 'UserRegistration'
+registerForm :: Monad m => Form (HtmlT (ReaderT Config IO) ()) m UserRegistration
+registerForm = UserRegistration
+  <$> "name" .: text Nothing
+  <*> "email" .: text Nothing
+  <*> "password" .: text Nothing
+  <*> "passwordValidation" .: text Nothing
 
-renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-renderRegister =
+-- | Render input elements for a 'UserRegistration'
+-- Note: This does not include the 'Form' element.
+--
+-- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection. 
+registerFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
+registerFormView view = do
+  div_ $ do
+    errorList "name" view
+    label     "name" view "Name: "
+    inputText "name" view
+
+  div_ $ do
+    errorList "email" view
+    label     "email" view "Email: "
+    inputText "email" view
+
+  div_ $ do
+    errorList     "password" view
+    label         "password" view "Password: "
+    inputPassword "password" view
+
+  div_ $ do
+    errorList     "passwordValidation" view
+    label         "passwordValidation" view "Re-enter password: "
+    inputPassword "passwordValidation" view
+
+  inputSubmit "Register"
+
+-- | Dummy for now.
+registerView :: (MonadIO m) => User -> HtmlT m ()
+registerView user = do
+  div_ $ do
+    -- TODO: Make nicer.
+    "You are registered and logged in as " 
+    toHtml (user ^. userName)
+
+renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m () -> HtmlT m ()
+renderRegister content = do
   renderPage $ 
     pageDef & pageTitle .~ "Aelve Guide"
-            & pageName .~ Just "Register"
-            & pageContent .~ registerContent
+            & pageContent .~ content

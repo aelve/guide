@@ -75,6 +75,14 @@ module Guide.State
   RestoreItem(..),
   RestoreTrait(..),
   SetDirty(..), UnsetDirty(..),
+  
+  LoadSession(..), StoreSession(..),
+  DeleteSession(..), GetSessions(..),
+
+  GetUser(..), CreateUser(..), DeleteUser(..),
+  LoginUser(..),
+
+  GetAdminUsers(..)
 )
 where
 
@@ -90,14 +98,18 @@ import qualified Data.Text.All as T
 import Data.IP
 -- acid-state
 import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 import Data.Acid as Acid
+--
+import Web.Spock.Internal.SessionManager (SessionId)
 
 import Guide.Utils
-import Guide.SafeCopy
 import Guide.Markdown
 import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Action
+import Guide.Types.Session
+import Guide.Types.User
 
 
 {- Note [extending types]
@@ -172,15 +184,22 @@ data GlobalState = GlobalState {
   _pendingEdits :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
   _editIdCounter :: Int,
+  -- | Sessions
+  _sessionStore :: Map SessionId GuideSession,
+  -- | Users
+  _users :: Map (Uid User) User,
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
   _dirty :: Bool }
   deriving (Show)
 
-deriveSafeCopySorted 7 'extension ''GlobalState
+deriveSafeCopySorted 8 'extension ''GlobalState
 makeLenses ''GlobalState
 
-changelog ''GlobalState (Current 7, Past 6) []
-deriveSafeCopySorted 6 'base ''GlobalState_v6
+changelog ''GlobalState (Current 8, Past 7) [
+  Added "_sessionStore" [hs|M.empty|],
+  Added "_users" [hs|M.empty|]
+  ]
+deriveSafeCopySorted 7 'base ''GlobalState_v7
 
 addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
 addGroupIfDoesNotExist g gs
@@ -683,6 +702,78 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
+-- | Retrieves a session by 'SessionID'. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
+loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
+loadSession key = view (sessionStore . at key)
+
+-- | Stores a session object. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
+storeSession :: GuideSession -> Acid.Update GlobalState ()
+storeSession sess = do
+  sessionStore %= M.insert (sess ^. sess_id) sess
+  setDirty
+
+-- | Deletes a session by 'SessionID'. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
+deleteSession :: SessionId -> Acid.Update GlobalState ()
+deleteSession key = do
+  sessionStore %= M.delete key
+  setDirty
+
+-- | Retrieves all sessions. 
+-- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
+getSessions :: Acid.Query GlobalState [GuideSession]
+getSessions = do
+  m <- view sessionStore
+  return . map snd $ M.toList m
+
+-- | Retrieves a user by their unique identifier.
+getUser :: Uid User -> Acid.Query GlobalState (Maybe User)
+getUser key = view (users . at key)
+
+-- | Creates a user, maintaining unique constraints on certain fields.
+createUser :: User -> Acid.Update GlobalState Bool
+createUser user = do
+  m <- toList <$> use users
+  if all (canCreateUser user) (m ^.. each) 
+  then do
+    users %= M.insert (user ^. userID) user
+    return True
+  else
+    return False
+
+-- | Remove a user completely. Unsets all user sessions with this user ID.
+deleteUser :: Uid User -> Acid.Update GlobalState ()
+deleteUser key = do
+  users %= M.delete key
+  logoutUserGlobally key
+  setDirty
+
+-- | Given an email address and a password, return the user if it exists
+-- and the password is correct.
+loginUser :: Text -> ByteString -> Acid.Query GlobalState (Maybe User)
+loginUser email password = do
+  matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
+  case matches of
+    [user] -> 
+      if verifyUser user password
+      then return $ Just user
+      else return $ Nothing
+    _ -> return Nothing
+
+-- | Global logout of all of a user's active sessions
+logoutUserGlobally :: Uid User -> Acid.Update GlobalState ()
+logoutUserGlobally key = do
+  sessions <- use sessionStore
+  for_ (M.toList sessions) $ \(sessID, sess) -> do
+    when ((sess ^. sess_data.sessionUserID) == Just key) $ do
+      sessionStore . ix sessID . sess_data . sessionUserID .= Nothing
+
+-- | Retrieve all users with the 'userIsAdmin' field set to True.
+getAdminUsers :: Acid.Query GlobalState [User]
+getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -715,5 +806,14 @@ makeAcidic ''GlobalState [
   -- other
   'moveItem, 'moveTrait,
   'restoreCategory, 'restoreItem, 'restoreTrait,
-  'setDirty, 'unsetDirty
+  'setDirty, 'unsetDirty,
+
+  -- sessions
+  'loadSession, 'storeSession, 'deleteSession, 'getSessions,
+
+  -- users
+  'getUser, 'createUser, 'deleteUser, 
+  'loginUser,
+
+  'getAdminUsers
   ]

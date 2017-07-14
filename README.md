@@ -33,6 +33,7 @@ If you want to contribute but don't know where to start, grep the source for
   * `templates` – HTML templates for pages and elements of pages
   * `scripts` – some scripts used by automatic testing
   * `favicon` – code used to generate a favicon
+  * `guidejs` – client side JavaScript
 
 ### Notes
 
@@ -45,6 +46,8 @@ When you see something like
 it means that there's an extensive comment somewhere else in the code, which you can find by grepping for `Note [acid-state]`. This convention was stolen from GHC. If you know some plugin for Emacs that would help with jumping to comments (even if those comments would have to be formatted differently), let me know.
 
 ### Main modules
+
+THIS SECTION IS OUTDATED
 
 There are 4 main modules – `Guide.hs`, `JS.hs`, `View.hs`, and `Types.hs`.
 

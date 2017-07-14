@@ -1,16 +1,21 @@
-resolver: lts-7.9
+resolver: lts-8.13
 
 packages:
 - location: .
 - location:
     git: https://github.com/aelve/stache-plus
-    commit: e8e7967d561148167eb1fe4112c6ad0e091490ab
+    commit: 789aeabbf8069dec80647160f127d047e8f5a330
+  extra-dep: true
+- location:
+    git: https://github.com/aelve/safecopy-migrate
+    commit: 26e5f8c7f62ebce66ef19e5bd573af21c16fe2b1
   extra-dep: true
 
 extra-deps:
-- cmark-sections-0.1.0.2
-- http-client-0.5.1
-- edit-distance-vector-1.0.0.4
+- text-all-0.4.1.0
+- cmark-sections-0.1.0.3
 - patches-vector-0.1.5.4
 - fmt-0.2.0.0
 - purescript-bridge-0.11.0.0
+- Spock-digestive-0.3.0.0
+- digestive-functors-0.8.2.0

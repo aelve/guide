@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE TypeFamilies #-}
 
 {- |
 All rest API handlers.
@@ -10,6 +10,7 @@ module Guide.Handlers
 (
   methods,
   adminMethods,
+  getLoggedInUser,
 )
 where
 
@@ -34,10 +35,11 @@ import Network.Wai.Middleware.Cors
 import Lucid hiding (for_)
 import qualified Network.HTTP.Types.Status as HTTP
 
+import Guide.App
 import Guide.ServerStuff
 import Guide.Config
 import Guide.Cache
-import Guide.Merge
+import Guide.Diff (merge)
 import Guide.Markdown
 import Guide.State
 import Guide.Types
@@ -45,8 +47,7 @@ import Guide.Api.ClientTypes (toCGrandCategory, toCCategoryDetail)
 import Guide.Utils
 import Guide.Views
 
-
-methods :: SpockM () () ServerState ()
+methods :: GuideM ctx ()
 methods = do
   apiMethods
   renderMethods
@@ -54,7 +55,7 @@ methods = do
   addMethods
   otherMethods
 
-apiMethods :: SpockM () () ServerState ()
+apiMethods :: GuideM ctx ()
 apiMethods = Spock.subcomponent "api" $ do
   middleware simpleCors
   Spock.get "all-categories" $ do
@@ -65,7 +66,7 @@ apiMethods = Spock.subcomponent "api" $ do
     cat <- dbQuery (GetCategory catId)
     json $ toCCategoryDetail cat
 
-renderMethods :: SpockM () () ServerState ()
+renderMethods :: GuideM ctx ()
 renderMethods = Spock.subcomponent "render" $ do
   -- Notes for a category
   Spock.get (categoryVar <//> "notes") $ \catId -> do
@@ -97,7 +98,7 @@ renderMethods = Spock.subcomponent "render" $ do
     category <- dbQuery (GetCategoryByItem itemId)
     lucidIO $ renderItemNotes category item
 
-setMethods :: SpockM () () ServerState ()
+setMethods :: GuideM ctx ()
 setMethods = Spock.subcomponent "set" $ do
   Spock.post (categoryVar <//> "info") $ \catId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the
@@ -274,7 +275,7 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
 
-addMethods :: SpockM () () ServerState ()
+addMethods :: GuideM ctx ()
 addMethods = Spock.subcomponent "add" $ do
   -- New category
   Spock.post "category" $ do
@@ -328,7 +329,7 @@ addMethods = Spock.subcomponent "add" $ do
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
 
-otherMethods :: SpockM () () ServerState ()
+otherMethods :: GuideM ctx ()
 otherMethods = do
   -- Moving things
   Spock.subcomponent "move" $ do
@@ -385,7 +386,7 @@ otherMethods = do
         Atom.feedEntries = entries,
         Atom.feedLinks   = [Atom.nullLink (T.unpack feedUrl)] }
 
-adminMethods :: SpockM () () ServerState ()
+adminMethods :: AdminM ctx ()
 adminMethods = Spock.subcomponent "admin" $ do
   -- Accept an edit
   Spock.post ("edit" <//> var <//> "accept") $ \n -> do
@@ -425,6 +426,14 @@ adminMethods = Spock.subcomponent "admin" $ do
 ----------------------------------------------------------------------------
 -- Utils
 ----------------------------------------------------------------------------
+
+-- | Retrieve the User based on the current session
+getLoggedInUser :: GuideAction ctx (Maybe User)
+getLoggedInUser = do
+  sess <- readSession
+  case sess ^. sessionUserID of
+    Nothing -> return Nothing
+    Just uid -> dbQuery $ GetUser uid
 
 itemToFeedEntry
   :: (MonadIO m)

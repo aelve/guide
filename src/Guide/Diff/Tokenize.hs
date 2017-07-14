@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 
-{- |
-An algorithm for merging users' edits. Specifically, there's just one
-function – 'merge' – and it simply does a three-way diff.
--}
-module Guide.Merge
+-- | Prepare text for diffing or merging by breaking it into tokens (like
+-- links or Markdown elements).
+module Guide.Diff.Tokenize
 (
-  merge,
+  tokenize,
 )
 where
 
@@ -17,34 +16,29 @@ import Imports
 -- Text
 import qualified Data.Text.All as T
 import Data.List.Split
--- Vector
-import qualified Data.Vector as V
--- Diffing
-import qualified Data.Patch as PV
 
 
--- | An implementation of a 3-way diff and merge.
-merge
-  :: Text    -- ^ Original text
-  -> Text    -- ^ Variant A (preferred)
-  -> Text    -- ^ Variant B
-  -> Text    -- ^ Merged text
-merge orig a b = T.concat . V.toList $ PV.apply (pa <> pb') orig'
-  where
-    (orig', a', b') = (orig, a, b) & each %~
-      V.fromList . consolidate . map T.toStrict . break' . T.toString
-    pa = PV.diff orig' a'
-    pb = PV.diff orig' b'
-    (_, pb') = PV.transformWith PV.ours pa pb
+-- | Break text into tokens.
+tokenize :: Text -> [Text]
+tokenize = consolidate . map T.toStrict . break' . T.toString
 
 -- | Break a string into words, spaces, and special characters.
 break' :: String -> [String]
 break' = split . dropInitBlank . dropFinalBlank . dropInnerBlanks . whenElt $
   \c -> not (isAlphaNum c) && c /= '\''
 
--- | Consolidate some of the things into tokens (like links, consecutive
--- spaces, and Markdown elements).
+-- | Consolidate some of the things into tokens.
 consolidate :: [Text] -> [Text]
+-- a word followed by a space, dot, or comma (this is needed to prevent
+-- spaces from being detected as “unchanged parts” and also to make diffs
+-- faster)
+consolidate (w:c:r)
+  | T.all (\t -> isLetter t || t == '\'') w && c `elem` [" ",".",","] =
+      (w <> c) : consolidate r
+-- glue newlines to ends of their lines
+consolidate (w:"\n":r)
+  | not ("\n" `T.isSuffixOf` w) =
+      (w <> "\n") : consolidate r
 -- spaces
 consolidate s@(" ":_) =
   let (l, r) = span (== " ") s
@@ -74,6 +68,23 @@ consolidate s@("https":":":"/":"/":_) =
   let (l, r) = span (\x -> x /= ")" && not (isSpace (T.head x))) s
   in  T.concat l : consolidate r
 consolidate ("(":"@":"hk":")":xs) = "(" : "@hk" : ")" : consolidate xs
+
+-- Haskell operators
+consolidate (op -> (x, xs))
+  | not (T.null x) = x : consolidate xs
+-- Haskell tokens
+consolidate ("[":"]":xs) = "[]" : consolidate xs
+consolidate ("(":")":xs) = "()" : consolidate xs
+consolidate ("[":"|":xs) = "[|" : consolidate xs
+consolidate ("|":"]":xs) = "|]" : consolidate xs
+
 -- the rest
 consolidate (x:xs) = x : consolidate xs
 consolidate [] = []
+
+-- | Helpful view pattern for matching operators
+op :: [Text] -> (Text, [Text])
+op = over _1 mconcat . span (isOpToken . T.unpack)
+  where
+    isOpToken [c] = c `elem` (":!#$%&*+./<=>?@\\^|-~" :: String)
+    isOpToken _   = False

@@ -12,7 +12,7 @@ maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
 tested-with:         GHC == 8.0.1
-build-type:          Simple
+build-type:          Custom
 extra-source-files:
   CHANGELOG.md
 -- Whatever, this won't ever be installed from a .tar package anyway so I
@@ -44,8 +44,10 @@ executable guide
 
 library
   exposed-modules:
-    Guide.Server
+    Guide.App
+    Guide.Main
     Guide.ServerStuff
+    Guide.Session
     Guide.Config
     Guide.State
     Guide.Types
@@ -54,9 +56,12 @@ library
       Guide.Types.Edit
       Guide.Types.Action
       Guide.Types.User
+      Guide.Types.Session
     Guide.Handlers
     Guide.Utils
-    Guide.Merge
+    Guide.Diff
+      Guide.Diff.Tokenize
+      Guide.Diff.Merge
     Guide.Markdown
     Guide.Search
     Guide.JS
@@ -68,15 +73,16 @@ library
       Guide.Views.Item
       Guide.Views.Category
       Guide.Views.Utils
+        Guide.Views.Utils.Input
     Guide.Cache
-    Guide.SafeCopy
     Guide.Api.ClientTypes
   other-modules:
     Imports
   build-depends:       Spock
+                     , Spock-digestive
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
-                     , aeson == 0.11.*
+                     , aeson == 1.0.*
                      , aeson-pretty
                      , base >=4.9 && <4.10
                      , base-prelude
@@ -88,6 +94,7 @@ library
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
+                     , digestive-functors
                      , directory >= 1.2
                      , ekg
                      , ekg-core
@@ -102,11 +109,13 @@ library
                      , fsnotify == 0.2.*
                      , hashable
                      , haskell-src-meta
+                     , http-api-data
                      , http-types
+                     , hvect
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
-                     , megaparsec == 5.0.*
+                     , megaparsec == 5.*
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
@@ -114,21 +123,22 @@ library
                      , network
                      , network-uri
                      , patches-vector
-                     , path-pieces
                      , random >= 1.1
                      , reroute
                      , safecopy
+                     , safecopy-migrate
                      , scrypt
                      , shortcut-links >= 0.4.2
                      , slave-thread
                      , split
                      , stache-plus == 0.1.*
+                     , stm
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
-                     , text-all == 0.3.*
+                     , text
+                     , text-all >= 0.4.1.0 && < 0.5
                      , time >= 1.5
                      , transformers
-                     , uniplate
                      , unix
                      , utf8-string
                      , vector
@@ -162,7 +172,7 @@ test-suite tests
                        MergeSpec
                        Selenium
   type:                exitcode-stdio-1.0
-  build-depends:       QuickCheck < 2.9
+  build-depends:       QuickCheck < 2.10
                      , base < 5
                      , base-prelude
                      , cmark
@@ -181,7 +191,7 @@ test-suite tests
                      , quickcheck-text < 0.2
                      , slave-thread
                      , tagsoup < 1
-                     , text-all < 0.4
+                     , text-all
                      , transformers
                      , webdriver >= 0.8.4 && < 0.9
   hs-source-dirs:      tests

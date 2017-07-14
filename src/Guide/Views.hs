@@ -55,9 +55,10 @@ import Guide.Utils
 import Guide.JS (JS(..))
 import qualified Guide.JS as JS
 import Guide.Markdown
+import Guide.Diff hiding (DiffChunk)
+import qualified Guide.Diff as Diff
 import Guide.Cache
 import Guide.Views.Utils
-
 
 {- Note [autosize]
 ~~~~~~~~~~~~~~~~~~
@@ -236,7 +237,8 @@ renderStats globalState acts = do
       th_ "Visits"
       th_ "Unique visitors"
     tbody_ $ do
-      let rawVisits :: [(Uid Category, Maybe IP)]
+      let rawVisits :: [(Uid Category, Maybe IP
+                        )]
           rawVisits = [(catId, actionIP d) |
                        (Action'CategoryVisit catId, d) <- acts']
       let visits :: [(Uid Category, (Int, Int))]
@@ -267,19 +269,21 @@ renderStats globalState acts = do
       th_ "Unique visitors"
     tbody_ $ do
       let rawVisits :: [(Url, Maybe IP)]
-          rawVisits = [(r, actionIP d) |
-                       (_, d) <- acts',
-                       Just (ExternalReferrer r) <- [actionReferrer d]]
-      let visits :: [(Url, (Int, Int))]
-          visits = map (over _2 (length &&& length.ordNub)) .
-                   map (fst.head &&& map snd) .
-                   groupWith fst
-                     $ rawVisits
+          rawVisits = [(r, actionIP d)
+                         | d <- map snd acts'
+                         , Just (ExternalReferrer r) <- [actionReferrer d]]
+      let sortRefs :: [(Url, Maybe IP)] -> [(ReferrerView, [Maybe IP])]
+          sortRefs = map (fst.head &&& map snd)
+                   . groupWith fst
+                   . map (over _1 toReferrerView)
+      let visits :: [(ReferrerView, (Int, Int))]
+          visits = map (over _2 (length &&& length.ordNub))
+                       (sortRefs rawVisits)
       for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
         tr_ $ do
-          td_ (toHtml r)
-          td_ (toHtml (show n))
-          td_ (toHtml (show u))
+          td_ (toHtml (show r))  -- referrer
+          td_ (toHtml (show n))  -- visitors
+          td_ (toHtml (show u))  -- unique visitors
   table_ $ do
     thead_ $ tr_ $ do
       th_ "Action"
@@ -391,14 +395,15 @@ renderEdit globalState edit = do
     Edit'AddCategory _catId title' -> p_ $ do
       "added category " >> quote (toHtml title')
     Edit'AddItem catId _itemId name' -> p_ $ do
-      "added item " >> quote (toHtml name')
+      "added item " >> printItem _itemId
+      " (initially called " >> quote (toHtml name') >> ")"
       " to category " >> printCategory catId
     Edit'AddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
+      pre_ $ code_ $ toHtml content'
     Edit'AddCon itemId _traitId content' -> do
       p_ $ "added con to item " >> printItem itemId
-      blockquote_ $ p_ $ toHtml (toMarkdownInline content')
+      pre_ $ code_ $ toHtml content'
 
     -- Change category properties
     Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
@@ -415,10 +420,7 @@ renderEdit globalState edit = do
     Edit'SetCategoryNotes catId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of category " >> printCategory catId
-      table_ $ tr_ $ do
-        unless (T.null oldNotes) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
+      renderDiff oldNotes newNotes
     Edit'ChangeCategoryEnabledSections catId toEnable toDisable -> do
       let sectName ItemProsConsSection  = "pros/cons"
           sectName ItemEcosystemSection = "ecosystem"
@@ -452,33 +454,22 @@ renderEdit globalState edit = do
     Edit'SetItemDescription itemId oldDescr newDescr -> do
       p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldDescr) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldDescr)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newDescr)
+      renderDiff oldDescr newDescr
     Edit'SetItemNotes itemId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldNotes) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldNotes)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newNotes)
+      renderDiff oldNotes newNotes
     Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
       p_ $ (if T.null oldEcosystem then "added" else "changed") >>
            " ecosystem of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldEcosystem) $
-          td_ $ blockquote_ $ toHtml (toMarkdownBlock oldEcosystem)
-        td_ $ blockquote_ $ toHtml (toMarkdownBlock newEcosystem)
+      renderDiff oldEcosystem newEcosystem
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ (if T.null oldContent then "added" else "changed") >>
-           " trait of item " >> printItem itemId
-      table_ $ tr_ $ do
-        unless (T.null oldContent) $
-          td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline oldContent))
-        td_ $ blockquote_ $ p_ (toHtml (toMarkdownInline newContent))
+           " trait of item " >> printItem itemId >>
+           " from category " >> printCategory (findItem itemId ^. _1.uid)
+      renderDiff oldContent newContent
 
     -- Delete
     Edit'DeleteCategory catId _pos -> p_ $ do
@@ -490,7 +481,7 @@ renderEdit globalState edit = do
     Edit'DeleteTrait itemId traitId _pos -> do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "deleted trait from item " >> quote (toHtml (item^.name))
-      blockquote_ $ p_ $ toHtml (trait^.content)
+      pre_ $ code_ $ toHtml $ trait^.content
 
     -- Other
     Edit'MoveItem itemId direction -> p_ $ do
@@ -500,15 +491,54 @@ renderEdit globalState edit = do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "moved trait of item " >> quote (toHtml (item^.name)) >>
            if direction then " up" else " down"
-      blockquote_ $ p_ $ toHtml (trait^.content)
+      pre_ $ code_ $ toHtml $ trait^.content
+
+renderDiff :: Monad m => Text -> Text -> HtmlT m ()
+renderDiff old new =
+    table_ $ tr_ $
+      if | T.null old -> renderOne new
+         | T.null new -> renderOne old
+         | otherwise  -> renderBoth
+  where
+    cell = td_ . pre_ . code_
+    renderOne s = cell (toHtml s)
+    renderBoth = do
+      let Diff{..} = diff old new
+      cell $ do
+        "[...] " >> toHtml (mconcat (takeEnd 10 diffContextAbove))
+        mapM_ renderChunk diffLeft
+        toHtml (mconcat (take 10 diffContextBelow)) >> " [...]"
+      cell $ do
+        "[...] " >> toHtml (mconcat (takeEnd 10 diffContextAbove))
+        mapM_ renderChunk diffRight
+        toHtml (mconcat (take 10 diffContextBelow)) >> " [...]"
+    --
+    renderChunk (Diff.Added   "") = ins_ [class_ "empty-chunk"] ""
+    renderChunk (Diff.Added    x) = ins_ (toHtml (showNewlines x))
+    renderChunk (Diff.Deleted "") = del_ [class_ "empty-chunk"] ""
+    renderChunk (Diff.Deleted  x) = del_ (toHtml (showNewlines x))
+    renderChunk (Diff.Plain    x) = toHtml x
+    --
+    showNewlines x =
+      let
+        (pref, x')  = T.span   (== '\n') x
+        (x'', suff) = tSpanEnd (== '\n') x'
+      in
+        T.replicate (T.length pref) "⏎\n" <> x'' <>
+        T.replicate (T.length suff) "⏎\n"
+    --
+    tSpanEnd p = over both T.reverse . swap . T.span p . T.reverse
 
 -- TODO: use “data Direction = Up | Down” for directions instead of Bool
 
 -- | Render the header on the </haskell> subpage: “Aelve Guide | Haskell”.
 haskellHeader :: (MonadReader Config m) => HtmlT m ()
-haskellHeader = do
-  h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
-  renderSubtitle
+haskellHeader = div_ [id_ "header"] $ do
+  div_ $ do
+    h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
+    renderSubtitle
+  div_ [class_ "auth-link-container"] $ do
+    a_ [href_ "/auth"] "login/logout"
 
 -- | Render </haskell>.
 renderHaskellRoot
@@ -592,7 +622,7 @@ wrapPage pageTitle' page = doctypehtml_ $ do
               "https://github.com/aelve/guide/issues");
         return false; };
       |]
-    includeJS "/jquery.js"
+    includeJS "/js/bundle.js"
     -- for modal dialogs
     includeJS "/magnific-popup.js"
     includeCSS "/magnific-popup.css"

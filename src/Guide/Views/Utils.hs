@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE QuasiQuotes #-}
 
 {- |
 Various HTML utils, Mustache utils, etc.
@@ -50,12 +50,20 @@ module Guide.Views.Utils
   readWidgets,
   getJS,
   getCSS,
+
+  protectForm,
+  getCsrfHeader,
+
+  module Guide.Views.Utils.Input
 )
 where
 
 
 import Imports
 
+-- Web
+import Web.Spock
+import Web.Spock.Config
 -- Lists
 import Data.List.Split
 -- Containers
@@ -63,7 +71,8 @@ import qualified Data.Map as M
 -- import Data.Tree
 -- Text
 import qualified Data.Text.All as T
-import qualified Data.Text.Lazy.All as TL
+-- digestive-functors
+import Text.Digestive (View)
 -- import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
@@ -78,6 +87,7 @@ import qualified System.FilePath.Find as F
 -- Mustache (templates)
 import Text.Mustache.Plus
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Text as A
 import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Semigroup as Semigroup
@@ -85,6 +95,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Text.Megaparsec
 import Text.Megaparsec.Text
 
+import Guide.App
 -- import Guide.Config
 -- import Guide.State
 import Guide.Types
@@ -93,6 +104,8 @@ import Guide.JS (JS(..), JQuerySelector)
 import qualified Guide.JS as JS
 import Guide.Markdown
 -- import Guide.Cache
+
+import Guide.Views.Utils.Input
 
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
@@ -289,7 +302,7 @@ mustache f v = do
             then return (A.String "selected")
             else return A.Null),
         ("js", \[x] -> return $
-            A.String . T.toStrict . TL.decodeUtf8 . A.encode $ x),
+            A.String . T.toStrict . A.encodeToLazyText $ x),
         ("trace", \xs -> do
             mapM_ (BS.putStrLn . A.encodePretty) xs
             return A.Null) ]
@@ -369,3 +382,36 @@ getCSS = do
   widgets <- readWidgets
   let css = [t | (CSS_, t) <- widgets]
   return (T.concat css)
+
+-- | 'protectForm' renders a set of input fields within a CSRF-protected form.
+--
+-- This sets the method (POST) of submission and includes a server-generated
+-- token to help prevent cross-site request forgery (CSRF) attacks.
+-- 
+-- Briefly: this is necessary to prevent third party sites from impersonating
+-- logged in users, because a POST to the right URL is not sufficient to
+-- submit the form and perform an action. The CSRF token is only displayed
+-- when viewing the page.
+protectForm :: MonadIO m
+  => (View (HtmlT m ()) -> HtmlT m ())
+  -> View (HtmlT m ())
+  -> GuideAction ctx (HtmlT m ())
+protectForm render formView = do
+  (name, value) <- getCsrfTokenPair
+  return $ form formView "" [id_ "login-form"] $ do
+    input_ [ type_ "hidden", name_ name, value_ value ]
+    render formView
+
+getCsrfTokenPair :: GuideAction ctx (Text, Text)
+getCsrfTokenPair = do
+  csrfTokenName <- spc_csrfPostName <$> getSpockCfg
+  csrfTokenValue <- getCsrfToken
+  return (csrfTokenName, csrfTokenValue)
+
+getCsrfHeader :: GuideAction ctx (Text, Text)
+getCsrfHeader = do
+  csrfTokenName <- spc_csrfHeaderName <$> getSpockCfg
+  csrfTokenValue <- getCsrfToken
+  return (csrfTokenName, csrfTokenValue)
+
+
