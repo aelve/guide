@@ -1,14 +1,17 @@
-module Guide.View.Haskell where
+module Guide.View.CategoryOverview
+  ( view
+  ) where
 
 import Prelude
 
 import Data.Array (null)
 import Data.Foldable (for_)
+import Data.Newtype (unwrap)
 import Guide.Api.ClientTypes (CCategoryOverview(..), CGrandCategory(..))
 import Guide.Events (Event(..))
 import Guide.Routes (Route(..), toUrl)
 import Guide.State (State(..))
-import Guide.Types (CGrandCategories)
+import Guide.Types (CGrandCategories, CategoryName(..))
 import Guide.Util.DOMUtil (mkKey)
 import Network.RemoteData (RemoteData(..))
 import Pux.DOM.Events (onClick) as P
@@ -19,10 +22,10 @@ import Text.Smolder.HTML.Attributes (href) as S
 import Text.Smolder.Markup ((#!), (!))
 import Text.Smolder.Markup (text) as S
 
-haskellView :: State -> P.HTML Event
-haskellView (State st) =
+view :: CategoryName -> State -> P.HTML Event
+view (CategoryName cName) state@(State st) =
   S.div $ do
-    S.h1 $ S.text "Haskell"
+    S.h1 $ S.text cName
     S.a ! S.href (toUrl Home)
         #! P.onClick (Navigate $ toUrl Home)
         $ S.text "Back to Home"
@@ -30,42 +33,44 @@ haskellView (State st) =
       NotAsked -> S.div $ S.text "GrandCategories not asked."
       Loading -> S.div $ S.text "Loading data..."
       Failure error -> S.div $ S.text $ "Error loading data: " <> (show error)
-      (Success cats) -> gCatsView cats
+      (Success cats) -> gCatsView state cats
       (Refreshing cats) ->
           S.div do
             S.div $ S.text "Refreshing data..."
-            gCatsView cats
+            gCatsView state cats
 
-gCatsView :: CGrandCategories -> P.HTML Event
-gCatsView cats =
+gCatsView :: State -> CGrandCategories -> P.HTML Event
+gCatsView state cats =
   S.ul
-    $ for_ cats gCatView
+    $ for_ cats (gCatView state)
 
-gCatView :: CGrandCategory -> P.HTML Event
-gCatView (CGrandCategory cat) =
+gCatView :: State -> CGrandCategory -> P.HTML Event
+gCatView state (CGrandCategory cat) =
   S.li
     ! P.key (mkKey cat.cgcTitle) $ do
     S.h2
       $ S.text cat.cgcTitle
     S.ul
-      $ for_ cat.cgcFinished catOverviewView
+      $ for_ cat.cgcFinished (catOverviewView state)
     when (not null cat.cgcWip) $
       S.div $ do
         S.h3
           $ S.text "In progress"
         S.ul
-          $ for_ cat.cgcWip catOverviewView
+          $ for_ cat.cgcWip (catOverviewView state)
     when (not null cat.cgcStub) $
       S.div $ do
         S.h3
           $ S.text "To be written"
         S.ul
-          $ for_ cat.cgcStub catOverviewView
+          $ for_ cat.cgcStub (catOverviewView state)
 
-catOverviewView :: CCategoryOverview -> P.HTML Event
-catOverviewView (CCategoryOverview cat) =
+catOverviewView :: State -> CCategoryOverview -> P.HTML Event
+catOverviewView (State st) (CCategoryOverview cat) =
+  let url = toUrl $ CategoryDetail st.currentCategoryName cat.ccoUid in
   S.li
     ! P.key cat.ccoUid
-    $ S.a ! S.href cat.ccoLink
-            #! P.onClick (Navigate cat.ccoLink)
-            $ S.text cat.ccoTitle
+    $ S.a
+      ! S.href url
+      #! P.onClick (Navigate url)
+      $ S.text cat.ccoTitle

@@ -5,7 +5,7 @@ import Prelude
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
 
-import Guide.Api.ClientTypes (CGrandCategory(..))
+import Guide.Api.ClientTypes (CGrandCategory)
 
 type CGrandCategories = Array CGrandCategory
 
@@ -25,4 +25,10 @@ newtype Users = Users (Array User)
 derive instance gUsers :: Generic Users
 derive instance newtypeUsers :: Newtype Users _
 instance showUsers :: Show Users where
+  show = gShow
+
+newtype CategoryName = CategoryName String
+derive instance gCategoryName :: Generic CategoryName
+derive instance newtypeCategoryName :: Newtype CategoryName _
+instance showCategoryName :: Show CategoryName where
   show = gShow

@@ -6,7 +6,7 @@ import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
 import Guide.Config (config)
 import Guide.Routes (Route, match)
-import Guide.Types (CGrandCategories, Users)
+import Guide.Types (CGrandCategories, CategoryName(..), Users)
 import Network.RemoteData (RemoteData(..))
 
 newtype State = State
@@ -17,8 +17,7 @@ newtype State = State
   , errors :: Array String
   , users :: RemoteData String Users
   , grandCategories :: RemoteData String CGrandCategories
-  , countHomeRoute :: Int
-  , countPGRoute :: Int
+  , currentCategoryName :: CategoryName
   }
 
 derive instance gState :: Generic State
@@ -34,8 +33,11 @@ init url = State
   , loaded: false
   , errors: []
   , grandCategories: NotAsked
+  , currentCategoryName: CategoryName haskellCatName
   -- playground
   , users: NotAsked
-  , countHomeRoute: 0
-  , countPGRoute: 0
   }
+
+
+haskellCatName :: String
+haskellCatName = "haskell"

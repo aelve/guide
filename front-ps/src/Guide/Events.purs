@@ -16,7 +16,7 @@ import Data.Maybe (Maybe(..))
 import Guide.Http (fetchUsers, fetchGrandCategories)
 import Guide.Routes (Route(..), match)
 import Guide.State (State(..))
-import Guide.Types (CGrandCategories, Users)
+import Guide.Types (CGrandCategories, CategoryName, Users)
 import Lib.IsomorphicFetch (FETCH)
 import Network.HTTP.Affjax (AJAX)
 import Network.RemoteData (RemoteData(..), isNotAsked)
@@ -28,7 +28,7 @@ data Event
   = PageView Route
   | Navigate String DOMEvent
   -- API
-  | RequestGrandCategories
+  | RequestGrandCategories CategoryName
   | ReceiveGrandCategories (Either String CGrandCategories)
   -- playground
   | RequestUsers
@@ -46,13 +46,13 @@ foldp :: ∀ eff. Event -> State -> EffModel State Event (AppEffects eff)
 
 -- Api
 
-foldp RequestGrandCategories (State st) =
+foldp (RequestGrandCategories catName) (State st) =
   { state: State $ st { grandCategories = case st.grandCategories of
                                   Success cats -> Refreshing cats
                                   _ -> Loading
                       }
   , effects:
-    [ fetchGrandCategories >>= pure <<< Just <<< ReceiveGrandCategories
+    [ fetchGrandCategories catName >>= pure <<< Just <<< ReceiveGrandCategories
     ]
   }
 
@@ -111,20 +111,28 @@ foldp (PageView route) (State st) =
 
 routeEffects :: ∀ fx. Route -> State -> EffModel State Event (AppEffects fx)
 routeEffects Home s@(State st) = noEffects $
-  State $ st { loaded = true, countHomeRoute = st.countHomeRoute + 1 }
+  State $ st { loaded = true }
 
-routeEffects Haskell s@(State st) =
-  { state: State $ st { loaded = false }
+routeEffects (CategoryOverview catName) s@(State st) =
+  { state:
+      State $ st  { loaded = false
+                  , currentCategoryName = catName
+                  }
   , effects: [
       -- fetch grandCategories only once
       if isNotAsked st.grandCategories then
-        pure $ Just RequestGrandCategories
+        pure <<< Just $ RequestGrandCategories catName
       else
         pure Nothing
   ]}
 
+routeEffects (CategoryDetail catName catId) s@(State st) = noEffects $
+  State $
+    st  { loaded = false
+        }
+
 routeEffects Playground s@(State st) =
-  { state: State $ st { loaded = false, countPGRoute = st.countPGRoute + 1 }
+  { state: State $ st { loaded = false }
   , effects: [
       -- fetch users only once
       if isNotAsked st.users then
