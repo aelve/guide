@@ -45,7 +45,7 @@ class Category extends Component {
   componentDidMount() {
     const uid = extractUid(this.props.match.params.uid);
 
-    fetchData('http://localhost:8080/haskell/api/category/'+uid)
+    fetchData('http://localhost:3080/haskell/api/category/'+uid)
       .then((data : T.Cat) => this.setState({cat: data}))
   }
   render() {
@@ -74,7 +74,7 @@ class Category extends Component {
             </div>
           </div>
           </div>
-          <div>{ 
+          <div>{
             this.state.cat.items
                 .map(item => <Item key={item.uid} {...item}/>)
           }</div>
@@ -83,7 +83,7 @@ class Category extends Component {
           .Item {
             margin-top: 20px;
           }
-          
+
           .category-info {
             display: block;
             box-sizing: border-box;
@@ -102,9 +102,9 @@ class Category extends Component {
 
           .text-button::before {content: "[";}
           .text-button::after  {content: "]";}
- 
+
           .text-button > a:visited {color: #008ACE;}
-          h1           > a:visited {color: #008ACE;} 
+          h1           > a:visited {color: #008ACE;}
 
           .category-info .group {
             font-size: 60%;

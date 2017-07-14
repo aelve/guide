@@ -14,7 +14,7 @@ class Home extends Component {
     this.setState({ categories: [] });
   }
   componentDidMount() {
-    fetchData('http://localhost:8080/haskell/api/all-categories')
+    fetchData('http://localhost:3080/haskell/api/all-categories')
       .then(data => this.setState({categories: data}))
   }
     render() {

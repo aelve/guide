@@ -22,7 +22,7 @@ The `config.json` file contains the config (it will be created at the 1st start)
     $ stack build
     $ stack exec guide
 
-And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:8080/admin>.
+And go to <http://localhost:3080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:3080/admin>.
 
 # How to install on a server
 
