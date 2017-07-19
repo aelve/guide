@@ -14,6 +14,7 @@ module Guide.Views
   -- * Pages
   renderRoot,
   renderAdmin,
+  renderAdminLinks,
   renderDonate,
   renderCategoryPage,
   renderHaskellRoot,
@@ -42,10 +43,14 @@ import NeatInterpolation
 import Lucid hiding (for_)
 -- Network
 import Data.IP
+import Network.HTTP.Conduit
 -- Time
 import Data.Time.Format.Human
 -- Mustache (templates)
 import qualified Data.Aeson as A
+
+-- CMark
+import qualified CMark as MD
 
 import Guide.Config
 import Guide.State
@@ -793,3 +798,81 @@ on those <div>s.
 -- people instead just write “TODO fix grammar” in description and then such
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
+
+-- | Render links page with info about broken links
+renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
+renderAdminLinks globalState = do
+  head_ $ do
+    includeJS "/js.js"
+    includeJS "/jquery.js"
+    includeJS "/sorttable.js"
+    includeCSS "/markup.css"
+    includeCSS "/admin.css"
+    includeCSS "/loader.css"
+    title_ "Links – Aelve Guide"
+    meta_ [name_ "viewport",
+           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
+
+  body_ $ do
+    script_ $ fromJS $ JS.createAjaxIndicator ()
+    h1_ "Links"
+    div_ [id_ "stats"] $
+      table_ [class_ "sortable"] $ do
+          thead_ $ tr_ $ do
+            th_ [class_ "sorttable_nosort"] "Link"
+            th_ "Status"
+          tbody_ $ do
+            manager <- liftIO $ newManager tlsManagerSettings
+            for_ (concatMap findLinksCategory $ globalState ^. categories) $ \(MD.LINK l _) -> do
+              tr_ $ do
+                td_ (a_ [href_ l] $ toHtml l)
+                if ("http" `T.isPrefixOf` l) then do
+                  let makeRequest = do
+                       request <- parseRequest $ T.unpack l
+                       show . responseStatus <$> httpLbs request manager
+                  response <- liftIO $ makeRequest `catch` (return . handleHttpException)
+                  td_ (toHtml response)
+                else
+                  td_ "??"
+ where
+  handleHttpException :: HttpException -> String
+  handleHttpException (HttpExceptionRequest _ x) = show x
+  handleHttpException (InvalidUrlException _ x) = x
+
+  findLinksCategory :: Category -> [MD.NodeType]
+  findLinksCategory = filter isLink . findNodesCategory
+
+  isLink :: MD.NodeType -> Bool
+  isLink (MD.LINK _ _) = True
+  isLink _ = False
+
+  findNodesCategory :: Category -> [MD.NodeType]
+  findNodesCategory Category{..} =
+    findLinksMdBlock _categoryNotes ++ concatMap findLinksCatItem _categoryItems
+
+  findLinksCatItem :: Item -> [MD.NodeType]
+  findLinksCatItem Item{..} =
+       findLinksMdBlock _itemDescription
+    ++ concatMap findLinksTrait _itemPros
+    ++ concatMap findLinksTrait _itemCons
+    ++ findLinksMdBlock _itemEcosystem
+    ++ findLinksMdTree _itemNotes
+    ++ findLinksItemLink _itemLink
+
+  findLinksMdBlock :: MarkdownBlock -> [MD.NodeType]
+  findLinksMdBlock = findAllLinks . markdownBlockMdMarkdown
+
+  findLinksMdTree :: MarkdownTree -> [MD.NodeType]
+  findLinksMdTree = findAllLinks . parseMD . markdownTreeMdText
+
+  findLinksMdNode :: MD.Node -> [MD.NodeType]
+  findLinksMdNode (MD.Node _ n ns) = n : findAllLinks ns
+
+  findLinksTrait :: Trait -> [MD.NodeType]
+  findLinksTrait = findAllLinks . markdownInlineMdMarkdown . _traitContent
+
+  findAllLinks = concatMap findLinksMdNode
+
+  findLinksItemLink :: Maybe Url -> [MD.NodeType]
+  findLinksItemLink (Just x) = [MD.LINK x ""]
+  findLinksItemLink _        = []

@@ -30,6 +30,7 @@ module Guide.Markdown
 
   -- * Misc
   renderMD,
+  parseMD,
   markdownNull,
   extractPreface,
 )
