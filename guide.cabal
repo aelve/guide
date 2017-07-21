@@ -109,7 +109,8 @@ library
                      , hashable
                      , haskell-src-meta
                      , http-api-data
-                     , http-conduit
+                     , http-client
+                     , http-client-tls
                      , http-types
                      , hvect
                      , ilist

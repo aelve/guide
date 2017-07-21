@@ -36,6 +36,7 @@ import Guide.Views.Category as X
 
 import Imports
 
+import Data.Monoid ((<>))
 -- Text
 import qualified Data.Text.All as T
 import NeatInterpolation
@@ -43,14 +44,17 @@ import NeatInterpolation
 import Lucid hiding (for_)
 -- Network
 import Data.IP
-import Network.HTTP.Conduit
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS
+import Network.HTTP.Types.Status (ok200)
+import Network.URI (isURI)
 -- Time
 import Data.Time.Format.Human
 -- Mustache (templates)
 import qualified Data.Aeson as A
-
 -- CMark
 import qualified CMark as MD
+import CMark.Sections (annValue, flattenDocument)
 
 import Guide.Config
 import Guide.State
@@ -799,6 +803,8 @@ on those <div>s.
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
 
+data LinkStatus = OK | Unknown | Broken String deriving Show
+
 -- | Render links page with info about broken links
 renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
 renderAdminLinks globalState = do
@@ -816,54 +822,99 @@ renderAdminLinks globalState = do
   body_ $ do
     script_ $ fromJS $ JS.createAjaxIndicator ()
     h1_ "Links"
-    div_ [id_ "stats"] $
+    div_ [id_ "stats"] $ do
+      manager  <- liftIO $ newManager tlsManagerSettings
+      fullList <- liftIO $ forM allLinks $ \(cat, l) -> do
+            resp <- if (isURI $ T.unpack l) then (do
+                        request <- parseRequest $ T.unpack l
+                        status <- responseStatus <$> httpNoBody request manager
+                        pure $ if status == ok200 then OK else Broken (show status)
+                      ) `catch` (return . handleHttpException)
+                    else
+                      pure Unknown
+            pure (toHtml cat, a_ [href_ l] (toHtml l), resp            )
+      let (ok, unknwn, br) = sortLinks fullList
+
+      h2_ "Broken Links"
+      table_ [class_ "sortable"] $ do
+        thead_ $ tr_ $ do
+          th_ [class_ "sorttable_nosort"] "Category"
+          th_ [class_ "sorttable_nosort"] "Link"
+          th_ "Status"
+        tbody_ $ do
+          for_ br $ \(cat, l, text) -> do
+            tr_ $ do
+              td_ cat
+              td_ l
+              td_ $ toHtml text
+      h2_ "Unchecked Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
+            th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
             th_ "Status"
           tbody_ $ do
-            manager <- liftIO $ newManager tlsManagerSettings
-            for_ (concatMap findLinksCategory $ globalState ^. categories) $ \(MD.LINK l _) -> do
+            for_ unknwn $ \(cat, l) -> do
               tr_ $ do
-                td_ (a_ [href_ l] $ toHtml l)
-                if ("http" `T.isPrefixOf` l) then do
-                  let makeRequest = do
-                       request <- parseRequest $ T.unpack l
-                       show . responseStatus <$> httpLbs request manager
-                  response <- liftIO $ makeRequest `catch` (return . handleHttpException)
-                  td_ (toHtml response)
-                else
-                  td_ "??"
+                td_ cat
+                td_ l
+                td_ "didn't check (unknown scheme)"
+      h2_ "OK Links"
+      table_ [class_ "sortable"] $ do
+          thead_ $ tr_ $ do
+            th_ [class_ "sorttable_nosort"] "Category"
+            th_ [class_ "sorttable_nosort"] "Link"
+            th_ "Status"
+          tbody_ $ do
+            for_ ok $ \(cat, l) -> do
+              tr_ $ do
+                td_ cat
+                td_ l
+                td_ "OK"
  where
-  handleHttpException :: HttpException -> String
-  handleHttpException (HttpExceptionRequest _ x) = show x
-  handleHttpException (InvalidUrlException _ x) = x
+  handleHttpException :: HttpException -> LinkStatus
+  handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
+  handleHttpException (InvalidUrlException  _ x) = Broken x
 
-  findLinksCategory :: Category -> [MD.NodeType]
-  findLinksCategory = filter isLink . findNodesCategory
+  sortLinks :: [(a, b, LinkStatus)] -> ([(a, b)], [(a, b)], [(a, b, String)])
+  sortLinks = foldr sortLink ([], [], [])
 
-  isLink :: MD.NodeType -> Bool
-  isLink (MD.LINK _ _) = True
-  isLink _ = False
+  sortLink (a, b, OK) = (\(x, y, z) -> ((a, b):x, y, z))
+  sortLink (a, b, Unknown) = (\(x, y, z) -> (x, (a, b):y, z))
+  sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
 
-  findNodesCategory :: Category -> [MD.NodeType]
+  allLinks :: [(Text, Url)]
+  allLinks = mapMaybe getLink getAllContent
+
+  getAllContent :: [(Text, MD.NodeType)]
+  getAllContent = concatMap findNodesCategory $ globalState ^. categories
+
+  getLink :: (Text, MD.NodeType) -> Maybe (Text, Url)
+  getLink (title, (MD.LINK l _)) = Just (title, l)
+  getLink _                      = Nothing
+
+  findNodesCategory :: Category -> [(Text, MD.NodeType)]
   findNodesCategory Category{..} =
-    findLinksMdBlock _categoryNotes ++ concatMap findLinksCatItem _categoryItems
+    map (\x -> (_categoryTitle, x))
+      (findLinksMdBlock _categoryNotes)
+        ++ map (\(item, x) -> (_categoryTitle <> "/" <> item, x))
+          (concatMap findLinksCatItem _categoryItems)
 
-  findLinksCatItem :: Item -> [MD.NodeType]
+  findLinksCatItem :: Item -> [(Text, MD.NodeType)]
   findLinksCatItem Item{..} =
-       findLinksMdBlock _itemDescription
-    ++ concatMap findLinksTrait _itemPros
-    ++ concatMap findLinksTrait _itemCons
-    ++ findLinksMdBlock _itemEcosystem
-    ++ findLinksMdTree _itemNotes
-    ++ findLinksItemLink _itemLink
+    map (\x -> (_itemName, x)) $
+         findLinksMdBlock _itemDescription
+      ++ concatMap findLinksTrait _itemPros
+      ++ concatMap findLinksTrait _itemCons
+      ++ findLinksMdBlock _itemEcosystem
+      ++ findLinksMdTree _itemNotes
+      ++ findLinksItemLink _itemLink
 
   findLinksMdBlock :: MarkdownBlock -> [MD.NodeType]
   findLinksMdBlock = findAllLinks . markdownBlockMdMarkdown
 
   findLinksMdTree :: MarkdownTree -> [MD.NodeType]
-  findLinksMdTree = findAllLinks . parseMD . markdownTreeMdText
+  findLinksMdTree = concatMap findLinksMdNode . annValue . flattenDocument . markdownTreeMdTree
 
   findLinksMdNode :: MD.Node -> [MD.NodeType]
   findLinksMdNode (MD.Node _ n ns) = n : findAllLinks ns
