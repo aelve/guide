@@ -54,7 +54,8 @@ import Data.Time.Format.Human
 import qualified Data.Aeson as A
 -- CMark
 import qualified CMark as MD
-import CMark.Sections (annValue, flattenDocument)
+-- Generic traversal (for finding links in content)
+import Data.Generics.Uniplate.Data (universeBi)
 
 import Guide.Config
 import Guide.State
@@ -823,17 +824,18 @@ renderAdminLinks globalState = do
     h1_ "Links"
     div_ [id_ "stats"] $ do
       manager  <- liftIO $ newManager tlsManagerSettings
-      fullList <- liftIO $ forM allLinks $ \(cat, l) -> do
-            resp <- if isURI (T.unpack l) then (do
-                        request <- parseRequest $ T.unpack l
+      fullList <- liftIO $ forM allLinks $ \(lnk, location) -> do
+            resp <- if isURI (T.unpack lnk) then (do
+                        request <- parseRequest $ T.unpack lnk
                         status <- responseStatus <$> httpNoBody request manager
+                        print (lnk, status)
                         pure $ case status of
                           Status 200  _   -> OK
                           Status code err -> Broken (""#|code|#": "#||err||#"")
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
-            pure (toHtml cat, a_ [href_ l] (toHtml l), resp)
+            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp)
       let (ok, unparseable, broken) = sortLinks fullList
 
       h2_ "Broken Links"
@@ -843,11 +845,11 @@ renderAdminLinks globalState = do
           th_ [class_ "sorttable_nosort"] "Link"
           th_ "Status"
         tbody_ $ do
-          for_ broken $ \(cat, l, text) -> do
+          for_ broken $ \(location, lnk, reason) -> do
             tr_ $ do
-              td_ cat
-              td_ l
-              td_ $ toHtml text
+              td_ location
+              td_ lnk
+              td_ $ toHtml reason
       h2_ "Unparseable Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
@@ -880,47 +882,31 @@ renderAdminLinks globalState = do
   sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
   sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
 
-  allLinks :: [(Text, Url)]
-  allLinks = ordNub (mapMaybe getLink getAllContent)
+  allLinks :: [(Url, Text)]
+  allLinks = ordNub (findLinks globalState)
 
-  getAllContent :: [(Text, MD.NodeType)]
-  getAllContent = concatMap findNodesCategory $ globalState ^. categories
+-- | Find all links in content, along with a human-readable description of
+-- where each link is located.
+findLinks :: GlobalState -> [(Url, Text)]
+findLinks = concatMap findLinksCategory . view categories
 
-  getLink :: (Text, MD.NodeType) -> Maybe (Text, Url)
-  getLink (title, (MD.LINK l _)) = Just (title, l)
-  getLink _                      = Nothing
+-- | Find all links in a single category.
+findLinksCategory :: Category -> [(Url, Text)]
+findLinksCategory cat =
+  [(url, cat^.title <> " (category notes)")
+      | url <- findLinksMD (cat^.notes)] ++
+  [(url, cat^.title <> " / " <> item^.name)
+      | item <- cat^.items
+      , url  <- findLinksItem item]
 
-  findNodesCategory :: Category -> [(Text, MD.NodeType)]
-  findNodesCategory Category{..} =
-    map (\x -> (_categoryTitle, x))
-      (findLinksMdBlock _categoryNotes)
-        ++ map (\(item, x) -> (_categoryTitle <> "/" <> item, x))
-          (concatMap findLinksCatItem _categoryItems)
+-- | Find all links in a single item.
+findLinksItem :: Item -> [Url]
+findLinksItem item = findLinksMD item' ++ maybeToList (item^.link)
+  where
+    -- we don't want to find any links in deleted traits
+    item' = item & prosDeleted .~ []
+                 & consDeleted .~ []
 
-  findLinksCatItem :: Item -> [(Text, MD.NodeType)]
-  findLinksCatItem Item{..} =
-    map (\x -> (_itemName, x)) $
-         findLinksMdBlock _itemDescription
-      ++ concatMap findLinksTrait _itemPros
-      ++ concatMap findLinksTrait _itemCons
-      ++ findLinksMdBlock _itemEcosystem
-      ++ findLinksMdTree _itemNotes
-      ++ findLinksItemLink _itemLink
-
-  findLinksMdBlock :: MarkdownBlock -> [MD.NodeType]
-  findLinksMdBlock = findAllLinks . markdownBlockMdMarkdown
-
-  findLinksMdTree :: MarkdownTree -> [MD.NodeType]
-  findLinksMdTree = concatMap findLinksMdNode . annValue . flattenDocument . markdownTreeMdTree
-
-  findLinksMdNode :: MD.Node -> [MD.NodeType]
-  findLinksMdNode (MD.Node _ n ns) = n : findAllLinks ns
-
-  findLinksTrait :: Trait -> [MD.NodeType]
-  findLinksTrait = findAllLinks . markdownInlineMdMarkdown . _traitContent
-
-  findAllLinks = concatMap findLinksMdNode
-
-  findLinksItemLink :: Maybe Url -> [MD.NodeType]
-  findLinksItemLink (Just x) = [MD.LINK x ""]
-  findLinksItemLink _        = []
+-- | Find all Markdown links in /any/ structure, using generics.
+findLinksMD :: Data a => a -> [Url]
+findLinksMD a = [url | MD.LINK url _ <- universeBi a]

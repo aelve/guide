@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -25,7 +26,7 @@ import Data.SafeCopy hiding (kind)
 
 
 data Hue = NoHue | Hue Int
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic, Data)
 
 deriveSafeCopySimple 1 'extension ''Hue
 
