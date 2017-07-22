@@ -1,3 +1,5 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -71,17 +73,25 @@ data MarkdownInline = MarkdownInline {
   markdownInlineMdText     :: Text,
   markdownInlineMdHtml     :: ByteString,
   markdownInlineMdMarkdown :: ![MD.Node] }
+  deriving (Generic, Data)
 
 data MarkdownBlock = MarkdownBlock {
   markdownBlockMdText     :: Text,
   markdownBlockMdHtml     :: ByteString,
   markdownBlockMdMarkdown :: ![MD.Node] }
+  deriving (Generic, Data)
 
 data MarkdownTree = MarkdownTree {
   markdownTreeMdText     :: Text,
   markdownTreeMdTree     :: !(Document Text ByteString),
   markdownTreeMdIdPrefix :: Text,
   markdownTreeMdTOC      :: Forest ([MD.Node], Text) }
+  deriving (Generic, Data)
+
+-- Orphan instances (to be deleted after migration to newer cmark-sections)
+deriving instance (Data a) => Data (Annotated a)
+deriving instance (Data a, Data b) => Data (Section a b)
+deriving instance (Data a, Data b) => Data (Document a b)
 
 makeFields ''MarkdownInline
 makeFields ''MarkdownBlock

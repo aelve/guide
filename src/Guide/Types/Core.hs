@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -94,7 +95,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 data Trait = Trait {
   _traitUid :: Uid Trait,
   _traitContent :: MarkdownInline }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 4 'extension ''Trait
 makeFields ''Trait
@@ -115,7 +116,7 @@ data ItemKind
   = Library {_itemKindHackageName :: Maybe Text}
   | Tool {_itemKindHackageName :: Maybe Text}
   | Other
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Data)
 
 deriveSafeCopySimple 3 'extension ''ItemKind
 makeFields ''ItemKind
@@ -146,7 +147,7 @@ data ItemSection
   = ItemProsConsSection
   | ItemEcosystemSection
   | ItemNotesSection
-  deriving (Eq, Ord, Show, Generic)
+  deriving (Eq, Ord, Show, Generic, Data)
 
 deriveSafeCopySimple 0 'base ''ItemSection
 
@@ -173,7 +174,7 @@ data Item = Item {
   _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
   _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 11 'extension ''Item
 makeFields ''Item
@@ -194,7 +195,7 @@ data CategoryStatus
   = CategoryStub                -- ^ “Stub” = just created
   | CategoryWIP                 -- ^ “WIP” = work in progress
   | CategoryFinished            -- ^ “Finished” = complete or nearly complete
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Data)
 
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
@@ -239,7 +240,7 @@ data Category = Category {
   -- all items in a group are deleted
   _categoryGroups :: Map Text Hue
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 11 'extension ''Category
 makeFields ''Category

@@ -109,6 +109,8 @@ library
                      , hashable
                      , haskell-src-meta
                      , http-api-data
+                     , http-client
+                     , http-client-tls
                      , http-types
                      , hvect
                      , ilist
@@ -138,6 +140,7 @@ library
                      , text-all >= 0.4.1.0 && < 0.5
                      , time >= 1.5
                      , transformers
+                     , uniplate
                      , unix
                      , utf8-string
                      , vector

@@ -14,6 +14,7 @@ module Guide.Views
   -- * Pages
   renderRoot,
   renderAdmin,
+  renderAdminLinks,
   renderDonate,
   renderCategoryPage,
   renderHaskellRoot,
@@ -35,6 +36,7 @@ import Guide.Views.Category as X
 
 import Imports
 
+import Data.Monoid ((<>))
 -- Text
 import qualified Data.Text.All as T
 import NeatInterpolation
@@ -42,10 +44,18 @@ import NeatInterpolation
 import Lucid hiding (for_)
 -- Network
 import Data.IP
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS
+import Network.HTTP.Types.Status (Status(..))
+import Network.URI (isURI)
 -- Time
 import Data.Time.Format.Human
 -- Mustache (templates)
 import qualified Data.Aeson as A
+-- CMark
+import qualified CMark as MD
+-- Generic traversal (for finding links in content)
+import Data.Generics.Uniplate.Data (universeBi)
 
 import Guide.Config
 import Guide.State
@@ -237,8 +247,7 @@ renderStats globalState acts = do
       th_ "Visits"
       th_ "Unique visitors"
     tbody_ $ do
-      let rawVisits :: [(Uid Category, Maybe IP
-                        )]
+      let rawVisits :: [(Uid Category, Maybe IP)]
           rawVisits = [(catId, actionIP d) |
                        (Action'CategoryVisit catId, d) <- acts']
       let visits :: [(Uid Category, (Int, Int))]
@@ -793,3 +802,111 @@ on those <div>s.
 -- people instead just write “TODO fix grammar” in description and then such
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
+
+data LinkStatus = OK | Unparseable | Broken String deriving Show
+
+-- | Render links page with info about broken links
+renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
+renderAdminLinks globalState = do
+  head_ $ do
+    includeJS "/js.js"
+    includeJS "/jquery.js"
+    includeJS "/sorttable.js"
+    includeCSS "/markup.css"
+    includeCSS "/admin.css"
+    includeCSS "/loader.css"
+    title_ "Links – Aelve Guide"
+    meta_ [name_ "viewport",
+           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
+
+  body_ $ do
+    script_ $ fromJS $ JS.createAjaxIndicator ()
+    h1_ "Links"
+    div_ [id_ "stats"] $ do
+      manager  <- liftIO $ newManager tlsManagerSettings
+      fullList <- liftIO $ forM allLinks $ \(lnk, location) -> do
+            resp <- if isURI (T.unpack lnk) then (do
+                        request <- parseRequest $ T.unpack lnk
+                        status <- responseStatus <$> httpNoBody request manager
+                        print (lnk, status)
+                        pure $ case status of
+                          Status 200  _   -> OK
+                          Status code err -> Broken (""#|code|#": "#||err||#"")
+                      ) `catch` (return . handleHttpException)
+                    else
+                      pure Unparseable
+            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp)
+      let (ok, unparseable, broken) = sortLinks fullList
+
+      h2_ "Broken Links"
+      table_ [class_ "sortable"] $ do
+        thead_ $ tr_ $ do
+          th_ [class_ "sorttable_nosort"] "Category"
+          th_ [class_ "sorttable_nosort"] "Link"
+          th_ "Status"
+        tbody_ $ do
+          for_ broken $ \(location, lnk, reason) -> do
+            tr_ $ do
+              td_ location
+              td_ lnk
+              td_ $ toHtml reason
+      h2_ "Unparseable Links"
+      table_ [class_ "sortable"] $ do
+          thead_ $ tr_ $ do
+            th_ [class_ "sorttable_nosort"] "Category"
+            th_ [class_ "sorttable_nosort"] "Link"
+          tbody_ $ do
+            for_ unparseable $ \(cat, l) -> do
+              tr_ $ do
+                td_ cat
+                td_ l
+      h2_ "OK Links"
+      table_ [class_ "sortable"] $ do
+          thead_ $ tr_ $ do
+            th_ [class_ "sorttable_nosort"] "Category"
+            th_ [class_ "sorttable_nosort"] "Link"
+          tbody_ $ do
+            for_ ok $ \(cat, l) -> do
+              tr_ $ do
+                td_ cat
+                td_ l
+ where
+  handleHttpException :: HttpException -> LinkStatus
+  handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
+  handleHttpException (InvalidUrlException  _ x) = Broken x
+
+  sortLinks :: [(a, b, LinkStatus)] -> ([(a, b)], [(a, b)], [(a, b, String)])
+  sortLinks = foldr sortLink ([], [], [])
+
+  sortLink (a, b, OK)          = (\(x, y, z) -> ((a, b):x, y, z))
+  sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
+  sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
+
+  allLinks :: [(Url, Text)]
+  allLinks = ordNub (findLinks globalState)
+
+-- | Find all links in content, along with a human-readable description of
+-- where each link is located.
+findLinks :: GlobalState -> [(Url, Text)]
+findLinks = concatMap findLinksCategory . view categories
+
+-- | Find all links in a single category.
+findLinksCategory :: Category -> [(Url, Text)]
+findLinksCategory cat =
+  [(url, cat^.title <> " (category notes)")
+      | url <- findLinksMD (cat^.notes)] ++
+  [(url, cat^.title <> " / " <> item^.name)
+      | item <- cat^.items
+      , url  <- findLinksItem item]
+
+-- | Find all links in a single item.
+findLinksItem :: Item -> [Url]
+findLinksItem item = findLinksMD item' ++ maybeToList (item^.link)
+  where
+    -- we don't want to find any links in deleted traits
+    item' = item & prosDeleted .~ []
+                 & consDeleted .~ []
+
+-- | Find all Markdown links in /any/ structure, using generics.
+findLinksMD :: Data a => a -> [Url]
+findLinksMD a = [url | MD.LINK url _ <- universeBi a]

@@ -25,6 +25,7 @@ state/
 config.json
 
 # IDE/support
+.idea/
 .vscode/
 tags
 
