@@ -246,8 +246,7 @@ renderStats globalState acts = do
       th_ "Visits"
       th_ "Unique visitors"
     tbody_ $ do
-      let rawVisits :: [(Uid Category, Maybe IP
-                        )]
+      let rawVisits :: [(Uid Category, Maybe IP)]
           rawVisits = [(catId, actionIP d) |
                        (Action'CategoryVisit catId, d) <- acts']
       let visits :: [(Uid Category, (Int, Int))]
@@ -803,7 +802,7 @@ on those <div>s.
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
 
-data LinkStatus = OK | Unknown | Broken String deriving Show
+data LinkStatus = OK | Unparseable | Broken String deriving Show
 
 -- | Render links page with info about broken links
 renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
@@ -825,15 +824,15 @@ renderAdminLinks globalState = do
     div_ [id_ "stats"] $ do
       manager  <- liftIO $ newManager tlsManagerSettings
       fullList <- liftIO $ forM allLinks $ \(cat, l) -> do
-            resp <- if (isURI $ T.unpack l) then (do
+            resp <- if isURI (T.unpack l) then (do
                         request <- parseRequest $ T.unpack l
                         status <- responseStatus <$> httpNoBody request manager
                         pure $ if status == ok200 then OK else Broken (show status)
                       ) `catch` (return . handleHttpException)
                     else
-                      pure Unknown
-            pure (toHtml cat, a_ [href_ l] (toHtml l), resp            )
-      let (ok, unknwn, br) = sortLinks fullList
+                      pure Unparseable
+            pure (toHtml cat, a_ [href_ l] (toHtml l), resp)
+      let (ok, unparseable, broken) = sortLinks fullList
 
       h2_ "Broken Links"
       table_ [class_ "sortable"] $ do
@@ -842,35 +841,31 @@ renderAdminLinks globalState = do
           th_ [class_ "sorttable_nosort"] "Link"
           th_ "Status"
         tbody_ $ do
-          for_ br $ \(cat, l, text) -> do
+          for_ broken $ \(cat, l, text) -> do
             tr_ $ do
               td_ cat
               td_ l
               td_ $ toHtml text
-      h2_ "Unchecked Links"
+      h2_ "Unparseable Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
-            th_ "Status"
           tbody_ $ do
-            for_ unknwn $ \(cat, l) -> do
+            for_ unparseable $ \(cat, l) -> do
               tr_ $ do
                 td_ cat
                 td_ l
-                td_ "didn't check (unknown scheme)"
       h2_ "OK Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
-            th_ "Status"
           tbody_ $ do
             for_ ok $ \(cat, l) -> do
               tr_ $ do
                 td_ cat
                 td_ l
-                td_ "OK"
  where
   handleHttpException :: HttpException -> LinkStatus
   handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
@@ -879,8 +874,8 @@ renderAdminLinks globalState = do
   sortLinks :: [(a, b, LinkStatus)] -> ([(a, b)], [(a, b)], [(a, b, String)])
   sortLinks = foldr sortLink ([], [], [])
 
-  sortLink (a, b, OK) = (\(x, y, z) -> ((a, b):x, y, z))
-  sortLink (a, b, Unknown) = (\(x, y, z) -> (x, (a, b):y, z))
+  sortLink (a, b, OK)          = (\(x, y, z) -> ((a, b):x, y, z))
+  sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
   sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
 
   allLinks :: [(Text, Url)]
