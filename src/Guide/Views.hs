@@ -879,7 +879,7 @@ renderAdminLinks globalState = do
   sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
 
   allLinks :: [(Text, Url)]
-  allLinks = mapMaybe getLink getAllContent
+  allLinks = ordNub (mapMaybe getLink getAllContent)
 
   getAllContent :: [(Text, MD.NodeType)]
   getAllContent = concatMap findNodesCategory $ globalState ^. categories
