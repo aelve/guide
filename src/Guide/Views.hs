@@ -46,7 +46,7 @@ import Lucid hiding (for_)
 import Data.IP
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
-import Network.HTTP.Types.Status (ok200)
+import Network.HTTP.Types.Status (Status(..))
 import Network.URI (isURI)
 -- Time
 import Data.Time.Format.Human
@@ -827,7 +827,9 @@ renderAdminLinks globalState = do
             resp <- if isURI (T.unpack l) then (do
                         request <- parseRequest $ T.unpack l
                         status <- responseStatus <$> httpNoBody request manager
-                        pure $ if status == ok200 then OK else Broken (show status)
+                        pure $ case status of
+                          Status 200  _   -> OK
+                          Status code err -> Broken (""#|code|#": "#||err||#"")
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
