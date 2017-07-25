@@ -45,3 +45,7 @@ div.tab button.active {
     border: 1px solid #ccc;
     border-top: none;
 }
+
+.diff {
+    background-color: cadetblue;
+}

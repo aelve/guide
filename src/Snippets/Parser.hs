@@ -7,6 +7,8 @@ module Snippets.Parser
 )
 where
 
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IM
 import qualified Data.Map as M (fromList)
 import Imports
 
@@ -14,12 +16,17 @@ import Imports
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 -- MegaParsec
-import           Text.Megaparsec      (alphaNumChar, anyChar, between, char, letterChar, many, manyTill, notFollowedBy, sepBy, space, string)
+import           Text.Megaparsec      ( alphaNumChar, anyChar
+                                      , between, char
+                                      , letterChar, many
+                                      , manyTill, notFollowedBy
+                                      , sepBy, space, string
+                                      )
 import qualified Text.Megaparsec      as MP
 import           Text.Megaparsec.Text (Parser)
 
--- TODO: take out `Multiple` to separate type and parse once in the beggining of the snippet
-data SnippetNode = Multiple [Text]
+
+data SnippetNode = Multiple (IntMap Text)
                  | Choice (Map Text Text)
                  | CodeText Text
                  | Hackage Text
@@ -75,7 +82,7 @@ parseMultiple :: Parser [SnippetNode]
 parseMultiple = do
   keyword "Multiple"
   multNames <- betweenBrackets labels
-  pure [Multiple multNames]
+  pure [Multiple $ IM.fromList $ zip [1..] multNames]
 
 parseChoice :: Parser SnippetNode
 parseChoice = do
