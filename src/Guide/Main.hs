@@ -260,9 +260,8 @@ guideApp waiMetrics = do
         Spock.get ("admin" <//> "links") $ do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdminLinks s
-        Spock.get ("admin" <//> "snippets") $ do
-          snippet <- liftIO renderTestSnippets
-          lucidIO snippet
+        Spock.get ("admin" <//> "snippets") $
+          lucidIO renderTestSnippets
 
       -- Donation page
       Spock.get "donate" $

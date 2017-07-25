@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {- |
   Code Snippets Parser
 -}
@@ -7,8 +8,6 @@ module Snippets.Parser
 )
 where
 
-import           Data.IntMap          (IntMap)
-import qualified Data.IntMap          as IM
 import qualified Data.Map             as M (fromList)
 import           Imports
 
@@ -23,7 +22,7 @@ import qualified Text.Megaparsec      as MP
 import           Text.Megaparsec.Text (Parser)
 
 
-data SnippetNode = Multiple (IntMap Text)
+data SnippetNode = Multiple [(Int, Text)]
                  | Choice (Map Text Text)
                  | CodeText Text
                  | Hackage Text
@@ -49,13 +48,12 @@ parseSimpleLinePiece =  MP.try parseHltLine
                     <|> MP.try parseHackage
                     <|> MP.try parseHltBegin
                     <|> parseHltEnd
-                    <|> (anyChar >>= \x -> pure $ CodeText $ T.pack [x])
------------------------------------------------
+                    <|> (anyChar >>= \x -> pure $ CodeText $ T.pack [x]) -- TODO: how to optimize? manyTill doesn't work :(
 
+-----------------------------------------------
 
 text :: String -> Parser Text
 text t = T.pack <$> string t
-
 
 txtP :: Parser Text
 txtP = T.pack <$> (space *> char '"' *> anyChar `manyTill` char '"' <* space)
@@ -70,16 +68,16 @@ labels :: Parser [Text]
 labels = txtP `sepBy` char ','
 
 choiceP :: Parser [(Text, Text)]
-choiceP = labels <* char ':' >>= \lbls -> txtP >>= \val -> pure $ fromChoicesToMap lbls val
+choiceP = liftA2 fromChoicesToMap (labels <* char ':') txtP
 
 fromChoicesToMap :: [Text] -> Text -> [(Text, Text)]
-fromChoicesToMap lbls val = (\x -> (x, val)) <$> lbls
+fromChoicesToMap lbls val = (, val) <$> lbls
 
 parseMultiple :: Parser [SnippetNode]
 parseMultiple = do
   keyword "Multiple"
   multNames <- betweenBrackets labels
-  pure [Multiple $ IM.fromList $ zip [1..] multNames]
+  pure [Multiple $ zip [1..] multNames]
 
 parseChoice :: Parser SnippetNode
 parseChoice = do
@@ -90,7 +88,7 @@ parseChoice = do
 parseHackage :: Parser SnippetNode
 parseHackage = do
   keyword "Hackage"
-  name <- betweenBrackets (many $ letterChar <|> char '.')
+  name <- betweenBrackets (many $ letterChar <|> char '.') -- TODO: possibly incorrect, think later
   pure $ Hackage $ T.pack name
 
 parseHltBegin :: Parser SnippetNode
@@ -101,6 +99,10 @@ parseHltEnd = keyword "HltEnd" >> pure HltEnd
 
 parseHltLine :: Parser SnippetNode
 parseHltLine = keyword "HltLine" >> pure HltLine
+
+-- maybe better data structure for parse result
+-- data ParsedSnippet = MultipleBlocks [(Int,Text)] [[SnippetNode]]
+--                    | SingleBlock                 [[SnippetNode]]
 
 mainParse :: IO [[SnippetNode]]
 mainParse = do
