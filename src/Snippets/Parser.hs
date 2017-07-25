@@ -7,21 +7,18 @@ module Snippets.Parser
 )
 where
 
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as IM
-import qualified Data.Map as M (fromList)
-import Imports
+import           Data.IntMap          (IntMap)
+import qualified Data.IntMap          as IM
+import qualified Data.Map             as M (fromList)
+import           Imports
 
 -- Text
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 -- MegaParsec
-import           Text.Megaparsec      ( alphaNumChar, anyChar
-                                      , between, char
-                                      , letterChar, many
-                                      , manyTill, notFollowedBy
-                                      , sepBy, space, string
-                                      )
+import           Text.Megaparsec      (alphaNumChar, anyChar, between, char,
+                                       letterChar, many, manyTill,
+                                       notFollowedBy, sepBy, space, string)
 import qualified Text.Megaparsec      as MP
 import           Text.Megaparsec.Text (Parser)
 
@@ -107,7 +104,7 @@ parseHltLine = keyword "HltLine" >> pure HltLine
 
 mainParse :: IO [[SnippetNode]]
 mainParse = do
-  prog <- TIO.readFile "prog.txt"
+  prog <- TIO.readFile "tests/SnippetsExample.md"
   let progLines = T.lines prog
   for progLines $ \line -> do
     let nodes = MP.parse parseLine "" line

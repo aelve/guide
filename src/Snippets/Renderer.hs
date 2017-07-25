@@ -22,21 +22,23 @@ renderTestSnippets :: (MonadIO m) => IO (HtmlT m ())
 renderTestSnippets = do
   nodes <- mainParse
   pure $ head_ $ do
-    includeJS "/snippetTabs.js"
     includeCSS "/snippets.css"
     title_ "Snippets – Aelve Guide"
     meta_ [ name_ "viewport"
           , content_ "width=device-width, initial-scale=1.0, user-scalable=yes"
           ]
-
     body_ $ renderSnippet nodes
+
 
 renderSnippet :: (MonadIO m) => [[SnippetNode]] -> HtmlT m ()
 renderSnippet [] = div_ "Empty Snippet"
 renderSnippet x = do
   let (snpt, rest) = createLabels x
-  unless (null snpt) $ createTabButtons snpt
-  for_ snpt $ \lbl -> renderTab snpt lbl rest
+  if not (null snpt) then do
+     createTabButtons snpt
+     for_ snpt $ \lbl -> renderTab snpt lbl rest
+     includeJS "/snippetTabs.js"
+  else renderTab snpt (1, "singleSnippet") rest
 
 createLabels :: [[SnippetNode]] -> ([(Int, Text)], [[SnippetNode]])
 createLabels ([Multiple lbls]:xs) = (IM.assocs lbls, xs)
@@ -56,9 +58,11 @@ createTabButtons lbls =
     button_ [class_ "tablinks", onclick_ ("openCode(event , \"" <> lbl <> "\")")] $ toHtml lbl
 
 renderTab :: (MonadIO m) => [(Int, Text)] -> (Int, Text) -> [[SnippetNode]] -> HtmlT m ()
-renderTab lbls intLbl@(_, lbl) x = div_ [class_ "code tabcontent", id_ lbl] $
-  pre_ $
-    for_ x (renderLine lbls intLbl)
+renderTab lbls intLbl@(_, lbl) x =
+  let clss = if not (null lbls) then " tabcontent" else "" in
+  div_ [class_ ("code" <> clss), id_ lbl] $
+    pre_ $
+      for_ x (renderLine lbls intLbl)
 
 renderLine :: (MonadIO m) => [(Int, Text)] -> (Int, Text) -> [SnippetNode] -> HtmlT m ()
 renderLine lbls intLbl x =
