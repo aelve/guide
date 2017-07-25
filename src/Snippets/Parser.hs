@@ -2,8 +2,12 @@
   Code Snippets Parser
 -}
 module Snippets.Parser
+( mainParse
+, SnippetNode(..)
+)
 where
 
+import qualified Data.Map as M (fromList)
 import Imports
 
 -- Text
@@ -14,21 +18,15 @@ import           Text.Megaparsec      (alphaNumChar, anyChar, between, char, let
 import qualified Text.Megaparsec      as MP
 import           Text.Megaparsec.Text (Parser)
 
--- import Text.Highlighting.Kate
-
--- TODO: improve snippet structure
-data Snippet = Snippet {
-               name :: Text
-} deriving Show
-
 -- TODO: take out `Multiple` to separate type and parse once in the beggining of the snippet
 data SnippetNode = Multiple [Text]
-                 | Choice [([Text],Text)]
+                 | Choice (Map Text Text)
                  | CodeText Text
                  | Hackage Text
                  | HltBegin
                  | HltEnd
-                 deriving Show
+                 | HltLine
+                 deriving (Show, Eq)
 
 sumSnippetNodes :: [SnippetNode] -> [SnippetNode]
 sumSnippetNodes [] = []
@@ -42,7 +40,8 @@ parseSimpleLine :: Parser [SnippetNode]
 parseSimpleLine = many parseSimpleLinePiece >>= pure . sumSnippetNodes
 
 parseSimpleLinePiece :: Parser SnippetNode
-parseSimpleLinePiece =  MP.try parseChoice
+parseSimpleLinePiece =  MP.try parseHltLine
+                    <|> MP.try parseChoice
                     <|> MP.try parseHackage
                     <|> MP.try parseHltBegin
                     <|> parseHltEnd
@@ -52,6 +51,7 @@ parseSimpleLinePiece =  MP.try parseChoice
 
 text :: String -> Parser Text
 text t = T.pack <$> string t
+
 
 txtP :: Parser Text
 txtP = T.pack <$> (space *> char '"' *> anyChar `manyTill` char '"' <* space)
@@ -65,8 +65,11 @@ keyword w = between (text "{{") (text "}}") $  space <* text w *> notFollowedBy 
 labels :: Parser [Text]
 labels = txtP `sepBy` char ','
 
-choiceP :: Parser ([Text], Text)
-choiceP = labels <* char ':' >>= \lbls -> txtP >>= \val -> pure (lbls, val)
+choiceP :: Parser [(Text, Text)]
+choiceP = labels <* char ':' >>= \lbls -> txtP >>= \val -> pure $ fromChoicesToMap lbls val
+
+fromChoicesToMap :: [Text] -> Text -> [(Text, Text)]
+fromChoicesToMap lbls val = (\x -> (x, val)) <$> lbls
 
 parseMultiple :: Parser [SnippetNode]
 parseMultiple = do
@@ -78,7 +81,7 @@ parseChoice :: Parser SnippetNode
 parseChoice = do
   keyword "Choice"
   multNames <- betweenBrackets (choiceP `sepBy` char ';')
-  pure $ Choice multNames
+  pure $ Choice $ M.fromList $ concat multNames
 
 parseHackage :: Parser SnippetNode
 parseHackage = do
@@ -92,6 +95,9 @@ parseHltBegin = keyword "HltBegin" >> pure HltBegin
 parseHltEnd :: Parser SnippetNode
 parseHltEnd = keyword "HltEnd" >> pure HltEnd
 
+parseHltLine :: Parser SnippetNode
+parseHltLine = keyword "HltLine" >> pure HltLine
+
 mainParse :: IO [[SnippetNode]]
 mainParse = do
   prog <- TIO.readFile "prog.txt"
@@ -99,5 +105,5 @@ mainParse = do
   for progLines $ \line -> do
     let nodes = MP.parse parseLine "" line
     case nodes of
-          Left err -> error (show err)
+          Left err -> pure [CodeText (T.pack $ show err)]
           Right p  -> pure p

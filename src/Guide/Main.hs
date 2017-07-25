@@ -68,7 +68,7 @@ import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
 import Guide.Session
-
+import Snippets.Renderer (renderTestSnippets)
 
 {- Note [acid-state]
 ~~~~~~~~~~~~~~~~~~~~
@@ -260,6 +260,9 @@ guideApp waiMetrics = do
         Spock.get ("admin" <//> "links") $ do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdminLinks s
+        Spock.get ("admin" <//> "snippets") $ do
+          snippet <- liftIO renderTestSnippets
+          lucidIO snippet
 
       -- Donation page
       Spock.get "donate" $
@@ -311,7 +314,7 @@ guideApp waiMetrics = do
         -- take them and inject into the page. We don't want to duplicate
         -- rendering on server side and on client side.
         methods
-      
+
       Spock.subcomponent "auth" $ do
         -- plain "/auth" logs out a logged-in user and lets a logged-out user
         -- log in (this is not the best idea, granted, and we should just
@@ -323,7 +326,7 @@ guideApp waiMetrics = do
             then Spock.redirect "auth/logout"
             else Spock.redirect "auth/login"
         Spock.getpost "login" $ authRedirect "/" $ loginAction
-        Spock.get "logout" $ logoutAction 
+        Spock.get "logout" $ logoutAction
         Spock.getpost "register" $ authRedirect "/" $ signupAction
 
 loginAction :: GuideAction ctx ()
@@ -353,7 +356,7 @@ logoutAction = do
 signupAction :: GuideAction ctx ()
 signupAction = do
   r <- runForm "register" registerForm
-  case r of 
+  case r of
     (v, Nothing) -> do
       formHtml <- protectForm registerFormView v
       lucidWithConfig $ renderRegister formHtml
@@ -384,7 +387,7 @@ adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ':
 adminHook = do
   oldCtx <- getContext
   let user = findFirst oldCtx
-  if user ^. userIsAdmin 
+  if user ^. userIsAdmin
     then return (IsAdmin :&: oldCtx)
     else Spock.text "Not authorized."
 

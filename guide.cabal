@@ -75,6 +75,9 @@ library
       Guide.Views.Utils
         Guide.Views.Utils.Input
     Guide.Cache
+    
+    Snippets.Parser
+    Snippets.Renderer
   other-modules:
     Imports
   build-depends:       Spock
