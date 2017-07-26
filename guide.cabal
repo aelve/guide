@@ -88,6 +88,7 @@ library
                      , aeson-pretty
                      , base >=4.9 && <4.10
                      , base-prelude
+                     , blaze-html
                      , bytestring
                      , cereal
                      , cmark == 0.5.*
@@ -111,6 +112,7 @@ library
                      , fsnotify == 0.2.*
                      , hashable
                      , haskell-src-meta
+                     , highlighting-kate
                      , http-api-data
                      , http-client
                      , http-client-tls

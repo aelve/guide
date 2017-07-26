@@ -8,9 +8,14 @@ where
 
 import           Imports
 
-import qualified Data.Map        as M (lookup)
+import           Data.List                       (dropWhileEnd)
+import qualified Data.Map                        as M (lookup)
+import qualified Data.Text                       as T
 -- Web
-import           Lucid           hiding (for_)
+import           Lucid                           hiding (for_)
+
+import           Text.Blaze.Html.Renderer.String (renderHtml)
+import           Text.Highlighting.Kate
 
 import           Guide.Utils
 import           Snippets.Parser
@@ -23,6 +28,7 @@ renderTestSnippets = do
   nodes <- liftIO mainParse
   head_ $ do
     includeCSS "/snippets.css"
+    includeCSS "/highlight.css"
     title_ "Snippets – Aelve Guide"
     meta_ [ name_ "viewport"
           , content_ "width=device-width, initial-scale=1.0, user-scalable=yes"
@@ -77,7 +83,7 @@ renderTab :: (Monad m)
           -> HtmlT m () -- ^ Rendered tab content
 renderTab lbls intLbl@(_, lbl) x =
   let clss = if not (null lbls) then " tabcontent" else "" in
-  div_ [class_ ("code" <> clss), id_ lbl] $
+  div_ [class_ ("code sourceCode" <> clss), id_ lbl] $
     pre_ $
       for_ x (renderLine lbls intLbl)
 
@@ -108,25 +114,32 @@ renderNode lbls intLbl (HltBegin:xs) = do
   mark_ [class_ "inlineMark"] $ renderNode lbls intLbl before
   renderNode lbls intLbl (drop 1 after)
 renderNode lbls intLbl (CodeText t:xs) = do
-  toHtml t
+  renderTextHtml t
   renderNode lbls intLbl xs
 renderNode lbls intLbl@(curInt, curLbl) (Choice x:xs) = do
   case M.lookup curLbl x of
     Just curTxt ->
       if curInt == 1
-        then toHtml curTxt
+        then renderTextHtml curTxt
       else
         case lookup (pred curInt) lbls of
              Just prevLbl -> case M.lookup prevLbl x of
                                   Just prevTxt ->
                                     if prevTxt /= curTxt
-                                      then span_ [class_ "diff"] $ toHtml curTxt
-                                    else toHtml curTxt
-                                  Nothing -> span_ [class_ "diff"] $ toHtml curTxt
-             Nothing -> toHtml curTxt
+                                      then span_ [class_ "diff"] $ renderTextHtml curTxt
+                                    else renderTextHtml curTxt
+                                  Nothing -> span_ [class_ "diff"] $ renderTextHtml curTxt
+             Nothing -> renderTextHtml curTxt
     Nothing -> ""
   renderNode lbls intLbl xs
 renderNode lbls lbl (Hackage x:xs) = do
   a_ [href_ "#"] (toHtml x)
   renderNode lbls lbl xs
 renderNode lbls lbl (_:xs) = renderNode lbls lbl xs
+
+highlightKateCode :: Text -> String
+highlightKateCode code = renderHtml $ formatHtmlInline defaultFormatOpts
+                         $ highlightAs "haskell" (T.unpack code)
+
+renderTextHtml :: (Monad m) => Text -> HtmlT m ()
+renderTextHtml = toHtmlRaw . highlightKateCode
