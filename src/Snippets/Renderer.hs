@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{- |
+{-|
   Code Snippets renderer to Html
 -}
 module Snippets.Renderer
@@ -9,13 +9,15 @@ where
 import           Imports
 
 import qualified Data.Map        as M (lookup)
-
 -- Web
 import           Lucid           hiding (for_)
 
 import           Guide.Utils
 import           Snippets.Parser
 
+{-|
+Renders given text example to Lucid
+-}
 renderTestSnippets :: (MonadIO m) => HtmlT m ()
 renderTestSnippets = do
   nodes <- liftIO mainParse
@@ -27,7 +29,9 @@ renderTestSnippets = do
           ]
     body_ $ renderSnippet nodes
 
-renderSnippet :: (Monad m) => [[SnippetNode]] -> HtmlT m ()
+-- Doesn't create tab if no multiple snippets
+-- In this case 'renderTab' works with fake "singleSnippet" label
+renderSnippet :: (Monad m) => Snippet -> HtmlT m ()
 renderSnippet [] = div_ "Empty Snippet"
 renderSnippet x  = do
   let (snpt, rest) = createLabels x
@@ -37,11 +41,15 @@ renderSnippet x  = do
      includeJS "/snippetTabs.js"
   else renderTab snpt (1, "singleSnippet") rest
 
-createLabels :: [[SnippetNode]] -> ([(Int, Text)], [[SnippetNode]])
+-- in case of 'Multiple' was in the first not empty line
+-- creates list of labels (with order number)
+-- returns empty one otherwise
+createLabels :: Snippet -> ([(Int, Text)], Snippet)
 createLabels ([Multiple lbls]:xs) = (lbls, xs)
 createLabels ([]:xs)              = createLabels xs
 createLabels x                    = ([], x)
 
+-- in case of multiple snippets Tab-Panel should be created
 createTabButtons :: (Monad m) => [(Int, Text)] -> HtmlT m ()
 createTabButtons []   = div_ "error"
 createTabButtons lbls =
@@ -59,32 +67,41 @@ createTabButtons lbls =
             , onclick_ ("openCode(event , \"" <> lbl <> "\")")
             ] $ toHtml lbl
 
+{-|
+Render snippet for specific label tag
+-}
 renderTab :: (Monad m)
-          => [(Int, Text)]
-          -> (Int, Text)
-          -> [[SnippetNode]]  -- ^ Lines to render
-          -> HtmlT m ()
+          => [(Int, Text)] -- ^ All Labels with order numbers
+          -> (Int, Text) -- ^ Current rendering label
+          -> Snippet  -- ^ Rendering lines
+          -> HtmlT m () -- ^ Rendered tab content
 renderTab lbls intLbl@(_, lbl) x =
   let clss = if not (null lbls) then " tabcontent" else "" in
   div_ [class_ ("code" <> clss), id_ lbl] $
     pre_ $
       for_ x (renderLine lbls intLbl)
 
+{-|
+Render line (list of snippet nodes) for specific label tag
+-}
 renderLine :: (Monad m)
-           => [(Int, Text)]
-           -> (Int, Text)
-           -> [SnippetNode]
-           -> HtmlT m ()
+           => [(Int, Text)] -- ^ All Labels with order numbers
+           -> (Int, Text) -- ^ Current rendering label
+           -> SnippetLine -- ^ Rendering line
+           -> HtmlT m () -- ^ Rendered list of nodes
 renderLine lbls intLbl (HltLine:rest) =
   mark_ [class_ "lineMark"] $ renderNode lbls intLbl rest
 renderLine lbls intLbl nodes =
   renderNode lbls intLbl nodes
 
+{-|
+Render snippet node for specific label tag
+-}
 renderNode :: (Monad m)
-           => [(Int, Text)]
-           -> (Int, Text)
-           -> [SnippetNode]
-           -> HtmlT m ()
+           => [(Int, Text)] -- ^ All Labels with order numbers
+           -> (Int, Text) -- ^ Current rendering label
+           -> SnippetLine -- ^ Rendering line
+           -> HtmlT m () -- ^ Rendered node
 renderNode _ _ [] = "\n"
 renderNode lbls intLbl (HltBegin:xs) = do
   let (before, after) = span (/= HltEnd) xs
