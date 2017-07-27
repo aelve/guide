@@ -8,7 +8,6 @@ where
 
 import           Imports
 
-import           Data.List                       (dropWhileEnd)
 import qualified Data.Map                        as M (lookup)
 import qualified Data.Text                       as T
 -- Web
@@ -135,6 +134,8 @@ renderNode lbls intLbl@(curInt, curLbl) (Choice x:xs) = do
 renderNode lbls lbl (Hackage x:xs) = do
   a_ [href_ "#"] (toHtml x)
   renderNode lbls lbl xs
+renderNode lbls lbl (PopUp x:xs) =
+  span_ [title_ x] $ renderNode lbls lbl xs
 renderNode lbls lbl (_:xs) = renderNode lbls lbl xs
 
 highlightKateCode :: Text -> String

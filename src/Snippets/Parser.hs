@@ -55,6 +55,8 @@ data SnippetNode
   | HltEnd
   -- | Whole line highlighting
   | HltLine
+  -- | Pop-up block with additional info
+  | PopUp Text
   deriving (Show, Eq)
 
 -- As I haven't found still better option for parsing except symb by symb parsing
@@ -76,7 +78,8 @@ parseSimpleLinePiece =  MP.try parseHltLine
                     <|> MP.try parseChoice
                     <|> MP.try parseHackage
                     <|> MP.try parseHltBegin
-                    <|> parseHltEnd
+                    <|> MP.try parseHltEnd
+                    <|> parsePopUp
                     <|> (anyChar >>= \x -> pure $ CodeText $ T.pack [x]) -- TODO: how to optimize? manyTill doesn't work :(
 
 -----------------------------------------------
@@ -181,6 +184,19 @@ factorial :: Int -> Integer
 -}
 parseHltLine :: Parser SnippetNode
 parseHltLine = keyword "HltLine" >> pure HltLine
+
+{-|
+Puts any additional text for clarifying code which appears as popUp-block when moused over.
+@
+addFive :: Int -> Int
+{{PopUp}}["Eta reducing]addFive = (+5)
+@
+-}
+parsePopUp :: Parser SnippetNode
+parsePopUp = do
+  keyword "PopUp"
+  popUpText <- betweenBrackets txtP
+  pure $ PopUp popUpText
 
 -- maybe better data structure for parse result
 -- data ParsedSnippet = MultipleBlocks [(Int,Text)] [[SnippetNode]]

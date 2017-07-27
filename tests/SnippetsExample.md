@@ -15,4 +15,4 @@
         app = do
 {{HltLine}}         -- When “/” is requested, show “Hello world!”
 {{HltLine}}         get root $
-{{HltLine}}            text "Hello world!"
+           {{PopUp}}["Hey there"]text "Hello world!"
