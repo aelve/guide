@@ -45,6 +45,8 @@ import Guide.Types
 import Guide.Utils
 import Guide.Views
 
+import Snippets.Renderer (renderSnippets)
+
 methods :: GuideM ctx ()
 methods = do
   renderMethods
@@ -408,6 +410,10 @@ adminMethods = Spock.subcomponent "admin" $ do
   Spock.post "create-checkpoint" $ do
     db <- _db <$> Spock.getState
     createCheckpoint' db
+  -- Snippets
+  Spock.post ("set/snippets") $ do
+        content' <- param' "content"
+        lucidIO $ renderSnippets content'
 
 ----------------------------------------------------------------------------
 -- Utils

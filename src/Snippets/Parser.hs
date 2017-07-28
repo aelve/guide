@@ -4,6 +4,7 @@
 -}
 module Snippets.Parser
 ( mainParse
+, parseCustomText
 , Snippet
 , SnippetLine
 , SnippetNode(..)
@@ -212,3 +213,12 @@ mainParse = do
     case nodes of
           Left err -> pure [CodeText (T.pack $ show err)]
           Right p  -> pure p
+
+parseCustomText :: Text -> Snippet
+parseCustomText txt =
+  let progLines = T.lines txt in
+  for progLines $ \line ->
+    let nodes = MP.parse parseLine "" line in
+    case nodes of
+      Left err -> [CodeText (T.pack $ show err)]
+      Right p  -> p

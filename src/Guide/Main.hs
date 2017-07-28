@@ -68,7 +68,7 @@ import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
 import Guide.Session
-import Snippets.Renderer (renderTestSnippets)
+import Snippets.Renderer (renderSnippets)
 
 {- Note [acid-state]
 ~~~~~~~~~~~~~~~~~~~~
@@ -261,7 +261,7 @@ guideApp waiMetrics = do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdminLinks s
         Spock.get ("admin" <//> "snippets") $
-          lucidIO renderTestSnippets
+          lucidIO $ renderSnippets ""
 
       -- Donation page
       Spock.get "donate" $

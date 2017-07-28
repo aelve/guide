@@ -58,7 +58,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Admin things
   acceptEdit, undoEdit,
   acceptBlock, undoBlock,
-  createCheckpoint ]
+  createCheckpoint,
+  submitMarkdownSnippet]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -727,3 +728,16 @@ selectChildren a b = JQuerySelector $ format "{} > {}" a b
 selectSection :: JQuerySelector -> Text -> JQuerySelector
 selectSection a b = JQuerySelector $ format "{} > .section.{}" a b
 
+submitMarkdownSnippet :: JSFunction a => a
+submitMarkdownSnippet =
+  makeJSFunction "submitMarkdownSnippet"
+                 ["ours"]
+  [text|
+    $.post({
+      url: "/admin/snippets/set/snippets",
+      data: {
+        content: ours },
+      success: function (data) {
+        $(document).replaceWith(data); },
+      });
+  |]

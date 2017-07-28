@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 {-|
   Code Snippets renderer to Html
@@ -16,23 +17,48 @@ import           Lucid                           hiding (for_)
 import           Text.Blaze.Html.Renderer.String (renderHtml)
 import           Text.Highlighting.Kate
 
+import qualified Guide.JS as JS
 import           Guide.Utils
+import           Guide.Views.Utils
 import           Snippets.Parser
 
 {-|
 Renders given text example to Lucid
 -}
-renderTestSnippets :: (MonadIO m) => HtmlT m ()
-renderTestSnippets = do
-  nodes <- liftIO mainParse
+renderSnippets :: (MonadIO m) => Text -> HtmlT m ()
+renderSnippets t =
   head_ $ do
     includeCSS "/snippets.css"
     includeCSS "/highlight.css"
+    includeJS "/jquery.js"
     title_ "Snippets – Aelve Guide"
     meta_ [ name_ "viewport"
           , content_ "width=device-width, initial-scale=1.0, user-scalable=yes"
           ]
-    body_ $ renderSnippet nodes
+    body_ $ do
+      let formSubmitHandler formNode = JS.submitMarkdownSnippet (JS.selectId "result", formNode)
+      form_ [method_ "POST", id_ "snippetForm", onFormSubmit formSubmitHandler] $
+        fieldset_ $ do
+          legend_ "Snippets Parser"
+          label_ $
+            "Snippet" >> br_ []
+          -- looks like using Guide.Views.Utils.Input
+          textarea_ [ id_ "snippet", name_ "snippet"
+                 , form_ "snippetForm"
+                 , rows_ "10"
+                 , cols_ "75"
+                 ] $ toHtml t
+          br_ []
+          input_ [type_ "submit", value_ "Parse", class_ "save"]
+          input_ [type_ "reset"]
+      div_ [id_ "result"] $
+        renderSnippet $ parseCustomText t
+
+
+--renderTestSnippets :: (MonadIO m) => HtmlT m ()
+--renderTestSnippets = do
+--  sn <- liftIO mainParse
+--  renderSnippets sn
 
 -- Doesn't create tab if no multiple snippets
 -- In this case 'renderTab' works with fake "singleSnippet" label
