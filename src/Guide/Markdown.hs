@@ -1,8 +1,8 @@
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 
 {- |
@@ -38,35 +38,35 @@ module Guide.Markdown
 where
 
 
-import Imports
+import           Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text.All         as T
 -- ByteString
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString as BS
+import qualified Data.ByteString       as BS
+import qualified Data.ByteString.Lazy  as BSL
 -- Parsing
-import Text.Megaparsec hiding (State)
-import Text.Megaparsec.Text
+import           Text.Megaparsec       hiding (State)
+import           Text.Megaparsec.Text
 -- JSON
-import qualified Data.Aeson as A
+import qualified Data.Aeson            as A
 -- HTML
-import Lucid
-import Text.HTML.SanitizeXSS
+import           Lucid                 hiding (for_)
+import           Text.HTML.SanitizeXSS
 -- Containers
-import Data.Tree
-import qualified Data.Set as S
+import qualified Data.Set              as S
+import           Data.Tree
 -- Markdown
-import CMark hiding (Node)
-import qualified CMark as MD
-import CMark.Highlight
-import CMark.Sections
-import ShortcutLinks
-import ShortcutLinks.All (hackage)
+import           CMark                 hiding (Node)
+import qualified CMark                 as MD
+import           CMark.Highlight
+import           CMark.Sections
+import           ShortcutLinks
+import           ShortcutLinks.All     (hackage)
 -- acid-state
-import Data.SafeCopy
+import           Data.SafeCopy
 
-import Guide.Utils
+import           Guide.Utils
 
 
 data MarkdownInline = MarkdownInline {
@@ -366,3 +366,107 @@ instance SafeCopy MarkdownTree where
 -- | Is a piece of Markdown empty?
 markdownNull :: HasMdText a Text => a -> Bool
 markdownNull = T.null . view mdText
+
+------------------------------
+------ Markdown Tables -------
+------------------------------
+
+{-|
+Data Structure to hold tables
+-}
+data Table = Table
+           { name    :: Text -- ^ Table Header
+           , columns :: [Text] -- ^ Names of Columns
+           , rows    :: [[Text]] -- ^ List of rows with cells
+           } deriving Show
+
+{-|
+Tries to make 'Table' structure from Node.
+Next markdown
+@
++ %TABLE TableName
++ - Column 1
+  - Column 2
+  - Column 3
++ --------------------------------
+
++ - Foo
+  - Bar
+  - Baz
+
++ - Another foo | Another bar | Another baz
+@
+should be parsed as
+@
+Table
+    { name = "TableName"
+    , columns = ["Column 1", "Column 2", "Column 3"]
+    , rows = [ ["Foo", "Bar", "Baz"]
+             , ["Another Foo", "Another Bar", "Another Baz"]
+             ]
+    }
+@
+-}
+getTable :: MD.Node -> Maybe Table
+getTable (MD.Node _ (LIST _) (table:columns:brk:rest)) = do
+  let tblName = getTableName table
+  let colNames = getRow columns
+  if getBreak brk then
+    let cellValues = mapM getRow rest in
+    liftA3 Table tblName colNames cellValues
+  else
+    Nothing
+getTable _ = Nothing
+
+{-|
+Parses table name after keyword "%TABLE"
+-}
+getTableName:: MD.Node -> Maybe Text
+getTableName (MD.Node _ ITEM [MD.Node _ PARAGRAPH [MD.Node _ (TEXT t) []]]) = T.stripPrefix "%TABLE " t
+getTableName _ = Nothing
+
+{-|
+Gets whole row values
+-}
+getRow :: MD.Node -> Maybe [Text]
+getRow (MD.Node _ ITEM [MD.Node _ (LIST _) items]) = concat `fmap` mapM getCellFromItem items
+getRow _ = Nothing
+
+{-|
+Possible row syntax  is
+@
++  - smth 1
+   - smth 2
+   - smth 3
+@
+or
+@
+smth 1 | smth 2 | smth 3
+@
+These two examples are equal.
+-}
+getCellFromItem :: MD.Node -> Maybe [Text]
+getCellFromItem (MD.Node _ ITEM [MD.Node _ PARAGRAPH [MD.Node _ (TEXT t) []]]) = Just $ T.splitOn "|" t
+getCellFromItem _ = Nothing
+
+{-|
+Break line should separate colunm names from values
+-}
+getBreak :: MD.Node -> Bool
+getBreak (MD.Node _ ITEM [MD.Node _ THEMATIC_BREAK []]) = True
+getBreak _                                              = False
+
+{-|
+Generates 'HTML' table from 'Table' structure
+-}
+renderTable :: (Monad m) => Table -> HtmlT m ()
+renderTable Table{..} = do
+  h3_ $ toHtml name
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $
+      for_ columns $ \clmn ->
+        td_ $ toHtml clmn
+    tbody_ $
+      for_ rows $ \row ->
+        tr_ $ for_ row $ \cell ->
+          td_ $ toHtml cell
