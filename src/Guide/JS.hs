@@ -122,8 +122,8 @@ class JSFunction a where
 instance JSFunction JS where
   makeJSFunction fName fParams fDef =
     let paramList = T.intercalate "," fParams
-    in JS $ format "function "#|fName|#"("#|paramList|#") {\n"
-                #|indent 2 (build fDef)|#
+    in JS $ format "function "+|fName|+"("+|paramList|+") {\n"
+                +|indent 2 (build fDef)|+
             "}\n"
 
 -- This generates a function that takes arguments and produces a Javascript

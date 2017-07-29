@@ -26,6 +26,8 @@ config.json
 
 # IDE/support
 .idea/
+.ideaHaskellLib/
+guide.iml
 .vscode/
 tags
 
