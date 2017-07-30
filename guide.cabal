@@ -75,6 +75,7 @@ library
       Guide.Views.Utils
         Guide.Views.Utils.Input
     Guide.Cache
+    Guide.Routes
   other-modules:
     Imports
   build-depends:       Spock
