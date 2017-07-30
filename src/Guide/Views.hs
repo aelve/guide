@@ -327,7 +327,7 @@ renderEdits globalState edits = do
   let editBlocks = groupBy (equating getIP) edits
   let ipNum = length $ groupWith getIP edits
   h1_ $ toHtml @Text $
-    "Pending edits (IPs: "#|ipNum|#", blocks: "#|length editBlocks|#")"
+    "Pending edits (IPs: "+|ipNum|+", blocks: "+|length editBlocks|+")"
   for_ editBlocks $ \editBlock -> div_ $ do
     blockNode <- thisNode
     h2_ $ do
@@ -831,7 +831,7 @@ renderAdminLinks globalState = do
                         print (lnk, status)
                         pure $ case status of
                           Status 200  _   -> OK
-                          Status code err -> Broken (""#|code|#": "#||err||#"")
+                          Status code err -> Broken (""+|code|+": "+||err||+"")
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
