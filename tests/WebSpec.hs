@@ -54,12 +54,12 @@ mainPageTests = session "main page" $ using [chromeCaps] $ do
       ("content", "some-google-token")
   wd "has a title" $ do
     "h1" `shouldHaveText` "Aelve Guide | Haskell"
-  describe "subtitle" $ do
-    wd "is present" $ do
-      sub <- select ".subtitle"
-      fs <- fontSize sub; fs `shouldBeInRange` (15,17)
-    wd "has a discuss link" $ do
-      checkPresent ".subtitle a[href='http://discuss.link']"
+  -- describe "subtitle" $ do
+  --   wd "is present" $ do
+  --     sub <- select ".subtitle"
+  --     fs <- fontSize sub; fs `shouldBeInRange` (15,17)
+  --   wd "has a discuss link" $ do
+  --     checkPresent ".subtitle a[href='http://discuss.link']"
   describe "footer" $ do
     wd "is present" $ do
       checkPresent "#footer"
@@ -90,8 +90,8 @@ categoryTests = session "categories" $ using [chromeCaps] $ do
       titleLink <- select "h1 > a"
       titleLink `shouldHaveText` "Aelve Guide | Haskell"
       titleLink `shouldLinkToRelative` "/haskell"
-    wd "has a subtitle" $ do
-      checkPresent ".subtitle"
+    -- wd "has a subtitle" $ do
+    --   checkPresent ".subtitle"
     wd "doesn't have an add-category field" $ do
       checkNotPresent ".add-category"
     wd "is present on the main page" $ do
