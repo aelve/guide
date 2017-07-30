@@ -363,8 +363,8 @@ readWidget fp = liftIO $ do
 readWidgets :: MonadIO m => m [(SectionType, Text)]
 readWidgets = liftIO $ do
   let isWidget = F.extension F.==? ".widget"
-  files <- F.find F.always isWidget "templates/"
-  concat <$> mapM readWidget files
+  files' <- F.find F.always isWidget "templates/"
+  concat <$> mapM readWidget files'
 
 getJS :: MonadIO m => m Text
 getJS = do
@@ -382,7 +382,7 @@ getCSS = do
 --
 -- This sets the method (POST) of submission and includes a server-generated
 -- token to help prevent cross-site request forgery (CSRF) attacks.
--- 
+--
 -- Briefly: this is necessary to prevent third party sites from impersonating
 -- logged in users, because a POST to the right URL is not sufficient to
 -- submit the form and perform an action. The CSRF token is only displayed
@@ -392,9 +392,9 @@ protectForm :: MonadIO m
   -> View (HtmlT m ())
   -> GuideAction ctx (HtmlT m ())
 protectForm render formView = do
-  (name, value) <- getCsrfTokenPair
+  (name', value) <- getCsrfTokenPair
   return $ form formView "" [id_ "login-form"] $ do
-    input_ [ type_ "hidden", name_ name, value_ value ]
+    input_ [ type_ "hidden", name_ name', value_ value ]
     render formView
 
 getCsrfTokenPair :: GuideAction ctx (Text, Text)
@@ -408,5 +408,3 @@ getCsrfHeader = do
   csrfTokenName <- spc_csrfHeaderName <$> getSpockCfg
   csrfTokenValue <- getCsrfToken
   return (csrfTokenName, csrfTokenValue)
-
-

@@ -418,7 +418,7 @@ getLoggedInUser = do
   sess <- readSession
   case sess ^. sessionUserID of
     Nothing -> return Nothing
-    Just uid -> dbQuery $ GetUser uid
+    Just uid' -> dbQuery $ GetUser uid'
 
 itemToFeedEntry
   :: (MonadIO m)

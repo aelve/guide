@@ -830,9 +830,9 @@ renderAdminLinks globalState = do
       fullList <- liftIO $ forM allLinks $ \(lnk, location) -> do
             resp <- if isURI (T.unpack lnk) then (do
                         request <- parseRequest $ T.unpack lnk
-                        status <- responseStatus <$> httpNoBody request manager
-                        print (lnk, status)
-                        pure $ case status of
+                        status' <- responseStatus <$> httpNoBody request manager
+                        print (lnk, status')
+                        pure $ case status' of
                           Status 200  _   -> OK
                           Status code err -> Broken (""+|code|+": "+||err||+"")
                       ) `catch` (return . handleHttpException)
@@ -883,7 +883,7 @@ renderAdminLinks globalState = do
 
   sortLink (a, b, OK)          = (\(x, y, z) -> ((a, b):x, y, z))
   sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
-  sortLink (a, b, Broken text) = (\(x, y, z) -> (x, y, (a, b, text):z))
+  sortLink (a, b, Broken text') = (\(x, y, z) -> (x, y, (a, b, text'):z))
 
   allLinks :: [(Url, Text)]
   allLinks = ordNub (findLinks globalState)
