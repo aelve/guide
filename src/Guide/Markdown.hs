@@ -70,7 +70,9 @@ import           Data.SafeCopy
 -- Safe
 import           Safe                  (headDef, initDef, lastDef, tailDef)
 -- Interpolation
-import qualified NeatInterpolation as NI
+import qualified NeatInterpolation     as NI
+
+import           Control.Monad.Extra   (whenJust)
 
 import           Guide.Utils
 
@@ -379,7 +381,7 @@ markdownNull = T.null . view mdText
 -- | Data Structure to hold tables
 data Table = Table
            { name    :: Text -- ^ Table header
-           , columns :: [[MD.Node]] -- ^ Names of columns
+           , columns :: Maybe [[MD.Node]] -- ^ Names of columns (optional)
            , rows    :: [[[MD.Node]]] -- ^ List of rows with cells
            } deriving (Eq, Show)
 
@@ -412,11 +414,17 @@ Table
 -}
 getTable :: MD.Node -> Maybe Table
 getTable (MD.ItemList_ _ (table:cols:brk:rest)) = do
-  guard (isBreak brk)
-  name    <- getTableName table
-  columns <- getRow cols
-  rows    <- mapM getRow rest
-  pure Table{..}
+  name <- getTableName table
+  if isBreak brk then do
+     let columns = getRow cols
+     rows <- mapM getRow rest
+     pure Table{..}
+  else do
+     guard (isBreak cols)
+     let columns = Nothing
+     rows <- mapM getRow (brk:rest)
+     pure Table{..}
+
 getTable _ = Nothing
 
 -- | Parses table name after keyword "%TABLE"
@@ -467,9 +475,10 @@ renderTable :: (Monad m) => Table -> HtmlT m ()
 renderTable Table{..} = do
   h3_ $ toHtml name
   table_ [class_ "sortable"] $ do
-    thead_ $ tr_ $
-      for_ columns $ \clmn ->
-        td_ $ toHtml $ renderMD clmn
+    whenJust columns $ \clmns ->
+      thead_ $ tr_ $
+        for_ clmns $ \clmn ->
+          td_ $ toHtml $ renderMD clmn
     tbody_ $
       for_ rows $ \row ->
         tr_ $ for_ row $ \cell ->
