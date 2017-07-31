@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances  #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE QuasiQuotes        #-}
 
 
 {- |
@@ -66,6 +67,10 @@ import           ShortcutLinks
 import           ShortcutLinks.All     (hackage)
 -- acid-state
 import           Data.SafeCopy
+-- Safe
+import           Safe                  (headDef, initDef, lastDef, tailDef)
+-- Interpolation
+import qualified NeatInterpolation as NI
 
 import           Guide.Utils
 
@@ -371,14 +376,12 @@ markdownNull = T.null . view mdText
 ------ Markdown Tables -------
 ------------------------------
 
-{-|
-Data Structure to hold tables
--}
+-- | Data Structure to hold tables
 data Table = Table
-           { name    :: Text -- ^ Table Header
-           , columns :: [Text] -- ^ Names of Columns
-           , rows    :: [[Text]] -- ^ List of rows with cells
-           } deriving Show
+           { name    :: Text -- ^ Table header
+           , columns :: [[MD.Node]] -- ^ Names of columns
+           , rows    :: [[[MD.Node]]] -- ^ List of rows with cells
+           } deriving (Eq, Show)
 
 {-|
 Tries to make 'Table' structure from Node.
@@ -402,38 +405,32 @@ Table
     { name = "TableName"
     , columns = ["Column 1", "Column 2", "Column 3"]
     , rows = [ ["Foo", "Bar", "Baz"]
-             , ["Another Foo", "Another Bar", "Another Baz"]
+             , ["Another foo", "Another bar", "Another baz"]
              ]
     }
 @
 -}
 getTable :: MD.Node -> Maybe Table
-getTable (MD.ItemList_ _ (table:columns:brk:rest)) = do
-  let tblName = getTableName table
-  let colNames = getRow columns
-  if getBreak brk then
-    let cellValues = mapM getRow rest in
-    liftA3 Table tblName colNames cellValues
-  else
-    Nothing
+getTable (MD.ItemList_ _ (table:cols:brk:rest)) = do
+  guard (isBreak brk)
+  name    <- getTableName table
+  columns <- getRow cols
+  rows    <- mapM getRow rest
+  pure Table{..}
 getTable _ = Nothing
 
-{-|
-Parses table name after keyword "%TABLE"
--}
+-- | Parses table name after keyword "%TABLE"
 getTableName :: [MD.Node] -> Maybe Text
 getTableName [MD.Paragraph_ [MD.Text_ t]] = T.stripPrefix "%TABLE " t
 getTableName _ = Nothing
 
-{-|
-Gets whole row values
--}
-getRow :: [MD.Node] -> Maybe [Text]
-getRow [MD.ItemList_ _ items] = concat `fmap` mapM getCellFromItem items
-getRow _ = Nothing
+-- | Gets whole row values
+getRow :: [MD.Node] -> Maybe [[MD.Node]]
+getRow [MD.ItemList_ _ items] = concat <$> mapM getCells items
+getRow _                      = Nothing
 
 {-|
-Possible row syntax  is
+Possible row syntax is
 @
 +  - smth 1
    - smth 2
@@ -441,32 +438,154 @@ Possible row syntax  is
 @
 or
 @
-smth 1 | smth 2 | smth 3
++  smth 1 | smth 2 | smth 3
 @
 These two examples are equal.
 -}
-getCellFromItem :: [MD.Node] -> Maybe [Text]
-getCellFromItem [MD.Paragraph_ [MD.Text_ t]] = Just $ T.splitOn "|" t
-getCellFromItem _ = Nothing
+getCells :: [MD.Node] -> Maybe [[MD.Node]]
+getCells []     = Nothing
+getCells items = Just $ splitCells [] items
 
-{-|
-Break line should separate colunm names from values
--}
-getBreak :: [MD.Node] -> Bool
-getBreak [MD.ThematicBreak_] = True
-getBreak _                   = False
+splitCells :: [[MD.Node]] -> [MD.Node] -> [[MD.Node]]
+splitCells = foldl' splitCell
 
-{-|
-Generates 'HTML' table from 'Table' structure
--}
+-- Need to check if there were ' | ' in text blocks
+splitCell :: [[MD.Node]] -> MD.Node -> [[MD.Node]]
+splitCell res (MD.Paragraph_ x) = splitCells res x
+splitCell res (MD.Text_ t) =
+  let splited = (:[]) . MD.Text_ <$> T.splitOn "|" t in
+  initDef [] res ++ ((lastDef [] res ++ headDef [] splited) : tailDef [] splited)
+splitCell res x = initDef [] res ++ [lastDef [] res ++ [x]]
+
+-- | Break line should separate table header (keyword & (optional) column names) from rows
+isBreak :: [MD.Node] -> Bool
+isBreak [MD.ThematicBreak_] = True
+isBreak _                   = False
+
+-- | Generates 'HTML' table from 'Table' structure
 renderTable :: (Monad m) => Table -> HtmlT m ()
 renderTable Table{..} = do
   h3_ $ toHtml name
   table_ [class_ "sortable"] $ do
     thead_ $ tr_ $
       for_ columns $ \clmn ->
-        td_ $ toHtml clmn
+        td_ $ toHtml $ renderMD clmn
     tbody_ $
       for_ rows $ \row ->
         tr_ $ for_ row $ \cell ->
-          td_ $ toHtml cell
+          td_ $ toHtml $ renderMD cell
+
+-- testing Tables with example
+{-
+----------------
+---- Table -----
+----------------
+    { name = "TableName"
+    , columns =
+        [ [ Node Nothing (TEXT "Column 1") [] ]
+        , [ Node Nothing (TEXT "Column 2") [] ]
+        , [ Node Nothing (TEXT "Column 3") [] ]
+        ]
+    , rows =
+        [ [ [ Node Nothing EMPH [ Node Nothing (TEXT "foo") [] ]
+            , Node Nothing (TEXT " ") []
+            ]
+          , [ Node Nothing (TEXT " ") []
+            , Node Nothing STRONG [ Node Nothing (TEXT "bar") [] ]
+            , Node Nothing (TEXT " ") []
+            ]
+          , [ Node Nothing (TEXT " baz") [] ]
+          ]
+        , [ [ Node Nothing (TEXT "Foo") [] ]
+          , [ Node Nothing (TEXT "Bar") [] ]
+          , [ Node Nothing (TEXT "Baz") [] ]
+          ]
+        , [ [ Node
+                (Just
+                   PosInfo
+                     { startLine = 11
+                     , startColumn = 5
+                     , endLine = 13
+                     , endColumn = 7
+                     })
+                (HTML_BLOCK
+                   "<div class=\"sourceCode\"><pre class=\"sourceCode\"><code class=\"sourceCode\">Code foo</code></pre></div>")
+                []
+            ]
+          , [ Node Nothing (TEXT "Simple bar") [] ]
+          , [ Node Nothing (CODE "inline code baz") [] ]
+          ]
+        , [ [ Node Nothing (TEXT "Another foo ") [] ]
+          , [ Node Nothing (TEXT " Another bar ") [] ]
+          , [ Node Nothing (TEXT " Another baz") [] ]
+          ]
+        ]
+    }
+
+---------------
+----- HTML ----
+---------------
+<h3>TableName</h3>
+<table class="sortable">
+  <thead>
+    <tr>
+      <td>Column 1</td>
+      <td>Column 2</td>
+      <td>Column 3</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><em>foo</em></td>
+      <td><strong>bar</strong></td>
+      <td> baz</td>
+    </tr>
+    <tr>
+      <td>Foo</td>
+      <td>Bar</td>
+      <td>Baz</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="sourceCode">
+          <pre class="sourceCode">
+            <code class="sourceCode">Code foo</code>
+          </pre>
+        </div>
+      </td>
+      <td>Simple bar</td>
+      <td><code>inline code baz</code></td>
+    </tr>
+    <tr>
+      <td>Another foo </td>
+      <td> Another bar </td>
+      <td> Another baz</td>
+    </tr>
+  </tbody>
+</table>
+-}
+testTable :: (Monad m) => HtmlT m ()
+testTable = renderTable
+          $ fromJust
+          $ getTable
+          $ head
+          $ parseMD
+          [NI.text|
+              + %TABLE TableName
+              + - Column 1
+                - Column 2
+                - Column 3
+              + --------------------------------
+              + - *foo* | **bar** | baz
+
+              + - Foo
+                - Bar
+                - Baz
+
+              + - ```
+                  Code foo
+                  ```
+                - Simple bar
+                - `inline code` baz
+              + - Another foo | Another bar | Another baz
+          |]
