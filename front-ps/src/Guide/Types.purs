@@ -2,10 +2,21 @@ module Guide.Types where
 
 import Prelude
 
+import DOM (DOM)
+import DOM.HTML.Types (HISTORY)
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
-
 import Guide.Api.ClientTypes (CGrandCategory)
+import Lib.IsomorphicFetch (FETCH)
+import Network.HTTP.Affjax (AJAX)
+
+type AppEffects eff =
+  ( ajax :: AJAX
+  , fetch :: FETCH
+  , dom :: DOM
+  , history :: HISTORY
+  | eff
+  )
 
 type CGrandCategories = Array CGrandCategory
 
