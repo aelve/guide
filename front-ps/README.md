@@ -1,4 +1,4 @@
-# [WIP] Front-end
+# [WIP] Guide's front-end
 
 ## Requirements
 
@@ -50,7 +50,7 @@ cd front-ps
 yarn start # or npm start
 ```
 
-Open `http://localhost:3333`.
+Open [`http://localhost:3333`](http://localhost:3333).
 
 ### Other `npm` scripts (all optional)
 
@@ -71,7 +71,7 @@ production server.
 
 ## Directory structure
 
-Structure based on `[Starter Pux app](https://github.com/alexmingoia/pux-starter-app)` with slightly modifications.
+Structure based on [`Starter Pux app`](https://github.com/alexmingoia/pux-starter-app) with slightly modifications.
 
 - `src`: Application source code.
   - `src/Guide/Config.js`: Configuration values.
