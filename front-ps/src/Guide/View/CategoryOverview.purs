@@ -6,7 +6,6 @@ import Prelude
 
 import Data.Array (null)
 import Data.Foldable (for_)
-import Data.Newtype (unwrap)
 import Guide.Api.ClientTypes (CCategoryOverview(..), CGrandCategory(..))
 import Guide.Events (Event(..))
 import Guide.Routes (Route(..), toUrl)
