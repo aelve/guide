@@ -63,7 +63,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS, fromCategorySlug, protectForm, getCsrfHeader)
+import Guide.Views.Utils (getJS, getCSS, protectForm, getCsrfHeader)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
