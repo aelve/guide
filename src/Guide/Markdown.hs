@@ -59,6 +59,7 @@ import           Data.Tree
 -- Markdown
 import           CMark                 hiding (Node)
 import qualified CMark                 as MD
+import qualified CMark.Patterns        as MD
 import           CMark.Highlight
 import           CMark.Sections
 import           ShortcutLinks
@@ -99,7 +100,7 @@ makeFields ''MarkdownTree
 
 parseMD :: Text -> [MD.Node]
 parseMD s =
-  let MD.Node _ DOCUMENT ns =
+  let MD.Document_ ns =
         highlightNode . shortcutLinks . commonmarkToNode [optSafe] $ s
   in  ns
 
@@ -109,7 +110,7 @@ renderMD ns
   | any isInlineNode ns =
       T.toByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
   | otherwise =
-      T.toByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+      T.toByteString . sanitize . nodeToHtml [] $ MD.Document_ ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
@@ -189,33 +190,32 @@ extractInlines = concatMap go
       CODE _            -> [node]
       -- Other stuff
       THEMATIC_BREAK    -> []
-      HTML_BLOCK xs     -> [MD.Node Nothing (CODE xs) []]
-      HTML_INLINE xs    -> [MD.Node Nothing (CODE xs) []]
-      CODE_BLOCK _ xs   -> [MD.Node Nothing (CODE xs) []]
+      HTML_BLOCK xs     -> [MD.Code_ xs]
+      HTML_INLINE xs    -> [MD.Code_ xs]
+      CODE_BLOCK _ xs   -> [MD.Code_ xs]
 
 shortcutLinks :: MD.Node -> MD.Node
-shortcutLinks node@(MD.Node pos (LINK url title) ns) | '@' <- T.head url =
+shortcutLinks node@(MD.Link pos url title ns) | '@' <- T.head url =
   -- %20s are possibly introduced by cmark (Pandoc definitely adds them,
   -- no idea about cmark but better safe than sorry) and so they need to
   -- be converted back to spaces
   case parseLink (T.replace "%20" " " url) of
-    Left _err -> MD.Node pos (LINK url title) (map shortcutLinks ns)
+    Left _err -> MD.Link pos url title (map shortcutLinks ns)
     Right (shortcut, opt, text) -> do
       let text' = fromMaybe (stringify [node]) text
       let shortcuts = (["hk"], hackage) : allShortcuts
       case useShortcutFrom shortcuts shortcut opt text' of
         Success link ->
-          MD.Node pos (LINK link title) (map shortcutLinks ns)
+          MD.Link pos link title (map shortcutLinks ns)
         Warning warnings link ->
           let warningText = "[warnings when processing shortcut link: " <>
                             T.pack (intercalate ", " warnings) <> "]"
-              warningNode = MD.Node Nothing (TEXT warningText) []
-          in  MD.Node pos (LINK link title)
-                             (warningNode : map shortcutLinks ns)
+              warningNode = MD.Text_ warningText
+          in  MD.Link pos link title (warningNode : map shortcutLinks ns)
         Failure err ->
           let errorText = "[error when processing shortcut link: " <>
                           T.pack err <> "]"
-          in  MD.Node Nothing (TEXT errorText) []
+          in  MD.Text_ errorText
 shortcutLinks (MD.Node pos tp ns) =
   MD.Node pos tp (map shortcutLinks ns)
 
@@ -408,7 +408,7 @@ Table
 @
 -}
 getTable :: MD.Node -> Maybe Table
-getTable (MD.Node _ (LIST _) (table:columns:brk:rest)) = do
+getTable (MD.ItemList_ _ (table:columns:brk:rest)) = do
   let tblName = getTableName table
   let colNames = getRow columns
   if getBreak brk then
@@ -421,15 +421,15 @@ getTable _ = Nothing
 {-|
 Parses table name after keyword "%TABLE"
 -}
-getTableName:: MD.Node -> Maybe Text
-getTableName (MD.Node _ ITEM [MD.Node _ PARAGRAPH [MD.Node _ (TEXT t) []]]) = T.stripPrefix "%TABLE " t
+getTableName :: [MD.Node] -> Maybe Text
+getTableName [MD.Paragraph_ [MD.Text_ t]] = T.stripPrefix "%TABLE " t
 getTableName _ = Nothing
 
 {-|
 Gets whole row values
 -}
-getRow :: MD.Node -> Maybe [Text]
-getRow (MD.Node _ ITEM [MD.Node _ (LIST _) items]) = concat `fmap` mapM getCellFromItem items
+getRow :: [MD.Node] -> Maybe [Text]
+getRow [MD.ItemList_ _ items] = concat `fmap` mapM getCellFromItem items
 getRow _ = Nothing
 
 {-|
@@ -445,16 +445,16 @@ smth 1 | smth 2 | smth 3
 @
 These two examples are equal.
 -}
-getCellFromItem :: MD.Node -> Maybe [Text]
-getCellFromItem (MD.Node _ ITEM [MD.Node _ PARAGRAPH [MD.Node _ (TEXT t) []]]) = Just $ T.splitOn "|" t
+getCellFromItem :: [MD.Node] -> Maybe [Text]
+getCellFromItem [MD.Paragraph_ [MD.Text_ t]] = Just $ T.splitOn "|" t
 getCellFromItem _ = Nothing
 
 {-|
 Break line should separate colunm names from values
 -}
-getBreak :: MD.Node -> Bool
-getBreak (MD.Node _ ITEM [MD.Node _ THEMATIC_BREAK []]) = True
-getBreak _                                              = False
+getBreak :: [MD.Node] -> Bool
+getBreak [MD.ThematicBreak_] = True
+getBreak _                   = False
 
 {-|
 Generates 'HTML' table from 'Table' structure

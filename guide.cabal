@@ -89,6 +89,7 @@ library
                      , cereal
                      , cmark == 0.5.*
                      , cmark-highlight == 0.2.*
+                     , cmark-patterns == 0.1.*
                      , cmark-sections == 0.1.*
                      , containers >= 0.5
                      , data-default >= 0.5
