@@ -13,6 +13,7 @@ import Test.Hspec
 import qualified WebSpec
 import qualified MarkdownSpec
 import qualified MergeSpec
+import qualified MdTablesSpec
 
 
 main :: IO ()
@@ -20,6 +21,7 @@ main = do
   hspec $ do
     MarkdownSpec.tests
     MergeSpec.tests
+    MdTablesSpec.tests
   -- TODO: it'd be nice if we could us WebSpec.tests in hspec as well,
   -- but I don't know how to achieve the following:
   --   * before WebSpec tests, the server is started

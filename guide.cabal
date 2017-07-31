@@ -173,6 +173,7 @@ test-suite tests
   other-modules:       WebSpec
                        MarkdownSpec
                        MergeSpec
+                       MdTablesSpec
                        Selenium
   type:                exitcode-stdio-1.0
   build-depends:       QuickCheck < 2.10

@@ -30,11 +30,17 @@ module Guide.Markdown
   toMarkdownInline,
   toMarkdownBlock,
   toMarkdownTree,
+  parseMD,
 
   -- * Misc
   renderMD,
   markdownNull,
   extractPreface,
+
+  -- * Tables
+  MarkdownTable(..),
+  getTable,
+  renderTable
 )
 where
 
@@ -379,10 +385,10 @@ markdownNull = T.null . view mdText
 ------------------------------
 
 -- | Data Structure to hold tables
-data Table = Table
-           { name    :: Text -- ^ Table header
-           , columns :: Maybe [[MD.Node]] -- ^ Names of columns (optional)
-           , rows    :: [[[MD.Node]]] -- ^ List of rows with cells
+data MarkdownTable = MarkdownTable
+           { markdownTableName    :: Text -- ^ Table header
+           , markdownTableColumns :: Maybe [[MD.Node]] -- ^ Names of columns (optional)
+           , markdownTableRows    :: [[[MD.Node]]] -- ^ List of rows with cells
            } deriving (Eq, Show)
 
 {-|
@@ -412,13 +418,13 @@ Table
     }
 @
 -}
-getTable :: MD.Node -> Maybe Table
+getTable :: MD.Node -> Maybe MarkdownTable
 getTable node = do
   MD.ItemList_ _ (table:cols:brk:rest) <- Just node
-  name <- getTableName table
-  let createTable columns rw = do
-          rows <- mapM getRow rw
-          pure Table{..}
+  markdownTableName <- getTableName table
+  let createTable markdownTableColumns rw = do
+          markdownTableRows <- mapM getRow rw
+          pure MarkdownTable{..}
   if isBreak brk then
      createTable (getRow cols) rest
   else do
@@ -469,16 +475,16 @@ isBreak [MD.ThematicBreak_] = True
 isBreak _                   = False
 
 -- | Generates 'HTML' table from 'Table' structure
-renderTable :: (Monad m) => Table -> HtmlT m ()
-renderTable Table{..} = do
-  h3_ $ toHtml name
+renderTable :: (Monad m) => MarkdownTable -> HtmlT m ()
+renderTable MarkdownTable{..} = do
+  h3_ $ toHtml markdownTableName
   table_ [class_ "sortable"] $ do
-    whenJust columns $ \clmns ->
+    whenJust markdownTableColumns $ \clmns ->
       thead_ $ tr_ $
         for_ clmns $ \clmn ->
           td_ $ toHtml $ renderMD clmn
     tbody_ $
-      for_ rows $ \row ->
+      for_ markdownTableRows $ \row ->
         tr_ $ for_ row $ \cell ->
           td_ $ toHtml $ renderMD cell
 
