@@ -413,19 +413,17 @@ Table
 @
 -}
 getTable :: MD.Node -> Maybe Table
-getTable (MD.ItemList_ _ (table:cols:brk:rest)) = do
+getTable node = do
+  MD.ItemList_ _ (table:cols:brk:rest) <- Just node
   name <- getTableName table
-  if isBreak brk then do
-     let columns = getRow cols
-     rows <- mapM getRow rest
-     pure Table{..}
+  let createTable columns rw = do
+          rows <- mapM getRow rw
+          pure Table{..}
+  if isBreak brk then
+     createTable (getRow cols) rest
   else do
      guard (isBreak cols)
-     let columns = Nothing
-     rows <- mapM getRow (brk:rest)
-     pure Table{..}
-
-getTable _ = Nothing
+     createTable Nothing (brk:rest)
 
 -- | Parses table name after keyword "%TABLE"
 getTableName :: [MD.Node] -> Maybe Text
@@ -452,7 +450,7 @@ These two examples are equal.
 -}
 getCells :: [MD.Node] -> Maybe [[MD.Node]]
 getCells []     = Nothing
-getCells items = Just $ splitCells [] items
+getCells items  = Just $ splitCells [] items
 
 splitCells :: [[MD.Node]] -> [MD.Node] -> [[MD.Node]]
 splitCells = foldl' splitCell
