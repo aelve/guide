@@ -110,7 +110,7 @@ import Guide.Views.Utils.Input
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
 onPageLoad js = script_ $
-  "$(document).ready(function(){"#|js|#"});"
+  "$(document).ready(function(){"+|js|+"});"
 
 -- | Add some empty space.
 emptySpan :: Monad m => Text -> HtmlT m ()
@@ -120,18 +120,18 @@ emptySpan w = span_ [style_ ("margin-left:" <> w)] mempty
 onEnter :: JS -> Attribute
 onEnter handler = onkeydown_ $
   "if (event.keyCode == 13 || event.keyCode == 10) {"
-      #|handler|#" return false;}\n"
+      +|handler|+" return false;}\n"
 
 onCtrlEnter :: JS -> Attribute
 onCtrlEnter handler = onkeydown_ $
   "if ((event.keyCode == 13 || event.keyCode == 10) && " <>
       "(event.metaKey || event.ctrlKey)) {"
-      #|handler|#" return false;}\n"
+      +|handler|+" return false;}\n"
 
 onEscape :: JS -> Attribute
 onEscape handler = onkeydown_ $
   "if (event.keyCode == 27) {"
-      #|handler|#" return false;}\n"
+      +|handler|+" return false;}\n"
 
 textInput :: Monad m => [Attribute] -> HtmlT m ()
 textInput attrs = input_ (type_ "text" : attrs)
@@ -192,7 +192,7 @@ markdownEditor
   -> HtmlT m ()
 markdownEditor attr (view mdText -> s) submit cancel instr = do
   textareaUid <- randomLongUid
-  let val = JS $ "document.getElementById(\""#|textareaUid|#"\").value"
+  let val = JS $ "document.getElementById(\""+|textareaUid|+"\").value"
   -- Autocomplete has to be turned off thanks to
   -- <http://stackoverflow.com/q/8311455>.
   textarea_ ([uid_ textareaUid,
@@ -224,7 +224,7 @@ smallMarkdownEditor
   -> HtmlT m ()
 smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
-  let val = JS $ "document.getElementById(\""#|textareaId|#"\").value"
+  let val = JS $ "document.getElementById(\""+|textareaId|+"\").value"
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
              [onEnter (submit val)] ++
              [onEscape cancel | Just cancel <- [mbCancel]] ++
@@ -368,8 +368,8 @@ readWidget fp = liftIO $ do
 readWidgets :: MonadIO m => m [(SectionType, Text)]
 readWidgets = liftIO $ do
   let isWidget = F.extension F.==? ".widget"
-  files <- F.find F.always isWidget "templates/"
-  concat <$> mapM readWidget files
+  files' <- F.find F.always isWidget "templates/"
+  concat <$> mapM readWidget files'
 
 getJS :: MonadIO m => m Text
 getJS = do
@@ -387,7 +387,7 @@ getCSS = do
 --
 -- This sets the method (POST) of submission and includes a server-generated
 -- token to help prevent cross-site request forgery (CSRF) attacks.
--- 
+--
 -- Briefly: this is necessary to prevent third party sites from impersonating
 -- logged in users, because a POST to the right URL is not sufficient to
 -- submit the form and perform an action. The CSRF token is only displayed
@@ -397,9 +397,9 @@ protectForm :: MonadIO m
   -> View (HtmlT m ())
   -> GuideAction ctx (HtmlT m ())
 protectForm render formView = do
-  (name, value) <- getCsrfTokenPair
+  (name', value) <- getCsrfTokenPair
   return $ form formView "" [id_ "login-form"] $ do
-    input_ [ type_ "hidden", name_ name, value_ value ]
+    input_ [ type_ "hidden", name_ name', value_ value ]
     render formView
 
 getCsrfTokenPair :: GuideAction ctx (Text, Text)
@@ -413,5 +413,3 @@ getCsrfHeader = do
   csrfTokenName <- spc_csrfHeaderName <$> getSpockCfg
   csrfTokenValue <- getCsrfToken
   return (csrfTokenName, csrfTokenValue)
-
-

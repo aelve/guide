@@ -23,6 +23,8 @@ CSS
 ============================================================
 
 #search {
+  /* TODO: this should rather be in the "h1+subtitle" block */
+  margin-top: 1em;
   font-size: 200%;
   font-weight: 200;
   border: 1px solid #aaa;

@@ -106,15 +106,18 @@ pageDef = Page {
   }
 
 subtitleDef 
-  :: (MonadIO m, MonadReader Config m)
+  :: MonadIO m
   => Page m
   -> HtmlT m ()
-subtitleDef _page = do
+subtitleDef _page = pure ()
+  {- previous version of the subtitle
+  -----------------------------------
   div_ [class_ "subtitle"] $ do
     "alpha version • don't share yet"
     lift (asks _discussLink) >>= \case
       Nothing -> return ()
       Just l  -> " • " >> mkLink "discuss the site" l
+  -}
 
 headTagDef 
   :: (MonadIO m, MonadReader Config m)

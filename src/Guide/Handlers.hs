@@ -28,7 +28,7 @@ import qualified Text.Atom.Feed  as Atom
 import qualified Data.Text.All as T
 import qualified Data.Text.Lazy.All as TL
 -- Web
-import Web.Spock hiding (head, get, text)
+import Web.Spock hiding (head, get, renderRoute, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
 import Network.Wai.Middleware.Cors
@@ -46,6 +46,7 @@ import Guide.Types
 import Guide.Api.ClientTypes (toCGrandCategory, toCCategoryDetail)
 import Guide.Utils
 import Guide.Views
+import Guide.Routes
 
 methods :: GuideM ctx ()
 methods = do
@@ -67,40 +68,40 @@ apiMethods = Spock.subcomponent "api" $ do
     json $ toCCategoryDetail cat
 
 renderMethods :: GuideM ctx ()
-renderMethods = Spock.subcomponent "render" $ do
+renderMethods = do
   -- Notes for a category
-  Spock.get (categoryVar <//> "notes") $ \catId -> do
+  Spock.get (renderRoute <//> categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderCategoryNotes category
   -- Item colors
-  Spock.get (itemVar <//> "colors") $ \itemId -> do
+  Spock.get (renderRoute <//> itemVar <//> "colors") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     let hue = getItemHue category item
     json $ M.fromList [("light" :: Text, hueToLightColor hue),
                        ("dark" :: Text, hueToDarkColor hue)]
   -- Item info
-  Spock.get (itemVar <//> "info") $ \itemId -> do
+  Spock.get (renderRoute <//> itemVar <//> "info") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucidIO $ renderItemInfo category item
   -- Item description
-  Spock.get (itemVar <//> "description") $ \itemId -> do
+  Spock.get (renderRoute <//> itemVar <//> "description") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     lucidIO $ renderItemDescription item
   -- Item ecosystem
-  Spock.get (itemVar <//> "ecosystem") $ \itemId -> do
+  Spock.get (renderRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     lucidIO $ renderItemEcosystem item
   -- Item notes
-  Spock.get (itemVar <//> "notes") $ \itemId -> do
+  Spock.get (renderRoute <//> itemVar <//> "notes") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
     lucidIO $ renderItemNotes category item
 
 setMethods :: GuideM ctx ()
-setMethods = Spock.subcomponent "set" $ do
-  Spock.post (categoryVar <//> "info") $ \catId -> do
+setMethods = do
+  Spock.post (setRoute <//> categoryVar <//> "info") $ \catId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the
     -- code and other notes saying where stuff is rendered, etc
     title' <- T.strip <$> param' "title"
@@ -143,7 +144,7 @@ setMethods = Spock.subcomponent "set" $ do
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderCategoryInfo category
   -- Notes for a category
-  Spock.post (categoryVar <//> "notes") $ \catId -> do
+  Spock.post (setRoute <//> categoryVar <//> "notes") $ \catId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (notes.mdText) <$> dbQuery (GetCategory catId)
@@ -160,7 +161,7 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item info
-  Spock.post (itemVar <//> "info") $ \itemId -> do
+  Spock.post (setRoute <//> itemVar <//> "info") $ \itemId -> do
     -- TODO: [easy] add a cross-link saying where the form is handled in the
     -- code and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
@@ -206,7 +207,7 @@ setMethods = Spock.subcomponent "set" $ do
     category <- dbQuery (GetCategoryByItem itemId)
     lucidIO $ renderItemInfo category item
   -- Item description
-  Spock.post (itemVar <//> "description") $ \itemId -> do
+  Spock.post (setRoute <//> itemVar <//> "description") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (description.mdText) <$> dbQuery (GetItem itemId)
@@ -223,7 +224,7 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item ecosystem
-  Spock.post (itemVar <//> "ecosystem") $ \itemId -> do
+  Spock.post (setRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
@@ -240,7 +241,7 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item notes
-  Spock.post (itemVar <//> "notes") $ \itemId -> do
+  Spock.post (setRoute <//> itemVar <//> "notes") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (notes.mdText) <$> dbQuery (GetItem itemId)
@@ -258,7 +259,7 @@ setMethods = Spock.subcomponent "set" $ do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Trait
-  Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
+  Spock.post (setRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
     original <- param' "original"
     content' <- param' "content"
     modified <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
@@ -276,9 +277,9 @@ setMethods = Spock.subcomponent "set" $ do
           ("merged" :: Text, merge original content' modified)]
 
 addMethods :: GuideM ctx ()
-addMethods = Spock.subcomponent "add" $ do
+addMethods = do
   -- New category
-  Spock.post "category" $ do
+  Spock.post (addRoute <//> "category") $ do
     title' <- param' "content"
     -- If the category exists already, don't create it
     cats <- view categories <$> dbQuery GetGlobalState
@@ -296,7 +297,7 @@ addMethods = Spock.subcomponent "add" $ do
     Spock.text ("/haskell/" <> categorySlug category)
 
   -- New item in a category
-  Spock.post (categoryVar <//> "item") $ \catId -> do
+  Spock.post (addRoute <//> categoryVar <//> "item") $ \catId -> do
     name' <- param' "name"
     -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
@@ -313,7 +314,7 @@ addMethods = Spock.subcomponent "add" $ do
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderItem category newItem
   -- Pro (argument in favor of an item)
-  Spock.post (itemVar <//> "pro") $ \itemId -> do
+  Spock.post (addRoute <//> itemVar <//> "pro") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddPro itemId traitId content')
@@ -321,7 +322,7 @@ addMethods = Spock.subcomponent "add" $ do
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
   -- Con (argument against an item)
-  Spock.post (itemVar <//> "con") $ \itemId -> do
+  Spock.post (addRoute <//> itemVar <//> "con") $ \itemId -> do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddCon itemId traitId content')
@@ -332,68 +333,66 @@ addMethods = Spock.subcomponent "add" $ do
 otherMethods :: GuideM ctx ()
 otherMethods = do
   -- Moving things
-  Spock.subcomponent "move" $ do
-    -- Move item
-    Spock.post itemVar $ \itemId -> do
-      direction :: Text <- param' "direction"
-      uncache (CacheItem itemId) $ do
-        edit <- dbUpdate (MoveItem itemId (direction == "up"))
-        addEdit edit
-    -- Move trait
-    Spock.post (itemVar <//> traitVar) $ \itemId traitId -> do
-      direction :: Text <- param' "direction"
-      uncache (CacheItemTraits itemId) $ do
-        edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
-        addEdit edit
+  -- Move item
+  Spock.post (moveRoute <//> itemVar) $ \itemId -> do
+    direction :: Text <- param' "direction"
+    uncache (CacheItem itemId) $ do
+      edit <- dbUpdate (MoveItem itemId (direction == "up"))
+      addEdit edit
+  -- Move trait
+  Spock.post (moveRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
+    direction :: Text <- param' "direction"
+    uncache (CacheItemTraits itemId) $ do
+      edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
+      addEdit edit
 
-  -- Deleting things
-  Spock.subcomponent "delete" $ do
-    -- Delete category
-    Spock.post categoryVar $ \catId ->
-      uncache (CacheCategory catId) $ do
-        mbEdit <- dbUpdate (DeleteCategory catId)
-        mapM_ addEdit mbEdit
-    -- Delete item
-    Spock.post itemVar $ \itemId ->
-      uncache (CacheItem itemId) $ do
-        mbEdit <- dbUpdate (DeleteItem itemId)
-        mapM_ addEdit mbEdit
-    -- Delete trait
-    Spock.post (itemVar <//> traitVar) $ \itemId traitId ->
-      uncache (CacheItemTraits itemId) $ do
-        mbEdit <- dbUpdate (DeleteTrait itemId traitId)
-        mapM_ addEdit mbEdit
+-- Deleting things
+  -- Delete category
+  Spock.post (deleteRoute <//> categoryVar) $ \catId ->
+    uncache (CacheCategory catId) $ do
+      mbEdit <- dbUpdate (DeleteCategory catId)
+      mapM_ addEdit mbEdit
+  -- Delete item
+  Spock.post (deleteRoute <//> itemVar) $ \itemId ->
+    uncache (CacheItem itemId) $ do
+      mbEdit <- dbUpdate (DeleteItem itemId)
+      mapM_ addEdit mbEdit
+  -- Delete trait
+  Spock.post (deleteRoute <//> itemVar <//> traitVar) $ \itemId traitId ->
+    uncache (CacheItemTraits itemId) $ do
+      mbEdit <- dbUpdate (DeleteTrait itemId traitId)
+      mapM_ addEdit mbEdit
 
   -- Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
   baseUrl <- (// "haskell") . _baseUrl <$> getConfig
-  Spock.subcomponent "feed" $ do
-    -- Feed for items in a category
-    Spock.get categoryVar $ \catId -> do
-      category <- dbQuery (GetCategory catId)
-      let sortedItems = reverse $ sortBy cmp (category^.items)
-            where cmp = comparing (^.created) <> comparing (^.uid)
-      let route = "feed" <//> categoryVar
-      let feedUrl = baseUrl // renderRoute route (category^.uid)
-          feedTitle = Atom.TextString (T.unpack (category^.title) ++
-                                       " – Haskell – Aelve Guide")
-          feedLastUpdate = case sortedItems of
-            (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
-            _        -> ""
-      let feedBase = Atom.nullFeed (T.unpack feedUrl) feedTitle feedLastUpdate
-      entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
-      atomFeed $ feedBase {
-        Atom.feedEntries = entries,
-        Atom.feedLinks   = [Atom.nullLink (T.unpack feedUrl)] }
+
+  -- Feed for items in a category
+  Spock.get (feedRoute <//> categoryVar) $ \catId -> do
+    category <- dbQuery (GetCategory catId)
+    let sortedItems = reverse $ sortBy cmp (category^.items)
+          where cmp = comparing (^.created) <> comparing (^.uid)
+    let route = "feed" <//> categoryVar
+    let feedUrl = baseUrl // Spock.renderRoute route (category^.uid)
+        feedTitle = Atom.TextString (T.unpack (category^.title) ++
+                                     " – Haskell – Aelve Guide")
+        feedLastUpdate = case sortedItems of
+          (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
+          _        -> ""
+    let feedBase = Atom.nullFeed (T.unpack feedUrl) feedTitle feedLastUpdate
+    entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
+    atomFeed $ feedBase {
+      Atom.feedEntries = entries,
+      Atom.feedLinks   = [Atom.nullLink (T.unpack feedUrl)] }
 
 adminMethods :: AdminM ctx ()
-adminMethods = Spock.subcomponent "admin" $ do
+adminMethods = do
   -- Accept an edit
-  Spock.post ("edit" <//> var <//> "accept") $ \n -> do
+  Spock.post (adminRoute <//> "edit" <//> var <//> "accept") $ \n -> do
     dbUpdate (RemovePendingEdit n)
     return ()
   -- Undo an edit
-  Spock.post ("edit" <//> var <//> "undo") $ \n -> do
+  Spock.post (adminRoute <//> "edit" <//> var <//> "undo") $ \n -> do
     (edit, _) <- dbQuery (GetEdit n)
     res <- undoEdit edit
     case res of
@@ -402,10 +401,10 @@ adminMethods = Spock.subcomponent "admin" $ do
                      dbUpdate (RemovePendingEdit n)
                      Spock.text ""
   -- Accept a range of edits
-  Spock.post ("edits" <//> var <//> var <//> "accept") $ \m n -> do
+  Spock.post (adminRoute <//> "edits" <//> var <//> var <//> "accept") $ \m n -> do
     dbUpdate (RemovePendingEdits m n)
   -- Undo a range of edits
-  Spock.post ("edits" <//> var <//> var <//> "undo") $ \m n -> do
+  Spock.post (adminRoute <//> "edits" <//> var <//> var <//> "undo") $ \m n -> do
     edits <- dbQuery (GetEdits m n)
     s <- dbQuery GetGlobalState
     failed <- fmap catMaybes $ for edits $ \(edit, details) -> do
@@ -419,7 +418,7 @@ adminMethods = Spock.subcomponent "admin" $ do
       [] -> Spock.text ""
       _  -> lucidIO $ renderEdits s failed
   -- Create a checkpoint
-  Spock.post "create-checkpoint" $ do
+  Spock.post (adminRoute <//> "create-checkpoint") $ do
     db <- _db <$> Spock.getState
     createCheckpoint' db
 
@@ -433,7 +432,7 @@ getLoggedInUser = do
   sess <- readSession
   case sess ^. sessionUserID of
     Nothing -> return Nothing
-    Just uid -> dbQuery $ GetUser uid
+    Just uid' -> dbQuery $ GetUser uid'
 
 itemToFeedEntry
   :: (MonadIO m)

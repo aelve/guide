@@ -1,7 +1,5 @@
-{-# LANGUAGE
-FlexibleContexts,
-GADTs
-  #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 
 -- run as: ./gen -o favicon.png -w 32 -h 32
 

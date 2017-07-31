@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -25,8 +26,7 @@ import Data.SafeCopy hiding (kind)
 
 
 data Hue = NoHue | Hue Int
-  deriving (Generic, Eq, Ord)
-  -- generic deriving ^ is needed by purescript-bridge
+  deriving (Eq, Ord, Generic, Data)
 
 deriveSafeCopySimple 1 'extension ''Hue
 
