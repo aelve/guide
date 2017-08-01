@@ -59,11 +59,11 @@ methods = do
 apiMethods :: GuideM ctx ()
 apiMethods = do
   middleware simpleCors
-  Spock.get (haskellRoute <//> apiRoute <//> "all-categories") $ do
+  Spock.get (apiRoute <//> haskellRoute <//> "all-categories") $ do
     grands <- groupWith (view group_) <$> dbQuery GetCategories
     json $ fmap toCGrandCategory grands
 
-  Spock.get (haskellRoute <//> categoryVar) $ \catId -> do
+  Spock.get (apiRoute <//> haskellRoute <//> categoryVar) $ \catId -> do
     cat <- dbQuery (GetCategory catId)
     json $ toCCategoryDetail cat
 

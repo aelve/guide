@@ -13,7 +13,7 @@ import Guide.Types (CGrandCategories, CategoryName(..), Users)
 import Lib.IsomorphicFetch (FETCH, fetch)
 
 apiEndpoint :: String
-apiEndpoint = "http://localhost:3080/"
+apiEndpoint = "http://localhost:3080/api/"
 
 decodeJson :: forall a. (Generic a) => Json -> Either String a
 decodeJson = genericDecodeJson options
@@ -28,5 +28,5 @@ fetchUsers = do
 
 fetchGrandCategories :: forall eff. CategoryName -> Aff (fetch :: FETCH | eff) (Either String CGrandCategories)
 fetchGrandCategories (CategoryName cName) = do
-  res <- attempt <<< fetch $ apiEndpoint <> cName <> "/api/all-categories"
+  res <- attempt <<< fetch $ apiEndpoint <> cName <> "/all-categories"
   pure $ either (Left <<< show) decodeJson res
