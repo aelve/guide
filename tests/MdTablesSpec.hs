@@ -4,23 +4,26 @@
 module MdTablesSpec (tests) where
 
 import           BasePrelude
+import           Control.Monad.IO.Class (liftIO)
 -- CMark
-import qualified CMark          as MD
+import qualified CMark                  as MD
 -- Text
-import           Data.Text.All  (Text)
-import qualified Data.Text.All  as T
+import           Data.Text.All          (Text)
+import qualified Data.Text.All          as T
 -- Testing
 import           Test.Hspec
+-- Lucid
+import           Lucid.Base             (renderTextT)
 
 import           Guide.Markdown
 
 tests :: Spec
 tests =
-  describe "MdTables.table" $
+  describe "MdTables.table" $ do
     describe "getting" $ do
-      it "return simple table with column names from list" $
+      it "returns simple table with column names from list" $
         getTable simpleTableColListMD `shouldBe` Just simpleTable
-      it "return simple table with column names from text with separator" $
+      it "returns simple table with column names from text with separator" $
         getTable simpleTableMD `shouldBe` Just simpleTable
       it "returns valid full example table" $
         getTable fullTableMD `shouldBe` Just fullTable
@@ -28,6 +31,18 @@ tests =
         getTable tableWOBreakMD `shouldBe` Nothing
       it "returns table without column names" $
         getTable tableWOColumnNamesMD `shouldBe` Just tableWOColumnNames
+    describe "rendering" $ do
+      it "renders simple table with column names" $ do
+        renderedT <- render simpleTable
+        renderedT `shouldBe` T.toLazy simpleTableHtml
+      it "renders simple table without column names" $ do
+        renderedT <- render tableWOColumnNames
+        renderedT `shouldBe` T.toLazy tableWOColumnNamesHtml
+      it "renders full table example" $ do
+        renderedT <- render fullTable
+        renderedT `shouldBe` T.toLazy fullTableHtml
+
+render = liftIO . renderTextT . renderTable
 
 -----------------------
 ------ Text Md --------
@@ -124,6 +139,38 @@ rowOfListSeveralNodesMD n =
     ]
   ]
 
+-----------------
+----- HTML ------
+-----------------
+tableNameHtml :: Text
+tableNameHtml = "<h3>Table</h3><table class=\"sortable\">"
+
+columnNamesHtml :: Text
+columnNamesHtml =
+  "<thead><tr><td>Column 1</td><td>Column 2</td><td>Column 3</td></tr></thead>"
+
+bodyStart :: Text
+bodyStart = "<tbody>"
+
+rowOfListHtml :: Text
+rowOfListHtml =
+  "<tr><td>Foo</td><td>Bar</td><td>Baz</td></tr>"
+
+rowSeveralNodesHtml :: Text
+rowSeveralNodesHtml =
+  "<tr><td>&lt;em&gt;foo&lt;/em&gt; </td><td> &lt;strong&gt;bar&lt;/strong&gt; </td><td> baz</td></tr>"
+
+rowWithSeparatorHtml :: Text
+rowWithSeparatorHtml =
+  "<tr><td>Another foo </td><td> Another bar </td><td> Another baz</td></tr>"
+
+rowOfListSeveralNodesHtml :: Text
+rowOfListSeveralNodesHtml =
+  "<tr><td>&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode&quot;&gt;&lt;code class=&quot;sourceCode&quot;&gt;Code foo&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;\n</td><td>Simple bar</td><td>&lt;code&gt;inline code&lt;/code&gt; baz</td></tr>"
+
+endHtml :: Text
+endHtml = "</tbody></table>"
+
 --------------------------------------
 
 buildTableMD :: [Text] -> MD.Node
@@ -131,19 +178,27 @@ buildTableMD txtTable = head $ parseMD $ T.unlines txtTable
 
 fullTableMD :: MD.Node
 fullTableMD = buildTableMD
-  (tableKeyword:columnNamesList ++ breakText:rowSeveralNodes:rowOfList ++ rowOfListSeveralNodes ++ [rowWithSeparator])
+  (  tableKeyword:columnNamesList
+  ++ breakText:rowSeveralNodes:rowOfList
+  ++ rowOfListSeveralNodes
+  ++ [rowWithSeparator]
+  )
 
 simpleTableMD :: MD.Node
-simpleTableMD = buildTableMD (tableKeyword:columnNamesSimple:breakText:rowOfList)
+simpleTableMD =
+  buildTableMD (tableKeyword:columnNamesSimple:breakText:rowOfList)
 
 simpleTableColListMD :: MD.Node
-simpleTableColListMD = buildTableMD (tableKeyword:columnNamesList ++ breakText:rowOfList)
+simpleTableColListMD =
+  buildTableMD (tableKeyword:columnNamesList ++ breakText:rowOfList)
 
 tableWOBreakMD :: MD.Node
-tableWOBreakMD = buildTableMD (tableKeyword:columnNamesSimple:rowOfList)
+tableWOBreakMD =
+  buildTableMD (tableKeyword:columnNamesSimple:rowOfList)
 
 tableWOColumnNamesMD :: MD.Node
-tableWOColumnNamesMD = buildTableMD (tableKeyword:breakText:rowOfList)
+tableWOColumnNamesMD =
+  buildTableMD (tableKeyword:breakText:rowOfList)
 
 buildTable :: Maybe [[MD.Node]] -> [[[MD.Node]]] -> MarkdownTable
 buildTable colNm rows =
@@ -153,14 +208,31 @@ buildTable colNm rows =
                 }
 
 fullTable :: MarkdownTable
-fullTable = buildTable (Just columnNames) [ rowSeveralNodesMD
-                                     , rowOfListMD
-                                     , rowOfListSeveralNodesMD 12
-                                     , rowWithSeparatorMD
-                                     ]
+fullTable =
+  buildTable (Just columnNames) [ rowSeveralNodesMD
+                                , rowOfListMD
+                                , rowOfListSeveralNodesMD 11
+                                , rowWithSeparatorMD
+                                ]
 
 simpleTable :: MarkdownTable
 simpleTable = buildTable (Just columnNames) [rowOfListMD]
 
 tableWOColumnNames :: MarkdownTable
 tableWOColumnNames = buildTable Nothing [rowOfListMD]
+
+buildTableHtml :: Text -> [Text] -> Text
+buildTableHtml cols rows = T.concat $ tableNameHtml:cols:bodyStart:rows ++ [endHtml]
+
+simpleTableHtml :: Text
+simpleTableHtml = buildTableHtml columnNamesHtml [rowOfListHtml]
+
+tableWOColumnNamesHtml :: Text
+tableWOColumnNamesHtml = buildTableHtml "" [rowOfListHtml]
+
+fullTableHtml :: Text
+fullTableHtml =
+  buildTableHtml columnNamesHtml [ rowSeveralNodesHtml
+                                 , rowOfListHtml
+                                 , rowOfListSeveralNodesHtml
+                                 , rowWithSeparatorHtml]
