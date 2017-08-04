@@ -1,5 +1,6 @@
 module Guide.Events where
 
+import Guide.Api.ClientTypes (CCategoryDetail, CCategoryOverview)
 import Data.Either (Either)
 import Guide.Routes (Route)
 import Guide.Types (CGrandCategories, CategoryName, Users)
@@ -12,6 +13,8 @@ data Event
   -- API
   | RequestGrandCategories CategoryName
   | ReceiveGrandCategories (Either String CGrandCategories)
+  | RequestCategory CCategoryOverview
+  | ReceiveCategory (Either String CCategoryDetail)
   -- playground
   | RequestUsers
   | ReceiveUsers (Either String Users)

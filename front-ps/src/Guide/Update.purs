@@ -12,7 +12,7 @@ import Data.Either (Either(..))
 import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..))
 import Guide.Events (Event(..))
-import Guide.Http (fetchUsers, fetchGrandCategories)
+import Guide.Http (fetchUsers, fetchCategory, fetchGrandCategories)
 import Guide.Routes (Route(..), match)
 import Guide.State (State(..))
 import Guide.Types (AppEffects)
@@ -44,6 +44,29 @@ foldp (ReceiveGrandCategories (Left error)) s@(State st) = noEffects $
     st  { loaded = true
         , errors = (show error) : st.errors
         , grandCategories = Failure error
+        }
+
+foldp (RequestCategory cat) (State st) =
+  { state: State $ st { currentCategoryDetails = case st.currentCategoryDetails of
+                                  Success c -> Refreshing c
+                                  _ -> Loading
+                      }
+  , effects:
+    [ fetchCategory cat >>= pure <<< Just <<< ReceiveCategory
+    ]
+  }
+
+foldp (ReceiveCategory (Right cat)) (State st) = noEffects $
+  State $
+    st  { loaded = true
+        , currentCategoryDetails = (Success cat)
+        }
+
+foldp (ReceiveCategory (Left error)) s@(State st) = noEffects $
+  State $
+    st  { loaded = true
+        , errors = (show error) : st.errors
+        , currentCategoryDetails = Failure error
         }
 
 foldp RequestUsers (State st) =
