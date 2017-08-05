@@ -60,5 +60,9 @@ clientTypes =
   , mkSumType (Proxy :: Proxy CMarkdown)
   ]
 
+-- FIXME: Currently `Uid a` defined in `Guide.Utils` is bridged into a `String`.
+-- For example: `Uid Category` on Haskell side is bridged to `String`
+-- It would be better to bridge it to a similar `Uid a` type
+
 main :: IO ()
 main = writePSTypes path (buildBridge bridge) clientTypes

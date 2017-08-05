@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
+import Guide.Api.ClientTypes (CCategoryDetail)
 import Guide.Config (config)
 import Guide.Routes (Route, match)
 import Guide.Types (CGrandCategories, CategoryName(..), Users)
@@ -18,6 +19,7 @@ newtype State = State
   , users :: RemoteData String Users
   , grandCategories :: RemoteData String CGrandCategories
   , currentCategoryName :: CategoryName
+  , currentCategoryDetails :: RemoteData String CCategoryDetail
   }
 
 derive instance gState :: Generic State
@@ -35,6 +37,7 @@ init url = State
   , grandCategories: NotAsked
   , currentCategoryName: CategoryName haskellCatName
   -- playground
+  , currentCategoryDetails: NotAsked
   , users: NotAsked
   }
 

@@ -9,6 +9,7 @@ import Data.Argonaut.Generic.Aeson (options)
 import Data.Argonaut.Generic.Decode (genericDecodeJson)
 import Data.Either (Either(..), either)
 import Data.Generic (class Generic)
+import Guide.Api.ClientTypes (CCategoryDetail)
 import Guide.Types (CGrandCategories, CategoryName(..), Users)
 import Lib.IsomorphicFetch (FETCH, fetch)
 
@@ -27,6 +28,13 @@ fetchUsers = do
   pure $ either (Left <<< show) decodeJson res
 
 fetchGrandCategories :: forall eff. CategoryName -> Aff (fetch :: FETCH | eff) (Either String CGrandCategories)
-fetchGrandCategories (CategoryName cName) = do
-  res <- attempt <<< fetch $ apiEndpoint <> cName <> "/all-categories"
+fetchGrandCategories (CategoryName catName) = do
+  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/all-categories"
+  pure $ either (Left <<< show) decodeJson res
+
+-- TODO: Use `Uid Category` instead of `String` as second function parameter
+-- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
+fetchCategory :: forall eff. CategoryName -> String -> Aff (fetch :: FETCH | eff) (Either String CCategoryDetail)
+fetchCategory (CategoryName catName) catId = do
+  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/category/" <> catId
   pure $ either (Left <<< show) decodeJson res
