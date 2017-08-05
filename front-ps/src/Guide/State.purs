@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
-import Guide.Api.ClientTypes (CCategoryDetail(..))
+import Guide.Api.ClientTypes (CCategoryDetail)
 import Guide.Config (config)
 import Guide.Routes (Route, match)
 import Guide.Types (CGrandCategories, CategoryName(..), Users)

@@ -11,7 +11,9 @@ import Pux.Router (end, lit, router, str)
 data Route
     = Home
     | CategoryOverview CategoryName
-    | CategoryDetail CategoryName String -- (Uid Category)
+    | CategoryDetail CategoryName String -- String == (Uid Category)
+    -- TODO: Use `Uid Category` instead of `String`
+    -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
     | Playground
     | NotFound String
 

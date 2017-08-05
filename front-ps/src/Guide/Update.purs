@@ -46,13 +46,13 @@ foldp (ReceiveGrandCategories (Left error)) s@(State st) = noEffects $
         , grandCategories = Failure error
         }
 
-foldp (RequestCategory cat) (State st) =
+foldp (RequestCategory catName catId) (State st) =
   { state: State $ st { currentCategoryDetails = case st.currentCategoryDetails of
                                   Success c -> Refreshing c
                                   _ -> Loading
                       }
   , effects:
-    [ fetchCategory cat >>= pure <<< Just <<< ReceiveCategory
+    [ fetchCategory catName catId >>= pure <<< Just <<< ReceiveCategory
     ]
   }
 
@@ -126,10 +126,14 @@ routeEffects (CategoryOverview catName) s@(State st) =
         pure Nothing
   ]}
 
-routeEffects (CategoryDetail catName catId) s@(State st) = noEffects $
-  State $
-    st  { loaded = false
-        }
+routeEffects (CategoryDetail catName catId) s@(State st) =
+  { state:
+      State $ st  { loaded = false
+                  }
+  , effects: [
+        pure <<< Just $ RequestCategory catName catId
+      ]
+  }
 
 routeEffects Playground s@(State st) =
   { state: State $ st { loaded = false }
