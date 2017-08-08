@@ -47,6 +47,8 @@ where
 
 import           Imports
 
+-- Lists
+import           Data.List.Split       (splitOn)
 -- Text
 import qualified Data.Text.All         as T
 -- ByteString
@@ -73,8 +75,6 @@ import           ShortcutLinks
 import           ShortcutLinks.All     (hackage)
 -- acid-state
 import           Data.SafeCopy
--- Safe
-import           Safe                  (headDef, initDef, lastDef, tailDef)
 -- Interpolation
 import qualified NeatInterpolation     as NI
 
@@ -441,35 +441,26 @@ getRow :: [MD.Node] -> Maybe [[MD.Node]]
 getRow [MD.ListItems_ _ items] = concat <$> mapM getCells items
 getRow _                       = Nothing
 
-{-|
-Possible row syntax is
-@
-+  - smth 1
-   - smth 2
-   - smth 3
-@
-or
-@
-+  smth 1 | smth 2 | smth 3
-@
-These two examples are equal.
--}
+-- | Extract cells from a row description. A row can be specified either by
+-- a list (each item containing one cell), or by a line containing cells
+-- separated by "|".
 getCells :: [MD.Node] -> Maybe [[MD.Node]]
-getCells []     = Nothing
-getCells items  = Just $ splitCells [] items
+getCells [MD.ListItems_ _ xs] = Just xs
+getCells [MD.Paragraph_ s]    = Just (splitRow s)
+getCells _                    = Nothing
 
-splitCells :: [[MD.Node]] -> [MD.Node] -> [[MD.Node]]
-splitCells = foldl' splitCell
+-- | Split Markdown separated by pipe characters. In pseudocode:
+--
+-- >>> splitRow "foo | **bar baz** blah | `qux`"
+-- ["foo ", " **bar baz** blah ", " `qux`"]
+splitRow :: [MD.Node] -> [[MD.Node]]
+splitRow = splitOn [MD.Text_ "|"] . concatMap splitText
+  where
+    splitText (MD.Text_ s) = map MD.Text_ $ intersperse "|" $ T.splitOn "|" s
+    splitText other        = [other]
 
--- Need to check if there were ' | ' in text blocks
-splitCell :: [[MD.Node]] -> MD.Node -> [[MD.Node]]
-splitCell res (MD.Paragraph_ x) = splitCells res x
-splitCell res (MD.Text_ t) =
-  let splited = (:[]) . MD.Text_ <$> T.splitOn "|" t in
-  initDef [] res ++ ((lastDef [] res ++ headDef [] splited) : tailDef [] splited)
-splitCell res x = initDef [] res ++ [lastDef [] res ++ [x]]
-
--- | Break line should separate table header (keyword & (optional) column names) from rows
+-- | Break line should separate table header (keyword & (optional) column
+-- names) from rows
 isBreak :: [MD.Node] -> Bool
 isBreak [MD.ThematicBreak_] = True
 isBreak _                   = False
@@ -479,10 +470,10 @@ renderTable :: (Monad m) => MarkdownTable -> HtmlT m ()
 renderTable MarkdownTable{..} = do
   h3_ $ toHtml markdownTableName
   table_ [class_ "sortable"] $ do
-    whenJust markdownTableColumns $ \clmns ->
+    whenJust markdownTableColumns $ \cols ->
       thead_ $ tr_ $
-        for_ clmns $ \clmn ->
-          td_ $ toHtml $ renderMD clmn
+        for_ cols $ \col ->
+          td_ $ toHtml $ renderMD col
     tbody_ $
       for_ markdownTableRows $ \row ->
         tr_ $ for_ row $ \cell ->
