@@ -6,14 +6,14 @@ import Control.Alt ((<|>))
 import Data.Generic (class Generic, gEq, gShow)
 import Data.Maybe (fromMaybe)
 import Guide.Types (CategoryName(..))
-import Guide.Utils (Uid(..))
+import Guide.Api.ClientTypes (CUid(..))
 import Pux.Router (end, lit, router, str)
 
 data Route
     = Home
     | CategoryOverview CategoryName
-    | CategoryDetail CategoryName (Uid String) -- String == (Uid Category)
-    -- TODO: Use `Uid Category` instead of `Uid String`
+    | CategoryDetail CategoryName (CUid String)
+    -- TODO: Use `CUid Category` instead of `CUid String`
     -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
     | Playground
     | NotFound String
@@ -31,7 +31,7 @@ match url = fromMaybe (NotFound url) $ router url $
   CategoryOverview <<< CategoryName <$> (lit categoryLit *> str) <* end
   <|>
   CategoryDetail <<< CategoryName <$> (lit categoryLit *> str)
-                                  <*> ((\s -> Uid {uidToText : s}) <$> str) <* end
+                                  <*> ((\s -> CUid {uidToText : s}) <$> str) <* end
   <|>
   Playground <$ (lit playgroundLit) <* end
 
@@ -57,8 +57,8 @@ categoryUrl (CategoryName name) = (litUrl categoryLit) <> (litUrl name)
 categoryDetailLit :: String
 categoryDetailLit = "detail"
 
-categoryDetailUrl :: CategoryName -> Uid String -> String
-categoryDetailUrl catName (Uid catId) = (categoryUrl catName) <> (litUrl catId.uidToText)
+categoryDetailUrl :: CategoryName -> CUid String -> String
+categoryDetailUrl catName (CUid catId) = (categoryUrl catName) <> (litUrl catId.uidToText)
 
 playgroundLit :: String
 playgroundLit = "playground"

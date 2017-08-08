@@ -18,11 +18,11 @@ import Language.PureScript.Bridge ( BridgePart, Language( Haskell ), PSType,
 import Language.PureScript.Bridge.PSTypes (psString)
 import Language.PureScript.Bridge.TypeParameters (A)
 import Guide.Api.ClientTypes ( CCategoryDetail, CCategoryOverview
-                             , CGrandCategory, CItem, CTrait, CMarkdown
+                             , CGrandCategory, CItem, CTrait
+                             , CMarkdown, CUid
                              )
 import Guide.Types.Hue (Hue)
 import Guide.Types.Core (CategoryStatus, ItemKind)
-import Guide.Utils (Uid)
 
 path :: FilePath
 path = "front-ps/src/Generated"
@@ -58,7 +58,7 @@ clientTypes =
   , mkSumType (Proxy @ItemKind)
   , mkSumType (Proxy @CTrait)
   , mkSumType (Proxy @CMarkdown)
-  , mkSumType (Proxy @(Uid A))
+  , mkSumType (Proxy @(CUid A))
   ]
 
 -- FIXME: Currently `Uid a` defined in `Guide.Utils` is bridged into a `String`.

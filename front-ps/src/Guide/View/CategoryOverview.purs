@@ -6,13 +6,12 @@ import Prelude
 
 import Data.Array (null)
 import Data.Foldable (for_)
-import Guide.Api.ClientTypes (CCategoryOverview(..), CGrandCategory(..))
+import Guide.Api.ClientTypes (CCategoryOverview(..), CGrandCategory(..), CUid(..))
 import Guide.Events (Event(..))
 import Guide.Routes (Route(..), toUrl)
 import Guide.State (State(..))
 import Guide.Types (CGrandCategories, CategoryName(..))
 import Guide.Util.DOMUtil (mkKey)
-import Guide.Utils (Uid(..))
 import Network.RemoteData (RemoteData(..))
 import Pux.DOM.Events (onClick) as P
 import Pux.DOM.HTML (HTML) as P
@@ -69,7 +68,7 @@ catOverviewView :: State -> CCategoryOverview -> P.HTML Event
 catOverviewView (State st) (CCategoryOverview cat) =
   let url = toUrl $ CategoryDetail st.currentCategoryName cat.ccoUid in
   S.li
-    ! P.key ((\(Uid t) -> t.uidToText) cat.ccoUid)
+    ! P.key ((\(CUid t) -> t.uidToText) cat.ccoUid)
     $ S.a
       ! S.href url
       #! P.onClick (Navigate url)
