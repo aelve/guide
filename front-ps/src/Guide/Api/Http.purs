@@ -11,6 +11,7 @@ import Data.Either (Either(..), either)
 import Data.Generic (class Generic)
 import Guide.Api.ClientTypes (CCategoryDetail)
 import Guide.Types (CGrandCategories, CategoryName(..), Users)
+import Guide.Utils (Uid(..))
 import Lib.IsomorphicFetch (FETCH, fetch)
 
 apiEndpoint :: String
@@ -34,7 +35,7 @@ fetchGrandCategories (CategoryName catName) = do
 
 -- TODO: Use `Uid Category` instead of `String` as second function parameter
 -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
-fetchCategory :: forall eff. CategoryName -> String -> Aff (fetch :: FETCH | eff) (Either String CCategoryDetail)
-fetchCategory (CategoryName catName) catId = do
-  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/category/" <> catId
+fetchCategory :: forall eff. CategoryName -> (Uid String) -> Aff (fetch :: FETCH | eff) (Either String CCategoryDetail)
+fetchCategory (CategoryName catName) (Uid catId) = do
+  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/category/" <> catId.uidToText
   pure $ either (Left <<< show) decodeJson res

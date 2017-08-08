@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 {- |
@@ -33,13 +33,13 @@ import Guide.Types.Core (Category, CategoryStatus(..), Item, ItemKind, Trait
   , content, created, group_, description, pros, prosDeleted, cons, consDeleted, ecosystem
   , notes, link, kind, name, items, notes, status, uid, title, group_
   )
-import Guide.Utils (Uid, Url)
+import Guide.Utils (Uid(..), Url)
 import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdText)
 import Guide.Views.Utils (categoryLink)
 
 -- | Client type of `Category`, which describes a category overview
 data CCategoryOverview = CCategoryOverview
-  { ccoUid    :: Uid Category
+  { ccoUid    :: Uid String
   , ccoTitle  :: Text
   , ccoLink  :: Text
   } deriving (Show, Generic)
@@ -49,7 +49,7 @@ instance A.ToJSON CCategoryOverview where
 
 toCCategoryOverview :: Category -> CCategoryOverview
 toCCategoryOverview cat = CCategoryOverview
-  { ccoUid = cat^.uid
+  { ccoUid = toUid (cat^.uid)
   , ccoTitle = cat^.title
   , ccoLink = categoryLink cat
   }
@@ -76,7 +76,7 @@ toCGrandCategory cats = CGrandCategory
 
 -- | Client type of `Category`, which describes a category detail
 data CCategoryDetail = CCategoryDetail
-  { ccdUid :: Uid Category
+  { ccdUid :: Uid String
   , ccdTitle :: Text
   , ccdGroup :: Text
   , ccdDescription :: CMarkdown
@@ -90,7 +90,7 @@ instance A.ToJSON CCategoryDetail where
 
 toCCategoryDetail :: Category -> CCategoryDetail
 toCCategoryDetail cat = CCategoryDetail
-  { ccdUid = cat^.uid
+  { ccdUid = toUid (cat^.uid)
   , ccdTitle = cat^.title
   , ccdGroup = cat^.group_
   , ccdDescription = toCMarkdown $ cat^.notes
@@ -100,7 +100,7 @@ toCCategoryDetail cat = CCategoryDetail
 
 -- | Client type of `Item`
 data CItem = CItem
-  { ciUid :: Uid Item
+  { ciUid :: Uid String
   , ciName :: Text
   , ciCreated :: UTCTime
   , ciGroup :: Maybe Text
@@ -120,7 +120,7 @@ instance A.ToJSON CItem where
 
 toCItem :: Item -> CItem
 toCItem item = CItem
-  { ciUid = item ^. uid
+  { ciUid = toUid (item ^. uid)
   , ciName = item ^. name
   , ciCreated = item ^. created
   , ciGroup = item ^. group_
@@ -136,7 +136,7 @@ toCItem item = CItem
   }
 
 data CTrait = CTrait
-  { ctUid :: Uid Trait
+  { ctUid :: Uid String
   , ctContent :: CMarkdown
   } deriving (Show, Generic)
 
@@ -146,7 +146,7 @@ instance A.ToJSON CTrait where
 
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid = trait ^. uid
+  { ctUid = toUid (trait ^. uid)
   , ctContent = toCMarkdown $ trait ^. content
   }
 
@@ -177,3 +177,6 @@ instance ToCMardown MarkdownTree where
     { text = md^.mdText
     , html = T.toStrict . renderText $ toHtml md
     }
+
+toUid :: Uid a -> Uid b
+toUid (Uid t) = Uid t
