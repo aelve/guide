@@ -31,6 +31,7 @@ import qualified Data.Text.Lazy.All as TL
 import Web.Spock hiding (head, get, renderRoute, text)
 import qualified Web.Spock as Spock
 import Web.Spock.Lucid
+import Network.Wai.Middleware.Cors
 import Lucid hiding (for_)
 import qualified Network.HTTP.Types.Status as HTTP
 
@@ -42,16 +43,29 @@ import Guide.Diff (merge)
 import Guide.Markdown
 import Guide.State
 import Guide.Types
+import Guide.Api.ClientTypes (toCGrandCategory, toCCategoryDetail)
 import Guide.Utils
 import Guide.Views
 import Guide.Routes
 
 methods :: GuideM ctx ()
 methods = do
+  apiMethods
   renderMethods
   setMethods
   addMethods
   otherMethods
+
+apiMethods :: GuideM ctx ()
+apiMethods = do
+  middleware simpleCors
+  Spock.get (apiRoute <//> haskellRoute <//> "all-categories") $ do
+    grands <- groupWith (view group_) <$> dbQuery GetCategories
+    json $ fmap toCGrandCategory grands
+
+  Spock.get (apiRoute <//> haskellRoute <//> categoryVar) $ \catId -> do
+    cat <- dbQuery (GetCategory catId)
+    json $ toCCategoryDetail cat
 
 renderMethods :: GuideM ctx ()
 renderMethods = do

@@ -31,5 +31,15 @@ guide.iml
 .vscode/
 tags
 
+node_modules/
+front/coverage/
+front/build/
+static/js/
+
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # JavaScript
 guidejs/node_modules/

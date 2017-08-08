@@ -318,7 +318,8 @@ instance A.ToJSON MarkdownBlock where
     "html" A..= T.toStrict (md^.mdHtml) ]
 instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
-    "text" A..= (md^.mdText) ]
+    "text" A..= (md^.mdText),
+    "html" A..= T.toStrict (renderText (toHtml md)) ]
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml

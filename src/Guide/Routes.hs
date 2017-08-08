@@ -2,7 +2,8 @@
 {-# LANGUAGE DataKinds #-}
 
 module Guide.Routes
-  ( addRoute
+  ( apiRoute
+  , addRoute
   , adminRoute
   , authRoute
   , deleteRoute
@@ -15,6 +16,9 @@ module Guide.Routes
 
 import Web.Spock (Path)
 import Web.Routing.Combinators (PathState(Open))
+
+apiRoute :: Path '[] 'Open
+apiRoute = "api"
 
 haskellRoute :: Path '[] 'Open
 haskellRoute = "haskell"

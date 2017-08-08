@@ -24,6 +24,7 @@ module Guide.Views.Utils
   hiddenIf,
   categoryLink,
   itemLink,
+  fromCategorySlug,
 
   -- * HTML components
   button,
@@ -257,6 +258,10 @@ categoryNodeId category = format "category-{}" (category^.uid)
 -- TODO: another absolute link to get rid of [absolute-links]
 categoryLink :: Category -> Url
 categoryLink category = format "/haskell/{}" (categorySlug category)
+
+fromCategorySlug :: Text -> (Text, Uid Category)
+fromCategorySlug s = let (title', catUid) = T.breakOnEnd "-" s
+                     in  (T.dropEnd 1 title', Uid catUid)
 
 itemLink :: Category -> Item -> Url
 itemLink category item =

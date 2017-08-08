@@ -299,7 +299,8 @@ sockAddrToIP _ = Nothing
 newtype Uid a = Uid {uidToText :: Text}
   deriving (Eq, Ord, Show, Data,
             ToHttpApiData, FromHttpApiData,
-            T.Buildable, Hashable, A.ToJSON)
+            T.Buildable, Hashable, A.ToJSON,
+            Generic)
 
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a

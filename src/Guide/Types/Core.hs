@@ -113,21 +113,31 @@ instance A.ToJSON Trait where
 
 -- | Kind of an item (items can be libraries, tools, etc).
 data ItemKind
-  = Library {_itemKindHackageName :: Maybe Text}
-  | Tool {_itemKindHackageName :: Maybe Text}
+  = Library (Maybe Text)  -- Hackage name
+  | Tool (Maybe Text)     -- Hackage name
   | Other
   deriving (Eq, Show, Generic, Data)
 
 deriveSafeCopySimple 3 'extension ''ItemKind
-makeFields ''ItemKind
+
+hackageName :: Traversal' ItemKind (Maybe Text)
+hackageName f (Library x) = Library <$> f x
+hackageName f (Tool x)    = Tool <$> f x
+hackageName _ Other       = pure Other
 
 instance A.ToJSON ItemKind where
-  toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "_itemKind") }
+  toJSON (Library x) = A.object [
+    "tag"         A..= ("Library" :: Text),
+    "hackageName" A..= x ]
+  toJSON (Tool x) = A.object [
+    "tag"         A..= ("Tool" :: Text),
+    "hackageName" A..= x ]
+  toJSON Other = A.object [
+    "tag"         A..= ("Other" :: Text) ]
 
 data ItemKind_v2
-  = Library_v2 {_itemKindHackageName_v2 :: Maybe Text}
-  | Tool_v2 {_itemKindHackageName_v2 :: Maybe Text}
+  = Library_v2 (Maybe Text)
+  | Tool_v2 (Maybe Text)
   | Other_v2
 
 -- TODO: at the next migration change this to deriveSafeCopySimple!
@@ -135,10 +145,8 @@ deriveSafeCopy 2 'base ''ItemKind_v2
 
 instance Migrate ItemKind where
   type MigrateFrom ItemKind = ItemKind_v2
-  migrate Library_v2{..} = Library {
-    _itemKindHackageName = _itemKindHackageName_v2 }
-  migrate Tool_v2{..} = Tool {
-    _itemKindHackageName = _itemKindHackageName_v2 }
+  migrate (Library_v2 x) = Library x
+  migrate (Tool_v2 x) = Tool x
   migrate Other_v2 = Other
 
 -- | Different kinds of sections inside items. This type is only used for
@@ -200,7 +208,10 @@ data CategoryStatus
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
 instance A.ToJSON CategoryStatus where
-  toJSON = A.genericToJSON A.defaultOptions
+  toJSON = \case
+    CategoryStub     -> A.toJSON ("Stub" :: Text)
+    CategoryWIP      -> A.toJSON ("WIP" :: Text)
+    CategoryFinished -> A.toJSON ("Finished" :: Text)
 
 data CategoryStatus_v1
   = CategoryStub_v1

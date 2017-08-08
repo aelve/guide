@@ -1,0 +1,16 @@
+body {
+  padding: 0px 15px;
+  padding-top: 2em;
+  margin: auto;
+  max-width: 800px;
+  font-family: sans-serif;
+  line-height: 120%;
+}
+
+/* Making the footer stick to the bottom of the screen */
+
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}

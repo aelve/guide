@@ -214,7 +214,7 @@ mainWith config = do
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ guideApp waiMetrics
+    runSpock 3080 $ spock spockConfig $ guideApp waiMetrics
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
