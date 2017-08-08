@@ -420,7 +420,7 @@ Table
 -}
 getTable :: MD.Node -> Maybe MarkdownTable
 getTable node = do
-  MD.ItemList_ _ (table:cols:brk:rest) <- Just node
+  MD.ListItems_ _ (table:cols:brk:rest) <- Just node
   markdownTableName <- getTableName table
   let createTable markdownTableColumns rw = do
           markdownTableRows <- mapM getRow rw
@@ -438,8 +438,8 @@ getTableName _ = Nothing
 
 -- | Gets whole row values
 getRow :: [MD.Node] -> Maybe [[MD.Node]]
-getRow [MD.ItemList_ _ items] = concat <$> mapM getCells items
-getRow _                      = Nothing
+getRow [MD.ListItems_ _ items] = concat <$> mapM getCells items
+getRow _                       = Nothing
 
 {-|
 Possible row syntax is

@@ -10,14 +10,11 @@ packages:
     git: https://github.com/aelve/safecopy-migrate
     commit: 26e5f8c7f62ebce66ef19e5bd573af21c16fe2b1
   extra-dep: true
-- location:
-    git: https://github.com/aelve/cmark-patterns
-    commit: 6e7c743de159a74c594174079a6b2c2b8bdda50c
-  extra-dep: true
 
 extra-deps:
 - text-all-0.4.1.0
 - cmark-sections-0.1.0.3
+- cmark-patterns-0.1.0.0
 - patches-vector-0.1.5.4
 - fmt-0.2.0.0
 - Spock-digestive-0.3.0.0
