@@ -34,10 +34,10 @@ loginForm = Login
 -- | Render input elements for a 'Login'
 -- Note: This does not include the 'Form' element.
 --
--- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection. 
+-- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection.
 loginFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
 loginFormView view = do
-  div_ $ do
+  div_ [class_ "auth"] $ do
     errorList "email" view
     label     "email" view "Email: "
     inputText "email" view
@@ -49,16 +49,33 @@ loginFormView view = do
 
   inputSubmit "Log in"
 
+  hr_ []
+
+  div_ [class_ "federated"] $ do
+    p_ "Or sign in with:"
+    -- TODO: Generate this list from the current configuration
+    -- will need to change type to our app or pass in as arg
+    div_ [class_ "logos"] $ do
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/azure.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/facebook.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/github.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/google.png"]
+
+
 -- | Dummy for now.
 loginView :: (MonadIO m) => User -> HtmlT m ()
 loginView user = do
   div_ $ do
     -- TODO: Make nicer.
-    "You are registered and logged in as " 
+    "You are registered and logged in as "
     toHtml (user ^. userName)
 
 renderLogin :: (MonadIO m, MonadReader Config m) => HtmlT m () -> HtmlT m ()
 renderLogin content = do
-  renderPage $ 
+  renderPage $
     pageDef & pageTitle .~ "Aelve Guide"
             & pageContent .~ content

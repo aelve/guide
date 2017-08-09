@@ -13,13 +13,13 @@ Portability :  portable | non-portable (<reason>)
 {-# LANGUAGE OverloadedStrings #-}
 
 module Guide.Types.Oauth2.Google where
-  
+
 import Imports
 
 -- acid-state
 import Data.SafeCopy hiding (kind)
 
-import Guide.SafeCopy
+-- import Guide.SafeCopy
 import Guide.Utils
 import Guide.Types.User
 -- Aeson

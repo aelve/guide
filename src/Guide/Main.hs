@@ -308,7 +308,7 @@ guideApp waiMetrics = do
         -- take them and inject into the page. We don't want to duplicate
         -- rendering on server side and on client side.
         methods
-      
+
       Spock.subcomponent "auth" $ do
         -- plain "/auth" logs out a logged-in user and lets a logged-out user
         -- log in (this is not the best idea, granted, and we should just
@@ -320,7 +320,7 @@ guideApp waiMetrics = do
             then Spock.redirect "auth/logout"
             else Spock.redirect "auth/login"
         Spock.getpost "login" $ authRedirect "/" $ loginAction
-        Spock.get "logout" $ logoutAction 
+        Spock.get "logout" $ logoutAction
         Spock.getpost "register" $ authRedirect "/" $ signupAction
 
 loginAction :: GuideAction ctx ()
@@ -329,7 +329,7 @@ loginAction = do
   case r of
     (v, Nothing) -> do
       formHtml <- protectForm loginFormView v
-      lucidWithConfig $ renderRegister formHtml
+      lucidWithConfig $ renderLogin formHtml
     (v, Just Login {..}) -> do
       loginAttempt <- dbQuery $
         LoginUser loginEmail (T.toByteString loginUserPassword)
@@ -340,7 +340,7 @@ loginAction = do
         -- TODO: show error message/validation of input
         Nothing -> do
           formHtml <- protectForm loginFormView v
-          lucidWithConfig $ renderRegister formHtml
+          lucidWithConfig $ renderLogin formHtml
 
 logoutAction :: GuideAction ctx ()
 logoutAction = do
@@ -350,7 +350,7 @@ logoutAction = do
 signupAction :: GuideAction ctx ()
 signupAction = do
   r <- runForm "register" registerForm
-  case r of 
+  case r of
     (v, Nothing) -> do
       formHtml <- protectForm registerFormView v
       lucidWithConfig $ renderRegister formHtml
@@ -381,7 +381,7 @@ adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ':
 adminHook = do
   oldCtx <- getContext
   let user = findFirst oldCtx
-  if user ^. userIsAdmin 
+  if user ^. userIsAdmin
     then return (IsAdmin :&: oldCtx)
     else Spock.text "Not authorized."
 

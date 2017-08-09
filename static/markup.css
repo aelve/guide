@@ -61,3 +61,12 @@ ins {
   margin-left: 10%;
   margin-right: 10%;
 }
+
+.federated .logos a {
+  padding: 0.5em;
+}
+
+.federated .logos a img {
+  width: 32px;
+  height: 32px;
+}

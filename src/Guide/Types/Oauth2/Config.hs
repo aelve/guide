@@ -17,24 +17,23 @@ module Guide.Types.Oauth2.Config where
 import Imports
 
 -- acid-state
-import Data.SafeCopy hiding (kind)
+-- import Data.SafeCopy hiding (kind)
 
-import Guide.SafeCopy
 import Guide.Utils
-import Guide.Types.User
+-- import Guide.Types.User
 -- Aeson
-import Data.Aeson
-import Data.Aeson.Encode.Pretty
+-- import Data.Aeson
+-- import Data.Aeson.Encode.Pretty
 -- ByteString
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
+-- import qualified Data.ByteString as BS
+-- import qualified Data.ByteString.Lazy as BSL
 -- Default
-import Data.Default
+-- import Data.Default
 
 -- | Configuration details to access an endpoint.
 --
 -- Intended to be used in a config file.
--- 
+--
 -- See note [Oauth2 workflow]
 data Oauth2Endpoint = Oauth2Endpoint {
   _endpointName         :: Text,      -- ^ A unique name for the Oauth2 endpoint.
@@ -44,7 +43,7 @@ data Oauth2Endpoint = Oauth2Endpoint {
                                       --    to this URL to begin the Oauth2 workflow.
   _endpointCallback     :: Url,       -- ^ The server callback URL, after logging in at the authorize URL
                                       --    the client is redirected to this server-controlled URL to provide
-                                      --    the server with a 
+                                      --    the server with a
   _endpointAccessToken  :: Url        -- ^ The endpoint access token URL, once the app receives a
                                       --    authorization code, this endpoint may be used to obtain
                                       --    a longer-lived access token for an API.
@@ -67,7 +66,8 @@ instance Oauth2Default Oauth2Endpoint where
   }
 
 
-  -- oauth2login :: t -> 
+
+  -- oauth2login :: t ->
 
 {- Note [Oauth2 workflow]
 
@@ -78,7 +78,7 @@ Terms:
 * Client: the user agent accessing the application (e.g.: web browser, API
   client)
 
-One of the better sources on authentication workflow is Google's: 
+One of the better sources on authentication workflow is Google's:
 
 https://developers.google.com/identity/protocols/OAuth2
 
@@ -92,6 +92,6 @@ instance HasOauth2Endpoint Oauth2Endpoint where
   ...
 
 Each instance of an Oauth2 endpoint then will contain a Oauth2Endpoint field,
-and implement the above type classes. 
+and implement the above type classes.
 
 -}
