@@ -386,10 +386,10 @@ markdownNull = T.null . view mdText
 
 -- | Data Structure to hold tables
 data MarkdownTable = MarkdownTable
-           { markdownTableName    :: Text -- ^ Table header
-           , markdownTableColumns :: Maybe [[MD.Node]] -- ^ Names of columns (optional)
-           , markdownTableRows    :: [[[MD.Node]]] -- ^ List of rows with cells
-           } deriving (Eq, Show)
+  { markdownTableName    :: Maybe Text        -- ^ Table header
+  , markdownTableColumns :: Maybe [[MD.Node]] -- ^ Names of columns
+  , markdownTableRows    :: [[[MD.Node]]]     -- ^ List of rows with cells
+  } deriving (Eq, Show)
 
 {-|
 Tries to make 'Table' structure from Node.
@@ -410,8 +410,8 @@ Next markdown
 should be parsed as
 @
 Table
-    { name = "TableName"
-    , columns = ["Column 1", "Column 2", "Column 3"]
+    { name = Just "TableName"
+    , columns = Just ["Column 1", "Column 2", "Column 3"]
     , rows = [ ["Foo", "Bar", "Baz"]
              , ["Another foo", "Another bar", "Another baz"]
              ]
@@ -432,8 +432,10 @@ getTable node = do
      createTable Nothing (brk:rest)
 
 -- | Parses table name after keyword "%TABLE"
-getTableName :: [MD.Node] -> Maybe Text
-getTableName [MD.Paragraph_ [MD.Text_ t]] = T.stripPrefix "%TABLE " t
+getTableName :: [MD.Node] -> Maybe (Maybe Text)
+getTableName [MD.Paragraph_ [MD.Text_ t]] = do
+  name <- T.strip <$> T.stripPrefix "%TABLE" t
+  pure $ if T.null name then Nothing else Just name
 getTableName _ = Nothing
 
 -- | Gets whole row values
@@ -468,7 +470,9 @@ isBreak _                   = False
 -- | Generates 'HTML' table from 'Table' structure
 renderTable :: (Monad m) => MarkdownTable -> HtmlT m ()
 renderTable MarkdownTable{..} = do
-  h3_ $ toHtml markdownTableName
+  case markdownTableName of
+    Just name -> h3_ $ toHtml name
+    Nothing   -> pure ()
   table_ [class_ "sortable"] $ do
     whenJust markdownTableColumns $ \cols ->
       thead_ $ tr_ $
