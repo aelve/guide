@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Main
@@ -11,11 +11,16 @@ module Main
 import Prelude
 
 import Data.Proxy (Proxy (..))
-import Language.PureScript.Bridge (BridgeBuilder, BridgePart, Language( Haskell ), SumType,
-                                    PSType, TypeInfo (..), (<|>), (^==), buildBridge,
-                                    defaultBridge, typeName, mkSumType, writePSTypes)
+import Language.PureScript.Bridge ( BridgePart, Language( Haskell ), PSType,
+                                    SumType, TypeInfo (..), (<|>),
+                                    (^==), buildBridge, defaultBridge,
+                                    typeName, mkSumType, writePSTypes)
 import Language.PureScript.Bridge.PSTypes (psString)
-import Guide.Api.ClientTypes (CCategoryDetail, CCategoryOverview, CGrandCategory, CItem, CTrait, CMarkdown)
+import Language.PureScript.Bridge.TypeParameters (A)
+import Guide.Api.ClientTypes ( CCategoryDetail, CCategoryOverview
+                             , CGrandCategory, CItem, CTrait
+                             , CMarkdown, CUid
+                             )
 import Guide.Types.Hue (Hue)
 import Guide.Types.Core (CategoryStatus, ItemKind)
 
@@ -25,12 +30,9 @@ path = "front-ps/src/Generated"
 psPosixTime :: PSType
 psPosixTime = TypeInfo "" "Data.Time.NominalDiffTime" "NominalDiffTime" []
 
-posixTimeBridge :: BridgeBuilder PSType
+posixTimeBridge :: BridgePart
 posixTimeBridge =
   typeName ^== "NominalDiffTime" >> pure psPosixTime
-
-uidBridge :: BridgePart
-uidBridge = typeName ^== "Uid" >> pure psString
 
 byteStringBridge :: BridgePart
 byteStringBridge = typeName ^== "ByteString" >> pure psString
@@ -39,25 +41,24 @@ byteStringBridge = typeName ^== "ByteString" >> pure psString
 utcTimeBridge :: BridgePart
 utcTimeBridge = typeName ^== "UTCTime" >> pure psString
 
-
-bridge :: BridgeBuilder PSType
+bridge :: BridgePart
 bridge = defaultBridge
   <|> posixTimeBridge
-  <|> uidBridge
   <|> byteStringBridge
   <|> utcTimeBridge
 
 clientTypes :: [SumType  'Haskell]
 clientTypes =
-  [ mkSumType (Proxy :: Proxy CGrandCategory)
-  , mkSumType (Proxy :: Proxy CCategoryDetail)
-  , mkSumType (Proxy :: Proxy CCategoryOverview)
-  , mkSumType (Proxy :: Proxy Hue)
-  , mkSumType (Proxy :: Proxy CategoryStatus)
-  , mkSumType (Proxy :: Proxy CItem)
-  , mkSumType (Proxy :: Proxy ItemKind)
-  , mkSumType (Proxy :: Proxy CTrait)
-  , mkSumType (Proxy :: Proxy CMarkdown)
+  [ mkSumType (Proxy @CGrandCategory)
+  , mkSumType (Proxy @CCategoryDetail)
+  , mkSumType (Proxy @CCategoryOverview)
+  , mkSumType (Proxy @Hue)
+  , mkSumType (Proxy @CategoryStatus)
+  , mkSumType (Proxy @CItem)
+  , mkSumType (Proxy @ItemKind)
+  , mkSumType (Proxy @CTrait)
+  , mkSumType (Proxy @CMarkdown)
+  , mkSumType (Proxy @(CUid A))
   ]
 
 -- FIXME: Currently `Uid a` defined in `Guide.Utils` is bridged into a `String`.

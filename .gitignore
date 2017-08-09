@@ -34,6 +34,7 @@ tags
 node_modules/
 front/coverage/
 front/build/
+static/js/
 
 .env
 npm-debug.log*
