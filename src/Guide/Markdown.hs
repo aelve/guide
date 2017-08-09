@@ -568,28 +568,28 @@ renderTable MarkdownTable{..} = do
   </tbody>
 </table>
 -}
-testTable :: (Monad m) => HtmlT m ()
-testTable = renderTable
-          $ fromJust
-          $ getTable
-          $ head
-          $ parseMD
-          [NI.text|
-              + %TABLE TableName
-              + - Column 1
-                - Column 2
-                - Column 3
-              + --------------------------------
-              + - *foo* | **bar** | baz
+_testTable :: (Monad m) => HtmlT m ()
+_testTable = renderTable
+           $ fromJust
+           $ getTable
+           $ head
+           $ parseMD
+           [NI.text|
+               + %TABLE TableName
+               + - Column 1
+                 - Column 2
+                 - Column 3
+               + --------------------------------
+               + - *foo* | **bar** | baz
 
-              + - Foo
-                - Bar
-                - Baz
+               + - Foo
+                 - Bar
+                 - Baz
 
-              + - ```
-                  Code foo
-                  ```
-                - Simple bar
-                - `inline code` baz
-              + - Another foo | Another bar | Another baz
-          |]
+               + - ```
+                   Code foo
+                   ```
+                 - Simple bar
+                 - `inline code` baz
+               + - Another foo | Another bar | Another baz
+           |]
