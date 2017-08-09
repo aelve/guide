@@ -35,11 +35,19 @@ loginForm = Login
 --
 -- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection.
 loginFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
+<<<<<<< HEAD
 loginFormView view' = do
   div_ $ do
     errorList "email" view'
     label     "email" view' "Email: "
     inputText "email" view'
+=======
+loginFormView view = do
+  div_ [class_ "auth"] $ do
+    errorList "email" view
+    label     "email" view "Email: "
+    inputText "email" view
+>>>>>>> wip
 
   div_ $ do
     errorList     "password" view'
@@ -47,6 +55,23 @@ loginFormView view' = do
     inputPassword "password" view'
 
   inputSubmit "Log in"
+
+  hr_ []
+
+  div_ [class_ "federated"] $ do
+    p_ "Or sign in with:"
+    -- TODO: Generate this list from the current configuration
+    -- will need to change type to our app or pass in as arg
+    div_ [class_ "logos"] $ do
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/azure.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/facebook.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/github.png"]
+      a_ [href_ "tbd"] $
+        img_ [src_ "/auth_logos/google.png"]
+
 
 -- | Dummy for now.
 loginView :: (MonadIO m) => User -> HtmlT m ()

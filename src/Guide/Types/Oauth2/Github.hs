@@ -13,13 +13,12 @@ Portability :  portable | non-portable (<reason>)
 {-# LANGUAGE OverloadedStrings #-}
 
 module Guide.Types.Oauth2.Github where
-  
+
 import Imports
 
 -- acid-state
 import Data.SafeCopy hiding (kind)
 
-import Guide.SafeCopy
 import Guide.Utils
 import Guide.Types.User
 -- Aeson
@@ -47,6 +46,8 @@ instance Oauth2Default GithubEndpoint where
       _endpointAccessToken = "https://github.com/login/oauth/access_token"
     }
   }
+
+-- data Github =
 
 instance HasOauth2Endpoint GithubEndpoint where
   oauth2Endpoint = githubEndpointConfig
