@@ -36,5 +36,5 @@ fetchGrandCategories (CategoryName catName) = do
 -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
 fetchCategory :: forall eff. CategoryName -> (CUid String) -> Aff (fetch :: FETCH | eff) (Either String CCategoryDetail)
 fetchCategory (CategoryName catName) (CUid catId) = do
-  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/category/" <> catId.uidToText
+  res <- attempt <<< fetch $ apiEndpoint <> catName <> "/category/" <> catId
   pure $ either (Left <<< show) decodeJson res

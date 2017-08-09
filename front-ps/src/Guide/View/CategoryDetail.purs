@@ -19,7 +19,7 @@ import Text.Smolder.Markup (text) as S
 view :: CategoryName -> CUid String -> State -> P.HTML Event
 view (CategoryName cName) (CUid catId) (State st) =
   S.div $ do
-    S.h1 $ S.text (cName <> " - " <> catId.uidToText)
+    S.h1 $ S.text (cName <> " - " <> catId)
     S.a ! S.href (toUrl Home)
         #! P.onClick (Navigate $ toUrl Home)
         $ S.text "Back to Home"

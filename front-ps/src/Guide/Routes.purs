@@ -31,7 +31,7 @@ match url = fromMaybe (NotFound url) $ router url $
   CategoryOverview <<< CategoryName <$> (lit categoryLit *> str) <* end
   <|>
   CategoryDetail <<< CategoryName <$> (lit categoryLit *> str)
-                                  <*> ((\s -> CUid {uidToText : s}) <$> str) <* end
+                                  <*> (CUid <$> str) <* end
   <|>
   Playground <$ (lit playgroundLit) <* end
 
@@ -58,7 +58,7 @@ categoryDetailLit :: String
 categoryDetailLit = "detail"
 
 categoryDetailUrl :: CategoryName -> CUid String -> String
-categoryDetailUrl catName (CUid catId) = (categoryUrl catName) <> (litUrl catId.uidToText)
+categoryDetailUrl catName (CUid catId) = (categoryUrl catName) <> (litUrl catId)
 
 playgroundLit :: String
 playgroundLit = "playground"

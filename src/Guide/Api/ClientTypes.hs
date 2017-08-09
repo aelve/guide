@@ -180,7 +180,7 @@ instance ToCMardown MarkdownTree where
     , html = T.toStrict . renderText $ toHtml md
     }
 
-newtype CUid a = CUid {uidToText :: Text}
+newtype CUid a = CUid Text
   deriving (Eq, Ord, Show, Generic, Data, Typeable)
 
 instance A.ToJSON (CUid a) where
