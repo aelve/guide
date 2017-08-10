@@ -1,0 +1,9 @@
+image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - stack build
