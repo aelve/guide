@@ -1,10 +1,10 @@
 image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
 
 cache:
-  paths:
-  - .stack-work
-  
+  untracked: true
+
 stages:
+  key: "$CI_COMMIT_REF_NAME"
   - build
 
 build:
