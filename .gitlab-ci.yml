@@ -1,5 +1,9 @@
 image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
 
+cache:
+  paths:
+  - .stack-work
+  
 stages:
   - build
 
