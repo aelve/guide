@@ -11,3 +11,5 @@ build:
   script:
     - ls -laR .
     - stack build
+    - ls -laR .
+    - git ls-files --others --exclude-standard
