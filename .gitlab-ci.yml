@@ -9,4 +9,5 @@ stages:
 build:
   stage: build
   script:
+    - ls -laR .
     - stack build
