@@ -4,7 +4,6 @@ cache:
   untracked: true
 
 stages:
-  key: "$CI_COMMIT_REF_NAME"
   - build
 
 build:
