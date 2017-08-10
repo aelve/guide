@@ -2,6 +2,8 @@ image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
 
 cache:
   untracked: true
+  paths:
+    - .stack-work
 
 stages:
   - build
@@ -9,7 +11,4 @@ stages:
 build:
   stage: build
   script:
-    - ls -laR .
     - stack build
-    - ls -laR .
-    - git ls-files --others --exclude-standard
