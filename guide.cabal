@@ -77,7 +77,8 @@ library
     Guide.Cache
   other-modules:
     Imports
-  build-depends:       Spock
+  build-depends:       HUnit
+                     , Spock
                      , Spock-digestive
                      , Spock-lucid == 0.3.*
                      , acid-state == 0.14.*
@@ -197,6 +198,7 @@ test-suite tests
                      , tagsoup < 1
                      , text-all
                      , transformers
+                     , uniplate
                      , webdriver >= 0.8.4 && < 0.9
   hs-source-dirs:      tests
   default-language:    Haskell2010

@@ -1,38 +1,51 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
 
 module MdTablesSpec (tests) where
 
 import           BasePrelude
-import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.IO.Class      (liftIO)
 -- CMark
-import qualified CMark                  as MD
+import qualified CMark                       as MD
 -- Text
-import           Data.Text.All          (Text, LText)
-import qualified Data.Text.All          as T
+import           Data.Text.All               (Text, LText)
+import qualified Data.Text.All               as T
 -- Testing
 import           Test.Hspec
+-- Generics
+import           Data.Generics.Uniplate.Data (transformBi)
 -- Lucid
-import           Lucid.Base             (renderTextT)
+import           Lucid.Base                  (renderTextT)
 
 import           Guide.Markdown
+import           Guide.Utils
 
 tests :: Spec
 tests =
   describe "MdTables.table" $ do
+
     describe "getting" $ do
-      it "returns simple table with column names from list" $
-        getTable simpleTableColListMD `shouldBe` Just simpleTable
-      it "returns simple table with column names from text with separator" $
-        getTable simpleTableMD `shouldBe` Just simpleTable
-      it "returns valid full example table" $
-        getTable fullTableMD `shouldBe` Just fullTable
-      it "returns nothing for table without hr" $
-        getTable tableWOBreakMD `shouldBe` Nothing
-      it "returns table without column names" $
-        getTable tableWOColumnNamesMD `shouldBe` Just tableWOColumnNames
-      it "returns table without table name" $
-        getTable tableWOTableNameMD `shouldBe` Just tableWOTableName
+      let shouldParseAs md res =
+            hspecFailDetails (T.unlines md) $
+            fmap stripPos (getTable (buildTableMD md)) `shouldBe`
+              Right (stripPos res)
+          shouldNotParse md =
+            hspecFailDetails (T.unlines md) $
+            getTable (buildTableMD md) `shouldSatisfy` isLeft
+      it "parses a simple table with column names from list" $
+        simpleTableColListMD `shouldParseAs` simpleTable
+      it "parses a simple table with column names from text with separator" $
+        simpleTableMD `shouldParseAs` simpleTable
+      it "parses a valid full example table" $
+        fullTableMD `shouldParseAs` fullTable
+      it "doesn't parse for table without hr" $
+        shouldNotParse tableWOBreakMD
+      it "parses a table without column names" $
+        tableWOColumnNamesMD `shouldParseAs` tableWOColumnNames
+      it "parses a table without table name" $
+        tableWOTableNameMD `shouldParseAs` tableWOTableName
+
     describe "rendering" $ do
       it "renders simple table with column names" $ do
         renderedT <- render simpleTable
@@ -46,6 +59,9 @@ tests =
 
 render :: MarkdownTable -> IO LText
 render = liftIO . renderTextT . renderTable
+
+stripPos :: MarkdownTable -> MarkdownTable
+stripPos = transformBi (\(_ :: Maybe MD.PosInfo) -> Nothing)
 
 -----------------------
 ------ Text Md --------
@@ -65,7 +81,7 @@ columnNamesList =
   ]
 
 columnNamesSimple :: Text
-columnNamesSimple = "+ - Column 1|Column 2|Column 3"
+columnNamesSimple = "+ Column 1|Column 2|Column 3"
 
 breakText :: Text
 breakText = "+ ----------------"
@@ -75,14 +91,13 @@ rowOfList =
   [ "+ - Foo"
   , "  - Bar"
   , "  - Baz"
-  , ""
   ]
 
 rowWithSeparator :: Text
-rowWithSeparator = "+ - Another foo | Another bar | Another baz"
+rowWithSeparator = "+ Another foo | Another bar | Another baz"
 
 rowSeveralNodes :: Text
-rowSeveralNodes = "+ - *foo* | **bar** | baz"
+rowSeveralNodes = "+ *foo* | **bar** | baz"
 
 rowOfListSeveralNodes :: [Text]
 rowOfListSeveralNodes =
@@ -97,82 +112,96 @@ rowOfListSeveralNodes =
 ------- MD elements -------
 ---------------------------
 
+-- | “foo ” is parsed as @Text_ "foo"@ (without a space), but we want a
+-- space there, so in the examples we use a dot instead of spaces.
+putSpaces :: [[MD.Node]] -> [[MD.Node]]
+putSpaces = transformBi $ \case
+  MD.TEXT s -> MD.TEXT (T.replace "·" " " s)
+  other     -> other
+
 columnNames :: [[MD.Node]]
-columnNames = [ [ MD.Node Nothing (MD.TEXT "Column 1") [] ]
-              , [ MD.Node Nothing (MD.TEXT "Column 2") [] ]
-              , [ MD.Node Nothing (MD.TEXT "Column 3") [] ]
-              ]
+columnNames = map parseMD ["Column 1", "Column 2", "Column 3"]
 
 rowOfListMD :: [[MD.Node]]
-rowOfListMD = [ [ MD.Node Nothing (MD.TEXT "Foo") [] ]
-              , [ MD.Node Nothing (MD.TEXT "Bar") [] ]
-              , [ MD.Node Nothing (MD.TEXT "Baz") [] ]
-              ]
+rowOfListMD = map parseMD ["Foo", "Bar", "Baz"]
 
 rowSeveralNodesMD :: [[MD.Node]]
-rowSeveralNodesMD = [ [ MD.Node Nothing MD.EMPH [ MD.Node Nothing (MD.TEXT "foo") [] ]
-                      , MD.Node Nothing (MD.TEXT " ") []
-                      ]
-                    , [ MD.Node Nothing (MD.TEXT " ") []
-                      , MD.Node Nothing MD.STRONG [ MD.Node Nothing (MD.TEXT "bar") [] ]
-                      , MD.Node Nothing (MD.TEXT " ") []
-                      ]
-                    , [ MD.Node Nothing (MD.TEXT " baz") [] ]
-                    ]
+rowSeveralNodesMD =
+  putSpaces $ map parseMD ["*foo*·", "·**bar**·", "·baz"]
 
 rowWithSeparatorMD :: [[MD.Node]]
-rowWithSeparatorMD = [ [ MD.Node Nothing (MD.TEXT "Another foo ") [] ]
-                     , [ MD.Node Nothing (MD.TEXT " Another bar ") [] ]
-                     , [ MD.Node Nothing (MD.TEXT " Another baz") [] ]
-                     ]
+rowWithSeparatorMD =
+  putSpaces $ map parseMD ["Another foo·", "·Another bar·", "·Another baz"]
 
-rowOfListSeveralNodesMD :: Int -> [[MD.Node]]
-rowOfListSeveralNodesMD n =
-  [ [ MD.Node ( Just
-                MD.PosInfo
-              { startLine = n
-              , startColumn = 5
-              , endLine = n + 2
-              , endColumn = 7
-              })
+rowOfListSeveralNodesMD :: [[MD.Node]]
+rowOfListSeveralNodesMD =
+  [ [ MD.Node Nothing
         (MD.HTML_BLOCK
-           "<div class=\"sourceCode\"><pre class=\"sourceCode\"><code class=\"sourceCode\">Code foo</code></pre></div>")
+           "<div class=\"sourceCode\">\
+             \<pre class=\"sourceCode\">\
+               \<code class=\"sourceCode\">Code foo</code>\
+             \</pre>\
+           \</div>")
         []
     ]
-  , [ MD.Node Nothing (MD.TEXT "Simple bar") [] ]
-  , [ MD.Node Nothing (MD.CODE "inline code") []
-    ,  MD.Node Nothing (MD.TEXT " baz") []
-    ]
+  , parseMD "Simple bar"
+  , parseMD "`inline code` baz"
   ]
 
------------------
------ HTML ------
------------------
+----------------------------------------------------------------------------
+-- HTML
+----------------------------------------------------------------------------
+
 tableNameHtml :: Text
-tableNameHtml = "<h3>Table</h3><table class=\"sortable\">"
+tableNameHtml =
+  "<h3>Table</h3>\
+  \<table class=\"sortable\">"
 
 columnNamesHtml :: Text
 columnNamesHtml =
-  "<thead><tr><td>Column 1</td><td>Column 2</td><td>Column 3</td></tr></thead>"
+  "<thead><tr>\
+      \<td><p>Column 1</p>\n</td>\
+      \<td><p>Column 2</p>\n</td>\
+      \<td><p>Column 3</p>\n</td>\
+  \</tr></thead>"
 
 bodyStart :: Text
 bodyStart = "<tbody>"
 
 rowOfListHtml :: Text
 rowOfListHtml =
-  "<tr><td>Foo</td><td>Bar</td><td>Baz</td></tr>"
+  "<tr>\
+      \<td><p>Foo</p>\n</td>\
+      \<td><p>Bar</p>\n</td>\
+      \<td><p>Baz</p>\n</td>\
+  \</tr>"
 
 rowSeveralNodesHtml :: Text
 rowSeveralNodesHtml =
-  "<tr><td>&lt;em&gt;foo&lt;/em&gt; </td><td> &lt;strong&gt;bar&lt;/strong&gt; </td><td> baz</td></tr>"
+  "<tr>\
+      \<td><p><em>foo</em> </p>\n</td>\
+      \<td><p> <strong>bar</strong> </p>\n</td>\
+      \<td><p> baz</p>\n</td>\
+  \</tr>"
 
 rowWithSeparatorHtml :: Text
 rowWithSeparatorHtml =
-  "<tr><td>Another foo </td><td> Another bar </td><td> Another baz</td></tr>"
+  "<tr>\
+      \<td><p>Another foo </p>\n</td>\
+      \<td><p> Another bar </p>\n</td>\
+      \<td><p> Another baz</p>\n</td>\
+  \</tr>"
 
 rowOfListSeveralNodesHtml :: Text
 rowOfListSeveralNodesHtml =
-  "<tr><td>&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode&quot;&gt;&lt;code class=&quot;sourceCode&quot;&gt;Code foo&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;\n</td><td>Simple bar</td><td>&lt;code&gt;inline code&lt;/code&gt; baz</td></tr>"
+  "<tr>\
+      \<td><div class=\"sourceCode\">\
+              \<pre class=\"sourceCode\">\
+                  \<code class=\"sourceCode\">Code foo</code>\
+              \</pre></div>\n</td>\
+      \<td><p>Simple bar</p>\n</td>\
+      \<td><p><code>inline code</code> baz</p>\n</td>\
+  \</tr>"
 
 endHtml :: Text
 endHtml = "</tbody></table>"
@@ -182,33 +211,32 @@ endHtml = "</tbody></table>"
 buildTableMD :: [Text] -> MD.Node
 buildTableMD txtTable = head $ parseMD $ T.unlines txtTable
 
-fullTableMD :: MD.Node
-fullTableMD = buildTableMD
-  (  tableKeyword:columnNamesList
-  ++ breakText:rowSeveralNodes:rowOfList
-  ++ rowOfListSeveralNodes
-  ++ [rowWithSeparator]
-  )
+fullTableMD :: [Text]
+fullTableMD =
+  tableKeyword:columnNamesList ++
+  breakText:rowSeveralNodes:rowOfList ++
+  rowOfListSeveralNodes ++
+  [rowWithSeparator]
 
-simpleTableMD :: MD.Node
+simpleTableMD :: [Text]
 simpleTableMD =
-  buildTableMD (tableKeyword:columnNamesSimple:breakText:rowOfList)
+  tableKeyword:columnNamesSimple:breakText:rowOfList
 
-simpleTableColListMD :: MD.Node
+simpleTableColListMD :: [Text]
 simpleTableColListMD =
-  buildTableMD (tableKeyword:columnNamesList ++ breakText:rowOfList)
+  tableKeyword:columnNamesList ++ breakText:rowOfList
 
-tableWOBreakMD :: MD.Node
+tableWOBreakMD :: [Text]
 tableWOBreakMD =
-  buildTableMD (tableKeyword:columnNamesSimple:rowOfList)
+  tableKeyword:columnNamesSimple:rowOfList
 
-tableWOColumnNamesMD :: MD.Node
+tableWOColumnNamesMD :: [Text]
 tableWOColumnNamesMD =
-  buildTableMD (tableKeyword:breakText:rowOfList)
+  tableKeyword:breakText:rowOfList
 
-tableWOTableNameMD :: MD.Node
+tableWOTableNameMD :: [Text]
 tableWOTableNameMD =
-  buildTableMD (tableKeywordNoName:breakText:rowOfList)
+  tableKeywordNoName:breakText:rowOfList
 
 buildTable :: Maybe Text -> Maybe [[MD.Node]] -> [[[MD.Node]]] -> MarkdownTable
 buildTable tabNm colNm rows =
@@ -222,7 +250,7 @@ fullTable =
   buildTable (Just "Table") (Just columnNames)
     [ rowSeveralNodesMD
     , rowOfListMD
-    , rowOfListSeveralNodesMD 11
+    , rowOfListSeveralNodesMD
     , rowWithSeparatorMD
     ]
 

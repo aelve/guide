@@ -60,6 +60,9 @@ module Guide.Utils
   -- * STM
   liftSTM,
 
+  -- * Testing
+  hspecFailDetails,
+
   -- * Instances
   -- ** 'MonadThrow' for 'HtmlT'
 )
@@ -69,7 +72,7 @@ where
 import Imports
 
 -- Monads and monad transformers
-import Control.Monad.Catch
+import Control.Monad.Catch hiding (catch)
 -- Containers
 import qualified Data.Set as S
 -- Randomness
@@ -95,6 +98,8 @@ import qualified Text.XML.Light.Output as XML
 import Data.SafeCopy
 -- Template Haskell
 import Language.Haskell.TH
+-- tests
+import qualified Test.HUnit.Lang as H
 -- needed for 'sanitiseUrl'
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
@@ -440,6 +445,24 @@ dumpSplices x = do
 -- | Lift an 'STM' action to any IO-supporting monad.
 liftSTM :: MonadIO m => STM a -> m a
 liftSTM = liftIO . atomically
+
+----------------------------------------------------------------------------
+-- Testing
+----------------------------------------------------------------------------
+
+hspecFailDetails :: Text -> H.Assertion -> H.Assertion
+hspecFailDetails (T.toString -> details) assertion = do
+    assertion `catch` \(H.HUnitFailure loc msg) -> do
+      throw $ H.HUnitFailure loc (addMsg msg)
+  where
+    addMsg (H.Reason reason) =
+      H.Reason (reason <> "\n\nDetails:\n" <> details)
+    addMsg (H.ExpectedButGot Nothing expected actual) =
+      H.ExpectedButGot (Just ("Details:\n" <> details <> "\n"))
+                       expected actual
+    addMsg (H.ExpectedButGot (Just preface) expected actual) =
+      H.ExpectedButGot (Just (preface <> "\n\nDetails:\n" <> details <> "\n"))
+                       expected actual
 
 ----------------------------------------------------------------------------
 -- Orphan instances

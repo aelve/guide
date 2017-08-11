@@ -40,7 +40,7 @@ module Guide.Markdown
   -- * Tables
   MarkdownTable(..),
   getTable,
-  renderTable
+  renderTable,
 )
 where
 
@@ -389,7 +389,7 @@ data MarkdownTable = MarkdownTable
   { markdownTableName    :: Maybe Text        -- ^ Table header
   , markdownTableColumns :: Maybe [[MD.Node]] -- ^ Names of columns
   , markdownTableRows    :: [[[MD.Node]]]     -- ^ List of rows with cells
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Data)
 
 {-|
 Tries to make 'Table' structure from Node.
@@ -418,45 +418,53 @@ Table
     }
 @
 -}
-getTable :: MD.Node -> Maybe MarkdownTable
+getTable :: MD.Node -> Either Text MarkdownTable
 getTable node = do
-  MD.ListItems_ _ (table:cols:brk:rest) <- Just node
-  markdownTableName <- getTableName table
-  let createTable markdownTableColumns rw = do
-          markdownTableRows <- mapM getRow rw
-          pure MarkdownTable{..}
-  if isBreak brk then
-     createTable (getRow cols) rest
-  else do
-     guard (isBreak cols)
-     createTable Nothing (brk:rest)
+  (table, mbHeader, rows) <- case node of
+      MD.ListItems_ _ (table:header:[MD.ThematicBreak_]:rows) ->
+        pure (table, Just header, rows)
+      MD.ListItems_ _ (table:[MD.ThematicBreak_]:rows) ->
+        pure (table, Nothing, rows)
+      MD.ListItems_ _ _ ->
+        Left "getTable: list has a wrong format"
+      _other ->
+        Left "getTable: expected a list"
+
+  markdownTableName    <- getTableName table
+  markdownTableColumns <- mapM getCells mbHeader
+  markdownTableRows    <- mapM getCells rows
+  pure MarkdownTable{..}
 
 -- | Parses table name after keyword "%TABLE"
-getTableName :: [MD.Node] -> Maybe (Maybe Text)
+getTableName :: [MD.Node] -> Either Text (Maybe Text)
 getTableName [MD.Paragraph_ [MD.Text_ t]] = do
-  name <- T.strip <$> T.stripPrefix "%TABLE" t
+  name <- case T.strip <$> T.stripPrefix "%TABLE" t of
+    Nothing -> Left "getTableName: expected %TABLE"
+    Just x  -> Right x
   pure $ if T.null name then Nothing else Just name
-getTableName _ = Nothing
-
--- | Gets whole row values
-getRow :: [MD.Node] -> Maybe [[MD.Node]]
-getRow [MD.ListItems_ _ items] = concat <$> mapM getCells items
-getRow _                       = Nothing
+getTableName _ = Left "getTableName: expected a paragraph without markup"
 
 -- | Extract cells from a row description. A row can be specified either by
 -- a list (each item containing one cell), or by a line containing cells
 -- separated by "|".
-getCells :: [MD.Node] -> Maybe [[MD.Node]]
-getCells [MD.ListItems_ _ xs] = Just xs
-getCells [MD.Paragraph_ s]    = Just (splitRow s)
-getCells _                    = Nothing
+--
+-- Note that @cmark@ always wraps text into paragraphs (which is alright and
+-- doesn't lead to ugly tables). For uniformity, when we split the row
+-- manually, we do the same.
+getCells :: [MD.Node] -> Either Text [[MD.Node]]
+getCells = \case
+  [MD.ListItems_ _ xs] -> Right xs
+  [MD.Paragraph_ s]    -> Right (splitRow s)
+  _other               -> Left "getCells: expected a list or a paragraph"
 
 -- | Split Markdown separated by pipe characters. In pseudocode:
 --
 -- >>> splitRow "foo | **bar baz** blah | `qux`"
 -- ["foo ", " **bar baz** blah ", " `qux`"]
 splitRow :: [MD.Node] -> [[MD.Node]]
-splitRow = splitOn [MD.Text_ "|"] . concatMap splitText
+splitRow = map (\s -> [MD.Paragraph_ s]) .
+           splitOn [MD.Text_ "|"] .
+           concatMap splitText
   where
     splitText (MD.Text_ s) = map MD.Text_ $ intersperse "|" $ T.splitOn "|" s
     splitText other        = [other]
@@ -477,18 +485,18 @@ renderTable MarkdownTable{..} = do
     whenJust markdownTableColumns $ \cols ->
       thead_ $ tr_ $
         for_ cols $ \col ->
-          td_ $ toHtml $ renderMD col
+          td_ $ toHtmlRaw $ renderMD col
     tbody_ $
       for_ markdownTableRows $ \row ->
         tr_ $ for_ row $ \cell ->
-          td_ $ toHtml $ renderMD cell
+          td_ $ toHtmlRaw $ renderMD cell
 
 -- testing Tables with example
 {-
 ----------------
 ---- Table -----
 ----------------
-    { name = "TableName"
+    { name = Just "TableName"
     , columns =
         [ [ Node Nothing (TEXT "Column 1") [] ]
         , [ Node Nothing (TEXT "Column 2") [] ]
@@ -573,27 +581,26 @@ renderTable MarkdownTable{..} = do
 </table>
 -}
 _testTable :: (Monad m) => HtmlT m ()
-_testTable = renderTable
-           $ fromJust
-           $ getTable
-           $ head
-           $ parseMD
-           [NI.text|
-               + %TABLE TableName
-               + - Column 1
-                 - Column 2
-                 - Column 3
-               + --------------------------------
-               + - *foo* | **bar** | baz
+_testTable = case getTable $ head $ parseMD table of
+    Right x  -> renderTable x
+    Left err -> toHtml ("Error when parsing the table: " <> err)
+  where
+    table = [NI.text|
+      + %TABLE TableName
+      + - Column 1
+        - Column 2
+        - Column 3
+      + --------------------------------
+      + *foo* | **bar** | baz
 
-               + - Foo
-                 - Bar
-                 - Baz
+      + - Foo
+        - Bar
+        - Baz
 
-               + - ```
-                   Code foo
-                   ```
-                 - Simple bar
-                 - `inline code` baz
-               + - Another foo | Another bar | Another baz
-           |]
+      + - ```
+          Code foo
+          ```
+        - Simple bar
+        - `inline code` baz
+      + Another foo | Another bar | Another baz
+    |]
