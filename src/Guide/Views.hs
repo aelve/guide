@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE OverloadedStrings     #-}
+-- {-# LANGUAGE DuplicateRecordFields #-}
 
 
 {- |
@@ -40,6 +41,7 @@ import Data.Monoid ((<>))
 -- Text
 import qualified Data.Text.All as T
 import NeatInterpolation
+import Data.ByteString.Lazy (toStrict)
 -- Web
 import Lucid hiding (for_)
 -- Network
@@ -806,7 +808,7 @@ on those <div>s.
 -- things could be displayed in gray font and also there'd be an
 -- automatically updated list of TODOs somewhere?)
 
-data LinkStatus = OK | Unparseable | Broken String deriving Show
+data LinkStatus = OK | Unparseable | Broken String  deriving Show
 
 -- | Render links page with info about broken links
 renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
@@ -838,28 +840,40 @@ renderAdminLinks globalState = do
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
-            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp)
+            archDate <- getArchieveOrgLatestDate manager lnk
+            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp, toHtml archDate)
       let (ok, unparseable, broken) = sortLinks fullList
-
-      h2_ "Broken Links"
+      -- archiveAnswer <- liftIO $ do
+      --   requestArch <- parseRequest "http://archive.org/wayback/available?url=example.com"
+      --   respArch <- responseBody <$> httpLbs requestArch manager
+      --   -- let respBr = singleton (BS.c2w '[') <> resp  <> singleton (BS.c2w ']')
+      --   d <- (A.eitherDecode <$> (pure respArch)) :: IO (Either String ArchiveOrgResponse)
+      --   case d of
+      --     Left err -> putStrLn err
+      --     Right ps -> print $ timestamp $ closest $ archivedSnapshots ps
+      --   pure respArch
+      --
+      -- div_ $ toHtml $ toStrict archiveAnswer
       table_ [class_ "sortable"] $ do
         thead_ $ tr_ $ do
           th_ [class_ "sorttable_nosort"] "Category"
           th_ [class_ "sorttable_nosort"] "Link"
           th_ "Status"
-        tbody_ $ do
-          for_ broken $ \(location, lnk, reason) -> do
+          th_ "Latest archieve date"
+        tbody_ $
+          for_ broken $ \(location, lnk, reason, d) ->
             tr_ $ do
               td_ location
               td_ lnk
               td_ $ toHtml reason
+              td_ d
       h2_ "Unparseable Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
-          tbody_ $ do
-            for_ unparseable $ \(cat, l) -> do
+          tbody_ $
+            for_ unparseable $ \(cat, l) ->
               tr_ $ do
                 td_ cat
                 td_ l
@@ -868,25 +882,36 @@ renderAdminLinks globalState = do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
-          tbody_ $ do
-            for_ ok $ \(cat, l) -> do
+            th_ [class_ "sorttable_nosort"] "Latest archieve date"
+          tbody_ $
+            for_ ok $ \(cat, l, d) ->
               tr_ $ do
                 td_ cat
                 td_ l
+                td_ d
  where
   handleHttpException :: HttpException -> LinkStatus
   handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
   handleHttpException (InvalidUrlException  _ x) = Broken x
 
-  sortLinks :: [(a, b, LinkStatus)] -> ([(a, b)], [(a, b)], [(a, b, String)])
+  sortLinks :: [(a, b, LinkStatus, c)] -> ([(a, b, c)], [(a, b)], [(a, b, String, c)])
   sortLinks = foldr sortLink ([], [], [])
 
-  sortLink (a, b, OK)          = (\(x, y, z) -> ((a, b):x, y, z))
-  sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
-  sortLink (a, b, Broken text') = (\(x, y, z) -> (x, y, (a, b, text'):z))
+  sortLink (a, b, OK, c)           = \ (x, y, z) -> ((a, b, c) : x, y, z)
+  sortLink (a, b, Unparseable, _)  = \ (x, y, z) -> (x, (a, b) : y, z)
+  sortLink (a, b, Broken text', c) = \ (x, y, z) -> (x, y, (a, b, text', c) : z)
 
   allLinks :: [(Url, Text)]
   allLinks = ordNub (findLinks globalState)
+
+  getArchieveOrgLatestDate manager lnk = do
+    requestArch <- parseRequest $ "http://archive.org/wayback/available?url="+|lnk|+""
+    respArch <- responseBody <$> httpLbs requestArch manager
+    d <- (A.decode <$> pure respArch) :: IO (Maybe ArchiveOrgResponse)
+    let archDate = case d of
+                    Just arch -> timestamp $ closest $ archivedSnapshots arch
+                    Nothing   -> "none"
+    pure archDate
 
 -- | Find all links in content, along with a human-readable description of
 -- where each link is located.
@@ -913,3 +938,37 @@ findLinksItem item = findLinksMD item' ++ maybeToList (item^.link)
 -- | Find all Markdown links in /any/ structure, using generics.
 findLinksMD :: Data a => a -> [Url]
 findLinksMD a = [url | MD.LINK url _ <- universeBi a]
+
+data ArchiveOrgResponse =
+  ArchiveOrgResponse { url :: String
+                     , archivedSnapshots :: ArchivedSnapshot
+                     } deriving (Show, Generic)
+
+data ArchivedSnapshot =
+  ArchivedSnapshot { closest :: Closest } deriving (Show, Generic)
+
+data Closest = 
+  Closest { status' :: String
+          , available :: Bool
+          , url' :: String
+          , timestamp :: String
+          } deriving (Show, Generic)
+
+instance A.FromJSON ArchiveOrgResponse where
+  parseJSON (A.Object v) =
+    ArchiveOrgResponse <$> v A..: "url"
+                       <*> v A..: "archived_snapshots"
+  parseJSON _ = mzero
+
+instance A.FromJSON ArchivedSnapshot where
+  parseJSON (A.Object v) =
+     ArchivedSnapshot <$> v A..: "closest"
+  parseJSON _ = mzero
+
+instance A.FromJSON Closest where
+  parseJSON (A.Object v) =
+    Closest <$> v A..: "status"
+            <*> v A..: "available"
+            <*> v A..: "url"
+            <*> v A..: "timestamp"
+  parseJSON _ = mzero
