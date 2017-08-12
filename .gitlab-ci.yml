@@ -1,4 +1,4 @@
-image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
+image: registry.gitlab.frielforreal.com/aelve/guide-build:latest
 
 cache:
   untracked: true
