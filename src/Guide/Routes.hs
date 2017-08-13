@@ -24,7 +24,7 @@ haskellRoute :: Path '[] 'Open
 haskellRoute = "haskell"
 
 authRoute :: Path '[] 'Open
-authRoute = haskellRoute <//> "auth"
+authRoute = "auth"
 
 setRoute :: Path '[] 'Open
 setRoute = haskellRoute <//> "set"
@@ -45,4 +45,4 @@ renderRoute :: Path '[] 'Open
 renderRoute = haskellRoute <//> "render"
 
 adminRoute :: Path '[] 'Open
-adminRoute = haskellRoute <//> "admin"
+adminRoute = "admin"

@@ -314,13 +314,13 @@ guideApp waiMetrics = do
 
       -- plain "/auth" logs out a logged-in user and lets a logged-out user
       -- log in (this is not the best idea, granted, and we should just
-      -- shot logged-in users a “logout” link and logged-out users a
+      -- show logged-in users a “logout” link and logged-out users a
       -- “login” link instead)
       Spock.get (authRoute <//> root) $ do
         user <- getLoggedInUser
         if isJust user
-          then Spock.redirect "auth/logout"
-          else Spock.redirect "auth/login"
+          then Spock.redirect "/auth/logout"
+          else Spock.redirect "/auth/login"
       Spock.getpost (authRoute <//> "login") $ authRedirect "/" loginAction
       Spock.get (authRoute <//> "logout") logoutAction
       Spock.getpost (authRoute <//> "register") $ authRedirect "/" signupAction
