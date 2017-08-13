@@ -321,9 +321,9 @@ guideApp waiMetrics = do
         if isJust user
           then Spock.redirect "auth/logout"
           else Spock.redirect "auth/login"
-      Spock.getpost "login" $ authRedirect "/" loginAction
-      Spock.get "logout" logoutAction
-      Spock.getpost "register" $ authRedirect "/" signupAction
+      Spock.getpost (authRoute <//> "login") $ authRedirect "/" loginAction
+      Spock.get (authRoute <//> "logout") logoutAction
+      Spock.getpost (authRoute <//> "register") $ authRedirect "/" signupAction
 
 loginAction :: GuideAction ctx ()
 loginAction = do

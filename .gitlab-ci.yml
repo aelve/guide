@@ -1,0 +1,14 @@
+image: registry.gitlab.frielforreal.com/friel/haskellstack:latest
+
+cache:
+  untracked: true
+  paths:
+    - .stack-work
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - stack build
