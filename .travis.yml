@@ -44,6 +44,7 @@ before_script:
 - sleep 15
 
 script:
+ - scripts/buildjs.sh
  - stack $ARGS --no-terminal --install-ghc build --test
  - scripts/test-official.sh $ARGS
 
