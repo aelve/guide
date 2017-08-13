@@ -9,6 +9,7 @@ addons:
     - libgmp-dev
     # Selenium
     - xvfb
+  chrome: stable
 
 cache:
   directories:
