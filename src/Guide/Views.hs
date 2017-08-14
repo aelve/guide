@@ -41,7 +41,6 @@ import Data.Monoid ((<>))
 -- Text
 import qualified Data.Text.All as T
 import NeatInterpolation
-import Data.ByteString.Lazy (toStrict)
 -- Web
 import Lucid hiding (for_)
 -- Network
@@ -840,59 +839,68 @@ renderAdminLinks globalState = do
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
-            archDate <- getArchieveOrgLatestDate manager lnk
-            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp, toHtml archDate)
+            (archDate, archUrl) <- liftIO $ getArchieveOrgData manager lnk
+            pure ( toHtml location
+                 , lnk
+                 , resp
+                 , (toHtml archDate, a_ [href_ (T.pack archUrl)] (toHtml $ show archUrl))
+                 )
       let (ok, unparseable, broken) = sortLinks fullList
       -- archiveAnswer <- liftIO $ do
       --   requestArch <- parseRequest "http://archive.org/wayback/available?url=example.com"
       --   respArch <- responseBody <$> httpLbs requestArch manager
-      --   -- let respBr = singleton (BS.c2w '[') <> resp  <> singleton (BS.c2w ']')
       --   d <- (A.eitherDecode <$> (pure respArch)) :: IO (Either String ArchiveOrgResponse)
       --   case d of
       --     Left err -> putStrLn err
-      --     Right ps -> print $ timestamp $ closest $ archivedSnapshots ps
+      --     Right ps -> print $ toProperDate $ timestamp $ closest $ archivedSnapshots ps
       --   pure respArch
       --
       -- div_ $ toHtml $ toStrict archiveAnswer
+      -- div_ $ button "To Archive" [] (JS.saveToArchiveOrg [JS.toJS $ T.pack "example.com"])
       table_ [class_ "sortable"] $ do
         thead_ $ tr_ $ do
           th_ [class_ "sorttable_nosort"] "Category"
           th_ [class_ "sorttable_nosort"] "Link"
           th_ "Status"
-          th_ "Latest archieve date"
+          th_ "Saved page"
         tbody_ $
-          for_ broken $ \(location, lnk, reason, d) ->
+          for_ broken $ \(location, lnk, reason, (_, archUrl)) ->
             tr_ $ do
               td_ location
-              td_ lnk
+              td_ $ a_ [href_ lnk] (toHtml lnk)
               td_ $ toHtml reason
-              td_ d
+              td_ archUrl
       h2_ "Unparseable Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
           tbody_ $
-            for_ unparseable $ \(cat, l) ->
+            for_ unparseable $ \(location, lnk) ->
               tr_ $ do
-                td_ cat
-                td_ l
+                td_ location
+                td_ $ a_ [href_ lnk] (toHtml lnk)
       h2_ "OK Links"
       table_ [class_ "sortable"] $ do
           thead_ $ tr_ $ do
             th_ [class_ "sorttable_nosort"] "Category"
             th_ [class_ "sorttable_nosort"] "Link"
             th_ [class_ "sorttable_nosort"] "Latest archieve date"
+            th_  "Save to Archive"
           tbody_ $
-            for_ ok $ \(cat, l, d) ->
+            for_ ok $ \(location, lnk, (dt, _)) ->
               tr_ $ do
-                td_ cat
-                td_ l
-                td_ d
+                td_ location
+                td_ $ a_ [href_ lnk] (toHtml lnk)
+                td_ dt
+                td_ $ button "To Archive" [] (JS.saveToArchiveOrg [JS.toJS lnk])
  where
   handleHttpException :: HttpException -> LinkStatus
   handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
   handleHttpException (InvalidUrlException  _ x) = Broken x
+
+  handleHttpExceptionDecode :: HttpException -> IO (String, String)
+  handleHttpExceptionDecode _ = pure ("error", "error")
 
   sortLinks :: [(a, b, LinkStatus, c)] -> ([(a, b, c)], [(a, b)], [(a, b, String, c)])
   sortLinks = foldr sortLink ([], [], [])
@@ -904,14 +912,16 @@ renderAdminLinks globalState = do
   allLinks :: [(Url, Text)]
   allLinks = ordNub (findLinks globalState)
 
-  getArchieveOrgLatestDate manager lnk = do
+  getArchieveOrgData manager lnk = (do
     requestArch <- parseRequest $ "http://archive.org/wayback/available?url="+|lnk|+""
     respArch <- responseBody <$> httpLbs requestArch manager
     d <- (A.decode <$> pure respArch) :: IO (Maybe ArchiveOrgResponse)
-    let archDate = case d of
-                    Just arch -> timestamp $ closest $ archivedSnapshots arch
-                    Nothing   -> "none"
-    pure archDate
+    let archRes = case d of
+                    Just arch -> ( show $ toProperDate $ timestamp $ closest $ archivedSnapshots arch
+                                 , url' $ closest $ archivedSnapshots arch
+                                 )
+                    Nothing   -> ("none", "none")
+    pure archRes) `catch` handleHttpExceptionDecode
 
 -- | Find all links in content, along with a human-readable description of
 -- where each link is located.
@@ -940,24 +950,21 @@ findLinksMD :: Data a => a -> [Url]
 findLinksMD a = [url | MD.LINK url _ <- universeBi a]
 
 data ArchiveOrgResponse =
-  ArchiveOrgResponse { url :: String
-                     , archivedSnapshots :: ArchivedSnapshot
+  ArchiveOrgResponse { archivedSnapshots :: ArchivedSnapshot
                      } deriving (Show, Generic)
 
 data ArchivedSnapshot =
-  ArchivedSnapshot { closest :: Closest } deriving (Show, Generic)
+  ArchivedSnapshot { closest :: Closest
+                   } deriving (Show, Generic)
 
-data Closest = 
-  Closest { status' :: String
-          , available :: Bool
-          , url' :: String
+data Closest =
+  Closest { url' :: String
           , timestamp :: String
           } deriving (Show, Generic)
 
 instance A.FromJSON ArchiveOrgResponse where
   parseJSON (A.Object v) =
-    ArchiveOrgResponse <$> v A..: "url"
-                       <*> v A..: "archived_snapshots"
+    ArchiveOrgResponse <$>  v A..: "archived_snapshots"
   parseJSON _ = mzero
 
 instance A.FromJSON ArchivedSnapshot where
@@ -967,8 +974,9 @@ instance A.FromJSON ArchivedSnapshot where
 
 instance A.FromJSON Closest where
   parseJSON (A.Object v) =
-    Closest <$> v A..: "status"
-            <*> v A..: "available"
-            <*> v A..: "url"
+    Closest <$> v A..: "url"
             <*> v A..: "timestamp"
   parseJSON _ = mzero
+
+toProperDate :: String -> UTCTime
+toProperDate = parseTimeOrError True defaultTimeLocale "%Y%m%d%H%M%S"
