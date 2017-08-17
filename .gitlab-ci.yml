@@ -11,4 +11,4 @@ stages:
 build:
   stage: build
   script:
-    - stack build
+    - stack build --install-ghc
