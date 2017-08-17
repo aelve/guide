@@ -103,7 +103,7 @@ library
                      , feed >= 0.3.11 && < 0.4
                      , filemanip == 0.3.6.*
                      , filepath
-                     , fmt == 0.2.*
+                     , fmt == 0.4.*
                      , focus
                      , friendly-time == 0.4.*
                      , fsnotify == 0.2.*

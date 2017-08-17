@@ -8,15 +8,7 @@ the "Prelude".)
 module Imports
 (
   module X,
-  LByteString,
-  (+|),
-  (|+),
-  (+||),
-  (||+),
-  (|++|),
-  (||++||),
-  (|++||),
-  (||++|)
+  LByteString
 )
 where
 
@@ -48,44 +40,8 @@ import           Data.Hashable          as X
 -- Lazy bytestring
 import qualified Data.ByteString.Lazy   as BSL
 -- Formatting
-import           Fmt                    as X hiding (( #| ), ( #|| ), (|#), (|##|),
-                                              (|##||), (||#), (||##|), (||##||))
-import qualified Fmt                    as FMT (( #| ), ( #|| ), (|#), (|##|), (|##||),
-                                                (||#), (||##|), (||##||))
-import           Fmt.Internal           (FromBuilder)
+import           Fmt                    as X
 
 
 type LByteString = BSL.ByteString
 -- LText is already provided by Data.Text.All
-
-infixr 1 +|
-(+|) :: FromBuilder b => Builder -> Builder -> b
-(+|) = (FMT.#|)
-
-infixr 1 |+
-(|+) :: (Buildable a, FromBuilder b) => a -> Builder -> b
-(|+) = (FMT.|#)
-
-infixr 1 +||
-(+||) :: FromBuilder b => Builder -> Builder -> b
-(+||) = (FMT.#||)
-
-infixr 1 ||+
-(||+) :: (Show a, FromBuilder b) => a -> Builder -> b
-(||+) = (FMT.||#)
-
-infixr 1 |++|
-(|++|) :: (Buildable a, FromBuilder b) => a -> Builder -> b
-(|++|) = (FMT.|##|)
-
-infixr 1 ||++||
-(||++||) :: (Show a, FromBuilder b) => a -> Builder -> b
-(||++||) = (FMT.||##||)
-
-infixr 1 ||++|
-(|++||) :: (Show a, FromBuilder b) => a -> Builder -> b
-(|++||) = (FMT.|##||)
-
-infixr 1 |++||
-(||++|) :: (Buildable a, FromBuilder b) => a -> Builder -> b
-(||++|) = (FMT.||##|)

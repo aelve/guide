@@ -1,20 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 
-module Guide.Routes
-  ( addRoute
-  , adminRoute
-  , authRoute
-  , deleteRoute
-  , haskellRoute
-  , feedRoute
-  , moveRoute
-  , renderRoute
-  , setRoute
-  ) where
 
-import Web.Spock (Path)
+module Guide.Routes
+(
+  addRoute,
+  adminRoute,
+  authRoute,
+  deleteRoute,
+  haskellRoute,
+  feedRoute,
+  moveRoute,
+  renderRoute,
+  setRoute,
+) where
+
+
+import Web.Spock (Path, (<//>))
 import Web.Routing.Combinators (PathState(Open))
+
 
 haskellRoute :: Path '[] 'Open
 haskellRoute = "haskell"
@@ -23,22 +27,22 @@ authRoute :: Path '[] 'Open
 authRoute = "auth"
 
 setRoute :: Path '[] 'Open
-setRoute = "set"
+setRoute = haskellRoute <//> "set"
 
 addRoute :: Path '[] 'Open
-addRoute = "add"
+addRoute = haskellRoute <//> "add"
 
 moveRoute :: Path '[] 'Open
-moveRoute = "move"
+moveRoute = haskellRoute <//> "move"
 
 deleteRoute :: Path '[] 'Open
-deleteRoute = "delete"
+deleteRoute = haskellRoute <//> "delete"
 
 feedRoute :: Path '[] 'Open
-feedRoute = "feed"
+feedRoute = haskellRoute <//> "feed"
 
 renderRoute :: Path '[] 'Open
-renderRoute = "render"
+renderRoute = haskellRoute <//> "render"
 
 adminRoute :: Path '[] 'Open
 adminRoute = "admin"
