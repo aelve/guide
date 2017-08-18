@@ -14,19 +14,20 @@ import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as M
 import System.FilePath((</>))
 import Data.Default
+import Data.Foldable (for_)
 
 import Common              
 import StackageUpdate
 import StackageArchive
 import REPL
 
-getLTSStackageURL :: StackageUpdateInfo -> LongSnapshotName -> URL
+getLTSStackageURL :: StackageUpdateInfo -> SnapshotName -> URL
 getLTSStackageURL sui name = suiStackageURL sui </> name </> "cabal.config"
 
 getSnapshotURL :: StackageUpdateInfo -> URL
 getSnapshotURL sui = suiStackageURL sui </> "download/lts-snapshots.json"
 
-getLTSGithubURL :: StackageUpdateInfo -> LongSnapshotName -> URL
+getLTSGithubURL :: StackageUpdateInfo -> SnapshotName -> URL
 getLTSGithubURL sui name = suiLTSURL sui </> (name ++ ".yaml") 
 
 getLTSFilesDir :: StackageUpdateInfo -> FilePath
@@ -66,9 +67,10 @@ stackageCommands = [
 
 showSnapshots :: URL -> IO ()
 showSnapshots url = do
-    SSS snapshots <- fetchStackageSnapshots url
+    snapshots <- fetchStackageSnapshots url
     putStrLn $ "Showing snapshots from " ++ url
-    mapM_ (putStrLn.(\s -> "\tSnapshot: " ++ s).show) snapshots
+    for_ snapshots $ \snapshot ->
+        putStrLn ("\tSnapshot: " ++ show snapshot)
 
 showSnapshotsCommand :: REPLCommand StackageUpdateInfo
 showSnapshotsCommand = RC {
@@ -82,14 +84,14 @@ showLTSContents :: FilePath -> IO ()
 showLTSContents ltsFile = do
     putStrLn $ "Showing the contents of " ++ ltsFile
     body <- BS.readFile ltsFile
-    datum <- parseYamlFileThrow body
+    datum <- parseSnapshotInfo body
     print datum
 
 showLTSContentsCommand :: REPLCommand StackageUpdateInfo
 showLTSContentsCommand = RC {
     cTag = "stackage",
     cMatch = isPrefixCommand "ltsshowcont ",
-    cExec = \sui commandStr -> let lts = parseValEnd commandStr in showLTSContents  (getLTSFile sui lts),
+    cExec = \sui commandStr -> let lts = parseValEnd commandStr in showLTSContents (getLTSFile sui lts),
     cDescription = const "ltsshowcont lts - shows the contents of specified downloaded lts file" 
 }
 
@@ -110,7 +112,7 @@ updateLTSFileCommand = RC {
 updateAllLTSFiles :: FilePath -> URL -> URL -> IO ()
 updateAllLTSFiles ltsDir ltsURL snapshotsURL = do
     snapshots <- fetchStackageSnapshots snapshotsURL
-    fetchAllLTSFiles ltsDir ltsURL (filterNormal snapshots)
+    fetchAllLTSFiles ltsDir ltsURL (filterLTS snapshots)
 
 updateAllLTSFilesCommand :: REPLCommand StackageUpdateInfo
 updateAllLTSFilesCommand = RC {
@@ -126,9 +128,9 @@ showStackageMapContents ltsDir ltsURL snapshotsURL count = do
     putStrLn "Fetching snapshot lists"
     snapshots <- fetchStackageSnapshots snapshotsURL
     putStrLn "Downloading YAML files"
-    fetchAllLTSFiles ltsDir ltsURL (filterNormal snapshots)
+    fetchAllLTSFiles ltsDir ltsURL (filterLTS snapshots)
     putStrLn "Generating stackage map"
-    map <- generateStackageMap ltsDir (filterNormal snapshots)
+    map <- generateStackageMap ltsDir (filterLTS snapshots)
     putStrLn $ "Printing " ++ show count ++ " packages"
     mapM_ print $ take count $ M.toList map
 
@@ -147,9 +149,9 @@ updatePersistentMapFromLTS updateDir ltsDir ltsURL snapshotsURL  = do
     putStrLn "Fetching snapshot lists"
     snapshots <- fetchStackageSnapshots snapshotsURL
     putStrLn "Downloading YAML files"
-    fetchAllLTSFiles ltsDir ltsURL (filterNormal snapshots)
+    fetchAllLTSFiles ltsDir ltsURL (filterLTS snapshots)
     putStrLn "Generating stackage map"
-    map <- generateStackageMap ltsDir (filterNormal snapshots)
+    map <- generateStackageMap ltsDir (filterLTS snapshots)
     updatePersistentMap updateDir map 
 
 updatePersistentMapFromLTSCommand :: REPLCommand StackageUpdateInfo

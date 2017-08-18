@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module AllCommands(
                   UpdateInfo(..), 
                   CombinedPackage (..),
@@ -30,9 +32,12 @@ defaultUI = UI {
 newtype CombinedPackage =  CP (HA.HackagePackage, Maybe SA.StackagePackage) deriving (Eq)
 
 instance Show CombinedPackage where
-  show (CP (hp, Just sp)) = HA.name hp ++ " " ++ show (HA.pVersion hp) ++ " present in stackage" 
-  show (CP (hp, Nothing)) = HA.name hp ++ " " ++ show (HA.pVersion hp) ++ " not in stackage" 
-
+  show (CP (hp, sp)) = packageName ++ " " ++ show packageVersion ++ present
+    where
+      PackageId{..} = HA.package hp
+      present = case sp of
+        Just _  -> " present in stackage"
+        Nothing -> " not in stackage"
 
 queryCombinedData :: UpdateInfo -> PackageName -> IO (Maybe CombinedPackage)
 queryCombinedData ui package = do

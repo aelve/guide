@@ -52,10 +52,9 @@ import Common
 -- The record for each of the package from hackage
 -- TODO - add another information about the packages
 data HackagePackage = HP {
-  name :: PackageName,
-  pVersion :: DV.Version,
-  author :: String
-} deriving (Eq, Show)
+  package :: PackageId,
+  author  :: String
+  } deriving (Eq, Show)
 
 -- The status of the package between two updates
 data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
@@ -65,11 +64,11 @@ data HackageUpdate = Added | Removed | Updated deriving (Eq, Show)
 type HackageMap = M.Map PackageName HackagePackage
 type PreHackageMap = M.Map PackageName DV.Version
 
--- The map, that shows, which packages have change since the last update
+-- The map that shows, for each package, which packages have change since the last update
 type HackageUpdateMap = M.Map PackageName (HackageUpdate, HackagePackage)
 
 -- Parses the file path of the cabal file to get version and package name
-parseCabalFilePath :: RP.ReadP PackageData
+parseCabalFilePath :: RP.ReadP PackageId
 parseCabalFilePath = do
   package <- RP.munch1 phi
   RP.char '/'
@@ -79,7 +78,7 @@ parseCabalFilePath = do
   guard (name == package)
   suff <- RP.string ".cabal"
   RP.eof
-  pure (package, version)
+  pure (PackageId name version)
   where phi l = DC.isLetter l || l == '-'
 
 updateMapCompare :: (Ord a) => String -> a -> M.Map String a -> M.Map String a
@@ -100,14 +99,14 @@ buildDifferenceMap oldMap newMap = foldr M.union M.empty [deletedMap, addedMap, 
     diff newpack oldpack = if newpack /= oldpack then Just newpack else Nothing
 
 createPackage :: DPD.PackageDescription -> HackagePackage
-createPackage pd = HP { name = nm, pVersion = ver, author = auth }
+createPackage pd = HP { package = PackageId name ver, author = auth }
   where
     pkg = DPD.package pd
-    nm = DP.unPackageName (DP.pkgName pkg)
+    name = DP.unPackageName (DP.pkgName pkg)
     ver = DP.pkgVersion pkg
     auth = DPD.author pd
 
-parsePath :: FilePath -> Maybe PackageData
+parsePath :: FilePath -> Maybe PackageId
 parsePath path = case RP.readP_to_S parseCabalFilePath path of 
     [(pd, _)] -> Just pd
     _ -> Nothing
@@ -121,12 +120,13 @@ parsePackageDescription _ = Nothing
 
 parsePackage :: Tar.Entry -> Maybe HackagePackage
 parsePackage entry = do
-  (path, version) <- parsePath $ Tar.entryPath entry
+  -- XXX: why do we parse it and then ignore it?
+  _ <- parsePath $ Tar.entryPath entry
   pd <- parsePackageDescription $ Tar.entryContent entry
   return $ createPackage pd
 
-updatePreMap :: PackageData -> PreHackageMap -> PreHackageMap
-updatePreMap (name, version) = updateMapCompare name version
+updatePreMap :: PackageId -> PreHackageMap -> PreHackageMap
+updatePreMap (PackageId name version) = updateMapCompare name version
 
 buildPreHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap
 buildPreHackageMap (Tar.Next entry entries) = 
@@ -141,11 +141,11 @@ buildPrehackageMap (Tar.Fail e) = X.throw e
 buildHackageMap :: Tar.Entries Tar.FormatError -> PreHackageMap -> HackageMap
 buildHackageMap (Tar.Next entry entries) premap = 
   case update $ Tar.entryPath entry of
-    Just hp -> M.insert (name hp) hp map
+    Just hp -> M.insert (packageName (package hp)) hp map
     Nothing -> map
   where map = buildHackageMap entries premap
         update path = do
-          (name, version) <- parsePath path
+          PackageId name version <- parsePath path
           preversion <- M.lookup name premap
           if preversion == version  then parsePackage entry
                                       else Nothing
@@ -157,6 +157,7 @@ buildHackageMap (Tar.Fail e) _ = X.throw e
 newtype KeyValue = KeyValue HackageMap deriving (Typeable)
 
 $(deriveSafeCopy 0 'base ''DV.Version)
+$(deriveSafeCopy 0 'base ''PackageId)
 $(deriveSafeCopy 0 'base ''HackagePackage)
 $(deriveSafeCopy 0 'base ''KeyValue)
 $(deriveSafeCopy 0 'base ''HackageUpdate)
@@ -205,4 +206,3 @@ queryPersistentMap path name = do
   val <- query acid (LookupKey name)
   closeAcidState acid
   return val
-  

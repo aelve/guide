@@ -1,15 +1,24 @@
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module StackageUpdate(fetchStackageSnapshots, 
-                      fetchLTS, 
-                      fetchAllLTSFiles,
-                      parseYamlFileThrow) where
+module StackageUpdate
+(
+  SnapshotInfo(..),
+  fetchStackageSnapshots,
+  fetchLTS,
+  fetchAllLTSFiles,
+  parseSnapshotInfo,
+)
+where
 
+import Data.Foldable
 import Data.Traversable
-import Data.Aeson.Types
-import qualified Data.Aeson as A
-import qualified Data.Aeson.Parser as AP
+import Data.Aeson
+-- import qualified Data.Aeson as A
+import qualified Data.Aeson.Parser as A
+import qualified Data.Aeson.Types as A
 
 import qualified Text.Megaparsec as TM
 import qualified Text.Megaparsec.String as TMS
@@ -30,21 +39,19 @@ import Common
 import HttpDownload
 import FileUtils
 
-instance FromJSON StackageSnapshots where
-  parseJSON = withObject "snapshots" $ \o ->
-    -- I have 'o', which is a HashMap. 
-    SSS <$> (for (HM.toList o) $ \(shortName, longNameVal) -> do 
-        longName <- parseJSON longNameVal
-        return (T.unpack shortName, longName))
-
 -- The method, that raises an exception, if it was not able to parse the
 -- snapshot from JSON
-parseSnapshotJSONThrow :: BL.ByteString -> IO StackageSnapshots
-parseSnapshotJSONThrow body = case A.decode body of 
-  (Just snapshots) -> return snapshots
-  Nothing -> X.throwIO $ UAE "Could not decode stackage JSON"
+parseSnapshotJSONThrow :: BL.ByteString -> IO [SnapshotId]
+parseSnapshotJSONThrow body =
+  case A.decodeWith A.json (A.parse parser) body of
+    Just snapshots -> return snapshots
+    Nothing -> X.throwIO $ UAE "Could not decode stackage JSON"
+  where
+    parser v = do
+      pairs <- HM.toList <$> parseJSON v
+      pure $ map (\(snapshotGroup, snapshotName) -> SnapshotId{..}) pairs
 
-fetchStackageSnapshots :: URL -> IO StackageSnapshots
+fetchStackageSnapshots :: URL -> IO [SnapshotId]
 fetchStackageSnapshots url = parseUrlThrow url >>= fetchResponseData >>= parseSnapshotJSONThrow
 
 fetchLTS :: FilePath -> URL -> IO ()
@@ -54,45 +61,49 @@ fetchLTS file url = do
   createDirectoryIfMissing True (takeDirectory file)
   writeAll2File file url
 
-fetchAllLTSFiles :: FilePath -> URL -> StackageSnapshots -> IO()
-fetchAllLTSFiles dir url (SSS ss) = do
+fetchAllLTSFiles :: FilePath -> URL -> [SnapshotId] -> IO()
+fetchAllLTSFiles dir url ss = do
   putStrLn $ "Getting all LTS from " ++ url ++ " to directory " ++ dir
   createDirectoryIfMissing True dir
-  mapM_ (\(_, l) -> fetchLTS (mkyml dir l) (mkyml url l)) ss
+  for_ ss $ \SnapshotId{..} ->
+    fetchLTS (mkyml dir snapshotName) (mkyml url snapshotName)
   where 
     mkyml pth l = pth </> (l ++ ".yaml")
     
 
-parseYamlFileThrow :: BS.ByteString -> IO PackageDatum
-parseYamlFileThrow body = case Y.decode body of
-  (Just datum) -> return datum
-  Nothing -> X.throwIO $ UAE "Could not decode package data yaml"
+-- | Parse a snapshot description file (e.g.
+-- <https://raw.githubusercontent.com/fpco/lts-haskell/master/lts-8.9.yaml>)
+parseSnapshotInfo :: BS.ByteString -> IO SnapshotInfo
+parseSnapshotInfo body = case Y.decode body of
+  Just datum -> return datum
+  Nothing    -> X.throwIO $ UAE "Could not decode package data yaml"
 
 
+data SnapshotInfo = SnapshotInfo {
+  snapshotCorePackages  :: [PackageId],
+  snapshotOtherPackages :: [PackageId]
+  } deriving (Eq, Show)
 
 -- This is the data, that is extracted from the yaml file
-instance FromJSON PackageDatum where
-  parseJSON = withObject "bigfatyaml" $ \o -> do
-    systemO <- o .: "system-info"
-    coreO <- systemO .: "core-packages"
-
-    pkgCore <- for (HM.toList coreO) $ \(name :: String, versionStr :: String) -> do
+instance FromJSON SnapshotInfo where
+  parseJSON = withObject "SnapshotInfo" $ \o -> do
+    core <- o .: "system-info" >>= (.: "core-packages")
+    snapshotCorePackages <- for (HM.toList core) $ \(name, versionStr) -> do
       version <- parseV versionStr
-      return (name, version)    
+      return (PackageId name version)
 
-    packagesO <- o .: "packages"
-
-    pkgAll <- for (HM.toList packagesO) $ \(name :: String, content) -> do 
-      (versionStr :: String) <- content .: "version"
+    packages <- o .: "packages"
+    snapshotOtherPackages <- for (HM.toList packages) $ \(name, content) -> do 
+      versionStr <- content .: "version"
       version <- parseV versionStr
-      return (name, version)
+      return (PackageId name version)
 
-    return $ PD (pkgCore ++ pkgAll)
+    return $ SnapshotInfo{..}
 
     where 
-          parseV vstr = case TM.parseMaybe parseVersion vstr of
-            Just version -> return version
-            Nothing -> fail "Count not parse"
+      parseV vstr = case TM.parseMaybe parseVersion vstr of
+        Just version -> return version
+        Nothing -> fail "Count not parse"
           
 parseVersion :: TMS.Parser DV.Version
 parseVersion = do 
