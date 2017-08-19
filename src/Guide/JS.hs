@@ -682,12 +682,10 @@ saveToArchiveOrg :: JSFunction a => a
 saveToArchiveOrg =
   makeJSFunction "saveToArchiveOrg" ["link"]
   [text|
-    console.log(link);
     $.post('http://web.archive.org/save/' + link)
       .done(function () {
-        console.log("inside work's done")
+        console.log(link + " saved to archive.org")
       });
-    console.log("Job's done");
   |]
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
