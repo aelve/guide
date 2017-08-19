@@ -87,7 +87,6 @@ import qualified System.FilePath.Find as F
 import Text.Mustache.Plus
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Text as A
-import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Semigroup as Semigroup
 import qualified Data.List.NonEmpty as NonEmpty
@@ -296,10 +295,9 @@ mustache f v = do
         ("selectIf", \[x] -> if x == A.Bool True
             then return (A.String "selected")
             else return A.Null),
-        ("js", \[x] -> return $
-            A.String . T.toStrict . A.encodeToLazyText $ x),
+        ("js", \[x] -> return $ A.String (toJson x)),
         ("trace", \xs -> do
-            mapM_ (BS.putStrLn . A.encodePretty) xs
+            mapM_ (BS.putStrLn . toJsonPretty) xs
             return A.Null) ]
   widgets <- readWidgets
   let templates = [(tname, t) | (HTML_ tname, t) <- widgets]

@@ -46,6 +46,12 @@ module Guide.Utils
   randomLongUid,
   uid_,
 
+  -- * JSON
+  fromJson,
+  fromJsonWith,
+  toJson,
+  toJsonPretty,
+
   -- * Lucid
   includeJS,
   includeCSS,
@@ -76,8 +82,14 @@ import qualified Data.Set as S
 import System.Random
 -- Text
 import qualified Data.Text.All as T
+-- Bytestring
+import qualified Data.ByteString.Lazy as BSL
 -- JSON
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Text as A
+import qualified Data.Aeson.Types as A
+import qualified Data.Aeson.Internal as A
+import qualified Data.Aeson.Encode.Pretty as A
 -- Network
 import qualified Network.Socket as Network
 import Data.IP
@@ -359,6 +371,56 @@ data Node
 -- | Generate a HTML @id@ attribute from an 'Uid'.
 uid_ :: Uid Node -> Attribute
 uid_ = id_ . uidToText
+
+----------------------------------------------------------------------------
+-- JSON
+----------------------------------------------------------------------------
+
+class AsJson s where
+  -- | Parse JSON using the default JSON instance.
+  fromJson :: A.FromJSON a => s -> Either String a
+  fromJson = fromJsonWith A.parseJSON
+
+  -- | Parse JSON using a custom parser.
+  fromJsonWith :: (A.Value -> A.Parser a) -> s -> Either String a
+  fromJsonWith p s = do
+    v <- fromJson s
+    case A.iparse p v of
+      A.IError path err -> Left (A.formatError path err)
+      A.ISuccess res    -> Right res
+
+  -- | Convert a value to JSON.
+  toJson :: A.ToJSON a => a -> s
+
+  -- | Convert a value to pretty-printed JSON.
+  toJsonPretty :: A.ToJSON a => a -> s
+
+instance AsJson ByteString where
+  fromJson = A.eitherDecodeStrict
+  toJson = BSL.toStrict . A.encode
+  toJsonPretty = BSL.toStrict . A.encodePretty
+
+instance AsJson LByteString where
+  fromJson = A.eitherDecode
+  toJson = A.encode
+  toJsonPretty = A.encodePretty
+
+instance AsJson Text where
+  fromJson = A.eitherDecode . T.toLByteString
+  toJson = T.toStrict . A.encodeToLazyText
+  toJsonPretty = T.toStrict . A.encodePrettyToTextBuilder
+
+instance AsJson LText where
+  fromJson = A.eitherDecode . T.toLByteString
+  toJson = A.encodeToLazyText
+  toJsonPretty = T.toLazy . A.encodePrettyToTextBuilder
+
+instance AsJson A.Value where
+  fromJsonWith p v = case A.iparse p v of
+    A.IError path err -> Left (A.formatError path err)
+    A.ISuccess res    -> Right res
+  toJson = A.toJSON
+  toJsonPretty = A.toJSON
 
 ----------------------------------------------------------------------------
 -- Lucid
