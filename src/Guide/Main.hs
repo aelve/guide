@@ -448,6 +448,7 @@ installTerminationCatcher thread = void $ do
 -- The user won't be added if it exists already.
 createAdminUser :: GuideApp ()
 createAdminUser = do
+  dbUpdate DeleteAllUsers
   pass <- T.toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

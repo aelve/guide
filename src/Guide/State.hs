@@ -79,7 +79,7 @@ module Guide.State
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
-  GetUser(..), CreateUser(..), DeleteUser(..),
+  GetUser(..), CreateUser(..), DeleteUser(..), DeleteAllUsers(..),
   LoginUser(..),
 
   GetAdminUsers(..)
@@ -750,6 +750,12 @@ deleteUser key = do
   logoutUserGlobally key
   setDirty
 
+deleteAllUsers :: Acid.Update GlobalState ()
+deleteAllUsers = do
+  mapM_ logoutUserGlobally . M.keys =<< use users
+  users .= mempty
+  setDirty
+
 -- | Given an email address and a password, return the user if it exists
 -- and the password is correct.
 loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
@@ -813,7 +819,7 @@ makeAcidic ''GlobalState [
   'loadSession, 'storeSession, 'deleteSession, 'getSessions,
 
   -- users
-  'getUser, 'createUser, 'deleteUser, 
+  'getUser, 'createUser, 'deleteUser, 'deleteAllUsers,
   'loginUser,
 
   'getAdminUsers
