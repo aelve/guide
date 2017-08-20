@@ -336,13 +336,15 @@ loginAction = do
       loginAttempt <- dbQuery $
         LoginUser loginEmail (T.toByteString loginUserPassword)
       case loginAttempt of
-        Just user -> do
+        Right user -> do
           modifySession (sessionUserID .~ Just (user ^. userID))
           Spock.redirect "/"
-        -- TODO: show error message/validation of input
-        Nothing -> do
+        -- TODO: *properly* show error message/validation of input
+        Left err -> do
           formHtml <- protectForm loginFormView v
-          lucidWithConfig $ renderRegister formHtml
+          lucidWithConfig $ renderRegister $ do
+            div_ $ toHtml ("Error: " <> err)
+            formHtml
 
 logoutAction :: GuideAction ctx ()
 logoutAction = do
