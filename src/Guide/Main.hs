@@ -336,13 +336,15 @@ loginAction = do
       loginAttempt <- dbQuery $
         LoginUser loginEmail (T.toByteString loginUserPassword)
       case loginAttempt of
-        Just user -> do
+        Right user -> do
           modifySession (sessionUserID .~ Just (user ^. userID))
           Spock.redirect "/"
-        -- TODO: show error message/validation of input
-        Nothing -> do
+        -- TODO: *properly* show error message/validation of input
+        Left err -> do
           formHtml <- protectForm loginFormView v
-          lucidWithConfig $ renderRegister formHtml
+          lucidWithConfig $ renderRegister $ do
+            div_ $ toHtml ("Error: " <> err)
+            formHtml
 
 logoutAction :: GuideAction ctx ()
 logoutAction = do
@@ -446,6 +448,7 @@ installTerminationCatcher thread = void $ do
 -- The user won't be added if it exists already.
 createAdminUser :: GuideApp ()
 createAdminUser = do
+  dbUpdate DeleteAllUsers
   pass <- T.toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

@@ -1,7 +1,9 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ExplicitForAll      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 {- |
@@ -65,6 +67,7 @@ import Guide.Utils
 import Guide.JS (JS(..))
 import qualified Guide.JS as JS
 import Guide.Markdown
+import Guide.Archival
 import Guide.Diff hiding (DiffChunk)
 import qualified Guide.Diff as Diff
 import Guide.Cache
@@ -808,8 +811,20 @@ on those <div>s.
 
 data LinkStatus = OK | Unparseable | Broken String deriving Show
 
+data LinkInfo = LinkInfo {
+  -- | Link itself
+  linkUrl :: Url,
+  -- | A description of where the link is in Guide
+  linkLocation :: Text,
+  -- | Link status (ok, unparseable, etc)
+  linkStatus :: LinkStatus,
+  -- | Link status on archive.org (if archive.org is available)
+  linkArchivalStatus :: Either String ArchivalStatus
+  }
+  deriving (Show)
+
 -- | Render links page with info about broken links
-renderAdminLinks :: (MonadIO m) => GlobalState -> HtmlT m ()
+renderAdminLinks :: forall m . (MonadIO m) => GlobalState -> HtmlT m ()
 renderAdminLinks globalState = do
   head_ $ do
     includeJS "/js.js"
@@ -828,7 +843,7 @@ renderAdminLinks globalState = do
     div_ [id_ "stats"] $ do
       manager  <- liftIO $ newManager tlsManagerSettings
       fullList <- liftIO $ forM allLinks $ \(lnk, location) -> do
-            resp <- if isURI (T.unpack lnk) then (do
+            lnkStatus <- if isURI (T.unpack lnk) then (do
                         request <- parseRequest $ T.unpack lnk
                         status' <- responseStatus <$> httpNoBody request manager
                         print (lnk, status')
@@ -838,55 +853,79 @@ renderAdminLinks globalState = do
                       ) `catch` (return . handleHttpException)
                     else
                       pure Unparseable
-            pure (toHtml location, a_ [href_ lnk] (toHtml lnk), resp)
-      let (ok, unparseable, broken) = sortLinks fullList
-
-      h2_ "Broken Links"
-      table_ [class_ "sortable"] $ do
-        thead_ $ tr_ $ do
-          th_ [class_ "sorttable_nosort"] "Category"
-          th_ [class_ "sorttable_nosort"] "Link"
-          th_ "Status"
-        tbody_ $ do
-          for_ broken $ \(location, lnk, reason) -> do
-            tr_ $ do
-              td_ location
-              td_ lnk
-              td_ $ toHtml reason
-      h2_ "Unparseable Links"
-      table_ [class_ "sortable"] $ do
-          thead_ $ tr_ $ do
-            th_ [class_ "sorttable_nosort"] "Category"
-            th_ [class_ "sorttable_nosort"] "Link"
-          tbody_ $ do
-            for_ unparseable $ \(cat, l) -> do
-              tr_ $ do
-                td_ cat
-                td_ l
-      h2_ "OK Links"
-      table_ [class_ "sortable"] $ do
-          thead_ $ tr_ $ do
-            th_ [class_ "sorttable_nosort"] "Category"
-            th_ [class_ "sorttable_nosort"] "Link"
-          tbody_ $ do
-            for_ ok $ \(cat, l) -> do
-              tr_ $ do
-                td_ cat
-                td_ l
+            archStatus <- liftIO (getArchivalStatus manager lnk)
+            pure $ LinkInfo {
+              linkUrl = lnk,
+              linkLocation = location,
+              linkStatus = lnkStatus,
+              linkArchivalStatus = archStatus }
+      renderUnparseableLinks fullList
+      renderBrokenLinks fullList
+      renderOKLinks fullList
  where
   handleHttpException :: HttpException -> LinkStatus
   handleHttpException (HttpExceptionRequest _ x) = Broken $ show x
   handleHttpException (InvalidUrlException  _ x) = Broken x
 
-  sortLinks :: [(a, b, LinkStatus)] -> ([(a, b)], [(a, b)], [(a, b, String)])
-  sortLinks = foldr sortLink ([], [], [])
-
-  sortLink (a, b, OK)          = (\(x, y, z) -> ((a, b):x, y, z))
-  sortLink (a, b, Unparseable) = (\(x, y, z) -> (x, (a, b):y, z))
-  sortLink (a, b, Broken text') = (\(x, y, z) -> (x, y, (a, b, text'):z))
-
+  -- Link + a text description of where that link was found in Guide
   allLinks :: [(Url, Text)]
   allLinks = ordNub (findLinks globalState)
+
+renderOKLinks :: Monad m => [LinkInfo] -> HtmlT m ()
+renderOKLinks links = do
+  h2_ "OK Links"
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $
+      mapM_ th_ ["Location", "Link", "Archival status", "Save to archive.org"]
+    tbody_ $
+      for_ (filterOK links) $ \LinkInfo{..} ->
+        tr_ $ do
+          td_ $ toHtml linkLocation
+          td_ $ a_ [href_ linkUrl] (toHtml linkUrl)
+          td_ $ renderArchivalStatus linkArchivalStatus
+          td_ $ button "archive" [] (JS.saveToArchiveOrg [JS.toJS linkUrl])
+  where
+    filterOK xs = [x | x <- xs, OK <- [linkStatus x]]
+
+renderUnparseableLinks :: Monad m => [LinkInfo] -> HtmlT m ()
+renderUnparseableLinks links = do
+  h2_ "Unparseable Links"
+  table_ [class_ "sortable"] $ do
+      thead_ $ tr_ $
+        mapM_ th_ ["Location", "Link"]
+      tbody_ $
+        for_ (filterUnparseable links) $ \LinkInfo{..} ->
+          tr_ $ do
+            td_ $ toHtml linkLocation
+            td_ $ a_ [href_ linkUrl] (toHtml linkUrl)
+  where
+    filterUnparseable xs = [x | x <- xs, Unparseable <- [linkStatus x]]
+
+renderBrokenLinks :: Monad m => [LinkInfo] -> HtmlT m ()
+renderBrokenLinks links = do
+  h2_ "Broken Links"
+  table_ [class_ "sortable"] $ do
+    thead_ $ tr_ $
+      mapM_ th_ ["Location", "Link", "Status", "Archival status"]
+    tbody_ $
+      for_ (filterBroken links) $ \(LinkInfo{..}, reason) ->
+        tr_ $ do
+          td_ $ toHtml linkLocation
+          td_ $ a_ [href_ linkUrl] (toHtml linkUrl)
+          td_ $ toHtml reason
+          td_ $ renderArchivalStatus linkArchivalStatus
+  where
+    filterBroken xs = [(x, reason) | x <- xs, Broken reason <- [linkStatus x]]
+
+renderArchivalStatus :: Monad m => Either String ArchivalStatus -> HtmlT m ()
+renderArchivalStatus = \case
+  Left err -> "couldn't get info from archive.org: " <> toHtml err
+  Right ArchivalStatus{..}
+    | asAvailable -> do
+        a_ [href_ asUrl] (toHtml (T.toStrict (dateDashF asTimestamp)))
+        unless (asStatus == "200") $
+          toHtml (format " (status: {})" asStatus :: Text)
+    | otherwise -> "unavailable"
 
 -- | Find all links in content, along with a human-readable description of
 -- where each link is located.

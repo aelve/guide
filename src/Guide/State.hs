@@ -79,7 +79,7 @@ module Guide.State
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
-  GetUser(..), CreateUser(..), DeleteUser(..),
+  GetUser(..), CreateUser(..), DeleteUser(..), DeleteAllUsers(..),
   LoginUser(..),
 
   GetAdminUsers(..)
@@ -750,17 +750,24 @@ deleteUser key = do
   logoutUserGlobally key
   setDirty
 
+deleteAllUsers :: Acid.Update GlobalState ()
+deleteAllUsers = do
+  mapM_ logoutUserGlobally . M.keys =<< use users
+  users .= mempty
+  setDirty
+
 -- | Given an email address and a password, return the user if it exists
 -- and the password is correct.
-loginUser :: Text -> ByteString -> Acid.Query GlobalState (Maybe User)
+loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
   matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
   case matches of
     [user] -> 
       if verifyUser user password
-      then return $ Just user
-      else return $ Nothing
-    _ -> return Nothing
+      then return $ Right user
+      else return $ Left "wrong password"
+    [] -> return $ Left "user not found"
+    _  -> return $ Left "more than one user found, please contact the admin"
 
 -- | Global logout of all of a user's active sessions
 logoutUserGlobally :: Uid User -> Acid.Update GlobalState ()
@@ -812,7 +819,7 @@ makeAcidic ''GlobalState [
   'loadSession, 'storeSession, 'deleteSession, 'getSessions,
 
   -- users
-  'getUser, 'createUser, 'deleteUser, 
+  'getUser, 'createUser, 'deleteUser, 'deleteAllUsers,
   'loginUser,
 
   'getAdminUsers

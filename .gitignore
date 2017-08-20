@@ -20,6 +20,8 @@ cabal.config
 TAGS
 .DS_Store
 *~
+*.swp
+*.swo
 *#
 state/
 config.json
