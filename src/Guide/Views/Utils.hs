@@ -86,7 +86,6 @@ import qualified System.FilePath.Find as F
 -- Mustache (templates)
 import Text.Mustache.Plus
 import qualified Data.Aeson as A
-import qualified Data.Aeson.Text as A
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Semigroup as Semigroup
 import qualified Data.List.NonEmpty as NonEmpty
