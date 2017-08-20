@@ -318,7 +318,7 @@ addMethods = do
 
 otherMethods :: GuideM ctx ()
 otherMethods = do
-  -- Moving things
+  -- # Moving things
   -- Move item
   Spock.post (moveRoute <//> itemVar) $ \itemId -> do
     direction :: Text <- param' "direction"
@@ -332,7 +332,7 @@ otherMethods = do
       edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
       addEdit edit
 
--- Deleting things
+  -- # Deleting things
   -- Delete category
   Spock.post (deleteRoute <//> categoryVar) $ \catId ->
     uncache (CacheCategory catId) $ do
@@ -349,7 +349,7 @@ otherMethods = do
       mbEdit <- dbUpdate (DeleteTrait itemId traitId)
       mapM_ addEdit mbEdit
 
-  -- Feeds
+  -- # Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
   baseUrl <- (// "haskell") . _baseUrl <$> getConfig
 
