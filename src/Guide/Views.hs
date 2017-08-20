@@ -67,6 +67,7 @@ import Guide.Utils
 import Guide.JS (JS(..))
 import qualified Guide.JS as JS
 import Guide.Markdown
+import Guide.Archival
 import Guide.Diff hiding (DiffChunk)
 import qualified Guide.Diff as Diff
 import Guide.Cache
@@ -926,19 +927,6 @@ renderArchivalStatus = \case
           toHtml (format " (status: {})" asStatus :: Text)
     | otherwise -> "unavailable"
 
--- | Get status of a link on archive.org. 'Left' means that an error
--- happened when talking to archive.org.
-getArchivalStatus :: Manager -> Url -> IO (Either String ArchivalStatus)
-getArchivalStatus manager lnk =
-  handle (pure . Left . show @HttpException) $ do
-    req <- setQueryString [("url", Just (T.toByteString lnk))] <$>
-               parseRequest waybackUrl
-    fromJsonWith responseParser . responseBody <$!> httpLbs req manager
-  where
-    waybackUrl = "http://archive.org/wayback/available"
-    responseParser = A.withObject "archive.org response" $
-        (A..: "archived_snapshots") >=> (A..: "closest")
-
 -- | Find all links in content, along with a human-readable description of
 -- where each link is located.
 findLinks :: GlobalState -> [(Url, Text)]
@@ -964,28 +952,3 @@ findLinksItem item = findLinksMD item' ++ maybeToList (item^.link)
 -- | Find all Markdown links in /any/ structure, using generics.
 findLinksMD :: Data a => a -> [Url]
 findLinksMD a = [url | MD.LINK url _ <- universeBi a]
-
-data ArchivalStatus = ArchivalStatus {
-  asAvailable :: Bool,     -- ^ Whether the link is available
-  asUrl       :: Url,      -- ^ Link to archived page
-  asTimestamp :: UTCTime,  -- ^ When the page was archived
-  asStatus    :: Text }    -- ^ HTTP status (200, 404, etc)
-  deriving (Eq, Show)
-
--- For an example, look at archived_snapshots.closest in
--- <http://archive.org/wayback/available?url=example.com>.
---
--- Here is sample JSON:
---
--- { "status": "200"
--- , "available": true
--- , "url": "http://web.archive.org/web/20170819042701/http://example.com"
--- , "timestamp": "20170819042701" }
-instance A.FromJSON ArchivalStatus where
-  parseJSON = A.withObject "ArchivalStatus" $ \o -> do
-    asAvailable <- o A..: "available"
-    asUrl       <- o A..: "url"
-    asStatus    <- o A..: "status"
-    asTimestamp <- o A..: "timestamp" >>=
-                   parseTimeM True defaultTimeLocale "%Y%m%d%H%M%S"
-    pure ArchivalStatus{..}

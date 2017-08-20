@@ -63,6 +63,7 @@ library
       Guide.Diff.Tokenize
       Guide.Diff.Merge
     Guide.Markdown
+    Guide.Archival
     Guide.Search
     Guide.JS
     Guide.Views
