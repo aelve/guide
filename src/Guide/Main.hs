@@ -155,6 +155,14 @@ mainWith config = do
        putStrLn "loaded the database successfully"
        closeAcidState db
        exitSuccess
+     when (args == ["--from-publicDB"]) $ do
+       db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+       gs <- query db GetGlobalState
+       putStrLn "loaded the database"
+       let publicdb = fromPublicDB $ toPublicDB gs
+       print publicdb
+       closeAcidState db
+       exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
