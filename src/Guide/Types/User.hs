@@ -15,6 +15,13 @@ module Guide.Types.User
   makeUser,
   verifyUser,
   canCreateUser,
+  PublicUser,
+    publicUserID,
+    publicUserName,
+    publicUserEmail,
+    publicUserIsAdmin,
+  userToPublic,
+  publicUserToUser
 )
 where
 
@@ -76,3 +83,37 @@ canCreateUser userFoo userBar =
         fieldNotEq userID,
         fieldNotEq userName,
         fieldNotEq userEmail ]
+
+data PublicUser = PublicUser {
+  -- | Unique, pseudorandom identifier for user.
+  _publicUserID          :: Uid User,
+  -- | Unique username for user.
+  _publicUserName        :: Text,
+  -- | Unique email address for user.
+  _publicUserEmail       :: Text,
+  -- | Flag set if user is an administrator.
+  _publicUserIsAdmin     :: Bool
+  }
+  deriving (Show)
+
+deriveSafeCopySorted 0 'base ''PublicUser
+makeLenses ''PublicUser
+
+userToPublic :: User -> PublicUser
+userToPublic User{..} =
+  PublicUser {
+    _publicUserID      = _userID,
+    _publicUserName    = _userName,
+    _publicUserEmail   = _userEmail,
+    _publicUserIsAdmin = _userIsAdmin
+  }
+
+publicUserToUser :: PublicUser -> User
+publicUserToUser PublicUser{..} =
+  User {
+    _userID       = _publicUserID,
+    _userName     = _publicUserName,
+    _userEmail    = _publicUserEmail,
+    _userPassword = Nothing,
+    _userIsAdmin  = _publicUserIsAdmin
+  }

@@ -82,7 +82,11 @@ module Guide.State
   GetUser(..), CreateUser(..), DeleteUser(..),
   LoginUser(..),
 
-  GetAdminUsers(..)
+  GetAdminUsers(..),
+  
+  PublicDB(..),
+  toPublicDB,
+  fromPublicDB
 )
 where
 
@@ -817,3 +821,44 @@ makeAcidic ''GlobalState [
 
   'getAdminUsers
   ]
+
+data PublicDB = PublicDB {
+  publicCategories :: [Category],
+  publicCategoriesDeleted :: [Category],
+  publicActions :: [(Action, ActionDetails)],
+  -- | Pending edits, newest first
+  publicPendingEdits :: [(Edit, EditDetails)],
+  -- | ID of next edit that will be made
+  publicEditIdCounter :: Int,
+  -- | Users
+  publicUsers :: Map (Uid User) PublicUser,
+  -- | The dirty bit (needed to choose whether to make a checkpoint or not)
+  publicDirty :: Bool }
+  deriving (Show)
+
+deriveSafeCopySorted 0 'base ''PublicDB
+
+toPublicDB :: GlobalState -> PublicDB
+toPublicDB GlobalState{..} =
+  PublicDB {
+    publicCategories        = _categories,
+    publicCategoriesDeleted = _categoriesDeleted,
+    publicActions           = _actions,
+    publicPendingEdits      = _pendingEdits,
+    publicEditIdCounter     = _editIdCounter,
+    publicUsers             = M.map userToPublic _users,
+    publicDirty             = _dirty
+  }
+
+fromPublicDB :: PublicDB -> GlobalState
+fromPublicDB PublicDB{..} =
+  GlobalState {
+    _categories        = publicCategories,
+    _categoriesDeleted = publicCategoriesDeleted,
+    _actions           = publicActions,
+    _pendingEdits      = publicPendingEdits,
+    _editIdCounter     = publicEditIdCounter,
+    _sessionStore      = M.empty,
+    _users             = M.map publicUserToUser publicUsers,
+    _dirty             = publicDirty
+  }
