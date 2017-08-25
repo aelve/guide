@@ -1,0 +1,35 @@
+{
+  "name": "aelve-guide-frontend",
+  "version": "0.0.1",
+  "description": "",
+  "main": "public/server.js",
+  "keywords": [],
+  "scripts": {
+    "postinstall": "bower cache clean && bower install",
+    "clean": "rimraf dist && rimraf public/*js && rimraf output",
+    "build:category-overview": "rimraf output/Main && pulp build --src-path ./pages/category-overview -O > ./public/category-overview.js",
+    "build:category-detail": "rimraf output/Main && pulp build --src-path ./pages/category-detail -O > ./public/category-detail.js",
+    "build:server": "rimraf output/Main && mkdir dist && pulp build --src-path ./server -O > ./dist/server.js",
+    "run:server": "PORT=3333 node dist/server.js",
+    "start": "npm run run:server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/aelve/guide/.git"
+  },
+  "author": "",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/aelve/guide/issues"
+  },
+  "devDependencies": {
+    "bower": "^1.8.0",
+    "pulp": "12.0.1",
+    "rimraf": "^2.6.1"
+  },
+  "dependencies": {
+    "ejs": "^2.5.7",
+    "express": "^4.15.4"
+  }
+}
