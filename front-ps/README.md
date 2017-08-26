@@ -36,14 +36,9 @@ yarn
 yarn build:server
 ```
 
-6. Build page `category-overview`
+6. Build pages (e.g. `category-overview` or `category-detail`)
 ```sh
-yarn build:category-overview
-```
-
-7. Build page `category-detail`
-```sh
-yarn build:category-detail
+yarn build:client
 ```
 
 ## Run
