@@ -318,9 +318,6 @@ renderStats globalState acts = do
           Nothing -> "<unknown IP>"
           Just ip -> toHtml (show ip)
 
--- TODO: when showing Edit'DeleteCategory, show the amount of items in that
--- category and titles of items themselves
-
 -- | Group edits by IP and render them.
 renderEdits
   :: (MonadIO m)
@@ -404,6 +401,14 @@ renderEdit globalState edit = do
         let (category, item) = findItem itemId
         quote $ a_ [href_ (itemLink category item)] $
           toHtml (item ^. name)
+  let printCategoryWithItems catId = do
+        let category = findCategory catId
+        quote $ toHtml (category ^. title)
+        let catItems = category ^. items
+        toHtml $ " with " ++ show (length catItems) ++ " items:"
+        ul_ $
+          for_ catItems $ \item ->
+            li_ $ toHtml (item ^. name)
 
   case edit of
     -- Add
@@ -488,7 +493,7 @@ renderEdit globalState edit = do
 
     -- Delete
     Edit'DeleteCategory catId _pos -> p_ $ do
-      "deleted category " >> printCategory catId
+      "deleted category " >> printCategoryWithItems catId
     Edit'DeleteItem itemId _pos -> p_ $ do
       let (category, item) = findItem itemId
       "deleted item " >> quote (toHtml (item^.name))
