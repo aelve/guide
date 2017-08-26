@@ -16,10 +16,6 @@ module Guide.Types.User
   verifyUser,
   canCreateUser,
   PublicUser,
-    publicUserID,
-    publicUserName,
-    publicUserEmail,
-    publicUserIsAdmin,
   userToPublic,
   publicUserToUser
 )
@@ -84,36 +80,35 @@ canCreateUser userFoo userBar =
         fieldNotEq userName,
         fieldNotEq userEmail ]
 
+-- | 'PublicUser' contains all safe User data.
+-- Removed from 'User':
+-- * Password
 data PublicUser = PublicUser {
-  -- | Unique, pseudorandom identifier for user.
-  _publicUserID          :: Uid User,
-  -- | Unique username for user.
-  _publicUserName        :: Text,
-  -- | Unique email address for user.
-  _publicUserEmail       :: Text,
-  -- | Flag set if user is an administrator.
-  _publicUserIsAdmin     :: Bool
-  }
+  publicUserID      :: Uid User,
+  publicUserName    :: Text,
+  publicUserEmail   :: Text,
+  publicUserIsAdmin :: Bool}
   deriving (Show)
 
 deriveSafeCopySorted 0 'base ''PublicUser
-makeLenses ''PublicUser
 
+-- | Converts 'User' to 'PublicUser' type.
 userToPublic :: User -> PublicUser
 userToPublic User{..} =
   PublicUser {
-    _publicUserID      = _userID,
-    _publicUserName    = _userName,
-    _publicUserEmail   = _userEmail,
-    _publicUserIsAdmin = _userIsAdmin
+    publicUserID      = _userID,
+    publicUserName    = _userName,
+    publicUserEmail   = _userEmail,
+    publicUserIsAdmin = _userIsAdmin
   }
 
+-- | Converts 'PublicUser' to 'User' filling password with Nothing.
 publicUserToUser :: PublicUser -> User
 publicUserToUser PublicUser{..} =
   User {
-    _userID       = _publicUserID,
-    _userName     = _publicUserName,
-    _userEmail    = _publicUserEmail,
+    _userID       = publicUserID,
+    _userName     = publicUserName,
+    _userEmail    = publicUserEmail,
     _userPassword = Nothing,
-    _userIsAdmin  = _publicUserIsAdmin
+    _userIsAdmin  = publicUserIsAdmin
   }

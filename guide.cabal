@@ -127,6 +127,7 @@ library
                      , patches-vector
                      , random >= 1.1
                      , reroute
+                     , safe
                      , safecopy
                      , safecopy-migrate
                      , scrypt

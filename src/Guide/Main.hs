@@ -55,6 +55,8 @@ import System.Posix.Signals
 import qualified System.FSNotify as FSNotify
 -- HVect
 import Data.HVect hiding (length)
+-- safe
+import Safe (headDef)
 
 import Guide.App
 import Guide.ServerStuff
@@ -150,18 +152,25 @@ mainWith config = do
         _users = M.empty,
         _dirty = True }
   do args <- getArgs
-     when (args == ["--dry-run"]) $ do
+     let option = headDef "" args
+     when (option == "--dry-run") $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
        putStrLn "loaded the database successfully"
        closeAcidState db
        exitSuccess
-     when (args == ["--from-publicDB"]) $ do
-       db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       gs <- query db GetGlobalState
-       putStrLn "loaded the database"
-       let publicdb = fromPublicDB $ toPublicDB gs
-       print publicdb
-       closeAcidState db
+     -- USAGE: --load-public <filename>
+     -- loads PublicDB from <filename>, converts it to GlobalState, uses that state
+     when (option == "--load-public") $ do
+       let path = headDef "state/public/" $ drop 1 args
+       publicDB :: AcidState PublicDB <- openLocalStateFrom path emptyPublicDB
+       publicState <- Acid.query publicDB GetPublicDB
+       closeAcidState publicDB
+
+       let globalState = fromPublicDB publicState
+       globalDB :: DB <- openLocalStateFrom "state/" globalState
+       Acid.update globalDB (SetGlobalState globalState)
+       createCheckpointAndClose' globalDB
+       putStrLn "PublicDB imported to GlobalState"
        exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep

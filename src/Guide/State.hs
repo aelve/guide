@@ -24,6 +24,7 @@ module Guide.State
   -- * acid-state methods
   -- ** query
   GetGlobalState(..),
+  GetPublicDB(..),
   GetCategories(..),
   GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
@@ -83,10 +84,12 @@ module Guide.State
   LoginUser(..),
 
   GetAdminUsers(..),
-  
+
+  -- * public db
   PublicDB(..),
   toPublicDB,
-  fromPublicDB
+  fromPublicDB,
+  emptyPublicDB
 )
 where
 
@@ -239,10 +242,72 @@ findCategoryByItem itemId s =
           T.unpack (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
 
+-- | 'PublicDB' contains all safe data from 'GlobalState'.
+-- Difference from 'GlobalState':
+-- * 'User' replaced with 'PublicUser'
+-- * Sessions information removed
+-- * Dirty flag removed
+data PublicDB = PublicDB {
+  publicCategories        :: [Category],
+  publicCategoriesDeleted :: [Category],
+  publicActions           :: [(Action, ActionDetails)],
+  publicPendingEdits      :: [(Edit, EditDetails)],
+  publicEditIdCounter     :: Int,
+  publicUsers             :: Map (Uid User) PublicUser}
+  deriving (Show)
+
+-- NOTE: you don't need to write migrations for 'PublicDB' but you still need
+-- to increase the version when the type changes, so that old clients
+-- wouldn't get cryptic error messages like “not enough bytes” when trying to
+-- deserialize a new version of 'PublicDB' that they can't handle.
+deriveSafeCopySorted 0 'base ''PublicDB
+
+-- | Initial state of 'PublicDB'.
+emptyPublicDB :: PublicDB
+emptyPublicDB =
+  PublicDB {
+    publicCategories        = mempty,
+    publicCategoriesDeleted = mempty,
+    publicActions           = mempty,
+    publicPendingEdits      = mempty,
+    publicEditIdCounter     = 0,
+    publicUsers             = mempty
+  }
+
+-- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
+toPublicDB :: GlobalState -> PublicDB
+toPublicDB GlobalState{..} =
+  PublicDB {
+    publicCategories        = _categories,
+    publicCategoriesDeleted = _categoriesDeleted,
+    publicActions           = _actions,
+    publicPendingEdits      = _pendingEdits,
+    publicEditIdCounter     = _editIdCounter,
+    publicUsers             = M.map userToPublic _users
+  }
+
+-- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
+-- default values.
+fromPublicDB :: PublicDB -> GlobalState
+fromPublicDB PublicDB{..} =
+  GlobalState {
+    _categories        = publicCategories,
+    _categoriesDeleted = publicCategoriesDeleted,
+    _actions           = publicActions,
+    _pendingEdits      = publicPendingEdits,
+    _editIdCounter     = publicEditIdCounter,
+    _sessionStore      = M.empty,
+    _users             = M.map publicUserToUser publicUsers,
+    _dirty             = True
+  }
+
 -- get
 
 getGlobalState :: Acid.Query GlobalState GlobalState
 getGlobalState = view id
+
+getPublicDB :: Acid.Query PublicDB PublicDB
+getPublicDB = view id
 
 getCategories :: Acid.Query GlobalState [Category]
 getCategories = view categories
@@ -822,43 +887,7 @@ makeAcidic ''GlobalState [
   'getAdminUsers
   ]
 
-data PublicDB = PublicDB {
-  publicCategories :: [Category],
-  publicCategoriesDeleted :: [Category],
-  publicActions :: [(Action, ActionDetails)],
-  -- | Pending edits, newest first
-  publicPendingEdits :: [(Edit, EditDetails)],
-  -- | ID of next edit that will be made
-  publicEditIdCounter :: Int,
-  -- | Users
-  publicUsers :: Map (Uid User) PublicUser,
-  -- | The dirty bit (needed to choose whether to make a checkpoint or not)
-  publicDirty :: Bool }
-  deriving (Show)
-
-deriveSafeCopySorted 0 'base ''PublicDB
-
-toPublicDB :: GlobalState -> PublicDB
-toPublicDB GlobalState{..} =
-  PublicDB {
-    publicCategories        = _categories,
-    publicCategoriesDeleted = _categoriesDeleted,
-    publicActions           = _actions,
-    publicPendingEdits      = _pendingEdits,
-    publicEditIdCounter     = _editIdCounter,
-    publicUsers             = M.map userToPublic _users,
-    publicDirty             = _dirty
-  }
-
-fromPublicDB :: PublicDB -> GlobalState
-fromPublicDB PublicDB{..} =
-  GlobalState {
-    _categories        = publicCategories,
-    _categoriesDeleted = publicCategoriesDeleted,
-    _actions           = publicActions,
-    _pendingEdits      = publicPendingEdits,
-    _editIdCounter     = publicEditIdCounter,
-    _sessionStore      = M.empty,
-    _users             = M.map publicUserToUser publicUsers,
-    _dirty             = publicDirty
-  }
+makeAcidic ''PublicDB [
+  -- query
+  'getPublicDB
+  ]
