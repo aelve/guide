@@ -6,14 +6,16 @@
   "keywords": [],
   "scripts": {
     "postinstall": "bower cache clean && bower install",
-    "clean": "rimraf dist && rimraf public/*.js && rimraf output",
-    "build:category-overview": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryOverview --include ./common -O > ./public/category-overview.js",
-    "build:category-detail": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryDetail --include ./common --no-check-main -O > ./public/category-detail.js",
-    "build:server": "rimraf output/Main && mkdir -p dist && pulp build --src-path ./server -O > ./dist/server.js",
-    "build:client": "npm run clean && webpack --config ./webpack.config.client.js --progress",
+    "clean": "rimraf output",
+    "build:client": "npm run clean && rimraf public/*.js && webpack --config ./webpack.config.client.js --progress",
+    "build:server": "npm run clean && rimraf dist && webpack --config ./webpack.config.server.js --progress",
     "run:server": "PORT=3333 node dist/server.js",
     "start": "npm run run:server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "--comment--": "All following `build:*-pulp` scripts are for debugging only and will be removed in the future",
+    "build:server-pulp": "rimraf output/Main && mkdir -p dist && pulp build --src-path ./server --include ./common -O > ./dist/server.js",
+    "build:category-detail-pulp": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryDetail --include ./common --no-check-main -O > ./public/category-detail.js",
+    "build:category-overview-pulp": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryOverview --include ./common -O > ./public/category-overview.js"
   },
   "repository": {
     "type": "git",

@@ -4,13 +4,12 @@ const webpack = require('webpack');
 const c = require('./webpack.config.common.js');
 
 module.exports = {
-  context: c.context,
+  target: 'node',
   entry: {
-    "category-overview": path.join(__dirname, 'client', 'Guide', 'Client', 'CategoryOverview-entry.js'),
-    "category-detail": path.join(__dirname, 'client', 'Guide', 'Client', 'CategoryDetail-entry.js')
+    "server": path.join(__dirname, 'server', 'entry.js')
   },
   output: {
-    path: path.join(__dirname, '/public'),
+    path: path.join(__dirname, 'dist'),
     publicPath: '/',
     filename: '[name].js',
     pathinfo: true
