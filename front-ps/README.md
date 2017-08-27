@@ -30,15 +30,27 @@ git checkout front-ps-next
 ```sh
 yarn
 ```
+or by using `npm`:
+```sh
+npm i
+```
 
 5. Build Express server
 ```sh
 yarn build:server
 ```
+or by using `npm`s:
+```sh
+npm run build:server
+```
 
 6. Build pages (e.g. `category-overview` or `category-detail`)
 ```sh
 yarn build:client
+```
+or by using `npm`:
+```sh
+npm run build:client
 ```
 
 ## Run
@@ -51,6 +63,10 @@ stack exec guide
 2. Run front-end
 ```sh
 yarn start
+```
+or by using `npm`:
+```sh
+npm start
 ```
 
 Open [`http://localhost:3333`](http://localhost:3333).
