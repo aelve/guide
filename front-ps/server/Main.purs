@@ -7,6 +7,7 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Int (fromString)
 import Data.Maybe (fromMaybe)
+import Guide.CategoryDetail.Events (AppEffects)
 import Guide.Server.Handler (categoryDetailHandler, categoryOverviewHandler, indexHandler, errorHandler)
 import Node.Express.App (App, get, listenHttp, setProp, use, useOnError)
 import Node.Express.Handler (Handler, next)
@@ -15,6 +16,7 @@ import Node.Express.Request (getOriginalUrl)
 import Node.Express.Types (EXPRESS)
 import Node.HTTP (Server)
 import Node.Process (PROCESS, lookupEnv)
+import Pux (CoreEffects)
 
 logger :: forall e. Handler (console :: CONSOLE | e)
 logger = do
@@ -22,7 +24,7 @@ logger = do
   liftEff $ log ("url: " <> url)
   next
 
-appSetup :: forall e. App (console :: CONSOLE | e)
+appSetup :: forall e. App (CoreEffects (AppEffects (console :: CONSOLE | e)))
 appSetup = do
   liftEff $ log "app setup"
 
@@ -38,7 +40,7 @@ appSetup = do
 
   useOnError errorHandler
 
-main :: forall e. Eff (express :: EXPRESS, process :: PROCESS, console :: CONSOLE | e) Server
+main :: forall e. Eff (CoreEffects (AppEffects (express :: EXPRESS, process :: PROCESS, console :: CONSOLE | e))) Server
 main = do
   port <- (fromMaybe defaultPort <<< fromString <<< fromMaybe (show defaultPort)) <$> lookupEnv "PORT"
   listenHttp appSetup port (callback port)
