@@ -35,7 +35,6 @@
   },
   "dependencies": {
     "create-react-class": "^15.6.0",
-    "ejs": "^2.5.7",
     "es6-promise": "^4.1.1",
     "express": "^4.15.4",
     "preact": "^8.2.4",

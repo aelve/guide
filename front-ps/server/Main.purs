@@ -9,7 +9,7 @@ import Data.Int (fromString)
 import Data.Maybe (fromMaybe)
 import Guide.CategoryDetail.Events (AppEffects)
 import Guide.Server.Handler (categoryDetailHandler, categoryOverviewHandler, indexHandler, errorHandler)
-import Node.Express.App (App, get, listenHttp, setProp, use, useOnError)
+import Node.Express.App (App, get, listenHttp, use, useOnError)
 import Node.Express.Handler (Handler, next)
 import Node.Express.Middleware.Static (static)
 import Node.Express.Request (getOriginalUrl)
@@ -27,9 +27,6 @@ logger = do
 appSetup :: forall e. App (CoreEffects (AppEffects (console :: CONSOLE | e)))
 appSetup = do
   liftEff $ log "app setup"
-
-  setProp "view engine"   "ejs"
-  setProp "views"         "public/views"
 
   use logger
   use $ static "public"
