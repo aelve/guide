@@ -33,7 +33,7 @@ appSetup = do
 
   get "/"                            indexHandler
   get "/category/:name/"             categoryOverviewHandler
-  get "/category/:name/detail/:id"   categoryDetailHandler
+  get "/category/:name/:id"          categoryDetailHandler
 
   useOnError errorHandler
 

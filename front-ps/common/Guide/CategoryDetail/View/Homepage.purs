@@ -1,17 +1,14 @@
 module Guide.CategoryDetail.View.Homepage where
 
+import Prelude
+
 import Guide.CategoryDetail.Events (Event)
 import Guide.CategoryDetail.State (State)
-import Control.Bind (discard)
-import Data.Function (($))
 import Pux.DOM.HTML (HTML)
-import Text.Smolder.HTML (a, div, h1)
-import Text.Smolder.HTML.Attributes (href, className)
-import Text.Smolder.Markup ((!), text)
+import Text.Smolder.HTML (div, h1) as S
+import Text.Smolder.Markup (text)
 
 view :: State -> HTML Event
 view s =
-  div do
-    h1 $ text "Pux"
-    a ! className "guide" ! href "https://www.purescript-pux.org/" $ text "Guide"
-    a ! className "github" ! href "https://github.com/alexmingoia/purescript-pux/" $ text "GitHub"
+  S.div do
+    S.h1 $ text "Category Detail"

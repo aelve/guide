@@ -1,10 +1,10 @@
-module Guide.CategoryDetail.View.Layout where
+module Guide.CategoryOverview.View.Layout where
 
-import Guide.CategoryDetail.View.Homepage as Homepage
-import Guide.CategoryDetail.View.NotFound as NotFound
-import Guide.CategoryDetail.Routes (Route(..))
-import Guide.CategoryDetail.State (State(..))
-import Guide.CategoryDetail.Events (Event)
+import Guide.CategoryOverview.View.Homepage as Homepage
+import Guide.CategoryOverview.View.NotFound as NotFound
+import Guide.CategoryOverview.Routes (Route(..))
+import Guide.CategoryOverview.State (State(..))
+import Guide.CategoryOverview.Events (Event)
 import CSS (CSS, fromString, (?), fontSize, display, inlineBlock, marginTop, marginRight, marginLeft, px, value, key, color, backgroundColor, padding, borderRadius)
 import CSS.Border (border, solid)
 import CSS.TextAlign (center, textAlign)
@@ -25,7 +25,7 @@ view (State st) =
 
     case st.route of
       (NotFound url) -> NotFound.view (State st)
-      (CategoryDetail _ _)-> Homepage.view (State st)
+      (CategoryOverview name)-> Homepage.view (State st)
 
 css :: CSS
 css = do

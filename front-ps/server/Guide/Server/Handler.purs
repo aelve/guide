@@ -7,17 +7,18 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error, message)
 import Data.Argonaut.Generic.Aeson (options)
 import Data.Argonaut.Generic.Encode (genericEncodeJson)
-import Data.Maybe (fromMaybe)
+import Guide.CategoryOverview.Events (AppEffects, Event(..), foldp) as CO
+import Guide.CategoryOverview.Routes (Route(..), match) as CO
+import Guide.CategoryOverview.State (State(..), init) as CO
+import Guide.CategoryOverview.View.Layout (view) as CO
 import Guide.CategoryDetail.Events (AppEffects, Event(..), foldp) as CD
 import Guide.CategoryDetail.Routes (Route(..), match) as CD
 import Guide.CategoryDetail.State (State(..), init) as CD
 import Guide.CategoryDetail.View.Layout (view) as CD
-import Guide.Server.Common (renderPage)
 import Guide.Server.Constants (defaultCategoryName)
 import Guide.Server.HTMLWrapper (htmlWrapper)
-import Guide.Server.Types (PageConfig(..))
 import Node.Express.Handler (HandlerM, Handler)
-import Node.Express.Request (getOriginalUrl, getRouteParam)
+import Node.Express.Request (getOriginalUrl)
 import Node.Express.Response (redirect, send, sendJson, setStatus)
 import Node.Express.Types (EXPRESS)
 import Pux (CoreEffects, start, waitState)
@@ -63,11 +64,31 @@ categoryDetailHandler = do
   send html
 
 
-categoryOverviewHandler :: forall e. HandlerM (express :: EXPRESS | e) Unit
+categoryOverviewHandler :: forall e. Handler (CoreEffects (CO.AppEffects e))
 categoryOverviewHandler = do
-  catName <- fromMaybe defaultCategoryName <$> getRouteParam "name"
-  renderPage $ PageConfig { contentId: "category-overview"
-                          , title: "Aelve - Guide: Category " <> catName
-                          , catName
-                          , catDetailId: "0"
-                          }
+  let getState (CO.State st) = st
+
+  url <- getOriginalUrl
+
+  app <- liftEff $ start
+   { initialState: CO.init url
+   , view: CO.view
+   , foldp: CO.foldp
+   , inputs: [constant (CO.PageView (CO.match url))]
+   }
+
+  state <- liftAff $ waitState (\(CO.State st) -> st.loaded) app
+
+  case (getState state).route of
+    (CO.NotFound _) -> setStatus 404
+    _ -> setStatus 200
+
+  html <- liftEff do
+    let state_json = "window.__puxInitialState = "
+                     <> (show $ genericEncodeJson options state)
+                     <> ";"
+
+    app_html <- renderToString app.markup
+    renderToStaticMarkup $ constant (htmlWrapper app_html state_json "category-overview")
+
+  send html
