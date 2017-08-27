@@ -9,13 +9,14 @@
     "clean": "rimraf output",
     "build:client": "npm run clean && rimraf public/*.js && webpack --config ./webpack.config.client.js --progress",
     "build:server": "npm run clean && rimraf dist && webpack --config ./webpack.config.server.js --progress",
+    "build": "npm run build:client && npm build:server",
     "run:server": "PORT=3333 node dist/server.js",
     "start": "npm run run:server",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "--comment--": "All following `build:*-pulp` scripts are for debugging only and will be removed in the future",
-    "build:server-pulp": "rimraf output/Main && mkdir -p dist && pulp build --src-path ./server --include ./common -O > ./dist/server.js",
-    "build:category-detail-pulp": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryDetail --include ./common --no-check-main -O > ./public/category-detail.js",
-    "build:category-overview-pulp": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryOverview --include ./common -O > ./public/category-overview.js"
+    "--comment--": "All following `pulp:*` scripts are for debugging only and will be removed in the future",
+    "pulp:server": "rimraf output/Main && mkdir -p dist && pulp build --src-path ./server --include ./common -O > ./dist/server.js",
+    "pulp:category-detail": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryDetail --include ./common --no-check-main -O > ./public/category-detail.js",
+    "pulp:category-overview": "rimraf output/Main && pulp build --src-path ./client --main Guide.Client.CategoryOverview --include ./common --no-check-main -O > ./public/category-overview.js"
   },
   "repository": {
     "type": "git",
