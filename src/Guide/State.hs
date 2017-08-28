@@ -82,7 +82,15 @@ module Guide.State
   GetUser(..), CreateUser(..), DeleteUser(..), DeleteAllUsers(..),
   LoginUser(..),
 
-  GetAdminUsers(..)
+  GetAdminUsers(..),
+
+  -- * PublicDB
+  PublicDB(..),
+  toPublicDB,
+  fromPublicDB,
+  -- ** queries
+  ImportPublicDB(..),
+  ExportPublicDB(..),
 )
 where
 
@@ -234,6 +242,53 @@ findCategoryByItem itemId s =
     err = "findCategoryByItem: couldn't find category with item with uid " ++
           T.unpack (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
+
+-- | 'PublicDB' contains all safe data from 'GlobalState'.
+-- Difference from 'GlobalState':
+-- * 'User' replaced with 'PublicUser'
+-- * Sessions information removed
+-- * Dirty flag removed
+data PublicDB = PublicDB {
+  publicCategories        :: [Category],
+  publicCategoriesDeleted :: [Category],
+  publicActions           :: [(Action, ActionDetails)],
+  publicPendingEdits      :: [(Edit, EditDetails)],
+  publicEditIdCounter     :: Int,
+  publicUsers             :: Map (Uid User) PublicUser}
+  deriving (Show)
+
+-- NOTE: you don't need to write migrations for 'PublicDB' but you still
+-- need to increase the version when the type changes, so that old clients
+-- wouldn't get cryptic error messages like “not enough bytes” when trying
+-- to deserialize a new version of 'PublicDB' that they can't handle.
+deriveSafeCopySorted 0 'base ''PublicDB
+
+-- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
+toPublicDB :: GlobalState -> PublicDB
+toPublicDB GlobalState{..} =
+  PublicDB {
+    publicCategories        = _categories,
+    publicCategoriesDeleted = _categoriesDeleted,
+    publicActions           = _actions,
+    publicPendingEdits      = _pendingEdits,
+    publicEditIdCounter     = _editIdCounter,
+    publicUsers             = fmap userToPublic _users
+  }
+
+-- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
+-- default values.
+fromPublicDB :: PublicDB -> GlobalState
+fromPublicDB PublicDB{..} =
+  GlobalState {
+    _categories        = publicCategories,
+    _categoriesDeleted = publicCategoriesDeleted,
+    _actions           = publicActions,
+    _pendingEdits      = publicPendingEdits,
+    _editIdCounter     = publicEditIdCounter,
+    _sessionStore      = M.empty,
+    _users             = fmap publicUserToUser publicUsers,
+    _dirty             = True
+  }
 
 -- get
 
@@ -781,6 +836,14 @@ logoutUserGlobally key = do
 getAdminUsers :: Acid.Query GlobalState [User]
 getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
 
+-- | Populate the database with info from the public DB.
+importPublicDB :: PublicDB -> Acid.Update GlobalState ()
+importPublicDB = put . fromPublicDB
+
+-- | Strip the database from sensitive data and create a 'PublicDB' from it.
+exportPublicDB :: Acid.Query GlobalState PublicDB
+exportPublicDB = toPublicDB <$> ask
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -822,5 +885,9 @@ makeAcidic ''GlobalState [
   'getUser, 'createUser, 'deleteUser, 'deleteAllUsers,
   'loginUser,
 
-  'getAdminUsers
+  'getAdminUsers,
+
+  -- PublicDB
+  'importPublicDB,
+  'exportPublicDB
   ]

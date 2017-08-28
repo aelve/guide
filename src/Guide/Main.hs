@@ -24,6 +24,10 @@ import Imports
 
 -- Containers
 import qualified Data.Map as M
+-- ByteString
+import qualified Data.ByteString as BS
+-- Lists
+import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
@@ -46,6 +50,8 @@ import qualified Network.Wai.Metrics      as EKG
 import qualified System.Metrics.Gauge     as EKG.Gauge
 -- acid-state
 import Data.Acid as Acid
+import Data.SafeCopy as SafeCopy
+import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
@@ -150,11 +156,26 @@ mainWith config = do
         _users = M.empty,
         _dirty = True }
   do args <- getArgs
-     when (args == ["--dry-run"]) $ do
+     let option = headDef "" args
+     when (option == "--dry-run") $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
        putStrLn "loaded the database successfully"
        closeAcidState db
        exitSuccess
+     -- USAGE: --load-public <filename>
+     -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
+     when (option == "--load-public") $ do
+       let path = fromMaybe
+             (error "you haven't provided public DB file name")
+             (args ^? ix 1)
+       (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+         Left err -> error err
+         Right publicDB -> do
+           db <- openLocalStateFrom "state/" emptyState
+           Acid.update db (ImportPublicDB publicDB)
+           createCheckpointAndClose' db
+           putStrLn "PublicDB imported to GlobalState"
+           exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to

@@ -15,6 +15,9 @@ module Guide.Types.User
   makeUser,
   verifyUser,
   canCreateUser,
+  PublicUser,
+  userToPublic,
+  publicUserToUser
 )
 where
 
@@ -76,3 +79,36 @@ canCreateUser userFoo userBar =
         fieldNotEq userID,
         fieldNotEq userName,
         fieldNotEq userEmail ]
+
+-- | 'PublicUser' contains all safe User data.
+-- Removed from 'User':
+-- * Password
+data PublicUser = PublicUser {
+  publicUserID      :: Uid User,
+  publicUserName    :: Text,
+  publicUserEmail   :: Text,
+  publicUserIsAdmin :: Bool}
+  deriving (Show)
+
+deriveSafeCopySorted 0 'base ''PublicUser
+
+-- | Converts 'User' to 'PublicUser' type.
+userToPublic :: User -> PublicUser
+userToPublic User{..} =
+  PublicUser {
+    publicUserID      = _userID,
+    publicUserName    = _userName,
+    publicUserEmail   = _userEmail,
+    publicUserIsAdmin = _userIsAdmin
+  }
+
+-- | Converts 'PublicUser' to 'User' filling password with Nothing.
+publicUserToUser :: PublicUser -> User
+publicUserToUser PublicUser{..} =
+  User {
+    _userID       = publicUserID,
+    _userName     = publicUserName,
+    _userEmail    = publicUserEmail,
+    _userPassword = Nothing,
+    _userIsAdmin  = publicUserIsAdmin
+  }
