@@ -24,7 +24,6 @@ module Guide.State
   -- * acid-state methods
   -- ** query
   GetGlobalState(..),
-  GetPublicDB(..),
   GetCategories(..),
   GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
@@ -85,11 +84,13 @@ module Guide.State
 
   GetAdminUsers(..),
 
-  -- * public db
+  -- * PublicDB
   PublicDB(..),
   toPublicDB,
   fromPublicDB,
-  emptyPublicDB
+  -- ** queries
+  ImportPublicDB(..),
+  ExportPublicDB(..),
 )
 where
 
@@ -256,23 +257,11 @@ data PublicDB = PublicDB {
   publicUsers             :: Map (Uid User) PublicUser}
   deriving (Show)
 
--- NOTE: you don't need to write migrations for 'PublicDB' but you still need
--- to increase the version when the type changes, so that old clients
--- wouldn't get cryptic error messages like “not enough bytes” when trying to
--- deserialize a new version of 'PublicDB' that they can't handle.
+-- NOTE: you don't need to write migrations for 'PublicDB' but you still
+-- need to increase the version when the type changes, so that old clients
+-- wouldn't get cryptic error messages like “not enough bytes” when trying
+-- to deserialize a new version of 'PublicDB' that they can't handle.
 deriveSafeCopySorted 0 'base ''PublicDB
-
--- | Initial state of 'PublicDB'.
-emptyPublicDB :: PublicDB
-emptyPublicDB =
-  PublicDB {
-    publicCategories        = mempty,
-    publicCategoriesDeleted = mempty,
-    publicActions           = mempty,
-    publicPendingEdits      = mempty,
-    publicEditIdCounter     = 0,
-    publicUsers             = mempty
-  }
 
 -- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
 toPublicDB :: GlobalState -> PublicDB
@@ -283,7 +272,7 @@ toPublicDB GlobalState{..} =
     publicActions           = _actions,
     publicPendingEdits      = _pendingEdits,
     publicEditIdCounter     = _editIdCounter,
-    publicUsers             = M.map userToPublic _users
+    publicUsers             = fmap userToPublic _users
   }
 
 -- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
@@ -297,7 +286,7 @@ fromPublicDB PublicDB{..} =
     _pendingEdits      = publicPendingEdits,
     _editIdCounter     = publicEditIdCounter,
     _sessionStore      = M.empty,
-    _users             = M.map publicUserToUser publicUsers,
+    _users             = fmap publicUserToUser publicUsers,
     _dirty             = True
   }
 
@@ -305,9 +294,6 @@ fromPublicDB PublicDB{..} =
 
 getGlobalState :: Acid.Query GlobalState GlobalState
 getGlobalState = view id
-
-getPublicDB :: Acid.Query PublicDB PublicDB
-getPublicDB = view id
 
 getCategories :: Acid.Query GlobalState [Category]
 getCategories = view categories
@@ -843,6 +829,14 @@ logoutUserGlobally key = do
 getAdminUsers :: Acid.Query GlobalState [User]
 getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
 
+-- | Populate the database with info from the public DB.
+importPublicDB :: PublicDB -> Acid.Update GlobalState ()
+importPublicDB = put . fromPublicDB
+
+-- | Strip the database from sensitive data and create a 'PublicDB' from it.
+exportPublicDB :: Acid.Query GlobalState PublicDB
+exportPublicDB = toPublicDB <$> ask
+
 makeAcidic ''GlobalState [
   -- queries
   'getGlobalState,
@@ -884,10 +878,9 @@ makeAcidic ''GlobalState [
   'getUser, 'createUser, 'deleteUser, 
   'loginUser,
 
-  'getAdminUsers
-  ]
+  'getAdminUsers,
 
-makeAcidic ''PublicDB [
-  -- query
-  'getPublicDB
+  -- PublicDB
+  'importPublicDB,
+  'exportPublicDB
   ]

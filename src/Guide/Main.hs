@@ -24,6 +24,10 @@ import Imports
 
 -- Containers
 import qualified Data.Map as M
+-- ByteString
+import qualified Data.ByteString as BS
+-- Lists
+import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
@@ -46,6 +50,8 @@ import qualified Network.Wai.Metrics      as EKG
 import qualified System.Metrics.Gauge     as EKG.Gauge
 -- acid-state
 import Data.Acid as Acid
+import Data.SafeCopy as SafeCopy
+import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
@@ -55,8 +61,6 @@ import System.Posix.Signals
 import qualified System.FSNotify as FSNotify
 -- HVect
 import Data.HVect hiding (length)
--- safe
-import Safe (headDef)
 
 import Guide.App
 import Guide.ServerStuff
@@ -159,19 +163,19 @@ mainWith config = do
        closeAcidState db
        exitSuccess
      -- USAGE: --load-public <filename>
-     -- loads PublicDB from <filename>, converts it to GlobalState, uses that state
+     -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
      when (option == "--load-public") $ do
-       let path = headDef "state/public/" $ drop 1 args
-       publicDB :: AcidState PublicDB <- openLocalStateFrom path emptyPublicDB
-       publicState <- Acid.query publicDB GetPublicDB
-       closeAcidState publicDB
-
-       let globalState = fromPublicDB publicState
-       globalDB :: DB <- openLocalStateFrom "state/" globalState
-       Acid.update globalDB (SetGlobalState globalState)
-       createCheckpointAndClose' globalDB
-       putStrLn "PublicDB imported to GlobalState"
-       exitSuccess
+       let path = fromMaybe
+             (error "you haven't provided public DB file name")
+             (args ^? ix 1)
+       (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+         Left err -> error err
+         Right publicDB -> do
+           db <- openLocalStateFrom "state/" emptyState
+           Acid.update db (ImportPublicDB publicDB)
+           createCheckpointAndClose' db
+           putStrLn "PublicDB imported to GlobalState"
+           exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
