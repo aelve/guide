@@ -35,19 +35,11 @@ loginForm = Login
 --
 -- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection.
 loginFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
-<<<<<<< HEAD
 loginFormView view' = do
-  div_ $ do
+  div_ [class_ "auth"] $ do
     errorList "email" view'
     label     "email" view' "Email: "
     inputText "email" view'
-=======
-loginFormView view = do
-  div_ [class_ "auth"] $ do
-    errorList "email" view
-    label     "email" view "Email: "
-    inputText "email" view
->>>>>>> wip
 
   div_ $ do
     errorList     "password" view'

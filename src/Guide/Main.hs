@@ -296,7 +296,6 @@ guideApp waiMetrics = do
         renderStaticMd "License" "license.md"
 
       -- Haskell
-<<<<<<< HEAD
       Spock.get (haskellRoute <//> root) $ do
         s <- dbQuery GetGlobalState
         q <- param "q"
@@ -346,59 +345,6 @@ guideApp waiMetrics = do
       Spock.getpost (authRoute <//> "login") $ authRedirect "/" loginAction
       Spock.get (authRoute <//> "logout") logoutAction
       Spock.getpost (authRoute <//> "register") $ authRedirect "/" signupAction
-=======
-      Spock.subcomponent "haskell" $ do
-        Spock.get root $ do
-          s <- dbQuery GetGlobalState
-          q <- param "q"
-          (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-          let act = case q of
-                Nothing -> Action'MainPageVisit
-                Just x  -> Action'Search x
-          baseUrl <- _baseUrl <$> getConfig
-          dbUpdate (RegisterAction act mbIP time baseUrl mbReferrer mbUA)
-          lucidWithConfig $ renderHaskellRoot s q
-        -- Category pages
-        Spock.get var $ \path -> do
-          -- The links look like /parsers-gao238b1 (because it's nice when
-          -- you can find out where a link leads just by looking at it)
-          let (_, catId) = T.breakOnEnd "-" path
-          when (T.null catId) $
-            Spock.jumpNext
-          mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
-          case mbCategory of
-            Nothing -> Spock.jumpNext
-            Just category -> do
-              (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-              baseUrl <- _baseUrl <$> getConfig
-              dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
-                           mbIP time baseUrl mbReferrer mbUA
-              -- If the slug in the url is old (i.e. if it doesn't match the
-              -- one we would've generated now), let's do a redirect
-              when (categorySlug category /= path) $
-                -- TODO: this link shouldn't be absolute [absolute-links]
-                Spock.redirect ("/haskell/" <> categorySlug category)
-              lucidWithConfig $ renderCategoryPage category
-        -- The add/set methods return rendered parts of the structure (added
-        -- categories, changed items, etc) so that the Javascript part could
-        -- take them and inject into the page. We don't want to duplicate
-        -- rendering on server side and on client side.
-        methods
-
-      Spock.subcomponent "auth" $ do
-        -- plain "/auth" logs out a logged-in user and lets a logged-out user
-        -- log in (this is not the best idea, granted, and we should just
-        -- shot logged-in users a “logout” link and logged-out users a
-        -- “login” link instead)
-        Spock.get root $ do
-          user <- getLoggedInUser
-          if isJust user
-            then Spock.redirect "auth/logout"
-            else Spock.redirect "auth/login"
-        Spock.getpost "login" $ authRedirect "/" $ loginAction
-        Spock.get "logout" $ logoutAction
-        Spock.getpost "register" $ authRedirect "/" $ signupAction
->>>>>>> wip
 
 loginAction :: GuideAction ctx ()
 loginAction = do
@@ -417,13 +363,9 @@ loginAction = do
         -- TODO: *properly* show error message/validation of input
         Left err -> do
           formHtml <- protectForm loginFormView v
-<<<<<<< HEAD
           lucidWithConfig $ renderRegister $ do
             div_ $ toHtml ("Error: " <> err)
             formHtml
-=======
-          lucidWithConfig $ renderLogin formHtml
->>>>>>> wip
 
 logoutAction :: GuideAction ctx ()
 logoutAction = do
