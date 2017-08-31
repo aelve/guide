@@ -28,10 +28,12 @@ git checkout front-ps-next
 
 4. Install front-end dependencies
 ```sh
+cd front-ps
 yarn
 ```
 or by using `npm`:
 ```sh
+cd front-ps
 npm i
 ```
 
