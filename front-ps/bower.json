@@ -12,7 +12,6 @@
     "purescript-express": "^0.5.2",
     "purescript-node-process": "^5.0.0",
     "purescript-pux": "^11.0.0",
-    "purescript-smolder": "^10.1.0",
     "purescript-aff": "^3.1.0",
     "purescript-affjax": "^4.0.0",
     "purescript-argonaut-generic-codecs": "^6.0.4"
@@ -21,6 +20,7 @@
     "purescript-psci-support": "^3.0.0"
   },
   "resolutions": {
+    "purescript-smolder": "^10.1.0",
     "purescript-arraybuffer-types": "^2.0.0"
   }
 }
