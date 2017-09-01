@@ -1,11 +1,16 @@
 node_modules/
 bower_components/
 output/
-public/server.js
-public/category-overview.js
-public/category-detail.js
 .psci_modules
 npm-debug.log
 .psc-ide-port
 yarn-error.log
 .yarnclean
+
+public/server.js
+public/category-overview.js
+public/category-detail.js
+# ^ from PureScript code compiled js files
+
+common/Generated
+# ^ generated types by `purescript-bridge`

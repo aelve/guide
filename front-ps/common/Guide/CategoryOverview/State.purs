@@ -1,14 +1,18 @@
 module Guide.CategoryOverview.State where
 
 import Data.Generic (class Generic, gShow)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Show (class Show)
+
+import Guide.Api.Types (CategoryInfo)
 import Guide.CategoryOverview.Routes (Route, match)
 
 newtype State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
+  , categories :: Maybe (Array CategoryInfo)
   }
 
 derive instance gState :: Generic State
@@ -21,4 +25,5 @@ init url = State
   { title: "CategoryDetail page" -- TODO (sectore): Change title
   , route: match url
   , loaded: false
+  , categories: Nothing
   }
