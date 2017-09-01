@@ -18,3 +18,4 @@ extra-deps:
 - fmt-0.4.0.0
 - Spock-digestive-0.3.0.0
 - digestive-functors-0.8.2.0
+- servant-generic-0.1.0.0

@@ -45,6 +45,7 @@ executable guide
 library
   exposed-modules:
     Guide.App
+    Guide.Api
     Guide.Main
     Guide.ServerStuff
     Guide.Session
@@ -131,7 +132,10 @@ library
                      , safe
                      , safecopy
                      , safecopy-migrate
+                     , say
                      , scrypt
+                     , servant-generic
+                     , servant-server
                      , shortcut-links >= 0.4.2
                      , slave-thread
                      , split
@@ -150,6 +154,7 @@ library
                      , wai
                      , wai-middleware-metrics
                      , wai-middleware-static
+                     , warp
                      , xml
                      , xss-sanitize
   ghc-options:         -Wall -fno-warn-unused-do-bind
