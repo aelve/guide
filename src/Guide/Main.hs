@@ -5,6 +5,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 {- |
 The main module.
@@ -40,6 +43,8 @@ import Web.Spock.Config
 import Web.Spock.Lucid
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (staticPolicy, addBase)
+-- http-client
+import Network.HTTP.Client.TLS (newTlsManager)
 -- Spock-digestive
 import Web.Spock.Digestive (runForm)
 -- Highlighting
@@ -63,6 +68,7 @@ import qualified System.FSNotify as FSNotify
 import Data.HVect hiding (length)
 
 import Guide.App
+import Guide.Auth
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config
@@ -154,6 +160,7 @@ mainWith config = do
         _editIdCounter = 0,
         _sessionStore = M.empty,
         _users = M.empty,
+        _creds = M.empty,
         _dirty = True }
   do args <- getArgs
      let option = headDef "" args
@@ -214,9 +221,11 @@ mainWith config = do
       threadDelay (1000000 * 60)
     -- Create an admin user
     -- Run the server
+    httpManager <- newTlsManager
     let serverState = ServerState {
           _config = config,
-          _db     = db }
+          _db     = db,
+          _httpManager = httpManager }
     spockConfig <- do
       cfg <- defaultSpockCfg () PCNoDatabase serverState
       store <- newAcidSessionStore db
@@ -235,7 +244,7 @@ mainWith config = do
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ guideApp waiMetrics
+    runSpockNoBanner 8080 $ spock spockConfig $ guideApp waiMetrics
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
@@ -346,6 +355,8 @@ guideApp waiMetrics = do
       Spock.get (authRoute <//> "logout") logoutAction
       Spock.getpost (authRoute <//> "register") $ authRedirect "/" signupAction
 
+      mkAuthApi authRoute
+
 loginAction :: GuideAction ctx ()
 loginAction = do
   r <- runForm "login" loginForm
@@ -363,7 +374,7 @@ loginAction = do
         -- TODO: *properly* show error message/validation of input
         Left err -> do
           formHtml <- protectForm loginFormView v
-          lucidWithConfig $ renderRegister $ do
+          lucidWithConfig $ renderLogin $ do
             div_ $ toHtml ("Error: " <> err)
             formHtml
 

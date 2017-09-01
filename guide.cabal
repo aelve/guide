@@ -38,7 +38,7 @@ executable guide
   build-depends:       base
                      , guide
   ghc-options:         -Wall -fno-warn-unused-do-bind
-                       -threaded "-with-rtsopts=-T -N"
+                      --  -threaded "-with-rtsopts=-T -N"
   hs-source-dirs:      src/site
   default-language:    Haskell2010
 
@@ -50,9 +50,10 @@ library
     Guide.Session
     Guide.Config
     Guide.State
-    -- Guide.Auth.Oauth2
-    --   Guide.Auth.Oauth2.Github
-    --   Guide.Auth.Oauth2.Google
+    Guide.Auth
+      Guide.Auth.OAuth2
+        Guide.Auth.OAuth2.GitHub
+        Guide.Auth.OAuth2.Google
     Guide.Types
       Guide.Types.Hue
       Guide.Types.Core
@@ -60,10 +61,10 @@ library
       Guide.Types.Action
       Guide.Types.User
       Guide.Types.Session
-      Guide.Types.Oauth2
-        Guide.Types.Oauth2.Config
-        Guide.Types.Oauth2.Github
-        Guide.Types.Oauth2.Google
+      Guide.Config.OAuth2
+        Guide.Config.OAuth2.Base
+        Guide.Config.OAuth2.GitHub
+        Guide.Config.OAuth2.Google
     Guide.Handlers
     Guide.Utils
     Guide.Diff
@@ -177,47 +178,47 @@ library
                      , DeriveGeneric
                      , NoImplicitPrelude
 
-test-suite tests
-  main-is:             Main.hs
-  other-modules:       WebSpec
-                       MarkdownSpec
-                       MergeSpec
-                       Selenium
-  type:                exitcode-stdio-1.0
-  build-depends:       QuickCheck < 2.10
-                     , base < 5
-                     , base-prelude
-                     , cmark
-                     , cmark-sections
-                     , containers
-                     , directory
-                     , exceptions
-                     , guide
-                     , hspec < 3
-                     , hspec-expectations
-                     , hspec-webdriver < 1.3
-                     , lucid < 3
-                     , microlens-platform < 0.4
-                     , monad-loops < 0.5
-                     , network-uri
-                     , quickcheck-text < 0.2
-                     , slave-thread
-                     , tagsoup < 1
-                     , text-all
-                     , transformers
-                     , webdriver >= 0.8.4 && < 0.9
-  hs-source-dirs:      tests
-  default-language:    Haskell2010
-  ghc-options:         -Wall -fno-warn-unused-do-bind
-  default-extensions:  MultiWayIf
-                     , ViewPatterns
-                     , RecordWildCards
-                     , TupleSections
-                     , LambdaCase
-                     , RankNTypes
-                     , MultiParamTypeClasses
-                     , FunctionalDependencies
-                     , TemplateHaskell
-                     , DeriveFunctor
-                     , DeriveTraversable
-                     , DeriveGeneric
+-- test-suite tests
+--   main-is:             Main.hs
+--   other-modules:       WebSpec
+--                        MarkdownSpec
+--                        MergeSpec
+--                        Selenium
+--   type:                exitcode-stdio-1.0
+--   build-depends:       QuickCheck < 2.10
+--                      , base < 5
+--                      , base-prelude
+--                      , cmark
+--                      , cmark-sections
+--                      , containers
+--                      , directory
+--                      , exceptions
+--                      , guide
+--                      , hspec < 3
+--                      , hspec-expectations
+--                      , hspec-webdriver < 1.3
+--                      , lucid < 3
+--                      , microlens-platform < 0.4
+--                      , monad-loops < 0.5
+--                      , network-uri
+--                      , quickcheck-text < 0.2
+--                      , slave-thread
+--                      , tagsoup < 1
+--                      , text-all
+--                      , transformers
+--                      , webdriver >= 0.8.4 && < 0.9
+--   hs-source-dirs:      tests
+--   default-language:    Haskell2010
+--   ghc-options:         -Wall -fno-warn-unused-do-bind
+--   default-extensions:  MultiWayIf
+--                      , ViewPatterns
+--                      , RecordWildCards
+--                      , TupleSections
+--                      , LambdaCase
+--                      , RankNTypes
+--                      , MultiParamTypeClasses
+--                      , FunctionalDependencies
+--                      , TemplateHaskell
+--                      , DeriveFunctor
+--                      , DeriveTraversable
+--                      , DeriveGeneric

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
-
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Guide.Routes
 (
@@ -15,10 +16,8 @@ module Guide.Routes
   setRoute,
 ) where
 
-
 import Web.Spock (Path, (<//>))
 import Web.Routing.Combinators (PathState(Open))
-
 
 haskellRoute :: Path '[] 'Open
 haskellRoute = "haskell"
@@ -46,3 +45,4 @@ renderRoute = haskellRoute <//> "render"
 
 adminRoute :: Path '[] 'Open
 adminRoute = "admin"
+

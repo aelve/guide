@@ -45,6 +45,7 @@ data GuideData = GuideData {
   }
   deriving (Show, Eq)
 
+
 deriveSafeCopySorted 0 'base ''GuideData
 makeLenses ''GuideData
 

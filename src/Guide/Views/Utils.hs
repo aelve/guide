@@ -52,6 +52,7 @@ module Guide.Views.Utils
 
   protectForm,
   getCsrfHeader,
+  getCsrfTokenPair,
 
   module Guide.Views.Utils.Input
 )

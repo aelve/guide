@@ -75,12 +75,15 @@ module Guide.State
   RestoreItem(..),
   RestoreTrait(..),
   SetDirty(..), UnsetDirty(..),
-  
+
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
   GetUser(..), CreateUser(..), DeleteUser(..), DeleteAllUsers(..),
   LoginUser(..),
+
+  AddCreds(..), RemoveCreds(..),
+  LoginUserCreds(..),
 
   GetAdminUsers(..),
 
@@ -118,6 +121,7 @@ import Guide.Types.Edit
 import Guide.Types.Action
 import Guide.Types.Session
 import Guide.Types.User
+import Guide.Types.Creds
 
 
 {- Note [extending types]
@@ -196,14 +200,21 @@ data GlobalState = GlobalState {
   _sessionStore :: Map SessionId GuideSession,
   -- | Users
   _users :: Map (Uid User) User,
+  -- | External credentials
+  _creds :: Map (Uid User) [Creds],
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
   _dirty :: Bool }
   deriving (Show)
 
-deriveSafeCopySorted 8 'extension ''GlobalState
+deriveSafeCopySorted 9 'extension ''GlobalState
 makeLenses ''GlobalState
 
-changelog ''GlobalState (Current 8, Past 7) [
+changelog ''GlobalState (Current 9, Past 8) [
+  Added "_creds" [hs|M.empty|]
+  ]
+deriveSafeCopySorted 8 'extension ''GlobalState_v8
+
+changelog ''GlobalState (Past 8, Past 7) [
   Added "_sessionStore" [hs|M.empty|],
   Added "_users" [hs|M.empty|]
   ]
@@ -254,14 +265,15 @@ data PublicDB = PublicDB {
   publicActions           :: [(Action, ActionDetails)],
   publicPendingEdits      :: [(Edit, EditDetails)],
   publicEditIdCounter     :: Int,
-  publicUsers             :: Map (Uid User) PublicUser}
+  publicUsers             :: Map (Uid User) PublicUser,
+  publicCreds             :: Map (Uid User) [PublicCreds]}
   deriving (Show)
 
 -- NOTE: you don't need to write migrations for 'PublicDB' but you still
 -- need to increase the version when the type changes, so that old clients
 -- wouldn't get cryptic error messages like “not enough bytes” when trying
 -- to deserialize a new version of 'PublicDB' that they can't handle.
-deriveSafeCopySorted 0 'base ''PublicDB
+deriveSafeCopySorted 1 'base ''PublicDB
 
 -- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
 toPublicDB :: GlobalState -> PublicDB
@@ -272,7 +284,8 @@ toPublicDB GlobalState{..} =
     publicActions           = _actions,
     publicPendingEdits      = _pendingEdits,
     publicEditIdCounter     = _editIdCounter,
-    publicUsers             = fmap userToPublic _users
+    publicUsers             = fmap userToPublic _users,
+    publicCreds             = (fmap . fmap) credsToPublic _creds
   }
 
 -- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
@@ -287,6 +300,7 @@ fromPublicDB PublicDB{..} =
     _editIdCounter     = publicEditIdCounter,
     _sessionStore      = M.empty,
     _users             = fmap publicUserToUser publicUsers,
+    _creds             = (fmap . fmap) publicCredsToCreds publicCreds,
     _dirty             = True
   }
 
@@ -757,26 +771,26 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
--- | Retrieves a session by 'SessionID'. 
+-- | Retrieves a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
 loadSession key = view (sessionStore . at key)
 
--- | Stores a session object. 
+-- | Stores a session object.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 storeSession :: GuideSession -> Acid.Update GlobalState ()
 storeSession sess = do
   sessionStore %= M.insert (sess ^. sess_id) sess
   setDirty
 
--- | Deletes a session by 'SessionID'. 
+-- | Deletes a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 deleteSession :: SessionId -> Acid.Update GlobalState ()
 deleteSession key = do
   sessionStore %= M.delete key
   setDirty
 
--- | Retrieves all sessions. 
+-- | Retrieves all sessions.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 getSessions :: Acid.Query GlobalState [GuideSession]
 getSessions = do
@@ -791,7 +805,7 @@ getUser key = view (users . at key)
 createUser :: User -> Acid.Update GlobalState Bool
 createUser user = do
   m <- toList <$> use users
-  if all (canCreateUser user) (m ^.. each) 
+  if all (canCreateUser user) (m ^.. each)
   then do
     users %= M.insert (user ^. userID) user
     return True
@@ -817,7 +831,7 @@ loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
   matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
   case matches of
-    [user] -> 
+    [user] ->
       if verifyUser user password
       then return $ Right user
       else return $ Left "wrong password"
@@ -835,6 +849,38 @@ logoutUserGlobally key = do
 -- | Retrieve all users with the 'userIsAdmin' field set to True.
 getAdminUsers :: Acid.Query GlobalState [User]
 getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
+
+-- | Add external credentials to a user account.
+addCreds :: User -> Creds -> Acid.Update GlobalState Bool
+addCreds user userCreds = do
+  allCreds <- concat . toList <$> use creds
+  if canAddCreds userCreds allCreds
+  then do
+    creds %= M.insertWith (++) (user ^. userID) [userCreds]
+    return True
+  else
+    return False
+
+-- | Remove external credentials to a user account.
+removeCreds :: User -> Creds -> Acid.Update GlobalState ()
+removeCreds user userCreds = do
+  creds %= M.adjust (filter filterCred) (user ^. userID)
+  where
+    filterCred cred |    cred ^. credsProvider == userCreds ^. credsProvider
+                      && cred ^. credsId       == userCreds ^. credsId
+                      = False
+                    | otherwise = True
+
+-- | Get user from creds
+loginUserCreds :: Creds -> Acid.Query GlobalState (Maybe User)
+loginUserCreds userCreds = do
+  matches <- filter (\(_, cs) -> any matchCred cs) . M.toList <$> view creds
+  case matches of
+    [(key, _)] -> view (users . at key)
+    _ -> return Nothing
+  where
+    matchCred cred =    cred ^. credsProvider == userCreds ^. credsProvider
+                     && cred ^. credsId       == userCreds ^. credsId
 
 -- | Populate the database with info from the public DB.
 importPublicDB :: PublicDB -> Acid.Update GlobalState ()
@@ -886,6 +932,10 @@ makeAcidic ''GlobalState [
   'loginUser,
 
   'getAdminUsers,
+
+  -- creds
+  'addCreds, 'removeCreds,
+  'loginUserCreds,
 
   -- PublicDB
   'importPublicDB,

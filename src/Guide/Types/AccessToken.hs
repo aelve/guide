@@ -1,6 +1,6 @@
 {- |
-Module      :  Guide.Types.Oauth2.AccessToken
-Description :  Oauth2 Access Token
+Module      :  Guide.Config.OAuth2.AccessToken
+Description :  OAuth2 Access Token
 Copyright   :  (c) Aaron Friel
 License     :  BSD-3
 
@@ -11,7 +11,7 @@ Portability :  portable | non-portable (<reason>)
 moduleLongerDescription
 -}
 
-module Guide.Types.Oauth2.AccessToken where
+module Guide.Config.OAuth2.AccessToken where
 
 import Imports
 

@@ -101,7 +101,7 @@ events*
 *.lock
 ~~~
 
-Create a repository locally and remotely. If you're using Github, you can avoid having to enter passwords by generate an access token and using it as username when adding a remote:
+Create a repository locally and remotely. If you're using GitHub, you can avoid having to enter passwords by generate an access token and using it as username when adding a remote:
 
     $ git remote add origin https://<token>@github.com/aelve/guide-database.git
 

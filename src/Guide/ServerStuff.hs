@@ -13,6 +13,7 @@ module Guide.ServerStuff
 (
   ServerState(..),
     getConfig,
+    getManager,
   DB,
     dbUpdate,
     dbQuery,
@@ -25,7 +26,7 @@ module Guide.ServerStuff
   addEdit,
   undoEdit,
   invalidateCacheForEdit,
-  
+
   -- * Handler helpers
   itemVar,
   categoryVar,
@@ -44,6 +45,8 @@ import Imports
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
 import Web.Routing.Combinators (PathState(..))
+-- http-client
+import Network.HTTP.Client (Manager)
 -- acid-state
 import Data.Acid as Acid
 import Data.Acid.Local as Acid
@@ -58,14 +61,20 @@ import Guide.Markdown
 
 -- | Global state of the site.
 data ServerState = ServerState {
-  _config :: Config,                -- ^ Config (doesn't change in runtime)
-  _db     :: DB                     -- ^ DB connection
+  _config      :: Config,                -- ^ Config (doesn't change in runtime)
+  _db          :: DB,                    -- ^ DB connection
+  _httpManager :: Manager                -- ^ HTTP.Client.Manager
   }
 
 -- | Get config in a Spock monad.
 getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
           => m Config
 getConfig = _config <$> Spock.getState
+
+-- | Get http manager in a Spock monad.
+getManager :: (Monad m, HasSpock m, SpockState m ~ ServerState)
+           => m Manager
+getManager = _httpManager <$> Spock.getState
 
 -- | A pointer to an open acid-state database (allows making queries/updates,
 -- creating checkpoints, etc).

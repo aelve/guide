@@ -32,7 +32,6 @@ import Crypto.Scrypt (Pass (..), EncryptedPass (..), encryptPassIO', getEncrypte
 
 import Guide.Utils
 
-
 data User = User {
   -- | Unique, pseudorandom identifier for user.
   _userID          :: Uid User,
@@ -64,7 +63,7 @@ makeUser username email password = do
 
 -- | Verifies a given password corresponds to a user's encrypted password.
 verifyUser :: User -> ByteString -> Bool
-verifyUser user password = 
+verifyUser user password =
   case user ^. userPassword of
     Just encPass -> verifyPass' (Pass password) (EncryptedPass encPass)
     Nothing -> False

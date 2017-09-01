@@ -7,6 +7,12 @@ the base url (for correct link generation in feeds).
 module Guide.Config
 (
   Config(..),
+  -- adminPassword,
+  -- baseUrl,
+  -- discussLink,
+  -- githubOauth,
+  -- googleToken,
+  -- prerender,
   readConfig,
   writeConfig,
   modifyConfig,
@@ -27,7 +33,7 @@ import Data.Default
 
 import Guide.Utils
 
-import qualified Guide.Types.Oauth2 as Oauth2
+import qualified Guide.Config.OAuth2 as OAuth2
 
 -- | Site config. Stored in @config.json@.
 data Config = Config {
@@ -37,13 +43,16 @@ data Config = Config {
   _googleToken   :: Text,         -- ^ Google site verification token. Will
                                   --    be inserted into all pages
   _adminPassword :: Text,         -- ^ Password for the admin user
-  _githubOauthConfig :: [Oauth2.GithubEndpoint],
   _prerender     :: Bool,         -- ^ Whether to prerender all pages when
                                   --    the app is started
-  _discussLink   :: Maybe Url     -- ^ Link to a place to discuss the site.
+  _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
+  _githubOauth   :: Maybe OAuth2.GitHubEndpoint
+                                  -- ^ Configuration for GitHub based OAuth
   }
   deriving (Eq, Show)
+
+-- makeLenses ''Config
 
 -- | Default instance: no base URL, no Google token, empty password, no
 -- prerendering, no discussion link.
@@ -52,9 +61,9 @@ instance Default Config where
     _baseUrl       = "/",
     _googleToken   = "",
     _adminPassword = "",
-    _githubOauthConfig = [Oauth2.oauth2def "/"],
     _prerender     = False,
-    _discussLink   = Nothing }
+    _discussLink   = Nothing,
+    _githubOauth   = Nothing }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
@@ -63,6 +72,7 @@ instance FromJSON Config where
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
+    _githubOauth   <- o .:? "github-oauth"   .!= _githubOauth def
     return Config{..}
 
 instance ToJSON Config where
@@ -71,7 +81,8 @@ instance ToJSON Config where
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
     "prerender"      .= _prerender,
-    "discuss-link"   .= _discussLink ]
+    "discuss-link"   .= _discussLink,
+    "github-oauth"   .= _githubOauth ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).

@@ -5,7 +5,7 @@
 
 The beta version is running at [guide.aelve.com](https://guide.aelve.com). The most complete section yet is [the one about lenses](https://guide.aelve.com/haskell/lenses-sth6l9jl).
 
-Installation instructions and the explanation of config variables (in `config.json`) are here: [INSTALL.md](INSTALL.md). Don't be afraid to install it locally – it's very easy! You don't need to set up any databases or anything like that, and you can get a full copy of the data from the site by simply cloning it from Github.
+Installation instructions and the explanation of config variables (in `config.json`) are here: [INSTALL.md](INSTALL.md). Don't be afraid to install it locally – it's very easy! You don't need to set up any databases or anything like that, and you can get a full copy of the data from the site by simply cloning it from GitHub.
 
 ## Contributing
 

@@ -4,7 +4,7 @@
 App module defines types used by the Spock framework.
 
 -}
-module Guide.App 
+module Guide.App
 where
 
 -- hvect

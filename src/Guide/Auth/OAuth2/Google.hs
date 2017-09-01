@@ -1,5 +1,5 @@
 {- |
-Module      :  Guide.Auth.Oauth2.Google
+Module      :  Guide.Auth.OAuth2.Google
 Description :  Google authentication module
 Copyright   :  (c) Aaron Friel
 License     :  BSD-3
@@ -10,4 +10,4 @@ Portability :  portable
 
 -}
 
-module Guide.API.Auth.Oauth2.Google where
+module Guide.Auth.OAuth2.Google where
