@@ -12,15 +12,16 @@ module Guide.Api.Server
 
 import Imports
 
-import Data.Aeson
+import Data.Acid as Acid
 import Servant
 import Servant.Generic
 import Network.Wai.Handler.Warp (run)
 -- putStrLn that works well with concurrency
 import Say (say)
 
-import Guide.Types
 import Guide.State
+import Guide.Api.Types (Api, Site(..))
+import Guide.Api.Methods (getCategories, getCategory)
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site {

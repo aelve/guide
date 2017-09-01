@@ -46,6 +46,9 @@ library
   exposed-modules:
     Guide.App
     Guide.Api
+      Guide.Api.Methods
+      Guide.Api.Server
+      Guide.Api.Types
     Guide.Main
     Guide.ServerStuff
     Guide.Session

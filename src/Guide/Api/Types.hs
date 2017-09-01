@@ -7,7 +7,8 @@
 {-# LANGUAGE TypeOperators         #-}
 
 module Guide.Api.Types
-  ( ApiError(..)
+  ( Api
+  , ApiError(..)
   , CategoryInfo(..)
   , CCategoryDetail(..)
   , CUid(..)
@@ -50,10 +51,11 @@ data Site route = Site
   -- | Details of a single category (and items in it, etc)
   , _getCategory :: route :-
       "category"                :> Capture "id" (Uid Category)
-                                :> Get '[JSON] (Either ApiError Category)
+                                :> Get '[JSON] (Either ApiError CCategoryDetail)
   }
   deriving (Generic)
 
+type Api = ToServant (Site AsApi)
 ----------------------------------------------------------------------------
 -- Client types
 ----------------------------------------------------------------------------
