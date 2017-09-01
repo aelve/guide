@@ -37,7 +37,7 @@ data Site route = Site
   -- | A list of all categories (the /haskell page). Returns category
   -- titles.
     _getCategories :: route :-
-      "categories"              :> Get '[JSON] [Text]
+      "categories"              :> Get '[JSON] [CategoryInfo]
 
   -- | Details of a single category (and items in it, etc)
   , _getCategory :: route :-
@@ -76,10 +76,28 @@ runApiServer db = do
 -- Implementations of methods
 ----------------------------------------------------------------------------
 
-getCategories :: DB -> Handler [Text]
+data CategoryInfo = CategoryInfo {
+  _categoryInfoUid     :: Uid Category,
+  _categoryInfoTitle   :: Text,
+  _categoryInfoCreated :: UTCTime,
+  _categoryInfoGroup_  :: Text,
+  _categoryInfoStatus  :: CategoryStatus
+  }
+  deriving (Show, Generic)
+
+instance ToJSON CategoryInfo
+
+getCategories :: DB -> Handler [CategoryInfo]
 getCategories db = do
   liftIO (Acid.query db GetCategories) <&> \xs ->
-    map (view title) xs
+    map categoryToInfo xs
+  where
+    categoryToInfo Category{..} = CategoryInfo {
+      _categoryInfoUid     = _categoryUid,
+      _categoryInfoTitle   = _categoryTitle,
+      _categoryInfoCreated = _categoryCreated,
+      _categoryInfoGroup_  = _categoryGroup_,
+      _categoryInfoStatus  = _categoryStatus }
 
 getCategory :: DB -> Uid Category -> Handler (Either ApiError Category)
 getCategory db catId =
