@@ -63,7 +63,7 @@ import Say (say)
 import Data.HVect hiding (length)
 
 import Guide.App
-import Guide.Api
+import Guide.Api (runApiServer)
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config

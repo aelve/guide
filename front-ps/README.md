@@ -26,7 +26,12 @@ git checkout front-ps-next
 ./b
 ```
 
-4. Install front-end dependencies
+4. Build PureScript types of Guide's Api
+```
+stack exec guide-hs2ps
+```
+
+5. Install front-end dependencies
 ```sh
 cd front-ps
 yarn
