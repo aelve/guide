@@ -5,7 +5,7 @@ import Prelude
 import Data.Generic (class Generic, gEq, gShow)
 import Data.Maybe (fromMaybe)
 import Pux.Router (end, lit, router, str)
-import Guide.Types (CategoryName(..))
+import Guide.Common.Types (CategoryName(..))
 
 data Route
   = CategoryDetail CategoryName String

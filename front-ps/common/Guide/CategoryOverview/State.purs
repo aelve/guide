@@ -1,18 +1,20 @@
 module Guide.CategoryOverview.State where
 
 import Data.Generic (class Generic, gShow)
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Show (class Show)
-
-import Guide.Api.Types (CategoryInfo)
+import Guide.Common.Api (ApiError)
 import Guide.CategoryOverview.Routes (Route, match)
+import Guide.Common.Types (CategoryName(..), CCategories)
+import Network.RemoteData (RemoteData(..))
 
 newtype State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
-  , categories :: Maybe (Array CategoryInfo)
+  , errors :: Array String
+  , categories :: RemoteData ApiError CCategories
+  , categoryName :: CategoryName
   }
 
 derive instance gState :: Generic State
@@ -22,8 +24,13 @@ instance showState :: Show State where
 
 init :: String -> State
 init url = State
-  { title: "CategoryDetail page" -- TODO (sectore): Change title
+  { title: "CategoryOverview page" -- TODO (sectore): Change title
   , route: match url
   , loaded: false
-  , categories: Nothing
+  , errors: []
+  , categories: NotAsked
+  , categoryName: CategoryName catNameHS
   }
+
+catNameHS :: String
+catNameHS = "haskell"

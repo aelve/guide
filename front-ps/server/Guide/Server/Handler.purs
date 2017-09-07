@@ -7,11 +7,12 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error, message)
 import Data.Argonaut.Generic.Aeson (options)
 import Data.Argonaut.Generic.Encode (genericEncodeJson)
-import Guide.CategoryOverview.Events (AppEffects, Event(..), foldp) as CO
+import Guide.Common.Types (AppEffects)
+import Guide.CategoryOverview.Events (Event(..), foldp) as CO
 import Guide.CategoryOverview.Routes (Route(..), match) as CO
 import Guide.CategoryOverview.State (State(..), init) as CO
 import Guide.CategoryOverview.View.Layout (view) as CO
-import Guide.CategoryDetail.Events (AppEffects, Event(..), foldp) as CD
+import Guide.CategoryDetail.Events (Event(..), foldp) as CD
 import Guide.CategoryDetail.Routes (Route(..), match) as CD
 import Guide.CategoryDetail.State (State(..), init) as CD
 import Guide.CategoryDetail.View.Layout (view) as CD
@@ -34,7 +35,7 @@ errorHandler err = do
   setStatus 500
   sendJson {error: message err}
 
-categoryDetailHandler :: forall e. Handler (CoreEffects (CD.AppEffects e))
+categoryDetailHandler :: forall e. Handler (CoreEffects (AppEffects e))
 categoryDetailHandler = do
   let getState (CD.State st) = st
 
@@ -64,7 +65,7 @@ categoryDetailHandler = do
   send html
 
 
-categoryOverviewHandler :: forall e. Handler (CoreEffects (CO.AppEffects e))
+categoryOverviewHandler :: forall e. Handler (CoreEffects (AppEffects e))
 categoryOverviewHandler = do
   let getState (CO.State st) = st
 
