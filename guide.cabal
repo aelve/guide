@@ -157,6 +157,7 @@ library
                      , wai
                      , wai-middleware-metrics
                      , wai-middleware-static
+                     , wai-cors
                      , warp
                      , xml
                      , xss-sanitize
