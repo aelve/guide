@@ -5,6 +5,7 @@ import Prelude
 import Data.Generic (class Generic, gEq, gShow)
 import Data.Maybe (fromMaybe)
 import Pux.Router (end, lit, router, str)
+import Guide.Common.Routes (categoryLit, categoryUrl)
 import Guide.Common.Types (CategoryName(..))
 
 data Route
@@ -24,12 +25,3 @@ match url = fromMaybe (NotFound url) $ router url $
 toURL :: Route -> String
 toURL (NotFound url)              = url
 toURL (CategoryOverview catName)  = categoryUrl catName
-
-litUrl :: String -> String
-litUrl lit = "/" <> lit
-
-categoryLit :: String
-categoryLit = "category"
-
-categoryUrl :: CategoryName -> String
-categoryUrl (CategoryName name) = (litUrl categoryLit) <> (litUrl name)

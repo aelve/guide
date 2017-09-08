@@ -4,11 +4,13 @@ import Prelude
 
 import Data.Generic (class Generic, gEq, gShow)
 import Data.Maybe (fromMaybe)
-import Pux.Router (end, lit, router, str)
+import Guide.Api.Types (CUid(..))
+import Guide.Common.Routes (categoryLit, categoryDetailUrl)
 import Guide.Common.Types (CategoryName(..))
+import Pux.Router (end, lit, router, str)
 
 data Route
-  = CategoryDetail CategoryName String
+  = CategoryDetail CategoryName (CUid String)
   | NotFound String
 
 derive instance genericRoute :: Generic Route
@@ -21,20 +23,8 @@ instance eqRoute :: Eq Route where
 match :: String -> Route
 match url = fromMaybe (NotFound url) $ router url $
   CategoryDetail <<< CategoryName <$> (lit categoryLit *> str)
-                                  <*> str <* end
+                                  <*> (CUid <$> str) <* end
 
 toURL :: Route -> String
 toURL (NotFound url)                  = url
 toURL (CategoryDetail catName catId)  = categoryDetailUrl catName catId
-
-litUrl :: String -> String
-litUrl lit = "/" <> lit
-
-categoryLit :: String
-categoryLit = "category"
-
-categoryUrl :: CategoryName -> String
-categoryUrl (CategoryName name) = (litUrl categoryLit) <> (litUrl name)
-
-categoryDetailUrl :: CategoryName -> String -> String
-categoryDetailUrl catName catId = (categoryUrl catName) <> (litUrl catId)
