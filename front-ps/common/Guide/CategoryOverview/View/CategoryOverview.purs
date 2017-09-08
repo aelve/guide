@@ -34,11 +34,8 @@ catsView st@(State state) cats =
 
 catView :: State -> CategoryInfo -> P.HTML Event
 catView (State state) (CategoryInfo cat) =
-  let url = categoryDetailUrl state.categoryName cat.categoryInfoUid in
   S.li
     ! P.key (cat.categoryInfoUid ^. _CUid) $ do
     S.a
-      ! S.href url
+      ! S.href (categoryDetailUrl state.categoryName cat.categoryInfoUid)
       $ S.text cat.categoryInfoTitle
-    S.h2
-      $ S.text url
