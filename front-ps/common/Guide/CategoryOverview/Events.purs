@@ -19,8 +19,6 @@ data Event =
   | ReceiveCategories (Either ApiError CCategories)
 
 foldp :: forall eff. Event -> State -> EffModel State Event (AppEffects eff)
-foldp (PageView route) (State st) =
-  routeEffects route (State $ st { route = route })
 
 foldp (GetCategories catName) (State st) =
   { state: State $ st { categories = Loading
@@ -42,6 +40,9 @@ foldp (ReceiveCategories (Left error)) s@(State st) = noEffects $
         , errors = (show error) : st.errors
         , categories = Failure error
         }
+
+foldp (PageView route) (State st) =
+  routeEffects route (State $ st { route = route })
 
 routeEffects :: forall eff. Route -> State -> EffModel State Event (AppEffects eff)
 routeEffects (CategoryOverview catName) s@(State st) =

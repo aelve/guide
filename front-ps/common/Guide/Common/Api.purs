@@ -9,6 +9,7 @@ import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, unsafeFromForeign)
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
+import Guide.Api.Types (CCategoryDetail, CUid(..))
 import Guide.Common.Types (CCategories, CategoryName)
 import IsomorphicFetch (FETCH, get, json)
 
@@ -33,5 +34,11 @@ decodeJson = genericDecodeJson options <<< unsafeFromForeign
 getCategories :: forall eff. CategoryName -> Aff (fetch :: FETCH | eff) (Either ApiError CCategories)
 getCategories _ = do
   response <- get $ endpoint <> "/categories"
+  json' <- json response
+  pure $ either (Left <<< ApiError) pure $ decodeJson json'
+
+getCategory :: forall eff. CategoryName -> (CUid String) -> Aff (fetch :: FETCH | eff) (Either ApiError CCategoryDetail)
+getCategory _ (CUid catId) = do
+  response <- get $ endpoint <> "/category/" <> catId
   json' <- json response
   pure $ either (Left <<< ApiError) pure $ decodeJson json'

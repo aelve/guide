@@ -3,17 +3,18 @@ module Guide.CategoryOverview.View.CategoryOverview where
 import Prelude
 
 import Data.Foldable (for_)
-import Data.Generic (gShow)
-import Guide.Api.Types (CategoryInfo(..))
+import Data.Lens ((^.))
+import Guide.Api.Types (CategoryInfo(..), _CUid)
 import Guide.CategoryOverview.Events (Event)
 import Guide.CategoryOverview.State (State(..))
+import Guide.Common.Routes (categoryDetailUrl)
 import Guide.Common.Types (CCategories)
 import Network.RemoteData (RemoteData(..))
-import Pux.DOM.Events (onClick) as P
 import Pux.DOM.HTML (HTML) as P
 import Pux.DOM.HTML.Attributes (key) as P
-import Text.Smolder.HTML (div, h1, h2, h3, a, ul, li) as S
-import Text.Smolder.Markup ((#!), (!))
+import Text.Smolder.HTML (div, h1, h2, a, ul, li) as S
+import Text.Smolder.HTML.Attributes (href) as S
+import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
 
 view :: State -> P.HTML Event
@@ -32,8 +33,12 @@ catsView st@(State state) cats =
     $ for_ cats (catView st)
 
 catView :: State -> CategoryInfo -> P.HTML Event
-catView _ (CategoryInfo cat) =
+catView (State state) (CategoryInfo cat) =
+  let url = categoryDetailUrl state.categoryName cat.categoryInfoUid in
   S.li
-    ! P.key (gShow cat.categoryInfoUid) $ do
-    S.h2
+    ! P.key (cat.categoryInfoUid ^. _CUid) $ do
+    S.a
+      ! S.href url
       $ S.text cat.categoryInfoTitle
+    S.h2
+      $ S.text url

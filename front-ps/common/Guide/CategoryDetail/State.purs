@@ -1,17 +1,18 @@
 module Guide.CategoryDetail.State where
 
 import Data.Generic (class Generic, gShow)
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Show (class Show)
-
 import Guide.Api.Types (CCategoryDetail)
 import Guide.CategoryDetail.Routes (Route, match)
+import Guide.Common.Api (ApiError)
+import Network.RemoteData (RemoteData(..))
 
 newtype State = State
   { title :: String
   , route :: Route
-  , category :: Maybe CCategoryDetail
+  , errors :: Array String
+  , category :: RemoteData ApiError CCategoryDetail
   , loaded :: Boolean
   }
 
@@ -24,6 +25,7 @@ init :: String -> State
 init url = State
   { title: "CategoryDetail page" -- TODO (sectore): Change title
   , route: match url
-  , category: Nothing
+  , errors: [] 
+  , category: NotAsked
   , loaded: false
   }
