@@ -46,12 +46,12 @@ data Site route = Site
   -- | A list of all categories (the /haskell page). Returns category
   -- titles.
     _getCategories :: route :-
-      "categories"              :> Get '[JSON] [CategoryInfo]
+      "categories"    :> Get '[JSON] (Either ApiError [CategoryInfo])
 
   -- | Details of a single category (and items in it, etc)
   , _getCategory :: route :-
-      "category"                :> Capture "id" (Uid Category)
-                                :> Get '[JSON] (Either ApiError CCategoryDetail)
+      "category"      :> Capture "id" (Uid Category)
+                      :> Get '[JSON] (Either ApiError CCategoryDetail)
   }
   deriving (Generic)
 
