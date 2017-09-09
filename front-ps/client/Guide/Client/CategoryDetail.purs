@@ -7,11 +7,14 @@ import Control.Monad.Eff.Console (CONSOLE, log)
 import DOM (DOM)
 import DOM.HTML (window)
 import DOM.HTML.Types (HISTORY)
-import Guide.Common.Types (AppEffects)
+import Data.Either (either)
+import Data.Foreign (Foreign)
 import Guide.CategoryDetail.Events (Event(..), foldp)
 import Guide.CategoryDetail.Routes (match)
 import Guide.CategoryDetail.State (State, init)
 import Guide.CategoryDetail.View.Layout (view)
+import Guide.Common.Api (decodeJson)
+import Guide.Common.Types (AppEffects)
 import Pux (CoreEffects, App, start)
 import Pux.DOM.Events (DOMEvent)
 import Pux.DOM.History (sampleURL)
@@ -35,5 +38,6 @@ main url state = do
   log "Heeeelloooo, here is category-detail page rendered on client-side"
   pure app
 
-initialState :: State
-initialState = init "/"
+-- | Used to serialize State from JSON in *-.entry.js
+readState :: Foreign -> State
+readState json = either (\_ -> init "/") id (decodeJson json)

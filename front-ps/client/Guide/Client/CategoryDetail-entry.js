@@ -1,9 +1,5 @@
-// shared js
-import '../../shared.js';
-// client app
-var Client = require('./CategoryDetail.purs');
-const app = Client.main(window.location.pathname)(window.__puxLastState || Client.initialState)()
-
-app.state.subscribe(function (state) {
- window.__puxLastState = state;
-});
+// shared js sources on client side
+import { initClient } from '../../shared.js';
+// init client app
+const client = require('./CategoryDetail.purs')
+initClient(client);
