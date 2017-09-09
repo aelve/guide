@@ -5,9 +5,9 @@ import Prelude
 import Data.Array ((:))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Guide.Common.Api (ApiError, getCategories)
 import Guide.CategoryOverview.Routes (Route(..))
 import Guide.CategoryOverview.State (State(..))
+import Guide.Common.Api (EndpointError, getCategories)
 import Guide.Common.Types (AppEffects, CategoryName, CCategories)
 import Network.RemoteData (RemoteData(..), isNotAsked)
 import Pux (EffModel, noEffects)
@@ -16,13 +16,13 @@ data Event =
   PageView Route
   -- API
   | GetCategories CategoryName
-  | ReceiveCategories (Either ApiError CCategories)
+  | ReceiveCategories (Either EndpointError CCategories)
 
 foldp :: forall eff. Event -> State -> EffModel State Event (AppEffects eff)
 
-foldp (GetCategories catName) (State st) =
-  { state: State $ st { categories = Loading
-                      }
+foldp (GetCategories catName) (State state) =
+  { state: State $ state { categories = Loading
+                         }
   , effects:
     [ getCategories catName >>= pure <<< Just <<< ReceiveCategories
     ]

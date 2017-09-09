@@ -5,14 +5,14 @@ import Data.Newtype (class Newtype)
 import Data.Show (class Show)
 import Guide.Api.Types (CCategoryDetail)
 import Guide.CategoryDetail.Routes (Route, match)
-import Guide.Common.Api (ApiError)
+import Guide.Common.Api (EndpointError)
 import Network.RemoteData (RemoteData(..))
 
 newtype State = State
   { title :: String
   , route :: Route
   , errors :: Array String
-  , category :: RemoteData ApiError CCategoryDetail
+  , category :: RemoteData EndpointError CCategoryDetail
   , loaded :: Boolean
   }
 
@@ -25,7 +25,7 @@ init :: String -> State
 init url = State
   { title: "CategoryDetail page" -- TODO (sectore): Change title
   , route: match url
-  , errors: [] 
+  , errors: []
   , category: NotAsked
   , loaded: false
   }

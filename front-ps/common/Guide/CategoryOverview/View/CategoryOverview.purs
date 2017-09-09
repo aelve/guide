@@ -12,7 +12,7 @@ import Guide.Common.Types (CCategories)
 import Network.RemoteData (RemoteData(..))
 import Pux.DOM.HTML (HTML) as P
 import Pux.DOM.HTML.Attributes (key) as P
-import Text.Smolder.HTML (div, h1, h2, a, ul, li) as S
+import Text.Smolder.HTML (div, h1, a, ul, li) as S
 import Text.Smolder.HTML.Attributes (href) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S

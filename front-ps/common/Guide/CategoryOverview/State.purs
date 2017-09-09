@@ -3,8 +3,8 @@ module Guide.CategoryOverview.State where
 import Data.Generic (class Generic, gShow)
 import Data.Newtype (class Newtype)
 import Data.Show (class Show)
-import Guide.Common.Api (ApiError)
 import Guide.CategoryOverview.Routes (Route, match)
+import Guide.Common.Api (EndpointError)
 import Guide.Common.Types (CategoryName(..), CCategories)
 import Network.RemoteData (RemoteData(..))
 
@@ -13,7 +13,7 @@ newtype State = State
   , route :: Route
   , loaded :: Boolean
   , errors :: Array String
-  , categories :: RemoteData ApiError CCategories
+  , categories :: RemoteData EndpointError CCategories
   , categoryName :: CategoryName
   }
 

@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Guide.Api.Types (CCategoryDetail, CUid)
 import Guide.CategoryDetail.Routes (Route(..))
 import Guide.CategoryDetail.State (State(..))
-import Guide.Common.Api (ApiError, getCategory)
+import Guide.Common.Api (EndpointError, getCategory)
 import Guide.Common.Types (AppEffects, CategoryName)
 import Network.RemoteData (RemoteData(..), isNotAsked)
 import Pux (EffModel, noEffects)
@@ -19,7 +19,7 @@ data Event
   | RequestCategory CategoryName (CUid String)
   -- TODO: ^ Use `CUid Category` instead of `CUid String` as second type parameter
   -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
-  | ReceiveCategory (Either ApiError CCategoryDetail)
+  | ReceiveCategory (Either EndpointError CCategoryDetail)
 
 foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 
