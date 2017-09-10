@@ -13,6 +13,12 @@ Site's database, and methods for manipulating it.
 -}
 module Guide.State
 (
+  DB,
+  withDB,
+  createCheckpoint',
+  createCheckpointAndClose',
+
+  -- * type of global state
   GlobalState(..),
     categories,
     categoriesDeleted,
@@ -20,6 +26,7 @@ module Guide.State
     pendingEdits,
     editIdCounter,
     findCategoryByItem,
+  emptyState,
 
   -- * acid-state methods
   -- ** query
@@ -79,10 +86,18 @@ module Guide.State
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
-  GetUser(..), CreateUser(..), DeleteUser(..),
+  GetUser(..), CreateUser(..), DeleteUser(..), DeleteAllUsers(..),
   LoginUser(..),
 
-  GetAdminUsers(..)
+  GetAdminUsers(..),
+
+  -- * PublicDB
+  PublicDB(..),
+  toPublicDB,
+  fromPublicDB,
+  -- ** queries
+  ImportPublicDB(..),
+  ExportPublicDB(..),
 )
 where
 
@@ -100,6 +115,7 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 import Data.Acid as Acid
+import Data.Acid.Local as Acid
 --
 import Web.Spock.Internal.SessionManager (SessionId)
 
@@ -176,6 +192,22 @@ Guide.hs
 
 -}
 
+
+----------------------------------------------------------------------------
+-- GlobalState
+----------------------------------------------------------------------------
+
+emptyState :: GlobalState
+emptyState = GlobalState {
+  _categories = [],
+  _categoriesDeleted = [],
+  _actions = [],
+  _pendingEdits = [],
+  _editIdCounter = 0,
+  _sessionStore = M.empty,
+  _users = M.empty,
+  _dirty = True }
+
 data GlobalState = GlobalState {
   _categories :: [Category],
   _categoriesDeleted :: [Category],
@@ -234,6 +266,53 @@ findCategoryByItem itemId s =
     err = "findCategoryByItem: couldn't find category with item with uid " ++
           T.unpack (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
+
+-- | 'PublicDB' contains all safe data from 'GlobalState'.
+-- Difference from 'GlobalState':
+-- * 'User' replaced with 'PublicUser'
+-- * Sessions information removed
+-- * Dirty flag removed
+data PublicDB = PublicDB {
+  publicCategories        :: [Category],
+  publicCategoriesDeleted :: [Category],
+  publicActions           :: [(Action, ActionDetails)],
+  publicPendingEdits      :: [(Edit, EditDetails)],
+  publicEditIdCounter     :: Int,
+  publicUsers             :: Map (Uid User) PublicUser}
+  deriving (Show)
+
+-- NOTE: you don't need to write migrations for 'PublicDB' but you still
+-- need to increase the version when the type changes, so that old clients
+-- wouldn't get cryptic error messages like “not enough bytes” when trying
+-- to deserialize a new version of 'PublicDB' that they can't handle.
+deriveSafeCopySorted 0 'base ''PublicDB
+
+-- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
+toPublicDB :: GlobalState -> PublicDB
+toPublicDB GlobalState{..} =
+  PublicDB {
+    publicCategories        = _categories,
+    publicCategoriesDeleted = _categoriesDeleted,
+    publicActions           = _actions,
+    publicPendingEdits      = _pendingEdits,
+    publicEditIdCounter     = _editIdCounter,
+    publicUsers             = fmap userToPublic _users
+  }
+
+-- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
+-- default values.
+fromPublicDB :: PublicDB -> GlobalState
+fromPublicDB PublicDB{..} =
+  GlobalState {
+    _categories        = publicCategories,
+    _categoriesDeleted = publicCategoriesDeleted,
+    _actions           = publicActions,
+    _pendingEdits      = publicPendingEdits,
+    _editIdCounter     = publicEditIdCounter,
+    _sessionStore      = M.empty,
+    _users             = fmap publicUserToUser publicUsers,
+    _dirty             = True
+  }
 
 -- get
 
@@ -750,17 +829,24 @@ deleteUser key = do
   logoutUserGlobally key
   setDirty
 
+deleteAllUsers :: Acid.Update GlobalState ()
+deleteAllUsers = do
+  mapM_ logoutUserGlobally . M.keys =<< use users
+  users .= mempty
+  setDirty
+
 -- | Given an email address and a password, return the user if it exists
 -- and the password is correct.
-loginUser :: Text -> ByteString -> Acid.Query GlobalState (Maybe User)
+loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
   matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
   case matches of
     [user] -> 
       if verifyUser user password
-      then return $ Just user
-      else return $ Nothing
-    _ -> return Nothing
+      then return $ Right user
+      else return $ Left "wrong password"
+    [] -> return $ Left "user not found"
+    _  -> return $ Left "more than one user found, please contact the admin"
 
 -- | Global logout of all of a user's active sessions
 logoutUserGlobally :: Uid User -> Acid.Update GlobalState ()
@@ -773,6 +859,14 @@ logoutUserGlobally key = do
 -- | Retrieve all users with the 'userIsAdmin' field set to True.
 getAdminUsers :: Acid.Query GlobalState [User]
 getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
+
+-- | Populate the database with info from the public DB.
+importPublicDB :: PublicDB -> Acid.Update GlobalState ()
+importPublicDB = put . fromPublicDB
+
+-- | Strip the database from sensitive data and create a 'PublicDB' from it.
+exportPublicDB :: Acid.Query GlobalState PublicDB
+exportPublicDB = toPublicDB <$> ask
 
 makeAcidic ''GlobalState [
   -- queries
@@ -812,8 +906,56 @@ makeAcidic ''GlobalState [
   'loadSession, 'storeSession, 'deleteSession, 'getSessions,
 
   -- users
-  'getUser, 'createUser, 'deleteUser, 
+  'getUser, 'createUser, 'deleteUser, 'deleteAllUsers,
   'loginUser,
 
-  'getAdminUsers
+  'getAdminUsers,
+
+  -- PublicDB
+  'importPublicDB,
+  'exportPublicDB
   ]
+
+----------------------------------------------------------------------------
+-- DB helpers (have to be at the end of the file)
+----------------------------------------------------------------------------
+
+-- | A connection to an open acid-state database (allows making
+-- queries/updates, creating checkpoints, etc).
+type DB = AcidState GlobalState
+
+-- | Open the database, do something with it, then close the database.
+--
+-- See Note [acid-state] for the explanation of 'openLocalStateFrom',
+-- 'createCheckpoint', etc.
+withDB
+  :: IO ()               -- ^ Action to run after closing the database
+  -> (DB -> IO ())       -- ^ Action to run when the database is open
+  -> IO ()
+withDB afterClose action = do
+  let prepare = openLocalStateFrom "state/" emptyState
+      finalise db = do
+        putStrLn "Creating an acid-state checkpoint and closing acid-state"
+        createCheckpointAndClose' db
+        afterClose
+  bracket prepare finalise action
+
+-- | Like 'createCheckpoint', but doesn't create a checkpoint if there were
+-- no changes made.
+createCheckpoint' :: MonadIO m => DB -> m ()
+createCheckpoint' db = liftIO $ do
+  wasDirty <- Acid.update db UnsetDirty
+  when wasDirty $ do
+    createArchive db
+    createCheckpoint db
+
+-- | Like 'createCheckpointAndClose', but doesn't create a checkpoint if
+-- there were no changes made.
+createCheckpointAndClose' :: MonadIO m => DB -> m ()
+createCheckpointAndClose' db = liftIO $ do
+  wasDirty <- Acid.update db UnsetDirty
+  if wasDirty then do
+    createArchive db
+    createCheckpointAndClose db
+  else do
+    closeAcidState db

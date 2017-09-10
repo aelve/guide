@@ -13,9 +13,10 @@ packages:
 
 extra-deps:
 - text-all-0.4.1.0
-- cmark-sections-0.1.0.3
+- cmark-sections-0.3.0
 - cmark-patterns-0.1.0.0
 - patches-vector-0.1.5.4
-- fmt-0.2.0.0
+- fmt-0.4.0.0
 - Spock-digestive-0.3.0.0
 - digestive-functors-0.8.2.0
+- servant-generic-0.1.0.0

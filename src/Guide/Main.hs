@@ -22,8 +22,10 @@ where
 
 import Imports
 
--- Containers
-import qualified Data.Map as M
+-- ByteString
+import qualified Data.ByteString as BS
+-- Lists
+import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
@@ -46,6 +48,8 @@ import qualified Network.Wai.Metrics      as EKG
 import qualified System.Metrics.Gauge     as EKG.Gauge
 -- acid-state
 import Data.Acid as Acid
+import Data.SafeCopy as SafeCopy
+import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
@@ -53,10 +57,13 @@ import qualified SlaveThread as Slave
 import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
+-- putStrLn that works well with concurrency
+import Say (say)
 -- HVect
 import Data.HVect hiding (length)
 
 import Guide.App
+import Guide.Api (runApiServer)
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config
@@ -68,6 +75,7 @@ import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
 import Guide.Session
+import Guide.Routes (authRoute, haskellRoute)
 
 
 {- Note [acid-state]
@@ -139,38 +147,41 @@ mainWith config = do
   -- won't be visible
   emptyCache
   startTemplateWatcher
-  let emptyState = GlobalState {
-        _categories = [],
-        _categoriesDeleted = [],
-        _actions = [],
-        _pendingEdits = [],
-        _editIdCounter = 0,
-        _sessionStore = M.empty,
-        _users = M.empty,
-        _dirty = True }
   do args <- getArgs
-     when (args == ["--dry-run"]) $ do
+     let option = headDef "" args
+     when (option == "--dry-run") $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       putStrLn "loaded the database successfully"
+       say "loaded the database successfully"
        closeAcidState db
        exitSuccess
+     -- USAGE: --load-public <filename>
+     -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
+     when (option == "--load-public") $ do
+       let path = fromMaybe
+             (error "you haven't provided public DB file name")
+             (args ^? ix 1)
+       (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+         Left err -> error err
+         Right publicDB -> do
+           db <- openLocalStateFrom "state/" emptyState
+           Acid.update db (ImportPublicDB publicDB)
+           createCheckpointAndClose' db
+           say "PublicDB imported to GlobalState"
+           exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
   -- restart GHCi before every run. So, we kill the thread in the finaliser.
   ekgId <- newIORef Nothing
-  -- See Note [acid-state] for the explanation of 'openLocalStateFrom',
-  -- 'createCheckpoint', etc
-  let prepare = openLocalStateFrom "state/" emptyState
-      finalise db = do
-        putStrLn "Creating an acid-state checkpoint and closing acid-state"
-        createCheckpointAndClose' db
+  workFinished <- newEmptyMVar
+  let finishWork = do
         -- Killing EKG has to be done last, because of
         -- <https://github.com/tibbe/ekg/issues/62>
-        putStrLn "Killing EKG"
+        say "Killing EKG"
         mapM_ killThread =<< readIORef ekgId
-  bracket prepare finalise $ \db -> do
-    installTerminationCatcher =<< myThreadId
+        putMVar workFinished ()
+  installTerminationCatcher =<< myThreadId
+  workThread <- Slave.fork $ withDB finishWork $ \db -> do
     hSetBuffering stdout NoBuffering
     -- Create a checkpoint every six hours. Note: if nothing was changed, the
     -- checkpoint won't be created, which saves us some space.
@@ -178,7 +189,9 @@ mainWith config = do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
-    ekg <- EKG.forkServer "localhost" 5050
+    ekg <- do
+      say "EKG is running on port 5050"
+      EKG.forkServer "localhost" 5050
     writeIORef ekgId (Just (EKG.serverThreadId ekg))
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
@@ -190,7 +203,8 @@ mainWith config = do
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
-    -- Create an admin user
+    -- Run the API
+    Slave.fork $ runApiServer db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -213,7 +227,10 @@ mainWith config = do
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
-    runSpock 8080 $ spock spockConfig $ guideApp waiMetrics
+    say "Spock is running on port 8080"
+    runSpockNoBanner 8080 $ spock spockConfig $ guideApp waiMetrics
+  forever (threadDelay (1000000 * 60))
+    `finally` (killThread workThread >> takeMVar workFinished)
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
@@ -249,7 +266,7 @@ guideApp waiMetrics = do
 
       -- Main page
       Spock.get root $
-        lucidWithConfig $ renderRoot
+        lucidWithConfig renderRoot
 
       -- Admin page
       prehook authHook $ prehook adminHook $ do
@@ -263,7 +280,7 @@ guideApp waiMetrics = do
 
       -- Donation page
       Spock.get "donate" $
-        lucidWithConfig $ renderDonate
+        lucidWithConfig renderDonate
 
       -- Static pages
       Spock.get "unwritten-rules" $ lucidWithConfig $
@@ -274,57 +291,55 @@ guideApp waiMetrics = do
         renderStaticMd "License" "license.md"
 
       -- Haskell
-      Spock.subcomponent "haskell" $ do
-        Spock.get root $ do
-          s <- dbQuery GetGlobalState
-          q <- param "q"
-          (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-          let act = case q of
-                Nothing -> Action'MainPageVisit
-                Just x  -> Action'Search x
-          baseUrl <- _baseUrl <$> getConfig
-          dbUpdate (RegisterAction act mbIP time baseUrl mbReferrer mbUA)
-          lucidWithConfig $ renderHaskellRoot s q
-        -- Category pages
-        Spock.get var $ \path -> do
-          -- The links look like /parsers-gao238b1 (because it's nice when
-          -- you can find out where a link leads just by looking at it)
-          let (_, catId) = T.breakOnEnd "-" path
-          when (T.null catId) $
-            Spock.jumpNext
-          mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
-          case mbCategory of
-            Nothing -> Spock.jumpNext
-            Just category -> do
-              (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-              baseUrl <- _baseUrl <$> getConfig
-              dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
-                           mbIP time baseUrl mbReferrer mbUA
-              -- If the slug in the url is old (i.e. if it doesn't match the
-              -- one we would've generated now), let's do a redirect
-              when (categorySlug category /= path) $
-                -- TODO: this link shouldn't be absolute [absolute-links]
-                Spock.redirect ("/haskell/" <> categorySlug category)
-              lucidWithConfig $ renderCategoryPage category
-        -- The add/set methods return rendered parts of the structure (added
-        -- categories, changed items, etc) so that the Javascript part could
-        -- take them and inject into the page. We don't want to duplicate
-        -- rendering on server side and on client side.
-        methods
-      
-      Spock.subcomponent "auth" $ do
-        -- plain "/auth" logs out a logged-in user and lets a logged-out user
-        -- log in (this is not the best idea, granted, and we should just
-        -- shot logged-in users a “logout” link and logged-out users a
-        -- “login” link instead)
-        Spock.get root $ do
-          user <- getLoggedInUser
-          if isJust user
-            then Spock.redirect "auth/logout"
-            else Spock.redirect "auth/login"
-        Spock.getpost "login" $ authRedirect "/" $ loginAction
-        Spock.get "logout" $ logoutAction 
-        Spock.getpost "register" $ authRedirect "/" $ signupAction
+      Spock.get (haskellRoute <//> root) $ do
+        s <- dbQuery GetGlobalState
+        q <- param "q"
+        (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
+        let act = case q of
+              Nothing -> Action'MainPageVisit
+              Just x  -> Action'Search x
+        baseUrl <- _baseUrl <$> getConfig
+        dbUpdate (RegisterAction act mbIP time baseUrl mbReferrer mbUA)
+        lucidWithConfig $ renderHaskellRoot s q
+      -- Category pages
+      Spock.get (haskellRoute <//> var) $ \path -> do
+        -- The links look like /parsers-gao238b1 (because it's nice when
+        -- you can find out where a link leads just by looking at it)
+        let (_, catId) = T.breakOnEnd "-" path
+        when (T.null catId)
+          Spock.jumpNext
+        mbCategory <- dbQuery (GetCategoryMaybe (Uid catId))
+        case mbCategory of
+          Nothing -> Spock.jumpNext
+          Just category -> do
+            (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
+            baseUrl <- _baseUrl <$> getConfig
+            dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
+                         mbIP time baseUrl mbReferrer mbUA
+            -- If the slug in the url is old (i.e. if it doesn't match the
+            -- one we would've generated now), let's do a redirect
+            when (categorySlug category /= path) $
+              -- TODO: this link shouldn't be absolute [absolute-links]
+              Spock.redirect ("/haskell/" <> categorySlug category)
+            lucidWithConfig $ renderCategoryPage category
+      -- The add/set methods return rendered parts of the structure (added
+      -- categories, changed items, etc) so that the Javascript part could
+      -- take them and inject into the page. We don't want to duplicate
+      -- rendering on server side and on client side.
+      methods
+
+      -- plain "/auth" logs out a logged-in user and lets a logged-out user
+      -- log in (this is not the best idea, granted, and we should just
+      -- show logged-in users a “logout” link and logged-out users a
+      -- “login” link instead)
+      Spock.get (authRoute <//> root) $ do
+        user <- getLoggedInUser
+        if isJust user
+          then Spock.redirect "/auth/logout"
+          else Spock.redirect "/auth/login"
+      Spock.getpost (authRoute <//> "login") $ authRedirect "/" loginAction
+      Spock.get (authRoute <//> "logout") logoutAction
+      Spock.getpost (authRoute <//> "register") $ authRedirect "/" signupAction
 
 loginAction :: GuideAction ctx ()
 loginAction = do
@@ -337,13 +352,15 @@ loginAction = do
       loginAttempt <- dbQuery $
         LoginUser loginEmail (T.toByteString loginUserPassword)
       case loginAttempt of
-        Just user -> do
+        Right user -> do
           modifySession (sessionUserID .~ Just (user ^. userID))
           Spock.redirect "/"
-        -- TODO: show error message/validation of input
-        Nothing -> do
+        -- TODO: *properly* show error message/validation of input
+        Left err -> do
           formHtml <- protectForm loginFormView v
-          lucidWithConfig $ renderRegister formHtml
+          lucidWithConfig $ renderRegister $ do
+            div_ $ toHtml ("Error: " <> err)
+            formHtml
 
 logoutAction :: GuideAction ctx ()
 logoutAction = do
@@ -353,7 +370,7 @@ logoutAction = do
 signupAction :: GuideAction ctx ()
 signupAction = do
   r <- runForm "register" registerForm
-  case r of 
+  case r of
     (v, Nothing) -> do
       formHtml <- protectForm registerFormView v
       lucidWithConfig $ renderRegister formHtml
@@ -384,7 +401,7 @@ adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ':
 adminHook = do
   oldCtx <- getContext
   let user = findFirst oldCtx
-  if user ^. userIsAdmin 
+  if user ^. userIsAdmin
     then return (IsAdmin :&: oldCtx)
     else Spock.text "Not authorized."
 
@@ -393,7 +410,7 @@ authRedirect :: Text -> GuideAction ctx a -> GuideAction ctx a
 authRedirect path action = do
   user <- getLoggedInUser
   case user of
-    Just _ -> do
+    Just _ ->
       Spock.redirect path
     Nothing -> action
 
@@ -404,9 +421,9 @@ authRedirect path action = do
 -- templates and clears the cache whenever a change occurs, so that you
 -- wouldn't see cached pages.
 startTemplateWatcher :: IO ()
-startTemplateWatcher = void $ do
+startTemplateWatcher = void $
   Slave.fork $ FSNotify.withManager $ \mgr -> do
-    FSNotify.watchTree mgr "templates/" (const True) $ \_ -> do
+    FSNotify.watchTree mgr "templates/" (const True) $ \_ ->
       emptyCache
     forever $ threadDelay 1000000
 
@@ -432,11 +449,13 @@ data Quit = CtrlC | ServiceStop
 
 instance Exception Quit
 
-{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM
-(i.e. service stop) and throw an exception instead of them. This lets us
+{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM (i.e.
+service stop) and throw an exception instead of the signal. This lets us
 create a checkpoint and close connections on exit.
 -}
-installTerminationCatcher :: ThreadId -> IO ()
+installTerminationCatcher
+  :: ThreadId  -- ^ Thread to kill when the signal comes
+  -> IO ()
 installTerminationCatcher thread = void $ do
   installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
   installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing
@@ -447,6 +466,7 @@ installTerminationCatcher thread = void $ do
 -- The user won't be added if it exists already.
 createAdminUser :: GuideApp ()
 createAdminUser = do
+  dbUpdate DeleteAllUsers
   pass <- T.toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

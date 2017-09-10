@@ -8,39 +8,41 @@ the "Prelude".)
 module Imports
 (
   module X,
-  LByteString,
+  LByteString
 )
 where
 
 
-import BasePrelude as X hiding (Category, GeneralCategory, lazy, (&))
+import           BasePrelude            as X
+  hiding (Category, GeneralCategory, lazy, (&), Handler)
 -- Lists
-import Data.List.Index as X
-import Data.List.Extra as X (takeEnd, dropEnd)
+import           Data.List.Extra        as X (dropEnd, takeEnd)
+import           Data.List.Index        as X
 -- Lenses
-import Lens.Micro.Platform as X
+import           Lens.Micro.Platform    as X
 -- Monads and monad transformers
-import Control.Monad.IO.Class as X
-import Control.Monad.State as X
-import Control.Monad.Reader as X
+import           Control.Monad.IO.Class as X
+import           Control.Monad.Reader   as X
+import           Control.Monad.State    as X
+import           Control.Monad.Except   as X
 -- Common types
-import Data.Text.All as X (Text, LText)
-import Data.ByteString as X (ByteString)
-import Data.Map as X (Map)
-import Data.Set as X (Set)
+import           Data.ByteString        as X (ByteString)
+import           Data.Map               as X (Map)
+import           Data.Set               as X (Set)
+import           Data.Text.All          as X (LText, Text)
 -- Time
-import Data.Time as X
+import           Data.Time              as X
 -- Files
-import System.Directory as X
-import System.FilePath as X
+import           System.Directory       as X
+import           System.FilePath        as X
 -- Deepseq
-import Control.DeepSeq as X
+import           Control.DeepSeq        as X
 -- Hashable
-import Data.Hashable as X
+import           Data.Hashable          as X
 -- Lazy bytestring
-import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy   as BSL
 -- Formatting
-import Fmt as X
+import           Fmt                    as X
 
 
 type LByteString = BSL.ByteString

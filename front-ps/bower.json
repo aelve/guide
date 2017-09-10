@@ -1,0 +1,30 @@
+{
+  "name": "aelve-guide-frontend",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^3.1.0",
+    "purescript-console": "^3.0.0",
+    "purescript-express": "^0.5.2",
+    "purescript-node-process": "^5.0.0",
+    "purescript-pux": "^11.0.0",
+    "purescript-aff": "^3.1.0",
+    "purescript-affjax": "^4.0.0",
+    "purescript-argonaut-generic-codecs": "^6.0.4",
+    "purescript-profunctor-lenses": "^3.6.1",
+    "purescript-remotedata": "^2.2.0",
+    "purescript-isomorphic-fetch": "https://github.com/sectore/purescript-isomorphic-fetch.git#master"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0"
+  },
+  "resolutions": {
+    "purescript-arraybuffer-types": "^2.0.0",
+    "purescript-foreign-generic": "^5.0.0",
+    "purescript-js-date": "^4.0.0"
+  }
+}

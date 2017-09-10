@@ -1,9 +1,14 @@
 import Distribution.Simple
 import System.Process
+import System.Environment (lookupEnv)
 
 main = do
-  hooks <- buildJS simpleUserHooks
-  defaultMainWithHooks hooks
+  js <- lookupEnv "NO_JS"
+  case js of
+    Just "true" -> defaultMain
+    _           -> do
+      hooks <- buildJS simpleUserHooks
+      defaultMainWithHooks hooks
 
 buildJS hooks = do
   let originalPostBuild = postBuild hooks

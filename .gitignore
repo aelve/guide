@@ -20,6 +20,8 @@ cabal.config
 TAGS
 .DS_Store
 *~
+*.swp
+*.swo
 *#
 state/
 config.json
@@ -33,3 +35,4 @@ tags
 
 # JavaScript
 guidejs/node_modules/
+static/js/

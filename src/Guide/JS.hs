@@ -58,7 +58,8 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Admin things
   acceptEdit, undoEdit,
   acceptBlock, undoBlock,
-  createCheckpoint ]
+  createCheckpoint,
+  saveToArchiveOrg]
 
 -- | A class for things that can be converted to Javascript syntax.
 class ToJS a where toJS :: a -> JS
@@ -122,8 +123,8 @@ class JSFunction a where
 instance JSFunction JS where
   makeJSFunction fName fParams fDef =
     let paramList = T.intercalate "," fParams
-    in JS $ format "function "#|fName|#"("#|paramList|#") {\n"
-                #|indent 2 (build fDef)|#
+    in JS $ format "function "+|fName|+"("+|paramList|+") {\n"
+                +|indent 2 (build fDef)|+
             "}\n"
 
 -- This generates a function that takes arguments and produces a Javascript
@@ -677,6 +678,15 @@ createCheckpoint =
      });
   |]
 
+saveToArchiveOrg :: JSFunction a => a
+saveToArchiveOrg =
+  makeJSFunction "saveToArchiveOrg" ["link"]
+  [text|
+    $.post('http://web.archive.org/save/' + link)
+      .done(function () {
+        console.log(link + " saved to archive.org")
+      });
+  |]
 -- When adding a function, don't forget to add it to 'allJSFunctions'!
 
 escapeJSString :: Text -> Text
@@ -726,4 +736,3 @@ selectChildren a b = JQuerySelector $ format "{} > {}" a b
 
 selectSection :: JQuerySelector -> Text -> JQuerySelector
 selectSection a b = JQuerySelector $ format "{} > .section.{}" a b
-

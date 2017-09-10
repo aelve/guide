@@ -9,6 +9,7 @@ addons:
     - libgmp-dev
     # Selenium
     - xvfb
+  chrome: stable
 
 cache:
   directories:
@@ -28,7 +29,7 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-- wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip
+- wget http://chromedriver.storage.googleapis.com/2.32/chromedriver_linux64.zip
 - unzip chromedriver_linux64.zip
 - chmod +x chromedriver
 - sudo mv -f chromedriver /usr/local/share/chromedriver
@@ -38,11 +39,12 @@ before_install:
 before_script:
 - sh -e /etc/init.d/xvfb start
 - export DISPLAY=:99.0
-- travis_retry wget http://selenium-release.storage.googleapis.com/2.53/selenium-server-standalone-2.53.1.jar
-- java -jar selenium-server-standalone-2.53.1.jar 2> /dev/null &
+- travis_retry wget http://selenium-release.storage.googleapis.com/3.0/selenium-server-standalone-3.0.1.jar
+- java -jar selenium-server-standalone-3.0.1.jar 2> /dev/null &
 - sleep 15
 
 script:
+ - scripts/buildjs.sh
  - stack $ARGS --no-terminal --install-ghc build --test
  - scripts/test-official.sh $ARGS
 
