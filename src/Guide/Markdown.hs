@@ -464,12 +464,6 @@ splitRow = map (\s -> [MD.Paragraph_ s]) .
     splitText (MD.Text_ s) = map MD.Text_ $ intersperse "|" $ T.splitOn "|" s
     splitText other        = [other]
 
--- | Break line should separate table header (keyword & (optional) column
--- names) from rows
-isBreak :: [MD.Node] -> Bool
-isBreak [MD.ThematicBreak_] = True
-isBreak _                   = False
-
 -- | Generates 'HTML' table from 'Table' structure
 renderTable :: (Monad m) => MarkdownTable -> HtmlT m ()
 renderTable MarkdownTable{..} = do
