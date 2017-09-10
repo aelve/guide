@@ -1,14 +1,67 @@
 module Guide.CategoryDetail.Events where
 
-import Guide.CategoryDetail.Routes (Route)
+import Prelude
+
+import Data.Array ((:))
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Guide.Api.Types (CCategoryDetail, CUid)
+import Guide.CategoryDetail.Routes (Route(..))
 import Guide.CategoryDetail.State (State(..))
-import Data.Function (($))
-import Network.HTTP.Affjax (AJAX)
+import Guide.Common.Api (EndpointError, getCategory)
+import Guide.Common.Types (AppEffects, CategoryName)
+import Network.RemoteData (RemoteData(..), isNotAsked)
 import Pux (EffModel, noEffects)
 
-data Event = PageView Route
 
-type AppEffects fx = (ajax :: AJAX | fx)
+data Event
+  = PageView Route
+  | RequestCategory CategoryName (CUid String)
+  -- TODO: ^ Use `CUid Category` instead of `CUid String` as second type parameter
+  -- if we have found a way to bridge `Uid a` properly from `Haskell` to `PS`
+  | ReceiveCategory (Either EndpointError CCategoryDetail)
 
 foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
-foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded = true }
+
+foldp (RequestCategory catName catId) (State state) =
+  { state:
+      State $ state { category = Loading
+                    }
+  , effects:
+    [ getCategory catName catId >>= pure <<< Just <<< ReceiveCategory
+    ]
+  }
+
+foldp (ReceiveCategory (Right cat)) (State state) = noEffects $
+  State $
+    state { loaded = true
+          , category = Success cat
+          }
+
+foldp (ReceiveCategory (Left error)) (State state) = noEffects $
+  State $
+    state { loaded = true
+          , errors = (show error) : state.errors
+          , category = Failure error
+          }
+
+
+foldp (PageView route) (State state) =
+  routeEffects route (State $ state { route = route })
+
+routeEffects :: forall eff. Route -> State -> EffModel State Event (AppEffects eff)
+routeEffects (CategoryDetail catName catId) (State state) =
+  { state:
+      State $ state { loaded = false
+                    }
+  , effects: [
+        -- fetch a category only once
+        if isNotAsked state.category then
+          pure <<< Just $ RequestCategory catName catId
+        else
+          pure Nothing
+      ]
+  }
+
+routeEffects (NotFound url) (State state) = noEffects $
+  State $ state { loaded = true }

@@ -1,6 +1,6 @@
 module Guide.CategoryOverview.View.Layout where
 
-import Guide.CategoryOverview.View.Homepage as Homepage
+import Guide.CategoryOverview.View.CategoryOverview as CategoryOverview
 import Guide.CategoryOverview.View.NotFound as NotFound
 import Guide.CategoryOverview.Routes (Route(..))
 import Guide.CategoryOverview.State (State(..))
@@ -25,7 +25,7 @@ view (State st) =
 
     case st.route of
       (NotFound url) -> NotFound.view (State st)
-      (CategoryOverview name)-> Homepage.view (State st)
+      (CategoryOverview name)-> CategoryOverview.view (State st)
 
 css :: CSS
 css = do
