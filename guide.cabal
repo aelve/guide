@@ -95,7 +95,7 @@ library
                      , cereal
                      , cmark == 0.5.*
                      , cmark-highlight == 0.2.*
-                     , cmark-sections == 0.1.*
+                     , cmark-sections == 0.3.*
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
