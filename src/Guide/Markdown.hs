@@ -88,11 +88,6 @@ data MarkdownTree = MarkdownTree {
   markdownTreeMdTOC      :: Forest ([MD.Node], Text) }
   deriving (Generic, Data)
 
--- Orphan instances (to be deleted after migration to newer cmark-sections)
-deriving instance (Data a) => Data (Annotated a)
-deriving instance (Data a, Data b) => Data (Section a b)
-deriving instance (Data a, Data b) => Data (Document a b)
-
 makeFields ''MarkdownInline
 makeFields ''MarkdownBlock
 makeFields ''MarkdownTree
@@ -159,9 +154,9 @@ extractPreface :: MarkdownTree -> MarkdownBlock
 extractPreface = mkBlock . preface . view mdTree
   where
     mkBlock x = MarkdownBlock {
-      markdownBlockMdText     = annSource x,
-      markdownBlockMdHtml     = renderMD (annValue x),
-      markdownBlockMdMarkdown = annValue x }
+      markdownBlockMdText     = getSource x,
+      markdownBlockMdHtml     = renderMD (stripSource x),
+      markdownBlockMdMarkdown = stripSource x }
 
 -- | Flatten Markdown by concatenating all block elements.
 extractInlines :: [MD.Node] -> [MD.Node]
@@ -275,19 +270,19 @@ toMarkdownTree idPrefix s = MarkdownTree {
     --
     tree :: Document Text ByteString
     tree = renderContents . slugifyDocument slugify $
-             nodesToDocument (Ann s blocks)
+             nodesToDocument (WithSource s blocks)
     --
     toc :: Forest ([MD.Node], Text)  -- (heading, slug)
     toc = sections tree
-            & each.each %~ (\Section{..} -> (annValue heading, headingAnn))
+            & each.each %~ (\Section{..} -> (stripSource heading, headingAnn))
 
 renderContents :: Document a b -> Document a ByteString
 renderContents doc = doc {
-  prefaceAnn = renderMD (annValue (preface doc)),
+  prefaceAnn = renderMD (stripSource (preface doc)),
   sections = over (each.each) renderSection (sections doc) }
   where
     renderSection sec = sec {
-      contentAnn = renderMD (annValue (content sec)) }
+      contentAnn = renderMD (stripSource (content sec)) }
 
 slugifyDocument :: (Text -> Text) -> Document a b -> Document Text b
 slugifyDocument slugify doc = doc {
@@ -297,7 +292,7 @@ slugifyDocument slugify doc = doc {
     process sec = do
       previousIds <- get
       let slug = until (`S.notMember` previousIds) (<> "_")
-                   (slugify (stringify (annValue (heading sec))))
+                   (slugify (stringify (stripSource (heading sec))))
       modify (S.insert slug)
       return sec{headingAnn = slug}
 
@@ -336,7 +331,7 @@ instance ToHtml MarkdownTree where
       renderSection Section{..} = BSL.toStrict . renderBS $ do
         mkH $ do
           span_ [id_ headingAnn] ""
-          toHtmlRaw (renderMD (annValue heading))
+          toHtmlRaw (renderMD (stripSource heading))
         toHtmlRaw contentAnn
         where
           mkH = case level of

@@ -115,20 +115,20 @@ tests = describe "Markdown" $ do
                               [MD.Node Nothing (TEXT "y") []]
       (toMarkdownTree "i-" s ^. mdTree) `shouldBe` Document {
         prefaceAnn = "<p>x</p>\n",
-        preface    = Ann "x\n\n" [prefaceMD],
+        preface    = WithSource "x\n\n" [prefaceMD],
         sections   = [
           Node {rootLabel = Section {
                    level      = 1,
-                   heading    = Ann "# foo\n\n" [headingMD],
+                   heading    = WithSource "# foo\n\n" [headingMD],
                    headingAnn = "i-foo",
-                   content    = Ann "" [],
+                   content    = WithSource "" [],
                    contentAnn = ""},
                 subForest = [
                    Node {rootLabel = Section {
                             level      = 2,
-                            heading    = Ann "## foo\n\n" [headingMD],
+                            heading    = WithSource "## foo\n\n" [headingMD],
                             headingAnn = "i-foo_",
-                            content    = Ann "y\n" [foo2MD],
+                            content    = WithSource "y\n" [foo2MD],
                             contentAnn = "<p>y</p>\n"},
                          subForest = [] }]}]}          
     it "has a correct TOC" $ do

@@ -13,7 +13,7 @@ packages:
 
 extra-deps:
 - text-all-0.4.1.0
-- cmark-sections-0.1.0.3
+- cmark-sections-0.3.0
 - patches-vector-0.1.5.4
 - fmt-0.4.0.0
 - Spock-digestive-0.3.0.0
