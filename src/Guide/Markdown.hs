@@ -31,6 +31,7 @@ module Guide.Markdown
   toMarkdownBlock,
   toMarkdownTree,
   parseMD,
+  parseVanillaMD,
 
   -- * Misc
   renderMD,
@@ -60,7 +61,7 @@ import           Text.Megaparsec.Text
 -- JSON
 import qualified Data.Aeson            as A
 -- HTML
-import           Lucid                 hiding (for_)
+import           Lucid                 as Lucid hiding (for_)
 import           Text.HTML.SanitizeXSS
 -- Containers
 import qualified Data.Set              as S
@@ -75,8 +76,6 @@ import           ShortcutLinks
 import           ShortcutLinks.All     (hackage)
 -- acid-state
 import           Data.SafeCopy
--- Interpolation
-import qualified NeatInterpolation     as NI
 
 import           Control.Monad.Extra   (whenJust)
 
@@ -106,10 +105,20 @@ makeFields ''MarkdownInline
 makeFields ''MarkdownBlock
 makeFields ''MarkdownTree
 
+-- | Parse Markdown and apply our custom passes to it.
 parseMD :: Text -> [MD.Node]
 parseMD s =
   let MD.Document_ ns =
-        highlightNode . shortcutLinks . commonmarkToNode [optSafe] $ s
+        renderTables .                -- render tables (as HTML)
+        highlightNode .               -- highlight code everywhere
+        resolveShortcutLinks $        -- turn shortcut links into ordinary ones
+        commonmarkToNode [optSafe] s  -- parse Markdown
+  in  ns
+
+-- | Parse Markdown without doing anything fancy.
+parseVanillaMD :: Text -> [MD.Node]
+parseVanillaMD s =
+  let MD.Document_ ns = commonmarkToNode [optSafe] s
   in  ns
 
 renderMD :: [MD.Node] -> ByteString
@@ -202,30 +211,33 @@ extractInlines = concatMap go
       HTML_INLINE xs    -> [MD.Code_ xs]
       CODE_BLOCK _ xs   -> [MD.Code_ xs]
 
-shortcutLinks :: MD.Node -> MD.Node
-shortcutLinks node@(MD.Link pos url title ns) | '@' <- T.head url =
+-- | Resolve all shortcut links in a Markdown node. If a link is invalid, it
+-- will insert an error message instead.
+resolveShortcutLinks :: MD.Node -> MD.Node
+resolveShortcutLinks node@(MD.Link pos url title ns) | '@' <- T.head url =
   -- %20s are possibly introduced by cmark (Pandoc definitely adds them,
   -- no idea about cmark but better safe than sorry) and so they need to
   -- be converted back to spaces
   case parseLink (T.replace "%20" " " url) of
-    Left _err -> MD.Link pos url title (map shortcutLinks ns)
+    Left _err -> MD.Link pos url title (map resolveShortcutLinks ns)
     Right (shortcut, opt, text) -> do
       let text' = fromMaybe (stringify [node]) text
       let shortcuts = (["hk"], hackage) : allShortcuts
       case useShortcutFrom shortcuts shortcut opt text' of
         Success link ->
-          MD.Link pos link title (map shortcutLinks ns)
+          MD.Link pos link title (map resolveShortcutLinks ns)
         Warning warnings link ->
-          let warningText = "[warnings when processing shortcut link: " <>
+          let warningText = "[warnings when processing a shortcut link: " <>
                             T.pack (intercalate ", " warnings) <> "]"
               warningNode = MD.Text_ warningText
-          in  MD.Link pos link title (warningNode : map shortcutLinks ns)
+          in  MD.Link pos link title
+                  (warningNode : map resolveShortcutLinks ns)
         Failure err ->
-          let errorText = "[error when processing shortcut link: " <>
+          let errorText = "[error when processing a shortcut link: " <>
                           T.pack err <> "]"
           in  MD.Text_ errorText
-shortcutLinks (MD.Node pos tp ns) =
-  MD.Node pos tp (map shortcutLinks ns)
+resolveShortcutLinks (MD.Node pos tp ns) =
+  MD.Node pos tp (map resolveShortcutLinks ns)
 
 -- TODO: this should be in the shortcut-links package itself
 
@@ -375,16 +387,30 @@ instance SafeCopy MarkdownTree where
 markdownNull :: HasMdText a Text => a -> Bool
 markdownNull = T.null . view mdText
 
-------------------------------
------- Markdown Tables -------
-------------------------------
+----------------------------------------------------------------------------
+-- Support for tables
+----------------------------------------------------------------------------
 
--- | Data Structure to hold tables
+-- | A table in Markdown is described by this type.
 data MarkdownTable = MarkdownTable
   { markdownTableName    :: Maybe Text        -- ^ Table header
   , markdownTableColumns :: Maybe [[MD.Node]] -- ^ Names of columns
   , markdownTableRows    :: [[[MD.Node]]]     -- ^ List of rows with cells
   } deriving (Eq, Show, Data)
+
+data TableParsingError
+  = NotATable Text
+  | WrongRowFormat [MD.Node]
+  deriving (Eq, Show)
+
+renderTableParsingError :: TableParsingError -> [MD.Node]
+renderTableParsingError = \case
+  NotATable reason ->
+    [ MD.Paragraph_ [MD.Text_ ("not a table ("+|reason|+")")] ]
+  WrongRowFormat nodes ->
+    [ MD.Paragraph_ [MD.Text_ "wrong row format (expected a list \
+                              \or a paragraph) for this row:"]
+    , MD.BlockQuote_ nodes ]
 
 {-|
 Tries to make 'Table' structure from Node.
@@ -413,7 +439,7 @@ Table
     }
 @
 -}
-getTable :: MD.Node -> Either Text MarkdownTable
+getTable :: MD.Node -> Either TableParsingError MarkdownTable
 getTable node = do
   (table, mbHeader, rows) <- case node of
       MD.ListItems_ _ (table:header:[MD.ThematicBreak_]:rows) ->
@@ -421,41 +447,41 @@ getTable node = do
       MD.ListItems_ _ (table:[MD.ThematicBreak_]:rows) ->
         pure (table, Nothing, rows)
       MD.ListItems_ _ _ ->
-        Left "getTable: list has a wrong format"
-      _other ->
-        Left "getTable: expected a list"
-
+        Left (NotATable "a table must have a ThematicBreak")
+      MD.Node _ tp _ ->
+        Left (NotATable ("a table must be a list, not a "
+                         +|takeWhile (/= ' ') (show tp)|+""))
   markdownTableName    <- getTableName table
   markdownTableColumns <- mapM getCells mbHeader
   markdownTableRows    <- mapM getCells rows
   pure MarkdownTable{..}
 
 -- | Parses table name after keyword "%TABLE"
-getTableName :: [MD.Node] -> Either Text (Maybe Text)
+getTableName :: [MD.Node] -> Either TableParsingError (Maybe Text)
 getTableName [MD.Paragraph_ [MD.Text_ t]] = do
   name <- case T.strip <$> T.stripPrefix "%TABLE" t of
-    Nothing -> Left "getTableName: expected %TABLE"
+    Nothing -> Left (NotATable "a table must start with %TABLE")
     Just x  -> Right x
   pure $ if T.null name then Nothing else Just name
-getTableName _ = Left "getTableName: expected a paragraph without markup"
+getTableName _ = Left $ NotATable
+  "a table must start with %TABLE in a single paragraph without markup"
 
 -- | Extract cells from a row description. A row can be specified either by
 -- a list (each item containing one cell), or by a line containing cells
 -- separated by "|".
---
--- Note that @cmark@ always wraps text into paragraphs (which is alright and
--- doesn't lead to ugly tables). For uniformity, when we split the row
--- manually, we do the same.
-getCells :: [MD.Node] -> Either Text [[MD.Node]]
+getCells :: [MD.Node] -> Either TableParsingError [[MD.Node]]
 getCells = \case
   [MD.ListItems_ _ xs] -> Right xs
   [MD.Paragraph_ s]    -> Right (splitRow s)
-  _other               -> Left "getCells: expected a list or a paragraph"
+  other                -> Left (WrongRowFormat other)
 
 -- | Split Markdown separated by pipe characters. In pseudocode:
 --
 -- >>> splitRow "foo | **bar baz** blah | `qux`"
 -- ["foo ", " **bar baz** blah ", " `qux`"]
+--
+-- Note that @cmark@ always wraps text into paragraphs. For uniformity, when
+-- we split the row manually, we do the same.
 splitRow :: [MD.Node] -> [[MD.Node]]
 splitRow = map (\s -> [MD.Paragraph_ s]) .
            splitOn [MD.Text_ "|"] .
@@ -480,116 +506,21 @@ renderTable MarkdownTable{..} = do
         tr_ $ for_ row $ \cell ->
           td_ $ toHtmlRaw $ renderMD cell
 
--- testing Tables with example
-{-
-----------------
----- Table -----
-----------------
-    { name = Just "TableName"
-    , columns =
-        [ [ Node Nothing (TEXT "Column 1") [] ]
-        , [ Node Nothing (TEXT "Column 2") [] ]
-        , [ Node Nothing (TEXT "Column 3") [] ]
-        ]
-    , rows =
-        [ [ [ Node Nothing EMPH [ Node Nothing (TEXT "foo") [] ]
-            , Node Nothing (TEXT " ") []
-            ]
-          , [ Node Nothing (TEXT " ") []
-            , Node Nothing STRONG [ Node Nothing (TEXT "bar") [] ]
-            , Node Nothing (TEXT " ") []
-            ]
-          , [ Node Nothing (TEXT " baz") [] ]
-          ]
-        , [ [ Node Nothing (TEXT "Foo") [] ]
-          , [ Node Nothing (TEXT "Bar") [] ]
-          , [ Node Nothing (TEXT "Baz") [] ]
-          ]
-        , [ [ Node
-                (Just
-                   PosInfo
-                     { startLine = 11
-                     , startColumn = 5
-                     , endLine = 13
-                     , endColumn = 7
-                     })
-                (HTML_BLOCK
-                   "<div class=\"sourceCode\"><pre class=\"sourceCode\"><code class=\"sourceCode\">Code foo</code></pre></div>")
-                []
-            ]
-          , [ Node Nothing (TEXT "Simple bar") [] ]
-          , [ Node Nothing (CODE "inline code baz") [] ]
-          ]
-        , [ [ Node Nothing (TEXT "Another foo ") [] ]
-          , [ Node Nothing (TEXT " Another bar ") [] ]
-          , [ Node Nothing (TEXT " Another baz") [] ]
-          ]
-        ]
-    }
-
----------------
------ HTML ----
----------------
-<h3>TableName</h3>
-<table class="sortable">
-  <thead>
-    <tr>
-      <td>Column 1</td>
-      <td>Column 2</td>
-      <td>Column 3</td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><em>foo</em></td>
-      <td><strong>bar</strong></td>
-      <td> baz</td>
-    </tr>
-    <tr>
-      <td>Foo</td>
-      <td>Bar</td>
-      <td>Baz</td>
-    </tr>
-    <tr>
-      <td>
-        <div class="sourceCode">
-          <pre class="sourceCode">
-            <code class="sourceCode">Code foo</code>
-          </pre>
-        </div>
-      </td>
-      <td>Simple bar</td>
-      <td><code>inline code baz</code></td>
-    </tr>
-    <tr>
-      <td>Another foo </td>
-      <td> Another bar </td>
-      <td> Another baz</td>
-    </tr>
-  </tbody>
-</table>
--}
-_testTable :: (Monad m) => HtmlT m ()
-_testTable = case getTable $ head $ parseMD table of
-    Right x  -> renderTable x
-    Left err -> toHtml ("Error when parsing the table: " <> err)
+-- | Find and render all tables in a Markdown node. If a table can't be
+-- parsed, it will insert an error message instead (generated with
+-- 'renderTableParsingError').
+--
+-- Note that other passes (e.g. 'resolveShortcutLinks') should happen before
+-- this one, because the rendered tables are inserted as HTML and it's not
+-- possible to inspect their contents anymore.
+renderTables :: MD.Node -> MD.Node
+renderTables (MD.Node pos tp ns) =
+    case getTable node' of
+      Left (NotATable _) ->
+        node'
+      Left err -> MD.HtmlBlock pos $
+        T.toStrict $ renderMD $ renderTableParsingError err
+      Right table -> MD.HtmlBlock pos $
+        T.toStrict $ Lucid.renderText $ renderTable table
   where
-    table = [NI.text|
-      + %TABLE TableName
-      + - Column 1
-        - Column 2
-        - Column 3
-      + --------------------------------
-      + *foo* | **bar** | baz
-
-      + - Foo
-        - Bar
-        - Baz
-
-      + - ```
-          Code foo
-          ```
-        - Simple bar
-        - `inline code` baz
-      + Another foo | Another bar | Another baz
-    |]
+    node' = MD.Node pos tp (map renderTables ns)

@@ -135,15 +135,7 @@ rowWithSeparatorMD =
 
 rowOfListSeveralNodesMD :: [[MD.Node]]
 rowOfListSeveralNodesMD =
-  [ [ MD.Node Nothing
-        (MD.HTML_BLOCK
-           "<div class=\"sourceCode\">\
-             \<pre class=\"sourceCode\">\
-               \<code class=\"sourceCode\">Code foo</code>\
-             \</pre>\
-           \</div>")
-        []
-    ]
+  [ parseVanillaMD "```\nCode foo\n```"
   , parseMD "Simple bar"
   , parseMD "`inline code` baz"
   ]
@@ -195,10 +187,8 @@ rowWithSeparatorHtml =
 rowOfListSeveralNodesHtml :: Text
 rowOfListSeveralNodesHtml =
   "<tr>\
-      \<td><div class=\"sourceCode\">\
-              \<pre class=\"sourceCode\">\
-                  \<code class=\"sourceCode\">Code foo</code>\
-              \</pre></div>\n</td>\
+      \<td><pre><code>Code foo\n\
+          \</code></pre>\n</td>\
       \<td><p>Simple bar</p>\n</td>\
       \<td><p><code>inline code</code> baz</p>\n</td>\
   \</tr>"
@@ -209,7 +199,7 @@ endHtml = "</tbody></table>"
 --------------------------------------
 
 buildTableMD :: [Text] -> MD.Node
-buildTableMD txtTable = head $ parseMD $ T.unlines txtTable
+buildTableMD txtTable = head $ parseVanillaMD $ T.unlines txtTable
 
 fullTableMD :: [Text]
 fullTableMD =
