@@ -3,9 +3,8 @@ module Guide.Common.Api where
 import Prelude
 
 import Control.Monad.Aff (Aff)
-import Data.Argonaut.Generic.Aeson (userDecoding, userEncoding)
-import Data.Argonaut.Generic.Decode (Options(..), SumEncoding(..), genericDecodeJson)
-import Data.Argonaut.Generic.Util (stripModulePath)
+import Data.Argonaut.Generic.Aeson (options)
+import Data.Argonaut.Generic.Decode (genericDecodeJson)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, unsafeFromForeign)
@@ -28,27 +27,6 @@ instance showEndpointError :: Show EndpointError where
       "[JSONDecodingError]: " <> show e
   show (ServerError e) =
       "[ServerError]: " <> show e
-
--- custom encode options (because `unpackRecords` should be `false`)
-sumEncoding :: SumEncoding
-sumEncoding = TaggedObject
-  { tagFieldName: "tag"
-  , contentsFieldName: "contents"
-  , unpackRecords: false
-  }
-
-options :: Options
-options = Options
-  { constructorTagModifier: stripModulePath
-  , allNullaryToStringTag: true
-  , sumEncoding
-  , flattenContentsArray: true
-  , encodeSingleConstructors: false
-  , userEncoding
-  , userDecoding
-  , fieldLabelModifier: id
-  , omitNothingFields: false
-  }
 
 -- | Decoder for json data
 decodeJson :: forall a. (Generic a) => Foreign -> Either String a
