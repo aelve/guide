@@ -13,8 +13,8 @@ module Guide.Views.Auth.Login where
 
 import Imports
 
-import Web.Routing.Combinators       (PathState (Open))
-import           Web.Spock                     hiding (get, head, text)
+-- import Web.Routing.Combinators       (PathState (Open))
+-- import           Web.Spock                     hiding (get, head, text)
 -- digestive-functors
 import Text.Digestive hiding (Path)
 -- lucid
@@ -23,8 +23,6 @@ import Guide.Views.Page
 import Guide.Views.Utils
 import Guide.Config
 import Guide.Types.User
-
-type PathReader m = MonadReader (Path '[] 'Open) m
 
 -- | Fields used by this form.
 data Login = Login {

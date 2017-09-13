@@ -80,6 +80,7 @@ library
       Guide.Views.Auth
         Guide.Views.Auth.Register
         Guide.Views.Auth.Login
+        Guide.Views.Auth.Profile
       Guide.Views.Item
       Guide.Views.Category
       Guide.Views.Utils
