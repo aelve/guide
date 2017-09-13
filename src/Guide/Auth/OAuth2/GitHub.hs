@@ -44,9 +44,12 @@ import           Guide.App
 -- import           Guide.Auth.OAuth2.GitHub
 import           Guide.Config
 import           Guide.Config.OAuth2
+import           Guide.Handlers
 -- import           Guide.Routes
 import           Guide.ServerStuff
+import           Guide.Types.Session
 import           Guide.Types.Creds
+import           Guide.Types.User
 
 -- import           Guide.Views.Utils
 
@@ -106,7 +109,7 @@ mkGitHubAuth prefix = do
           oauth {
               oauthCallback = Just . T.toByteString $ baseUrl <> renderRoute callbackRoute,
               oauthOAuthorizeEndpoint = oauthOAuthorizeEndpoint oauth
-                `appendQueryParam` [("state", T.encodeUtf8 csrfValue)]
+                `appendQueryParam` [(T.encodeUtf8 csrfTokenParam, T.encodeUtf8 csrfValue)]
             }
         setupForward = do
           Spock.get forwardRoute $ do
@@ -119,26 +122,42 @@ mkGitHubAuth prefix = do
           let oauth' = withCallback csrfValue
           result <- liftIO $ fetchAccessToken mgr oauth' (T.encodeUtf8 code)
           case result of
-            Left _ -> abort
+            Left _ -> errorInvalidToken
             Right token -> do
               mbCreds <- liftIO $ fetchGithubProfile mgr token
               case mbCreds of
                 Just creds -> do
-                  mbUser <- dbQuery $ LoginUserCreds creds
-                  case mbUser of
-                    Just _user -> do
-                      Spock.text "Found user, but nothing to do yet."
-                    Nothing -> abort
-                Nothing -> abort
+                  mbCurrentUser <- getLoggedInUser
+                  -- TODO: This is hackish, need to create a "profile" page and
+                  -- an "associate login" page.
+                  case mbCurrentUser of
+                    Just currentUser -> do
+                      result <- dbUpdate $ AddCreds currentUser creds
+                      if result
+                      then Spock.text "Associated account"
+                      else Spock.text "Failed to associate account"
+                    Nothing -> do
+                      mbUser <- dbQuery $ LoginUserCreds creds
+                      case mbUser of
+                        Just user -> do
+                          modifySession (sessionUserID .~ Just (user ^. userID))
+                          Spock.redirect "/"
+                        Nothing -> errorNoAssociatedUser
+                Nothing -> errorNoExternalUser
         checkCallbackCsrf successAction = do
           csrf <- getCsrfToken
-          clientCsrf <- param' "state"
+          clientCsrf <- param' csrfTokenParam
           if clientCsrf == csrf
           then successAction
-          else abort
-        abort = do
+          else errorInvalidCsrf
+        csrfTokenParam = "state"
+        errorInvalidCsrf = abort "Broken/invalid CSRF token (Guide error)"
+        errorInvalidToken = abort "Invalid code for external provider"
+        errorNoExternalUser = abort "No external user"
+        errorNoAssociatedUser = abort "No user associated with external account"
+        abort error = do
           setStatus status403
-          Spock.text "Broken/invalid CSRF token"
+          Spock.text error
     Nothing -> return ()
 
 fetchGithubProfile :: Manager -> AccessToken -> IO (Maybe Creds)
