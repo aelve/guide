@@ -14,9 +14,8 @@ module Guide.ServerStuff
   ServerState(..),
     getConfig,
     getManager,
-  DB,
-    dbUpdate,
-    dbQuery,
+  dbUpdate,
+  dbQuery,
 
   -- * Cache
   uncache,
@@ -31,10 +30,6 @@ module Guide.ServerStuff
   itemVar,
   categoryVar,
   traitVar,
-
-  -- * Other helpers
-  createCheckpoint',
-  createCheckpointAndClose',
 )
 where
 
@@ -49,7 +44,6 @@ import Web.Routing.Combinators (PathState(..))
 import Network.HTTP.Client (Manager)
 -- acid-state
 import Data.Acid as Acid
-import Data.Acid.Local as Acid
 
 import Guide.Config
 import Guide.State
@@ -75,10 +69,6 @@ getConfig = _config <$> Spock.getState
 getManager :: (Monad m, HasSpock m, SpockState m ~ ServerState)
            => m Manager
 getManager = _httpManager <$> Spock.getState
-
--- | A pointer to an open acid-state database (allows making queries/updates,
--- creating checkpoints, etc).
-type DB = AcidState GlobalState
 
 -- | Update something in the database. Don't forget to 'invalidateCache' or
 -- use 'uncache' when you update something that is cached.
@@ -328,27 +318,3 @@ categoryVar = "category" <//> var
 -- | A path pieces for traits
 traitVar :: Path '[Uid Trait] 'Open
 traitVar = "trait" <//> var
-
-----------------------------------------------------------------------------
--- Other helpers
-----------------------------------------------------------------------------
-
--- | Like 'createCheckpoint', but doesn't create a checkpoint if there were
--- no changes made.
-createCheckpoint' :: MonadIO m => DB -> m ()
-createCheckpoint' db = liftIO $ do
-  wasDirty <- Acid.update db UnsetDirty
-  when wasDirty $ do
-    createArchive db
-    createCheckpoint db
-
--- | Like 'createCheckpointAndClose', but doesn't create a checkpoint if
--- there were no changes made.
-createCheckpointAndClose' :: MonadIO m => DB -> m ()
-createCheckpointAndClose' db = liftIO $ do
-  wasDirty <- Acid.update db UnsetDirty
-  if wasDirty then do
-    createArchive db
-    createCheckpointAndClose db
-  else do
-    closeAcidState db

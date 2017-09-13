@@ -25,8 +25,6 @@ where
 
 import Imports
 
--- Containers
-import qualified Data.Map as M
 -- ByteString
 import qualified Data.ByteString as BS
 -- Lists
@@ -64,11 +62,14 @@ import qualified SlaveThread as Slave
 import System.Posix.Signals
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
+-- putStrLn that works well with concurrency
+import Say (say)
 -- HVect
 import Data.HVect hiding (length)
 
 import Guide.App
 import Guide.Auth
+import Guide.Api (runApiServer)
 import Guide.ServerStuff
 import Guide.Handlers
 import Guide.Config
@@ -152,21 +153,11 @@ mainWith config = do
   -- won't be visible
   emptyCache
   startTemplateWatcher
-  let emptyState = GlobalState {
-        _categories = [],
-        _categoriesDeleted = [],
-        _actions = [],
-        _pendingEdits = [],
-        _editIdCounter = 0,
-        _sessionStore = M.empty,
-        _users = M.empty,
-        _creds = M.empty,
-        _dirty = True }
   do args <- getArgs
      let option = headDef "" args
      when (option == "--dry-run") $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       putStrLn "loaded the database successfully"
+       say "loaded the database successfully"
        closeAcidState db
        exitSuccess
      -- USAGE: --load-public <filename>
@@ -181,25 +172,22 @@ mainWith config = do
            db <- openLocalStateFrom "state/" emptyState
            Acid.update db (ImportPublicDB publicDB)
            createCheckpointAndClose' db
-           putStrLn "PublicDB imported to GlobalState"
+           say "PublicDB imported to GlobalState"
            exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
   -- restart GHCi before every run. So, we kill the thread in the finaliser.
   ekgId <- newIORef Nothing
-  -- See Note [acid-state] for the explanation of 'openLocalStateFrom',
-  -- 'createCheckpoint', etc
-  let prepare = openLocalStateFrom "state/" emptyState
-      finalise db = do
-        putStrLn "Creating an acid-state checkpoint and closing acid-state"
-        createCheckpointAndClose' db
+  workFinished <- newEmptyMVar
+  let finishWork = do
         -- Killing EKG has to be done last, because of
         -- <https://github.com/tibbe/ekg/issues/62>
-        putStrLn "Killing EKG"
+        say "Killing EKG"
         mapM_ killThread =<< readIORef ekgId
-  bracket prepare finalise $ \db -> do
-    installTerminationCatcher =<< myThreadId
+        putMVar workFinished ()
+  installTerminationCatcher =<< myThreadId
+  workThread <- Slave.fork $ withDB finishWork $ \db -> do
     hSetBuffering stdout NoBuffering
     -- Create a checkpoint every six hours. Note: if nothing was changed, the
     -- checkpoint won't be created, which saves us some space.
@@ -207,7 +195,9 @@ mainWith config = do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
-    ekg <- EKG.forkServer "localhost" 5050
+    ekg <- do
+      say "EKG is running on port 5050"
+      EKG.forkServer "localhost" 5050
     writeIORef ekgId (Just (EKG.serverThreadId ekg))
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
@@ -219,7 +209,8 @@ mainWith config = do
       EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
-    -- Create an admin user
+    -- Run the API
+    Slave.fork $ runApiServer db
     -- Run the server
     httpManager <- newTlsManager
     let serverState = ServerState {
@@ -244,7 +235,10 @@ mainWith config = do
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
+    say "Spock is running on port 8080"
     runSpockNoBanner 8080 $ spock spockConfig $ guideApp waiMetrics
+  forever (threadDelay (1000000 * 60))
+    `finally` (killThread workThread >> takeMVar workFinished)
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: EKG.WaiMetrics -> GuideApp ()
@@ -465,11 +459,13 @@ data Quit = CtrlC | ServiceStop
 
 instance Exception Quit
 
-{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM
-(i.e. service stop) and throw an exception instead of them. This lets us
+{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM (i.e.
+service stop) and throw an exception instead of the signal. This lets us
 create a checkpoint and close connections on exit.
 -}
-installTerminationCatcher :: ThreadId -> IO ()
+installTerminationCatcher
+  :: ThreadId  -- ^ Thread to kill when the signal comes
+  -> IO ()
 installTerminationCatcher thread = void $ do
   installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
   installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing

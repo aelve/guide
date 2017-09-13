@@ -13,7 +13,8 @@ module Imports
 where
 
 
-import           BasePrelude            as X hiding (Category, GeneralCategory, lazy, (&))
+import           BasePrelude            as X
+  hiding (Category, GeneralCategory, lazy, (&), Handler)
 -- Lists
 import           Data.List.Extra        as X (dropEnd, takeEnd)
 import           Data.List.Index        as X
@@ -23,6 +24,7 @@ import           Lens.Micro.Platform    as X
 import           Control.Monad.IO.Class as X
 import           Control.Monad.Reader   as X
 import           Control.Monad.State    as X
+import           Control.Monad.Except   as X
 -- Common types
 import           Data.ByteString        as X (ByteString)
 import           Data.Map               as X (Map)

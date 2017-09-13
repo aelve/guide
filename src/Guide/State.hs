@@ -13,6 +13,12 @@ Site's database, and methods for manipulating it.
 -}
 module Guide.State
 (
+  DB,
+  withDB,
+  createCheckpoint',
+  createCheckpointAndClose',
+
+  -- * type of global state
   GlobalState(..),
     categories,
     categoriesDeleted,
@@ -20,6 +26,7 @@ module Guide.State
     pendingEdits,
     editIdCounter,
     findCategoryByItem,
+  emptyState,
 
   -- * acid-state methods
   -- ** query
@@ -111,6 +118,7 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 import Data.Acid as Acid
+import Data.Acid.Local as Acid
 --
 import Web.Spock.Internal.SessionManager (SessionId)
 
@@ -187,6 +195,23 @@ Guide.hs
      'setMethods'.
 
 -}
+
+
+----------------------------------------------------------------------------
+-- GlobalState
+----------------------------------------------------------------------------
+
+emptyState :: GlobalState
+emptyState = GlobalState {
+  _categories = [],
+  _categoriesDeleted = [],
+  _actions = [],
+  _pendingEdits = [],
+  _editIdCounter = 0,
+  _sessionStore = M.empty,
+  _users = M.empty,
+  _creds = M.empty,
+  _dirty = True }
 
 data GlobalState = GlobalState {
   _categories :: [Category],
@@ -941,3 +966,47 @@ makeAcidic ''GlobalState [
   'importPublicDB,
   'exportPublicDB
   ]
+
+----------------------------------------------------------------------------
+-- DB helpers (have to be at the end of the file)
+----------------------------------------------------------------------------
+
+-- | A connection to an open acid-state database (allows making
+-- queries/updates, creating checkpoints, etc).
+type DB = AcidState GlobalState
+
+-- | Open the database, do something with it, then close the database.
+--
+-- See Note [acid-state] for the explanation of 'openLocalStateFrom',
+-- 'createCheckpoint', etc.
+withDB
+  :: IO ()               -- ^ Action to run after closing the database
+  -> (DB -> IO ())       -- ^ Action to run when the database is open
+  -> IO ()
+withDB afterClose action = do
+  let prepare = openLocalStateFrom "state/" emptyState
+      finalise db = do
+        putStrLn "Creating an acid-state checkpoint and closing acid-state"
+        createCheckpointAndClose' db
+        afterClose
+  bracket prepare finalise action
+
+-- | Like 'createCheckpoint', but doesn't create a checkpoint if there were
+-- no changes made.
+createCheckpoint' :: MonadIO m => DB -> m ()
+createCheckpoint' db = liftIO $ do
+  wasDirty <- Acid.update db UnsetDirty
+  when wasDirty $ do
+    createArchive db
+    createCheckpoint db
+
+-- | Like 'createCheckpointAndClose', but doesn't create a checkpoint if
+-- there were no changes made.
+createCheckpointAndClose' :: MonadIO m => DB -> m ()
+createCheckpointAndClose' db = liftIO $ do
+  wasDirty <- Acid.update db UnsetDirty
+  if wasDirty then do
+    createArchive db
+    createCheckpointAndClose db
+  else do
+    closeAcidState db
