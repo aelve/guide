@@ -72,9 +72,9 @@ unwrapSession (GuideSession {..}) = Spock.Session {
   }
 
 wrapSession :: SpockSession conn st -> GuideSession
-wrapSession (Spock.Session {..}) = GuideSession {
-    _sess_id = sess_id,
-    _sess_csrfToken = sess_csrfToken,
-    _sess_validUntil = sess_validUntil,
-    _sess_data = sess_data
+wrapSession sess = GuideSession {
+    _sess_id = Spock.sess_id sess,
+    _sess_csrfToken = Spock.sess_csrfToken sess,
+    _sess_validUntil = Spock.sess_validUntil sess,
+    _sess_data = Spock.sess_data sess
   }
