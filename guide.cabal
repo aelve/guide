@@ -60,6 +60,7 @@ library
       Guide.Types.Edit
       Guide.Types.Action
       Guide.Types.User
+      Guide.Types.Creds
       Guide.Types.Session
       Guide.Config.OAuth2
         Guide.Config.OAuth2.Base
