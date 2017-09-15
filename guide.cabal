@@ -38,7 +38,7 @@ executable guide
   build-depends:       base
                      , guide
   ghc-options:         -Wall -fno-warn-unused-do-bind
-                      --  -threaded "-with-rtsopts=-T -N"
+                       -threaded "-with-rtsopts=-T -N"
   hs-source-dirs:      src/site
   default-language:    Haskell2010
 
@@ -56,7 +56,7 @@ library
     Guide.State
     Guide.Auth
       Guide.Auth.OAuth2
-        Guide.Auth.OAuth2.GitHub
+        Guide.Auth.OAuth2.Github
         Guide.Auth.OAuth2.Google
     Guide.Types
       Guide.Types.Hue
@@ -68,7 +68,7 @@ library
       Guide.Types.Session
       Guide.Config.OAuth2
         Guide.Config.OAuth2.Base
-        Guide.Config.OAuth2.GitHub
+        Guide.Config.OAuth2.Github
         Guide.Config.OAuth2.Google
     Guide.Handlers
     Guide.Utils
@@ -99,6 +99,7 @@ library
                      , acid-state == 0.14.*
                      , aeson == 1.0.*
                      , aeson-pretty
+                     , unordered-containers >= 0.2.8
                      , base >=4.9 && <4.10
                      , base-prelude
                      , bytestring

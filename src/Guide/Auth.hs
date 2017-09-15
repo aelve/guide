@@ -5,6 +5,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 
+{-# LANGUAGE TypeFamilies        #-}
+
 {- |
 Module      :  Guide.Auth
 Description :  Authentication module
@@ -17,28 +19,28 @@ Portability :  portable
 
 -}
 
-{-# LANGUAGE TypeFamilies        #-}
-
 module Guide.Auth where
-
--- Web
--- import           Lucid                         hiding (for_)
--- import           Network.Wai.Middleware.Static (addBase, staticPolicy)
-import           Web.Routing.Combinators       (PathState (Open))
-import           Web.Spock                     hiding (get, head, text)
--- import qualified Web.Spock                     as Spock
--- import           Web.Spock.Config
--- import           Web.Spock.Lucid
 
 import           Imports
 
+-- Web
+import           Web.Routing.Combinators       (PathState (Open))
+import           Web.Spock                     hiding (get, head, text)
+
 import           Guide.App
 import           Guide.Auth.OAuth2
--- import           Guide.Config
--- import           Guide.Config.OAuth2
--- import           Guide.Routes
--- import           Guide.ServerStuff
 
+-- | This function adds handlers for all authentication routes that
+-- we need to support. Assuming that the prefix is @auth@, 'mkAuthApi'
+-- will add handlers for these routes:
+--
+-- @
+-- /auth/oauth2/github/...
+-- /auth/oauth2/google/...
+-- /auth/oauth2/generic/...
+-- @
+--
+-- For details on the created routes, see 'mkOAuth2Api', 'mkGithubAuth', etc.
 mkAuthApi :: Path '[] 'Open -> GuideM ctx ()
 mkAuthApi prefix = do
   mkOAuth2Api $ prefix <//> "oauth2"

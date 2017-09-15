@@ -18,5 +18,5 @@ module Guide.Config.OAuth2
 ) where
 
 import           Guide.Config.OAuth2.Base   as X
-import           Guide.Config.OAuth2.GitHub as X
+import           Guide.Config.OAuth2.Github as X
 import           Guide.Config.OAuth2.Google as X

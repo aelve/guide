@@ -1,11 +1,11 @@
 {- |
 Module      :  Guide.Types.Creds
-Description :  Credentials for external providers (e.g.: GitHub authentication)
+Description :  Credentials for external providers (e.g.: Github authentication)
 Copyright   :  (c) Aaron Friel
 License     :  BSD-3
 
 Maintainer  :  Aaron Friel <mayreply@aaronfriel.com>
-Stability   :  unstable | experimental | provisional | stable | frozen
+Stability   :  unstable
 Portability :  portable | non-portable (<reason>)
 
 -}
@@ -44,6 +44,11 @@ data Creds = Creds {
 
 deriveSafeCopySorted 0 'base ''Creds
 makeLenses ''Creds
+
+instance Eq Creds where
+  credFoo == credBar =
+       credFoo ^. credsProvider == credBar ^. credsProvider
+    && credFoo ^. credsId       == credBar ^. credsId
 
 makeCreds :: Text -> Text -> Map Text Text -> Creds
 makeCreds = Creds

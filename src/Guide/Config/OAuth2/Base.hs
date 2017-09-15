@@ -1,3 +1,7 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 {- |
 Module      :  Guide.Config.OAuth2.Base
 Description :  OAuth2 data definitions
@@ -10,37 +14,31 @@ Portability :  portable
 
 -}
 
-{-# LANGUAGE OverloadedStrings #-}
-
 module Guide.Config.OAuth2.Base where
 
-import Imports hiding ((.=))
-
--- acid-state
--- import Data.SafeCopy hiding (kind)
-
-import Guide.Utils
+import           Imports                  hiding ((.=))
 
 -- hoauth2
-import Network.OAuth.OAuth2
+import           Network.OAuth.OAuth2
 -- text
-import qualified Data.Text.All as T
-
--- import Guide.Types.User
+import qualified Data.Text.All            as T
 -- Aeson
-import Data.Aeson
-import Data.Aeson.Encode.Pretty
--- ByteString
--- import qualified Data.ByteString as BS
--- import qualified Data.ByteString.Lazy as BSL
+import           Data.Aeson
+import           Data.Aeson.Encode.Pretty
 -- Default
-import Data.Default
+import           Data.Default
+
+import           Guide.Utils
+
 
 -- | Configuration details to access an endpoint.
 --
 -- Intended to be used in a config file.
 --
 -- See note [OAuth2 workflow]
+--
+-- Note that some of these parameters may be "read only" in the configuration,
+-- and overwritten by an authorization provider.
 data OAuth2Endpoint = OAuth2Endpoint {
   _endpointName         :: Text,      -- ^ A unique name for the OAuth2 endpoint.
   _endpointClientId     :: Text,      -- ^ The client ID for the OAuth2 endpoint.

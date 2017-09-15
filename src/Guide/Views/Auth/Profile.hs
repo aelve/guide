@@ -5,7 +5,7 @@ Copyright   :  (c) Aaron Friel
 License     :  BSD-3
 
 Maintainer  :  Aaron Friel <mayreply@aaronfriel.com>
-Stability   :  unstable | experimental | provisional | stable | frozen
+Stability   :  unstable
 Portability :  portable | non-portable (<reason>)
 
 Should display the user's current information, any available options for changing,

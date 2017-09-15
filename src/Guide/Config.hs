@@ -47,8 +47,8 @@ data Config = Config {
                                   --    the app is started
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
-  _githubOauth   :: Maybe OAuth2.GitHubEndpoint
-                                  -- ^ Configuration for GitHub based OAuth
+  _githubOauth   :: Maybe OAuth2.GithubEndpoint
+                                  -- ^ Configuration for Github based OAuth
   }
   deriving (Eq, Show)
 

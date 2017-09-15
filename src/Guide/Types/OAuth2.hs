@@ -16,7 +16,7 @@ where
 
 import Guide.App
 
-import qualified Guide.Config.OAuth2.GitHub as X
+import qualified Guide.Config.OAuth2.Github as X
 import qualified Guide.Config.OAuth2.Google as X
 import qualified Guide.Config.OAuth2 as X
 

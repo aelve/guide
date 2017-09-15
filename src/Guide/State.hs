@@ -886,7 +886,7 @@ addCreds user userCreds = do
   else
     return False
 
--- | Remove external credentials to a user account.
+-- | Remove external credentials from a user account.
 removeCreds :: User -> Creds -> Acid.Update GlobalState ()
 removeCreds user userCreds = do
   creds %= M.adjust (filter filterCred) (user ^. userID)
@@ -899,13 +899,12 @@ removeCreds user userCreds = do
 -- | Get user from creds
 loginUserCreds :: Creds -> Acid.Query GlobalState (Maybe User)
 loginUserCreds userCreds = do
-  matches <- filter (\(_, cs) -> any matchCred cs) . M.toList <$> view creds
+  matches <- filter (\(_, cs) -> any (userCreds==) cs) . M.toList <$> view creds
   case matches of
     [(key, _)] -> view (users . at key)
-    _ -> return Nothing
-  where
-    matchCred cred =    cred ^. credsProvider == userCreds ^. credsProvider
-                     && cred ^. credsId       == userCreds ^. credsId
+    [] -> return Nothing
+    _ -> error $ "loginUserCreds: More than one credential matched,"
+                 <> " a duplicate credential exists in the database."
 
 -- | Populate the database with info from the public DB.
 importPublicDB :: PublicDB -> Acid.Update GlobalState ()
