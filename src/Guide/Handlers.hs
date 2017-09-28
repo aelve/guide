@@ -210,17 +210,18 @@ setMethods = do
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item ecosystem
-  Spock.post (setRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
+  Spock.post (setRoute <//> itemVar <//> ecosystemTabVar) $ \itemId tabId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
+    itm <- dbQuery (GetItem itemId)
+    modified <- view (block.mdText) <$> dbQuery (GetEcosystemTab itemId tabId)
     if modified == original
       then do
-        item <- uncache (CacheItemEcosystem itemId) $ do
-          (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
+        tab <- uncache (CacheItemEcosystem itemId) $ do
+          (edit, tab) <- dbUpdate (SetItemEcosystemTabBlock itemId tabId content')
           addEdit edit
-          return item
-        lucidIO $ renderItemEcosystem item
+          return tab
+        lucidIO $ renderItemEcosystemTab itm tab
       else do
         setStatus HTTP.status409
         json $ M.fromList [

@@ -25,11 +25,12 @@ module Guide.ServerStuff
   addEdit,
   undoEdit,
   invalidateCacheForEdit,
-  
+
   -- * Handler helpers
   itemVar,
   categoryVar,
   traitVar,
+  ecosystemTabVar,
 
   -- * Other helpers
   createCheckpoint',
@@ -47,7 +48,8 @@ import Web.Routing.Combinators (PathState(..))
 -- acid-state
 import Data.Acid as Acid
 import Data.Acid.Local as Acid
-
+-- Text
+import qualified Data.Text as T
 import Guide.Config
 import Guide.State
 import Guide.Types
@@ -227,10 +229,21 @@ undoEdit (Edit'SetItemNotes itemId old new) = do
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetItemNotes itemId old)
 undoEdit (Edit'SetItemEcosystem itemId old new) = do
-  now <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
-  if now /= new
+  now <- view (ecosystemTabs) <$> dbQuery (GetItem itemId)
+  let nowText = T.concat $ map (^.block.mdText) now
+  if nowText /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
+undoEdit (Edit'SetItemEcosystemTabName itemId tabId oldName newName) = do
+  now <- view name <$> dbQuery (GetEcosystemTab itemId tabId)
+  if now /= newName
+    then return (Left "ecosysten tab's name has been changed further")
+    else Right () <$ dbUpdate (SetItemEcosystemTabName itemId tabId oldName)
+undoEdit (Edit'SetItemEcosystemTabBlock itemId tabId oldBlock newBlock) = do
+  now <- view (block.mdText) <$> dbQuery (GetEcosystemTab itemId tabId)
+  if now /= newBlock
+    then return (Left "ecosysten tab's block has been changed further")
+    else Right () <$ dbUpdate (SetItemEcosystemTabBlock itemId tabId oldBlock)
 undoEdit (Edit'SetTraitContent itemId traitId old new) = do
   now <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
   if now /= new
@@ -319,6 +332,9 @@ categoryVar = "category" <//> var
 -- | A path pieces for traits
 traitVar :: Path '[Uid Trait] 'Open
 traitVar = "trait" <//> var
+
+ecosystemTabVar :: Path '[Uid EcosystemTab] 'Open
+ecosystemTabVar = "ecosystemTab" <//> var
 
 ----------------------------------------------------------------------------
 -- Other helpers

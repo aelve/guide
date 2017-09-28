@@ -208,6 +208,7 @@ renderAdmin globalState = do
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
 
   body_ $ do
+    -- liftIO $ putStrLn $ show $ markdownBlockMdMarkdown $ _itemEcosystem (head$  filter (\x -> _itemName x == "attoparsec") ( (head $ filter (\x -> (x ^. title == "Parsing")) $ globalState ^. categories) ^. items))
     script_ $ fromJS $ JS.createAjaxIndicator ()
     h1_ "Miscellaneous"
     buttonUid <- randomLongUid
@@ -756,15 +757,16 @@ renderSearchResult r = do
           toHtml (item^.name)
         div_ [class_ "description notes-like"] $
           toHtml (item^.description)
-      SRItemEcosystem cat item -> do
+      SRItemEcosystemTab cat item tab -> do
         a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
           toHtml (cat^.title)
         span_ [class_ "breadcrumb"] "»"
         a_ [class_ "item-link", href_ (itemLink cat item)] $
           toHtml (item^.name)
         span_ [class_ "item-link-addition"] "'s ecosystem"
-        div_ [class_ "ecosystem notes-like"] $
-          toHtml (item^.ecosystem)
+        div_ [class_ "ecosystem notes-like"] $ do
+          strong_ $ toHtml $ tab^.name
+          toHtml (tab^.block.mdText)
 
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

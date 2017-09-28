@@ -26,7 +26,7 @@ data SearchResult
   -- | Item's name matches the query
   | SRItem Category Item
   -- | Item's ecosystem matches the query
-  | SRItemEcosystem Category Item
+  | SRItemEcosystemTab Category Item EcosystemTab
   deriving (Show, Generic)
 
 {- | Find things matching a simple text query, and return results ranked by
@@ -50,11 +50,14 @@ search query gs =
                  , let rank = match query (item^.name)
                  , rank > 0 ] ++
     -- item ecosystems
-    sortByRank [(SRItemEcosystem cat item, rank)
+    sortByRank [(SRItemEcosystemTab cat item tab, max contentRank nameRank)
                  | cat  <- gs^.categories
                  , item <- cat^.items
-                 , let rank = match query (item^.ecosystem.mdText)
-                 , rank > 0 ]
+                 , tab <- item^.ecosystemTabs
+                 , let contentRank = match query (tab^.block.mdText)
+                 , let nameRank = match query (tab^.name)
+                 , contentRank > 0 || nameRank > 0
+                 ]
   where
     sortByRank :: [(a, Int)] -> [a]
     sortByRank = map fst . sortOn (Down . snd)

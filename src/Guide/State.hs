@@ -28,6 +28,7 @@ module Guide.State
   GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
   GetItem(..),
+  GetEcosystemTab(..),
   GetTrait(..),
 
   -- ** add
@@ -51,7 +52,9 @@ module Guide.State
   SetItemKind(..),
   SetItemDescription(..),
   SetItemNotes(..),
-  SetItemEcosystem(..),
+  SetItemEcosystem (..),
+  SetItemEcosystemTabName(..),
+  SetItemEcosystemTabBlock(..),
   -- *** 'Trait'
   SetTraitContent(..),
 
@@ -75,7 +78,7 @@ module Guide.State
   RestoreItem(..),
   RestoreTrait(..),
   SetDirty(..), UnsetDirty(..),
-  
+
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
@@ -223,6 +226,12 @@ traitById uid' = singular $
   error ("traitById: couldn't find trait with uid " ++
          T.unpack (uidToText uid'))
 
+ecosystemTabById :: Uid EcosystemTab -> Lens' Item EcosystemTab
+ecosystemTabById uid' = singular $
+  (ecosystemTabs.each . filtered (hasUid uid')) `failing`
+  error ("ecosystemTabById: couldn't find ecosystemTab with uid " ++
+         T.unpack (uidToText uid'))
+
 categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
   categories.each . filtered (hasUid catId) `failing`
@@ -310,6 +319,9 @@ getCategoryByItem uid' = findCategoryByItem uid' <$> ask
 getItem :: Uid Item -> Acid.Query GlobalState Item
 getItem uid' = view (itemById uid')
 
+getEcosystemTab :: Uid Item -> Uid EcosystemTab -> Acid.Query GlobalState EcosystemTab
+getEcosystemTab itemId tabId = view (itemById itemId . ecosystemTabById tabId)
+
 -- TODO: this doesn't need the item id, but then we have to be a bit cleverer
 -- and store a (TraitId -> ItemId) map in global state (and update it
 -- accordingly whenever anything happens, so perhaps let's not do it!)
@@ -351,20 +363,20 @@ addItem
   -> Acid.Update GlobalState (Edit, Item)
 addItem catId itemId name' created' kind' = do
   let newItem = Item {
-        _itemUid         = itemId,
-        _itemName        = name',
-        _itemCreated     = created',
-        _itemGroup_      = Nothing,
-        _itemDescription = toMarkdownBlock "",
-        _itemPros        = [],
-        _itemProsDeleted = [],
-        _itemCons        = [],
-        _itemConsDeleted = [],
-        _itemEcosystem   = toMarkdownBlock "",
-        _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
-                           in  toMarkdownTree pref "",
-        _itemLink        = Nothing,
-        _itemKind        = kind' }
+        _itemUid           = itemId,
+        _itemName          = name',
+        _itemCreated       = created',
+        _itemGroup_        = Nothing,
+        _itemDescription   = toMarkdownBlock "",
+        _itemPros          = [],
+        _itemProsDeleted   = [],
+        _itemCons          = [],
+        _itemConsDeleted   = [],
+        _itemEcosystemTabs = [],
+        _itemNotes         = let pref = "item-notes-" <> uidToText itemId <> "-"
+                             in  toMarkdownTree pref "",
+        _itemLink          = Nothing,
+        _itemKind          = kind' }
   categoryById catId . items %= (++ [newItem])
   let edit = Edit'AddItem catId itemId name'
   return (edit, newItem)
@@ -505,11 +517,24 @@ setItemNotes itemId notes' = do
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
-  oldEcosystem <- itemById itemId . ecosystem <<.=
-                    toMarkdownBlock ecosystem'
+  let newEco = [EcosystemTab (Uid "sadsad") "TabName" (toMarkdownBlock ecosystem')]
+
+  oldEcosystem <- itemById itemId . ecosystemTabs <<.= newEco
   let edit = Edit'SetItemEcosystem itemId
-               (oldEcosystem ^. mdText) ecosystem'
+               (T.concat $ map (^. block.mdText) oldEcosystem) ecosystem'
   (edit,) <$> use (itemById itemId)
+
+setItemEcosystemTabName :: Uid Item -> Uid EcosystemTab -> Text -> Acid.Update GlobalState (Edit, EcosystemTab)
+setItemEcosystemTabName itemId tabId tabName' = do
+  oldTabName  <- itemById itemId . ecosystemTabById tabId . name <<.= tabName'
+  let edit = Edit'SetItemEcosystemTabName itemId tabId oldTabName tabName'
+  (edit,) <$> use (itemById itemId . ecosystemTabById tabId)
+
+setItemEcosystemTabBlock :: Uid Item -> Uid EcosystemTab -> Text -> Acid.Update GlobalState (Edit, EcosystemTab)
+setItemEcosystemTabBlock itemId tabId block' = do
+  oldTabBlock <- itemById itemId . ecosystemTabById tabId . block <<.= toMarkdownBlock block'
+  let edit = Edit'SetItemEcosystemTabBlock itemId tabId (oldTabBlock ^. mdText) block'
+  (edit,) <$> use (itemById itemId . ecosystemTabById tabId)
 
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
 setTraitContent itemId traitId content' = do
@@ -757,26 +782,26 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
--- | Retrieves a session by 'SessionID'. 
+-- | Retrieves a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
 loadSession key = view (sessionStore . at key)
 
--- | Stores a session object. 
+-- | Stores a session object.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 storeSession :: GuideSession -> Acid.Update GlobalState ()
 storeSession sess = do
   sessionStore %= M.insert (sess ^. sess_id) sess
   setDirty
 
--- | Deletes a session by 'SessionID'. 
+-- | Deletes a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 deleteSession :: SessionId -> Acid.Update GlobalState ()
 deleteSession key = do
   sessionStore %= M.delete key
   setDirty
 
--- | Retrieves all sessions. 
+-- | Retrieves all sessions.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 getSessions :: Acid.Query GlobalState [GuideSession]
 getSessions = do
@@ -791,7 +816,7 @@ getUser key = view (users . at key)
 createUser :: User -> Acid.Update GlobalState Bool
 createUser user = do
   m <- toList <$> use users
-  if all (canCreateUser user) (m ^.. each) 
+  if all (canCreateUser user) (m ^.. each)
   then do
     users %= M.insert (user ^. userID) user
     return True
@@ -817,7 +842,7 @@ loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
   matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
   case matches of
-    [user] -> 
+    [user] ->
       if verifyUser user password
       then return $ Right user
       else return $ Left "wrong password"
@@ -852,6 +877,7 @@ makeAcidic ''GlobalState [
   'getCategoryByItem,
   'getItem,
   'getTrait,
+  'getEcosystemTab,
   -- add
   'addCategory,
   'addItem,
@@ -861,7 +887,9 @@ makeAcidic ''GlobalState [
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'changeCategoryEnabledSections,
   'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
-    'setItemDescription, 'setItemNotes, 'setItemEcosystem,
+    'setItemDescription, 'setItemNotes,
+      'setItemEcosystemTabName, 'setItemEcosystemTabBlock,
+        'setItemEcosystem,
   'setTraitContent,
   -- delete
   'deleteCategory,

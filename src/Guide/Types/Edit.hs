@@ -29,6 +29,7 @@ import Data.SafeCopy.Migrate
 
 import Guide.Utils
 import Guide.Types.Core
+import Guide.Markdown (MarkdownBlock (..))
 
 
 -- | Edits made by users. It should always be possible to undo an edit.
@@ -102,7 +103,16 @@ data Edit
       editItemUid            :: Uid Item,
       editItemEcosystem      :: Text,
       editItemNewEcosystem   :: Text }
-
+  | Edit'SetItemEcosystemTabName {
+      editItemUid                   :: Uid Item,
+      editItemEcosystemTabUid       :: Uid EcosystemTab,
+      editItemEcosystemTabName      :: Text,
+      editItemNewEcosystemTabName   :: Text }
+  | Edit'SetItemEcosystemTabBlock {
+      editItemUid                   :: Uid Item,
+      editItemEcosystemTabUid       :: Uid EcosystemTab,
+      editItemEcosystemTabBlock      :: Text,
+      editItemNewEcosystemTabBlock   :: Text }
   -- Change trait properties
   | Edit'SetTraitContent {
       editItemUid         :: Uid Item,
@@ -133,7 +143,7 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 7 'extension ''Edit
+deriveSafeCopySimple 8 'extension ''Edit
 
 genVer ''Edit 6 [
   -- Add

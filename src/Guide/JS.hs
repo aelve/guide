@@ -52,7 +52,9 @@ allJSFunctions = JS . T.unlines . map fromJS $ [
   -- Set methods
   submitCategoryInfo, submitCategoryNotes,
   submitItemDescription,
-  submitItemNotes, submitItemEcosystem,
+  submitItemNotes,
+  -- submitItemEcosystem,
+  submitItemEcosystemTab,
   -- Other things
   deleteCategoryAndRedirect,
   -- Admin things
@@ -536,13 +538,35 @@ submitItemDescription =
       });
   |]
 
-submitItemEcosystem :: JSFunction a => a
-submitItemEcosystem =
-  makeJSFunction "submitItemEcosystem"
-                 ["node", "itemId", "original", "ours"]
+-- submitItemEcosystem :: JSFunction a => a
+-- submitItemEcosystem =
+--   makeJSFunction "submitItemEcosystem"
+--                  ["node", "itemId", "original", "ours"]
+--   [text|
+--     $.post({
+--       url: "/haskell/set/item/"+itemId+"/ecosystem",
+--       data: {
+--         original: original,
+--         content: ours },
+--       success: function (data) {
+--         $.magnificPopup.close();
+--         $(node).replaceWith(data); },
+--       statusCode: {
+--         409: function (xhr, st, err) {
+--           modified = xhr.responseJSON["modified"];
+--           merged   = xhr.responseJSON["merged"];
+--           showDiffPopup(ours, modified, merged, function (x) {
+--             submitItemEcosystem(node, itemId, modified, x) }); } }
+--       });
+--   |]
+
+submitItemEcosystemTab :: JSFunction a => a
+submitItemEcosystemTab =
+  makeJSFunction "submitItemEcosystemTab"
+                 ["node", "itemId", "tabId", "original", "ours"]
   [text|
     $.post({
-      url: "/haskell/set/item/"+itemId+"/ecosystem",
+        url: "/haskell/set/item/"+itemId+"/ecosystemTab/"+tabId,
       data: {
         original: original,
         content: ours },
@@ -554,7 +578,7 @@ submitItemEcosystem =
           modified = xhr.responseJSON["modified"];
           merged   = xhr.responseJSON["merged"];
           showDiffPopup(ours, modified, merged, function (x) {
-            submitItemEcosystem(node, itemId, modified, x) }); } }
+            submitItemEcosystemTab(node, itemId, tabId, modified, x) }); } }
       });
   |]
 

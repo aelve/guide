@@ -17,6 +17,7 @@ module Guide.Views.Item
   renderItemInfo,
   renderItemDescription,
   renderItemEcosystem,
+  renderItemEcosystemTab,
   renderItemTraits,
   renderItemNotes,
 
@@ -91,9 +92,10 @@ renderItemForFeed category item = do
     h2_ "Cons"
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
   when (ItemEcosystemSection `elem` category^.enabledSections) $ do
-    unless (markdownNull (item^.ecosystem)) $ do
-      h2_ "Ecosystem"
-      toHtml (item^.ecosystem)
+    forM_ (item^.ecosystemTabs) $ \tab -> do
+      unless (markdownNull (tab^.block)) $ do
+        h2_ $ toHtml (tab^.name)
+        toHtml (tab^.block.mdText)
   -- TODO: include .notes-like style here? otherwise the headers are too big
   unless (markdownNull (item^.notes)) $ do
     h2_ "Notes"
@@ -147,37 +149,74 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $
   mustache "item-description" $ A.object [
     "item" A..= item ]
 
--- | Render the “ecosystem” secion..
+-- | Render the “ecosystem” section..
+-- renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
+-- renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
+--   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
+--       this   = JS.selectId thisId
+--   div_ [id_ thisId, class_ "item-ecosystem"] $ do
+--
+--     section "normal" [shown, noScriptShown] $ do
+--       strong_ "Ecosystem"
+--       emptySpan "0.5em"
+--       imgButton "edit ecosystem" "/pencil.svg"
+--         [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
+--         JS.switchSection (this, "editing" :: Text) <>
+--         JS.focusOn [(this `JS.selectSection` "editing")
+--                     `JS.selectChildren`
+--                     JS.selectClass "editor"]
+--       div_ [class_ "notes-like"] $ do
+--         unless (markdownNull (item^.ecosystem)) $
+--           toHtml (item^.ecosystem)
+--
+--     section "editing" [] $ do
+--       strong_ "Ecosystem"
+--       emptySpan "0.5em"
+--       imgButton "quit editing ecosystem" "/pencil.svg"
+--         [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
+--         JS.switchSection (this, "normal" :: Text)
+--       markdownEditor
+--         [rows_ "3", class_ " editor "]
+--         (item^.ecosystem)
+--         (\val -> JS.submitItemEcosystem
+--                    (this, item^.uid, item^.ecosystem.mdText, val))
+--         (JS.switchSection (this, "normal" :: Text))
+--         "or press Ctrl+Enter to save"
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
-renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
-  let thisId = "item-ecosystem-" <> uidToText (item^.uid)
+renderItemEcosystem item = cached (CacheItemEcosystem $ item^.uid) $ do
+  forM_ (item^.ecosystemTabs) $ \tab -> renderItemEcosystemTab item tab
+
+-- | Render the “ecosystemTab” section..
+renderItemEcosystemTab :: MonadIO m => Item -> EcosystemTab -> HtmlT m ()
+renderItemEcosystemTab item tab = do
+  let thisId = "item-ecosystem-tab-" <> uidToText (tab^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-ecosystem"] $ do
+  div_ [id_ thisId, class_ "item-ecosystem-tab"] $ do
 
     section "normal" [shown, noScriptShown] $ do
-      strong_ "Ecosystem"
+      strong_ $ toHtml (tab^.name)
       emptySpan "0.5em"
-      imgButton "edit ecosystem" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
+      imgButton "edit ecosystem tab" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem-tab "] $
         JS.switchSection (this, "editing" :: Text) <>
         JS.focusOn [(this `JS.selectSection` "editing")
                     `JS.selectChildren`
                     JS.selectClass "editor"]
       div_ [class_ "notes-like"] $ do
-        unless (markdownNull (item^.ecosystem)) $
-          toHtml (item^.ecosystem)
+        unless (markdownNull (tab^.block)) $
+          toHtml (tab^.block.mdText)
 
     section "editing" [] $ do
-      strong_ "Ecosystem"
+      strong_ $ toHtml $ tab^.name
       emptySpan "0.5em"
-      imgButton "quit editing ecosystem" "/pencil.svg"
-        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
+      imgButton "quit editing ecosystem tab" "/pencil.svg"
+        [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem-tab "] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
         [rows_ "3", class_ " editor "]
-        (item^.ecosystem)
-        (\val -> JS.submitItemEcosystem
-                   (this, item^.uid, item^.ecosystem.mdText, val))
+        (tab^.block)
+        (\val -> JS.submitItemEcosystemTab
+                   (this, item^.uid, tab^.uid, tab^.block.mdText, val))
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 

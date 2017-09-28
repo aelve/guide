@@ -20,6 +20,8 @@ overloaded and can be used with many types.
 module Guide.Types.Core
 (
   Trait(..),
+  EcosystemTab(..),
+    block,
   ItemKind(..),
     hackageName,
   ItemSection(..),
@@ -28,7 +30,7 @@ module Guide.Types.Core
     prosDeleted,
     cons,
     consDeleted,
-    ecosystem,
+    ecosystemTabs,
     link,
     kind,
   Hue(..),
@@ -73,6 +75,8 @@ import Data.SafeCopy.Migrate
 import Guide.Markdown
 import Guide.Utils
 import Guide.Types.Hue
+
+import qualified CMark as MD
 
 
 ----------------------------------------------------------------------------
@@ -157,30 +161,63 @@ instance A.ToJSON ItemSection where
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
+-- | Tab of Ecosystem field
+data EcosystemTab = EcosystemTab {
+  _ecosystemTabUid   :: Uid EcosystemTab, -- ^ Ecosystem tab ID
+  _ecosystemTabName  :: Text,             -- ^ Ecosystem tab title
+  _ecosystemTabBlock :: MarkdownBlock     -- ^ Ecosystem tab content
+  }
+  deriving (Show, Generic, Data)
+makeFields ''EcosystemTab
+
+deriveSafeCopySorted 0 'base ''EcosystemTab
+
+createEcosystemFromMDBlock :: MarkdownBlock -> [EcosystemTab]
+createEcosystemFromMDBlock blck = map toEcosystem
+                                 $ listFromMarkdownList
+                                 $ blck^.mdMarkdown
+ where
+  toEcosystem :: [MD.Node] -> EcosystemTab
+  toEcosystem nodes =
+    EcosystemTab (unsafePerformIO randomShortUid)
+                 "Tab"
+                 (MarkdownBlock (stringify nodes) (renderMD nodes) nodes)
+
+instance A.ToJSON EcosystemTab where
+  toJSON = A.genericToJSON A.defaultOptions {
+    A.fieldLabelModifier = over _head toLower . drop (T.length "_ecosystem") }
+
+
 -- | An item (usually a library). Items are stored in categories.
 data Item = Item {
-  _itemUid         :: Uid Item,        -- ^ Item ID
-  _itemName        :: Text,            -- ^ Item title
-  _itemCreated     :: UTCTime,         -- ^ When the item was created
-  _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
-  _itemDescription :: MarkdownBlock,   -- ^ Item summary
-  _itemPros        :: [Trait],         -- ^ Pros (positive traits)
-  _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
-                                       --   it'd be easy to restore them)
-  _itemCons        :: [Trait],         -- ^ Cons (negative traits)
-  _itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
-  _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
-  _itemNotes       :: MarkdownTree,    -- ^ The notes section
-  _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
-  _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
+  _itemUid           :: Uid Item,        -- ^ Item ID
+  _itemName          :: Text,            -- ^ Item title
+  _itemCreated       :: UTCTime,         -- ^ When the item was created
+  _itemGroup_        :: Maybe Text,      -- ^ Item group (affects item's color)
+  _itemDescription   :: MarkdownBlock,   -- ^ Item summary
+  _itemPros          :: [Trait],         -- ^ Pros (positive traits)
+  _itemProsDeleted   :: [Trait],         -- ^ Deleted pros go here (so that
+                                         --   it'd be easy to restore them)
+  _itemCons          :: [Trait],         -- ^ Cons (negative traits)
+  _itemConsDeleted   :: [Trait],         -- ^ Deleted cons go here
+  _itemEcosystemTabs :: [EcosystemTab],  -- ^ The ecosystem section
+  _itemNotes         :: MarkdownTree,    -- ^ The notes section
+  _itemLink          :: Maybe Url,       -- ^ Link to homepage or something
+  _itemKind          :: ItemKind         -- ^ Is it a library, tool, etc
   }
   deriving (Show, Generic, Data)
 
-deriveSafeCopySorted 11 'extension ''Item
+deriveSafeCopySorted 12 'extension ''Item
 makeFields ''Item
 
-changelog ''Item (Current 11, Past 10) []
-deriveSafeCopySorted 10 'base ''Item_v10
+changelog ''Item (Current 12, Past 11)
+   [Removed "_itemEcosystem" [t|MarkdownBlock|],
+    Added   "_itemEcosystemTabs"  [hs| createEcosystemFromMDBlock  _itemEcosystem|]
+    ]
+deriveSafeCopySorted 11 'base ''Item_v11
+
+-- changelog ''Item (Current 11, Past 10) []
+-- deriveSafeCopySorted 10 'base ''Item_v10
 
 instance A.ToJSON Item where
   toJSON = A.genericToJSON A.defaultOptions {
