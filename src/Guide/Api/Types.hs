@@ -2,7 +2,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -11,7 +10,6 @@ module Guide.Api.Types
   , ApiError(..)
   , CategoryInfo(..)
   , CCategoryDetail(..)
-  , CUid(..)
   , CItem(..)
   , CMarkdown(..)
   , CTrait(..)
@@ -43,8 +41,8 @@ import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdTe
 -- | The description of the served API.
 data Site route = Site
   {
-  -- | A list of all categories (the /haskell page). Returns category
-  -- titles.
+  -- | A list of all categories (the /haskell page). Returns a small info
+  -- about a category
     _getCategories :: route :-
       "categories"    :> Get '[JSON] (Either ApiError [CategoryInfo])
 
@@ -56,18 +54,29 @@ data Site route = Site
   deriving (Generic)
 
 type Api = ToServant (Site AsApi)
+
 ----------------------------------------------------------------------------
 -- Client types
+
+-- These are more "light-weight" Haskell types of `Guide`,
+-- which can be bridged into PureScript types by using `purescript-bridge`
+-- w/o any issues.
+
+-- Furthermore using these "light-weight" types we keep all data small
+-- to send these over the wire w/o having deep nested data,
+-- we might not need on front-end.
 ----------------------------------------------------------------------------
 
-data ApiError = ApiError !Text
+-- | Client-side API error
+newtype ApiError = ApiError Text
   deriving (Generic)
 
 instance A.FromJSON ApiError
 instance A.ToJSON ApiError
 
+-- | A "light-weight" client type of `Category`, which describes a category info
 data CategoryInfo = CategoryInfo
-  { categoryInfoUid     :: CUid String
+  { categoryInfoUid     :: Uid CategoryInfo
   , categoryInfoTitle   :: Text
   , categoryInfoCreated :: UTCTime
   , categoryInfoGroup_  :: Text
@@ -77,19 +86,19 @@ data CategoryInfo = CategoryInfo
 
 instance A.ToJSON CategoryInfo
 
--- | Client type of `Category`, which describes a category info
+-- | Factory to create a `CategoryInfo` from a `Category`
 toCategoryInfo :: Category -> CategoryInfo
 toCategoryInfo Category{..} = CategoryInfo
-  { categoryInfoUid     = toCUid _categoryUid
+  { categoryInfoUid     = bridgeUid _categoryUid
   , categoryInfoTitle   = _categoryTitle
   , categoryInfoCreated = _categoryCreated
   , categoryInfoGroup_  = _categoryGroup_
   , categoryInfoStatus  = _categoryStatus
   }
 
--- | Client type of `Category`, which describes a category detail
+-- | A "light-weight" client type of `Category`, which describes a category detail
 data CCategoryDetail = CCategoryDetail
-  { ccdUid :: CUid String
+  { ccdUid :: Uid CCategoryDetail
   , ccdTitle :: Text
   , ccdGroup :: Text
   , ccdDescription :: CMarkdown
@@ -101,9 +110,10 @@ data CCategoryDetail = CCategoryDetail
 instance A.ToJSON CCategoryDetail where
   toJSON = A.genericToJSON A.defaultOptions
 
+-- | Factory to create a `CCategoryDetail` from a `Category`
 toCCategoryDetail :: Category -> CCategoryDetail
 toCCategoryDetail Category{..} = CCategoryDetail
-  { ccdUid = toCUid _categoryUid
+  { ccdUid = bridgeUid _categoryUid
   , ccdTitle = _categoryTitle
   , ccdGroup = _categoryGroup_
   , ccdDescription = toCMarkdown _categoryNotes
@@ -113,7 +123,7 @@ toCCategoryDetail Category{..} = CCategoryDetail
 
 -- | Client type of `Item`
 data CItem = CItem
-  { ciUid :: CUid String
+  { ciUid :: Uid CItem
   , ciName :: Text
   , ciCreated :: UTCTime
   , ciGroup :: Maybe Text
@@ -131,9 +141,10 @@ data CItem = CItem
 instance A.ToJSON CItem where
   toJSON = A.genericToJSON A.defaultOptions
 
+-- | Factory to create a `CItem` from an `Item`
 toCItem :: Item -> CItem
 toCItem Item{..} = CItem
-  { ciUid = toCUid _itemUid
+  { ciUid = bridgeUid _itemUid
   , ciName = _itemName
   , ciCreated = _itemCreated
   , ciGroup = _itemGroup_
@@ -150,7 +161,7 @@ toCItem Item{..} = CItem
 
 -- | Client type of `Trait`
 data CTrait = CTrait
-  { ctUid :: CUid String
+  { ctUid :: Uid CTrait
   , ctContent :: CMarkdown
   } deriving (Show, Generic)
 
@@ -158,9 +169,10 @@ data CTrait = CTrait
 instance A.ToJSON CTrait where
   toJSON = A.genericToJSON A.defaultOptions
 
+-- | Factory to create a `CTrait` from a `Trait`
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid = toCUid (trait ^. uid)
+  { ctUid = bridgeUid (trait ^. uid)
   , ctContent = toCMarkdown $ trait ^. content
   }
 
@@ -173,6 +185,7 @@ data CMarkdown = CMarkdown
 instance A.ToJSON CMarkdown where
   toJSON = A.genericToJSON A.defaultOptions
 
+-- | Type class to create `CMarkdown`
 class ToCMardown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMardown MarkdownInline where
@@ -193,14 +206,15 @@ instance ToCMardown MarkdownTree where
     , html = T.toStrict . renderText $ toHtml md
     }
 
--- | Client type of `Uid`.
--- It's needed because we don't find a way
--- to bridge `Uid a` properly (for example `Uid Category` )
-newtype CUid a = CUid Text
-  deriving (Eq, Ord, Show, Generic, Data, Typeable)
+----------------------------------------------------------------------------
+-- Helpers
+----------------------------------------------------------------------------
 
-instance A.ToJSON (CUid a) where
-  toJSON = A.genericToJSON A.defaultOptions
-
-toCUid :: Uid a -> CUid b
-toCUid (Uid t) = CUid t
+-- | It converts `Uid a` into a more client-side friendly type `Uid b`,
+-- where `b` is compatible to bridge it w/ `purescript-bridge` w/o any mess.
+--
+-- For example: With `Uid Category` we have some issue to bridge
+-- it into PureScript. By using `bridgeUid` we can transform this type
+-- into a more client-side friendly `Uid CCategoryDetail`
+bridgeUid :: Uid a -> Uid b
+bridgeUid (Uid t) = Uid t

@@ -9,8 +9,9 @@ import Data.Bifunctor (bimap)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, unsafeFromForeign)
 import Data.Generic (class Generic)
-import Guide.Api.Types (CCategoryDetail, CUid(..))
-import Guide.Common.Types (CCategories, CategoryName)
+import Guide.Api.Types (CategoryInfo, CCategoryDetail)
+import Guide.Utils (Uid)
+import Guide.Common.Types (CCategories, CategoryName, unwrapUid)
 import IsomorphicFetch (FETCH, get, json)
 
 endpoint :: String
@@ -44,8 +45,8 @@ getCategories _ = do
   pure $ decodeResult json'
 
 -- | Fetches a categories by a given category id
-getCategory :: forall eff. CategoryName -> (CUid String) -> Aff (fetch :: FETCH | eff) (Either EndpointError CCategoryDetail)
-getCategory _ (CUid catId) = do
-  response <- get $ endpoint <> "/category/" <> catId
+getCategory :: forall eff. CategoryName -> (Uid CategoryInfo) -> Aff (fetch :: FETCH | eff) (Either EndpointError CCategoryDetail)
+getCategory _ catId = do
+  response <- get $ endpoint <> "/category/" <> unwrapUid catId
   json' <- json response
   pure $ decodeResult json'

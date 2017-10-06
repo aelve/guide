@@ -18,9 +18,10 @@ import Language.PureScript.Bridge ( BridgePart, Language( Haskell ), PSType,
 import Language.PureScript.Bridge.PSTypes (psString)
 import Language.PureScript.Bridge.TypeParameters (A)
 
-import Guide.Api.Types (ApiError, CategoryInfo, CCategoryDetail, CItem, CMarkdown, CTrait, CUid)
+import Guide.Api.Types (ApiError, CategoryInfo, CCategoryDetail, CItem, CMarkdown, CTrait)
 import Guide.Types.Core (CategoryStatus, ItemKind)
 import Guide.Types.Hue (Hue)
+import Guide.Utils (Uid)
 
 path :: FilePath
 path = "front-ps/common/Generated"
@@ -56,12 +57,8 @@ clientTypes =
   , mkSumType (Proxy @CMarkdown)
   , mkSumType (Proxy @Hue)
   , mkSumType (Proxy @ItemKind)
-  , mkSumType (Proxy @(CUid A))
+  , mkSumType (Proxy @(Uid A))
   ]
-
--- FIXME: Currently `Uid a` defined in `Guide.Utils` is bridged into a `String`.
--- For example: `Uid Category` on Haskell side is bridged to `String`
--- It would be better to bridge it to a similar `Uid a` type
 
 main :: IO ()
 main = writePSTypes path (buildBridge bridge) clientTypes
