@@ -34,7 +34,7 @@ import Guide.Types.Core (Category(..), CategoryStatus(..), Item(..), ItemKind
   , Trait, content, uid
   )
 import Guide.Utils (Uid(..), Url)
-import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdText)
+import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSource)
 
 ----------------------------------------------------------------------------
 -- Routes
@@ -177,19 +177,19 @@ class ToCMardown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMardown MarkdownInline where
   toCMarkdown md = CMarkdown
-    { text = md^.mdText
+    { text = md^.mdSource
     , html = T.decodeUtf8 $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownBlock where
   toCMarkdown md = CMarkdown
-    { text = md^.mdText
+    { text = md^.mdSource
     , html = T.decodeUtf8 $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownTree where
   toCMarkdown md = CMarkdown
-    { text = md^.mdText
+    { text = md^.mdSource
     , html = T.toStrict . renderText $ toHtml md
     }
 

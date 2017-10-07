@@ -182,6 +182,6 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
         [rows_ "10", class_ " editor "]
         contents
         (\val -> JS.submitCategoryNotes
-                   (this, category^.uid, category^.notes.mdText, val))
+                   (this, category^.uid, category^.notes.mdSource, val))
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"

@@ -28,7 +28,7 @@ import Guide.Markdown
 tests :: Spec
 tests = describe "Markdown" $ do
   allMarkdowns $ \convert -> do
-    it "has mdText filled accurately" $ do
+    it "has mdSource filled accurately" $ do
       for_ mdBlockExamples $ \s ->
         s `shouldBe` fst (convert s)
     it "only has allowed tags" $ do
@@ -130,7 +130,7 @@ tests = describe "Markdown" $ do
                             headingAnn = "i-foo_",
                             content    = WithSource "y\n" [foo2MD],
                             contentAnn = "<p>y</p>\n"},
-                         subForest = [] }]}]}          
+                         subForest = [] }]}]}
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
       let headingMD = MD.Node Nothing (TEXT "foo") []
@@ -149,15 +149,15 @@ htmlToText = T.toStrict . renderText . toHtml
 allMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 allMarkdowns f = do
   describe "inline MD" $
-    f ((view mdText &&& htmlToText) . toMarkdownInline)
+    f ((view mdSource &&& htmlToText) . toMarkdownInline)
   blockMarkdowns f
 
 blockMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 blockMarkdowns f = do
   describe "block MD" $
-    f ((view mdText &&& htmlToText) . toMarkdownBlock)
+    f ((view mdSource &&& htmlToText) . toMarkdownBlock)
   describe "block+toc MD" $
-    f ((view mdText &&& htmlToText) . toMarkdownTree "")
+    f ((view mdSource &&& htmlToText) . toMarkdownTree "")
 
 mdInlineExamples :: [Text]
 mdInlineExamples = [
