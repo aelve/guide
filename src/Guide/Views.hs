@@ -479,6 +479,14 @@ renderEdit globalState edit = do
       p_ $ (if T.null oldEcosystem then "added" else "changed") >>
            " ecosystem of item " >> printItem itemId
       renderDiff oldEcosystem newEcosystem
+    Edit'SetItemEcosystemTabName itemId tabId oldName newName -> do
+      p_ $ (if T.null oldName then "added" else "changed") >>
+           " ecosystem tab name of item " >> printItem itemId
+      renderDiff oldName newName
+    Edit'SetItemEcosystemTabBlock itemId tabId oldBlock newBlock -> do
+      p_ $ (if T.null oldBlock then "added" else "changed") >>
+           " ecosystem tab name of item " >> printItem itemId
+      renderDiff oldBlock newBlock
 
     -- Change trait properties
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
@@ -766,7 +774,7 @@ renderSearchResult r = do
         span_ [class_ "item-link-addition"] "'s ecosystem"
         div_ [class_ "ecosystem notes-like"] $ do
           strong_ $ toHtml $ tab^.name
-          toHtml (tab^.block.mdText)
+          toHtml (tab^.block)
 
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

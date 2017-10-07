@@ -304,6 +304,10 @@ invalidateCacheForEdit ed = do
         [CacheItemNotes itemId]
     Edit'SetItemEcosystem itemId _ _ ->
         [CacheItemEcosystem itemId]
+    Edit'SetItemEcosystemTabName itemId _ _ _ ->
+        [CacheItemEcosystem itemId]
+    Edit'SetItemEcosystemTabBlock itemId _ _ _ ->
+        [CacheItemEcosystem itemId]
     Edit'SetTraitContent itemId _ _ _ ->
         [CacheItemTraits itemId]
     Edit'DeleteCategory catId _ ->

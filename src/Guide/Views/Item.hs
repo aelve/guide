@@ -93,9 +93,8 @@ renderItemForFeed category item = do
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.cons)
   when (ItemEcosystemSection `elem` category^.enabledSections) $ do
     forM_ (item^.ecosystemTabs) $ \tab -> do
-      unless (markdownNull (tab^.block)) $ do
-        h2_ $ toHtml (tab^.name)
-        toHtml (tab^.block.mdText)
+      h2_ $ toHtml (tab^.name)
+      toHtml (tab^.block)
   -- TODO: include .notes-like style here? otherwise the headers are too big
   unless (markdownNull (item^.notes)) $ do
     h2_ "Notes"
@@ -204,7 +203,7 @@ renderItemEcosystemTab item tab = do
                     JS.selectClass "editor"]
       div_ [class_ "notes-like"] $ do
         unless (markdownNull (tab^.block)) $
-          toHtml (tab^.block.mdText)
+          toHtml (tab^.block)
 
     section "editing" [] $ do
       strong_ $ toHtml $ tab^.name

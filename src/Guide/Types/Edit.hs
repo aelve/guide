@@ -16,11 +16,7 @@ module Guide.Types.Edit
 )
 where
 
-
 import Imports
-
--- Containers
-import qualified Data.Set as S
 -- Network
 import Data.IP
 -- acid-state
@@ -29,8 +25,6 @@ import Data.SafeCopy.Migrate
 
 import Guide.Utils
 import Guide.Types.Core
-import Guide.Markdown (MarkdownBlock (..))
-
 
 -- | Edits made by users. It should always be possible to undo an edit.
 data Edit
@@ -145,7 +139,7 @@ data Edit
 
 deriveSafeCopySimple 8 'extension ''Edit
 
-genVer ''Edit 6 [
+genVer ''Edit 7 [
   -- Add
   Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
@@ -156,18 +150,7 @@ genVer ''Edit 6 [
   Copy 'Edit'SetCategoryGroup,
   Copy 'Edit'SetCategoryNotes,
   Copy 'Edit'SetCategoryStatus,
-  Custom "Edit'SetCategoryProsConsEnabled" [
-      ("editCategoryUid"                , [t|Uid Category|]),
-      ("_editCategoryProsConsEnabled"   , [t|Bool|]),
-      ("editCategoryNewProsConsEnabled" , [t|Bool|]) ],
-  Custom "Edit'SetCategoryEcosystemEnabled" [
-      ("editCategoryUid"                , [t|Uid Category|]),
-      ("_editCategoryEcosystemEnabled"  , [t|Bool|]),
-      ("editCategoryNewEcosystemEnabled", [t|Bool|]) ],
-  Custom "Edit'SetCategoryNotesEnabled" [
-      ("editCategoryUid"                , [t|Uid Category|]),
-      ("_editCategoryNotesEnabled"      , [t|Bool|]),
-      ("editCategoryNewNotesEnabled"    , [t|Bool|]) ],
+  Copy 'Edit'ChangeCategoryEnabledSections,
   -- Change item properties
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
@@ -186,11 +169,11 @@ genVer ''Edit 6 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 6 'base ''Edit_v6
+deriveSafeCopySimple 7 'base ''Edit_v7
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v6
-  migrate = $(migrateVer ''Edit 6 [
+  type MigrateFrom Edit = Edit_v7
+  migrate = $(migrateVer ''Edit 7 [
     CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
@@ -200,24 +183,7 @@ instance Migrate Edit where
     CopyM 'Edit'SetCategoryGroup,
     CopyM 'Edit'SetCategoryNotes,
     CopyM 'Edit'SetCategoryStatus,
-    CustomM "Edit'SetCategoryProsConsEnabled" [|\x ->
-        if editCategoryNewProsConsEnabled_v6 x
-          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 (S.singleton ItemProsConsSection) mempty
-          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 mempty (S.singleton ItemProsConsSection) |],
-    CustomM "Edit'SetCategoryEcosystemEnabled" [|\x ->
-        if editCategoryNewEcosystemEnabled_v6 x
-          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 (S.singleton ItemEcosystemSection) mempty
-          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 mempty (S.singleton ItemEcosystemSection) |],
-    CustomM "Edit'SetCategoryNotesEnabled" [|\x ->
-        if editCategoryNewNotesEnabled_v6 x
-          then Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 (S.singleton ItemNotesSection) mempty
-          else Edit'ChangeCategoryEnabledSections (editCategoryUid_v6 x)
-                 mempty (S.singleton ItemNotesSection) |],
+    CopyM 'Edit'ChangeCategoryEnabledSections,
     -- Change item properties
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
@@ -265,6 +231,10 @@ isVacuousEdit Edit'SetItemNotes{..} =
   editItemNotes == editItemNewNotes
 isVacuousEdit Edit'SetItemEcosystem{..} =
   editItemEcosystem == editItemNewEcosystem
+isVacuousEdit Edit'SetItemEcosystemTabName{..} =
+  editItemEcosystemTabName == editItemNewEcosystemTabName
+isVacuousEdit Edit'SetItemEcosystemTabBlock{..} =
+  editItemEcosystemTabBlock == editItemNewEcosystemTabBlock
 isVacuousEdit Edit'SetTraitContent{..} =
   editTraitContent == editTraitNewContent
 isVacuousEdit Edit'AddCategory{}    = False

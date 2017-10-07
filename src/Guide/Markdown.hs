@@ -35,7 +35,6 @@ module Guide.Markdown
   markdownNull,
   extractPreface,
   stringify,
-  listFromMarkdownList
 )
 where
 
@@ -368,7 +367,3 @@ instance SafeCopy MarkdownTree where
 -- | Is a piece of Markdown empty?
 markdownNull :: HasMdText a Text => a -> Bool
 markdownNull = T.null . view mdText
-
-listFromMarkdownList :: [MD.Node] -> [[MD.Node]]
-listFromMarkdownList [MD.Node _ (MD.LIST _)  items] = map (\(MD.Node _ MD.ITEM i) -> i) items
-listFromMarkdownList _ = []

@@ -76,9 +76,6 @@ import Guide.Markdown
 import Guide.Utils
 import Guide.Types.Hue
 
-import qualified CMark as MD
-
-
 ----------------------------------------------------------------------------
 -- General notes on code
 ----------------------------------------------------------------------------
@@ -173,15 +170,10 @@ makeFields ''EcosystemTab
 deriveSafeCopySorted 0 'base ''EcosystemTab
 
 createEcosystemFromMDBlock :: MarkdownBlock -> [EcosystemTab]
-createEcosystemFromMDBlock blck = map toEcosystem
-                                 $ listFromMarkdownList
-                                 $ blck^.mdMarkdown
- where
-  toEcosystem :: [MD.Node] -> EcosystemTab
-  toEcosystem nodes =
-    EcosystemTab (unsafePerformIO randomShortUid)
+createEcosystemFromMDBlock blck =
+  [ EcosystemTab (unsafePerformIO randomShortUid)
                  "Tab"
-                 (MarkdownBlock (stringify nodes) (renderMD nodes) nodes)
+                 blck ]
 
 instance A.ToJSON EcosystemTab where
   toJSON = A.genericToJSON A.defaultOptions {
