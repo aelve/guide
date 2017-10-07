@@ -752,7 +752,7 @@ renderSearchResult r = do
         a_ [class_ "category-link", href_ (categoryLink cat)] $
           toHtml (cat^.title)
         div_ [class_ "category-description notes-like"] $
-          toHtml (extractPreface $ toMarkdownTree "" $ cat^.notes.mdText)
+          toHtml (extractPreface $ toMarkdownTree "" $ cat^.notes.mdSource)
       SRItem cat item -> do
         a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
           toHtml (cat^.title)

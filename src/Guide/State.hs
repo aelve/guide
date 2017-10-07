@@ -82,7 +82,7 @@ module Guide.State
   RestoreItem(..),
   RestoreTrait(..),
   SetDirty(..), UnsetDirty(..),
-  
+
   LoadSession(..), StoreSession(..),
   DeleteSession(..), GetSessions(..),
 
@@ -440,7 +440,7 @@ setCategoryGroup catId group' = do
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . notes <<.= toMarkdownBlock notes'
-  let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdText) notes'
+  let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdSource) notes'
   (edit,) <$> use (categoryById catId)
 
 setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (Edit, Category)
@@ -516,7 +516,7 @@ setItemDescription itemId description' = do
   oldDescr <- itemById itemId . description <<.=
                 toMarkdownBlock description'
   let edit = Edit'SetItemDescription itemId
-               (oldDescr ^. mdText) description'
+               (oldDescr ^. mdSource) description'
   (edit,) <$> use (itemById itemId)
 
 setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -524,7 +524,7 @@ setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
   oldNotes <- itemById itemId . notes <<.=
                 toMarkdownTree pref notes'
-  let edit = Edit'SetItemNotes itemId (oldNotes ^. mdText) notes'
+  let edit = Edit'SetItemNotes itemId (oldNotes ^. mdSource) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
@@ -532,7 +532,7 @@ setItemEcosystem itemId ecosystem' = do
   oldEcosystem <- itemById itemId . ecosystem <<.=
                     toMarkdownBlock ecosystem'
   let edit = Edit'SetItemEcosystem itemId
-               (oldEcosystem ^. mdText) ecosystem'
+               (oldEcosystem ^. mdSource) ecosystem'
   (edit,) <$> use (itemById itemId)
 
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
@@ -540,7 +540,7 @@ setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . content <<.=
                   toMarkdownInline content'
   let edit = Edit'SetTraitContent itemId traitId
-               (oldContent ^. mdText) content'
+               (oldContent ^. mdSource) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
 
 -- delete
@@ -781,26 +781,26 @@ setDirty = dirty .= True
 unsetDirty :: Acid.Update GlobalState Bool
 unsetDirty = dirty <<.= False
 
--- | Retrieves a session by 'SessionID'. 
+-- | Retrieves a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
 loadSession key = view (sessionStore . at key)
 
--- | Stores a session object. 
+-- | Stores a session object.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 storeSession :: GuideSession -> Acid.Update GlobalState ()
 storeSession sess = do
   sessionStore %= M.insert (sess ^. sess_id) sess
   setDirty
 
--- | Deletes a session by 'SessionID'. 
+-- | Deletes a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 deleteSession :: SessionId -> Acid.Update GlobalState ()
 deleteSession key = do
   sessionStore %= M.delete key
   setDirty
 
--- | Retrieves all sessions. 
+-- | Retrieves all sessions.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 getSessions :: Acid.Query GlobalState [GuideSession]
 getSessions = do
@@ -815,7 +815,7 @@ getUser key = view (users . at key)
 createUser :: User -> Acid.Update GlobalState Bool
 createUser user = do
   m <- toList <$> use users
-  if all (canCreateUser user) (m ^.. each) 
+  if all (canCreateUser user) (m ^.. each)
   then do
     users %= M.insert (user ^. userID) user
     return True
@@ -841,7 +841,7 @@ loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
   matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
   case matches of
-    [user] -> 
+    [user] ->
       if verifyUser user password
       then return $ Right user
       else return $ Left "wrong password"

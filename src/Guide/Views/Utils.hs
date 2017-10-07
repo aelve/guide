@@ -187,7 +187,7 @@ markdownEditor
   -> JS             -- ^ “Cancel” handler
   -> Text           -- ^ Instruction (e.g. “press Ctrl+Enter to save”)
   -> HtmlT m ()
-markdownEditor attr (view mdText -> s) submit cancel instr = do
+markdownEditor attr (view mdSource -> s) submit cancel instr = do
   textareaUid <- randomLongUid
   let val = JS $ "document.getElementById(\""+|textareaUid|+"\").value"
   -- Autocomplete has to be turned off thanks to
@@ -219,7 +219,7 @@ smallMarkdownEditor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> Text           -- ^ Instruction (e.g. “press Enter to add”)
   -> HtmlT m ()
-smallMarkdownEditor attr (view mdText -> s) submit mbCancel instr = do
+smallMarkdownEditor attr (view mdSource -> s) submit mbCancel instr = do
   textareaId <- randomLongUid
   let val = JS $ "document.getElementById(\""+|textareaId|+"\").value"
   textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
