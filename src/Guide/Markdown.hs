@@ -19,7 +19,7 @@ module Guide.Markdown
 
   -- * Lenses
   mdHtml,
-  mdText,
+  mdSource,
   mdMarkdown,
   mdIdPrefix,
   mdTree,
@@ -70,19 +70,19 @@ import Guide.Utils
 
 
 data MarkdownInline = MarkdownInline {
-  markdownInlineMdText     :: Text,
+  markdownInlineMdSource   :: Text,
   markdownInlineMdHtml     :: ByteString,
   markdownInlineMdMarkdown :: ![MD.Node] }
   deriving (Generic, Data)
 
 data MarkdownBlock = MarkdownBlock {
-  markdownBlockMdText     :: Text,
+  markdownBlockMdSource   :: Text,
   markdownBlockMdHtml     :: ByteString,
   markdownBlockMdMarkdown :: ![MD.Node] }
   deriving (Generic, Data)
 
 data MarkdownTree = MarkdownTree {
-  markdownTreeMdText     :: Text,
+  markdownTreeMdSource   :: Text,
   markdownTreeMdTree     :: !(Document Text ByteString),
   markdownTreeMdIdPrefix :: Text,
   markdownTreeMdTOC      :: Forest ([MD.Node], Text) }
@@ -147,14 +147,14 @@ stringify = T.concat . map go
 
 -- | Extract everything before the first heading.
 --
--- Note that if you render 'mdText' of the produced Markdown block, it won't
+-- Note that if you render 'mdSource' of the produced Markdown block, it won't
 -- necessarily parse into 'mdHtml' from the same block. It's because rendered
 -- Markdown might depend on links that are defined further in the tree.
 extractPreface :: MarkdownTree -> MarkdownBlock
 extractPreface = mkBlock . preface . view mdTree
   where
     mkBlock x = MarkdownBlock {
-      markdownBlockMdText     = getSource x,
+      markdownBlockMdSource   = getSource x,
       markdownBlockMdHtml     = renderMD (stripSource x),
       markdownBlockMdMarkdown = stripSource x }
 
@@ -239,7 +239,7 @@ parseLink = either (Left . show) Right . parse p ""
 
 toMarkdownInline :: Text -> MarkdownInline
 toMarkdownInline s = MarkdownInline {
-  markdownInlineMdText     = s,
+  markdownInlineMdSource   = s,
   markdownInlineMdHtml     = html,
   markdownInlineMdMarkdown = inlines }
   where
@@ -248,7 +248,7 @@ toMarkdownInline s = MarkdownInline {
 
 toMarkdownBlock :: Text -> MarkdownBlock
 toMarkdownBlock s = MarkdownBlock {
-  markdownBlockMdText     = s,
+  markdownBlockMdSource   = s,
   markdownBlockMdHtml     = html,
   markdownBlockMdMarkdown = doc }
   where
@@ -257,7 +257,7 @@ toMarkdownBlock s = MarkdownBlock {
 
 toMarkdownTree :: Text -> Text -> MarkdownTree
 toMarkdownTree idPrefix s = MarkdownTree {
-  markdownTreeMdText     = s,
+  markdownTreeMdSource   = s,
   markdownTreeMdIdPrefix = idPrefix,
   markdownTreeMdTree     = tree,
   markdownTreeMdTOC      = toc }
@@ -297,23 +297,23 @@ slugifyDocument slugify doc = doc {
       return sec{headingAnn = slug}
 
 instance Show MarkdownInline where
-  show = show . view mdText
+  show = show . view mdSource
 instance Show MarkdownBlock where
-  show = show . view mdText
+  show = show . view mdSource
 instance Show MarkdownTree where
-  show = show . view mdText
+  show = show . view mdSource
 
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
-    "text" A..= (md^.mdText),
+    "text" A..= (md^.mdSource),
     "html" A..= T.toStrict (md^.mdHtml) ]
 instance A.ToJSON MarkdownBlock where
   toJSON md = A.object [
-    "text" A..= (md^.mdText),
+    "text" A..= (md^.mdSource),
     "html" A..= T.toStrict (md^.mdHtml) ]
 instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
-    "text" A..= (md^.mdText) ]
+    "text" A..= (md^.mdSource) ]
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml
@@ -342,22 +342,22 @@ instance ToHtml MarkdownTree where
 instance SafeCopy MarkdownInline where
   version = 0
   kind = base
-  putCopy = contain . safePut . view mdText
+  putCopy = contain . safePut . view mdSource
   getCopy = contain $ toMarkdownInline <$> safeGet
 instance SafeCopy MarkdownBlock where
   version = 0
   kind = base
-  putCopy = contain . safePut . view mdText
+  putCopy = contain . safePut . view mdSource
   getCopy = contain $ toMarkdownBlock <$> safeGet
 instance SafeCopy MarkdownTree where
   version = 0
   kind = base
   putCopy md = contain $ do
     safePut (md ^. mdIdPrefix)
-    safePut (md ^. mdText)
+    safePut (md ^. mdSource)
   getCopy = contain $
     toMarkdownTree <$> safeGet <*> safeGet
 
 -- | Is a piece of Markdown empty?
-markdownNull :: HasMdText a Text => a -> Bool
-markdownNull = T.null . view mdText
+markdownNull :: HasMdSource a Text => a -> Bool
+markdownNull = T.null . view mdSource

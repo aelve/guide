@@ -53,7 +53,7 @@ search query gs =
     sortByRank [(SRItemEcosystem cat item, rank)
                  | cat  <- gs^.categories
                  , item <- cat^.items
-                 , let rank = match query (item^.ecosystem.mdText)
+                 , let rank = match query (item^.ecosystem.mdSource)
                  , rank > 0 ]
   where
     sortByRank :: [(a, Int)] -> [a]

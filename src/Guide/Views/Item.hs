@@ -177,7 +177,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         [rows_ "3", class_ " editor "]
         (item^.ecosystem)
         (\val -> JS.submitItemEcosystem
-                   (this, item^.uid, item^.ecosystem.mdText, val))
+                   (this, item^.uid, item^.ecosystem.mdSource, val))
         (JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
@@ -294,7 +294,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
       textareaUid <- randomLongUid
       contents <- if markdownNull (item^.notes)
         then liftIO $ T.readFile "static/item-notes-template.md"
-        else return (item^.notes.mdText)
+        else return (item^.notes.mdSource)
       let buttons = do
             textButton "collapse notes" $
               JS.switchSection (this, "collapsed" :: Text)

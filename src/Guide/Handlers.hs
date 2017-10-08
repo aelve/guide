@@ -133,7 +133,7 @@ setMethods = do
   Spock.post (setRoute <//> categoryVar <//> "notes") $ \catId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (notes.mdText) <$> dbQuery (GetCategory catId)
+    modified <- view (notes.mdSource) <$> dbQuery (GetCategory catId)
     if modified == original
       then do
         category <- uncache (CacheCategoryNotes catId) $ do
@@ -196,7 +196,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "description") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (description.mdText) <$> dbQuery (GetItem itemId)
+    modified <- view (description.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         item <- uncache (CacheItemDescription itemId) $ do
@@ -213,7 +213,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
+    modified <- view (ecosystem.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         item <- uncache (CacheItemEcosystem itemId) $ do
@@ -230,7 +230,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "notes") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (notes.mdText) <$> dbQuery (GetItem itemId)
+    modified <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         item <- uncache (CacheItemNotes itemId) $ do
@@ -248,7 +248,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
+    modified <- view (content.mdSource) <$> dbQuery (GetTrait itemId traitId)
     if modified == original
       then do
         trait <- uncache (CacheItemTraits itemId) $ do

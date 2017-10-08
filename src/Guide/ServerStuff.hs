@@ -24,7 +24,7 @@ module Guide.ServerStuff
   addEdit,
   undoEdit,
   invalidateCacheForEdit,
-  
+
   -- * Handler helpers
   itemVar,
   categoryVar,
@@ -182,7 +182,7 @@ undoEdit (Edit'ChangeCategoryEnabledSections catId toEnable toDisable) = do
     then return (Left "enabled-sections has been changed further")
     else Right () <$ dbUpdate (ChangeCategoryEnabledSections catId toDisable toEnable)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
-  now <- view (notes.mdText) <$> dbQuery (GetCategory catId)
+  now <- view (notes.mdSource) <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetCategoryNotes catId old)
@@ -207,22 +207,22 @@ undoEdit (Edit'SetItemKind itemId old new) = do
     then return (Left "kind has been changed further")
     else Right () <$ dbUpdate (SetItemKind itemId old)
 undoEdit (Edit'SetItemDescription itemId old new) = do
-  now <- view (description.mdText) <$> dbQuery (GetItem itemId)
+  now <- view (description.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "description has been changed further")
     else Right () <$ dbUpdate (SetItemDescription itemId old)
 undoEdit (Edit'SetItemNotes itemId old new) = do
-  now <- view (notes.mdText) <$> dbQuery (GetItem itemId)
+  now <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetItemNotes itemId old)
 undoEdit (Edit'SetItemEcosystem itemId old new) = do
-  now <- view (ecosystem.mdText) <$> dbQuery (GetItem itemId)
+  now <- view (ecosystem.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
 undoEdit (Edit'SetTraitContent itemId traitId old new) = do
-  now <- view (content.mdText) <$> dbQuery (GetTrait itemId traitId)
+  now <- view (content.mdSource) <$> dbQuery (GetTrait itemId traitId)
   if now /= new
     then return (Left "trait has been changed further")
     else Right () <$ dbUpdate (SetTraitContent itemId traitId old)
