@@ -2,8 +2,8 @@ module Guide.CategoryDetail.View.CategoryDetail where
 
 import Prelude
 
-import Data.Lens ((^.))
-import Guide.Api.Types (CCategoryDetail(..), _CUid)
+import Guide.Api.Types (CCategoryDetail(..))
+import Guide.Common.Types (unwrapUid)
 import Guide.CategoryDetail.Events (Event)
 import Guide.CategoryDetail.State (State(..))
 import Network.RemoteData (RemoteData(..))
@@ -19,4 +19,4 @@ view (State state) =
       NotAsked -> S.div $ S.text "Categories not asked."
       Loading -> S.div $ S.text "Loading data..."
       Failure error -> S.div $ S.text $ "Error loading data: " <> (show error)
-      (Success (CCategoryDetail cat)) -> S.h2 $ S.text (cat.ccdTitle <> " - " <> (cat.ccdUid ^. _CUid))
+      (Success (CCategoryDetail cat)) -> S.h2 $ S.text (cat.ccdTitle <> " - " <> (unwrapUid cat.ccdUid))

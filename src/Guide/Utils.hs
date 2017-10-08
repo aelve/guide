@@ -311,7 +311,10 @@ sockAddrToIP _ = Nothing
 newtype Uid a = Uid {uidToText :: Text}
   deriving (Generic, Eq, Ord, Show, Data,
             ToHttpApiData, FromHttpApiData,
-            T.Buildable, Hashable, A.ToJSON)
+            T.Buildable, Hashable)
+
+instance A.ToJSON (Uid a) where
+  toJSON = A.genericToJSON A.defaultOptions
 
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a
@@ -451,7 +454,7 @@ getRequestDetails
   :: (MonadIO m, HasSpock (ActionCtxT ctx m))
   => ActionCtxT ctx m (UTCTime, Maybe IP, Maybe Text, Maybe Text)
 getRequestDetails = do
-  time <- liftIO $ getCurrentTime
+  time <- liftIO getCurrentTime
   mbForwardedFor <- liftA2 (<|>) (Spock.header "Forwarded-For")
                                  (Spock.header "X-Forwarded-For")
   mbIP <- case mbForwardedFor of

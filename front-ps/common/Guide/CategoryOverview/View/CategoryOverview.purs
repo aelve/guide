@@ -3,12 +3,11 @@ module Guide.CategoryOverview.View.CategoryOverview where
 import Prelude
 
 import Data.Foldable (for_)
-import Data.Lens ((^.))
-import Guide.Api.Types (CategoryInfo(..), _CUid)
+import Guide.Api.Types (CategoryInfo(..))
 import Guide.CategoryOverview.Events (Event)
 import Guide.CategoryOverview.State (State(..))
 import Guide.Common.Routes (categoryDetailUrl)
-import Guide.Common.Types (CCategories)
+import Guide.Common.Types (CCategories, unwrapUid)
 import Network.RemoteData (RemoteData(..))
 import Pux.DOM.HTML (HTML) as P
 import Pux.DOM.HTML.Attributes (key) as P
@@ -35,7 +34,7 @@ catsView st@(State state) cats =
 catView :: State -> CategoryInfo -> P.HTML Event
 catView (State state) (CategoryInfo cat) =
   S.li
-    ! P.key (cat.categoryInfoUid ^. _CUid) $ do
+    ! P.key (unwrapUid cat.categoryInfoUid) $ do
     S.a
       ! S.href (categoryDetailUrl state.categoryName cat.categoryInfoUid)
       $ S.text cat.categoryInfoTitle
