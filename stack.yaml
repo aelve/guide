@@ -11,6 +11,9 @@ packages:
     commit: 26e5f8c7f62ebce66ef19e5bd573af21c16fe2b1
   extra-dep: true
 
+nix:
+  shell-file: shell.nix
+
 extra-deps:
 - text-all-0.4.1.0
 - cmark-sections-0.3.0
