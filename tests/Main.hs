@@ -5,7 +5,6 @@
 module Main (main) where
 
 import BasePrelude
-import GHC.IO.Encoding (setLocaleEncoding, utf8)
 -- Testing
 import Test.Hspec
 
@@ -17,8 +16,6 @@ import qualified MergeSpec
 
 main :: IO ()
 main = do
-  -- force to use UTF-8
-  setLocaleEncoding utf8
   hspec $ do
     MarkdownSpec.tests
     MergeSpec.tests

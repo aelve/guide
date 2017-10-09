@@ -53,7 +53,6 @@ import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
-import GHC.IO.Encoding (setLocaleEncoding, utf8)
 -- Catching signals
 import System.Posix.Signals
 -- Watching the templates directory
@@ -137,8 +136,6 @@ lucidWithConfig x = do
 -- | Start the site.
 main :: IO ()
 main = do
-  -- force to use UTF-8
-  setLocaleEncoding utf8
   config <- readConfig
   mainWith config
 
