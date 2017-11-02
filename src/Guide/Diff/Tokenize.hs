@@ -62,10 +62,10 @@ consolidate s@("-":_) =
 consolidate (".":".":".":xs) = "..." : consolidate xs
 -- links
 consolidate s@("http":":":"/":"/":_) =
-  let (l, r) = span (\x -> x /= ")" && not (isSpace (T.head x))) s
+  let (l, r) = span (\x -> x /= ")" && not (startsWithSpace x)) s
   in  T.concat l : consolidate r
 consolidate s@("https":":":"/":"/":_) =
-  let (l, r) = span (\x -> x /= ")" && not (isSpace (T.head x))) s
+  let (l, r) = span (\x -> x /= ")" && not (startsWithSpace x)) s
   in  T.concat l : consolidate r
 consolidate ("(":"@":"hk":")":xs) = "(" : "@hk" : ")" : consolidate xs
 
@@ -88,3 +88,8 @@ op = over _1 mconcat . span (isOpToken . T.unpack)
   where
     isOpToken [c] = c `elem` (":!#$%&*+./<=>?@\\^|-~" :: String)
     isOpToken _   = False
+
+startsWithSpace :: Text -> Bool
+startsWithSpace s = case T.uncons s of
+  Nothing     -> False
+  Just (c, _) -> isSpace c

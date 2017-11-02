@@ -189,7 +189,7 @@ extractInlines = concatMap go
       CODE_BLOCK _ xs   -> [MD.Node Nothing (CODE xs) []]
 
 shortcutLinks :: MD.Node -> MD.Node
-shortcutLinks node@(MD.Node pos (LINK url title) ns) | '@' <- T.head url =
+shortcutLinks node@(MD.Node pos (LINK url title) ns) | "@" <- T.take 1 url =
   -- %20s are possibly introduced by cmark (Pandoc definitely adds them,
   -- no idea about cmark but better safe than sorry) and so they need to
   -- be converted back to spaces

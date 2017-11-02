@@ -35,4 +35,5 @@ tags
 
 # JavaScript
 guidejs/node_modules/
+front/node_modules/
 static/js/
