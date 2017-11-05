@@ -1,9 +1,10 @@
 
 const path = require('path');
 const webpack = require('webpack');
+const merge = require('webpack-merge');
 const c = require('./webpack.config.common.js');
 
-module.exports = {
+module.exports = merge(c.config, {
   target: 'node',
   entry: {
     "server": path.join(__dirname, 'server', 'entry.js')
@@ -14,16 +15,9 @@ module.exports = {
     filename: '[name].js',
     pathinfo: true
   },
-  plugins: c.plugins,
-  module: {
-    loaders: c.loaders
-  },
   resolveLoader: {
     modules: [
       path.join(__dirname, 'node_modules')
     ]
-  },
-  resolve: c.resolve,
-  performance: c.performance,
-  stats: c.stats
-}
+  }
+})

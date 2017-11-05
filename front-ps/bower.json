@@ -7,6 +7,7 @@
     "output"
   ],
   "dependencies": {
+    "purescript-bulma": "https://github.com/sectore/purescript-bulma",
     "purescript-prelude": "^3.1.0",
     "purescript-console": "^3.0.0",
     "purescript-express": "^0.6.0",

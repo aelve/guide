@@ -4,6 +4,7 @@ const path = require('path')
 const webpack = require('webpack')
 
 const NamedModulesPlugin = require('webpack/lib/NamedModulesPlugin');
+const UglifyJsPlugin = require ("webpack/lib/optimize/UglifyJsPlugin");
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -13,7 +14,7 @@ const plugins = [
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     '$PRODUCTION': isProd
   }),
-  new NamedModulesPlugin(),
+  new NamedModulesPlugin()
 ]
 
 if (isProd) {
@@ -26,7 +27,17 @@ if (isProd) {
       hashFunction: 'sha256',
       hashDigest: 'hex',
       hashDigestLength: 20
-    })
+    }),
+    new UglifyJsPlugin({
+        sourceMap: false,
+        beautify: false,
+        comments: false,
+        compress: {
+          drop_console: true,
+          dead_code: true,
+          warnings: false
+        }
+      })
   )
 } else {
   plugins.push(
@@ -51,6 +62,34 @@ const loaders = [
       bundle: isProd
     }
   }
+  // {
+  //   test: /\.s[ac]ss$/,
+  //   loader: ExtractTextPlugin.extract({
+  //     fallback: 'style-loader',
+  //     use: [
+  //       'css-loader?importLoaders=1',
+  //       'sass-loader'
+  //     ]
+  //   })
+  // }
+  // {
+  //   test: /\.s[ac]ss$/,
+  //   use: ExtractTextPlugin.extract('css-loader?minimize!sass-loader?minimize'),
+  //   // In dev mode enable HMR w/o ExtractTextPlugin
+  //   use: isProd ? undefined : [
+  //     'isomorphic-style-loader',
+  //     'css-loader?importLoaders=1',
+  //     'sass-loader?sourceMap'
+  //   ],
+  //   // And in `prod mode` use ExtractTextPlugin
+  //   loader: isProd ? ExtractTextPlugin.extract({
+  //     fallback: 'isomorphic-style-loader',
+  //     use: [
+  //       'css-loader?importLoaders=1',
+  //       'sass-loader'
+  //     ]
+  //   }) : undefined,
+  // }
 ]
 
 const resolve = {
@@ -83,11 +122,15 @@ const stats = {
 
 const performance = { hints: false }
 
-
 module.exports = {
-  plugins,
-  performance,
-  loaders,
-  resolve,
-  stats
-  }
+  config: {
+    plugins: plugins,
+    performance: performance,
+    module: {
+      loaders: loaders
+    },
+    resolve: resolve,
+    stats: stats
+  },
+  isProd: isProd
+}

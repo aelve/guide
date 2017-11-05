@@ -7,10 +7,10 @@ npm-debug.log
 yarn-error.log
 .yarnclean
 
-public/server.js
-public/category-overview.js
-public/category-detail.js
-# ^ from PureScript code compiled js files
+public/*.js
+# ^ By PureScript compiled js files
+public/*.css
+# ^ Sass generated css files
 
 common/Generated
 # ^ generated types by `purescript-bridge`
