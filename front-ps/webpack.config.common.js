@@ -62,34 +62,6 @@ const loaders = [
       bundle: isProd
     }
   }
-  // {
-  //   test: /\.s[ac]ss$/,
-  //   loader: ExtractTextPlugin.extract({
-  //     fallback: 'style-loader',
-  //     use: [
-  //       'css-loader?importLoaders=1',
-  //       'sass-loader'
-  //     ]
-  //   })
-  // }
-  // {
-  //   test: /\.s[ac]ss$/,
-  //   use: ExtractTextPlugin.extract('css-loader?minimize!sass-loader?minimize'),
-  //   // In dev mode enable HMR w/o ExtractTextPlugin
-  //   use: isProd ? undefined : [
-  //     'isomorphic-style-loader',
-  //     'css-loader?importLoaders=1',
-  //     'sass-loader?sourceMap'
-  //   ],
-  //   // And in `prod mode` use ExtractTextPlugin
-  //   loader: isProd ? ExtractTextPlugin.extract({
-  //     fallback: 'isomorphic-style-loader',
-  //     use: [
-  //       'css-loader?importLoaders=1',
-  //       'sass-loader'
-  //     ]
-  //   }) : undefined,
-  // }
 ]
 
 const resolve = {
