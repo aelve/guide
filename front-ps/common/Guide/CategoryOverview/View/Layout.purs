@@ -13,11 +13,13 @@ import Pux.DOM.HTML (HTML) as P
 import Text.Smolder.HTML (div) as S
 import Text.Smolder.HTML.Attributes (className) as S
 import Text.Smolder.Markup ((!))
+import Bulma.Core (runClassName) as Bulma
+import Bulma.Columns.Columns (column) as Bulma
 
 view :: State -> P.HTML Event
 view state@(State st) =
   S.div
-    ! S.className "column" $ do
+    ! S.className (Bulma.runClassName Bulma.column) $ do
       Header.view state
       case st.route of
         (NotFound url) -> NotFound.view state

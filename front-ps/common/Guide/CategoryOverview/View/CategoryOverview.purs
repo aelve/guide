@@ -15,11 +15,14 @@ import Text.Smolder.HTML (div, a) as S
 import Text.Smolder.HTML.Attributes (href, className) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
+import Bulma.Core (Is(..), Breakpoint(..), runClassNames) as Bulma
+import Bulma.Elements.Title (subtitle, isSize) as Bulma
+import Bulma.Columns.Columns (column, columns, isMultiline) as Bulma
+import Bulma.Columns.Size (PercentSize(..), isPercentSize, isPercentSizeResponsive) as Bulma
 
 view :: State -> P.HTML Event
 view st@(State state) =
   S.div
-    ! S.className "content"
     $ case state.categories of
         NotAsked -> S.div $ S.text "Categories not asked."
         Loading -> S.div $ S.text "Loading data..."
@@ -29,15 +32,26 @@ view st@(State state) =
 catsView :: State -> CCategories -> P.HTML Event
 catsView st@(State state) cats =
   S.div
-    ! S.className "columns is-multiline"
+    ! S.className (Bulma.runClassNames
+                    [ Bulma.columns
+                    , Bulma.isMultiline
+                    ])
     $ for_ cats (catView st)
 
 catView :: State -> CategoryInfo -> P.HTML Event
 catView (State state) (CategoryInfo cat) =
   S.div
-    ! S.className "column is-one-third-desktop is-half"
+    ! S.className (Bulma.runClassNames
+                    [ Bulma.column
+                    , Bulma.isPercentSizeResponsive Bulma.OneThird Bulma.Desktop
+                    , Bulma.isPercentSize Bulma.Half
+                    , Bulma.isSize Bulma.Is4
+                    ])
     ! P.key (unwrapUid cat.categoryInfoUid) $ do
     S.a
-      ! S.className "subtitle is-4"
+      ! S.className (Bulma.runClassNames
+                      [ Bulma.subtitle
+                      , Bulma.isSize Bulma.Is4
+                      ])
       ! S.href (categoryDetailUrl state.categoryName cat.categoryInfoUid)
       $ S.text cat.categoryInfoTitle

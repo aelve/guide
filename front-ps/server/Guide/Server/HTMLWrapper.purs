@@ -7,14 +7,15 @@ import CSS.String (fromString)
 import CSS.Stylesheet (CSS, (?))
 import CSS.Text (textDecoration, underline)
 import Data.Maybe (fromMaybe)
-import Data.Monoid (mempty)
 import Pux.DOM.HTML (HTML) as P
 import Pux.DOM.HTML.Attributes (key) as P
 import Pux.Renderer.React (dangerouslySetInnerHTML) as P
-import Text.Smolder.HTML (body, div, head, html, link, meta, script, style, title, br) as S
+import Text.Smolder.HTML (body, div, head, html, link, meta, script, style, title) as S
 import Text.Smolder.HTML.Attributes (charset, className, content, href, id, name, rel, src, type') as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (empty, text) as S
+import Bulma.Core (runClassName) as Bulma
+import Bulma.Layout.Layout (container) as Bulma
 
 globalStyle :: CSS
 globalStyle = do
@@ -32,11 +33,12 @@ htmlWrapper app_html state_json file_name =
       S.link ! S.rel "stylesheet" ! S.href ("/vendor.css")
       -- ^ vendor styles (Bluma & Co.)
       S.style ! P.dangerouslySetInnerHTML (fromMaybe "" (renderedSheet (render globalStyle))) $ S.empty
+      -- ^ global styles
     S.body do
       S.div
         ! P.key "guide"
         ! S.id "guide"
-        ! S.className "container"
+        ! S.className (Bulma.runClassName Bulma.container)
         ! P.dangerouslySetInnerHTML app_html
         $ S.empty
       S.script

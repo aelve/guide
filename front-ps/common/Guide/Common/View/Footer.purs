@@ -10,26 +10,26 @@ import Text.Smolder.HTML.Attributes (href, className) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
 import Bulma.Layout.Layout (footer) as Bulma
-import Bulma.Core (runClazzName, runClazzNames) as Bulma
-import Bulma.Modifiers.Typography (alignment, Alignment(..)) as Bulma
-import Bulma.Modifiers.Responsive (showInlineFlex') as Bulma
-import Bulma.Components.NavBar (navbar, navbarItem) as Bulma
+import Bulma.Core (runClassName, runClassNames) as Bulma
+import Bulma.Modifiers.Typography (hasAlignment, Alignment(..)) as Bulma
+import Bulma.Modifiers.Responsive (isInlineFlex) as Bulma
+import Bulma.Components.Navbar (navbar, navbarItem) as Bulma
 
 view :: State -> P.HTML Event
 view st@(State state) =
   S.div
-    ! S.className (Bulma.runClazzNames
+    ! S.className (Bulma.runClassNames
                     [ Bulma.footer
-                    , Bulma.alignment Bulma.Centered
+                    , Bulma.hasAlignment Bulma.Centered
                     ])
     $ S.ul
-      ! S.className (Bulma.runClazzNames
+      ! S.className (Bulma.runClassNames
                       [ Bulma.navbar
-                      , Bulma.showInlineFlex'
+                      , Bulma.isInlineFlex
                       ])
       $ do
         S.li
-          ! S.className (Bulma.runClazzName Bulma.navbarItem)
+          ! S.className (Bulma.runClassName Bulma.navbarItem)
           $ S.div $ do
             S.text "made by "
             S.a
@@ -40,7 +40,7 @@ view st@(State state) =
               ! S.href "https://github.com/aelve/guide/graphs/contributors"
               $ S.text "others"
         S.li
-          ! S.className (Bulma.runClazzName Bulma.navbarItem)
+          ! S.className (Bulma.runClassName Bulma.navbarItem)
           $ S.div $ do
             S.a
               ! S.href "https://github.com/aelve/guide"
@@ -50,17 +50,17 @@ view st@(State state) =
               ! S.href "https://github.com/aelve/guide/issues"
               $ S.text "issue tracker"
         S.li
-          ! S.className (Bulma.runClazzName Bulma.navbarItem)
+          ! S.className (Bulma.runClassName Bulma.navbarItem)
           $ S.a
               ! S.href "https://guide.aelve.com/unwritten-rules"
               $ S.text "rules"
         S.li
-          ! S.className (Bulma.runClazzName Bulma.navbarItem)
+          ! S.className (Bulma.runClassName Bulma.navbarItem)
           $ S.a
               ! S.href "https://guide.aelve.com/donate"
               $ S.text "donate"
         S.li
-          ! S.className (Bulma.runClazzName Bulma.navbarItem)
+          ! S.className (Bulma.runClassName Bulma.navbarItem)
           $ S.div $ do
             S.text "licensed under "
             S.a
