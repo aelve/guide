@@ -15,7 +15,7 @@ import Text.Smolder.HTML (div, a) as S
 import Text.Smolder.HTML.Attributes (href, className) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
-import Bulma.Core (Is(..), Breakpoint(..), runClassNames) as Bulma
+import Bulma.Common (Is(..), Breakpoint(..), runClassNames) as Bulma
 import Bulma.Elements.Title (subtitle, isSize) as Bulma
 import Bulma.Columns.Columns (column, columns, isMultiline) as Bulma
 import Bulma.Columns.Size (PercentSize(..), isPercentSize, isPercentSizeResponsive) as Bulma

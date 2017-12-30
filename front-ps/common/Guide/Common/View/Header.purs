@@ -9,7 +9,7 @@ import Text.Smolder.HTML (div, h1, a, section, span) as S
 import Text.Smolder.HTML.Attributes (href, className) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
-import Bulma.Core (Is(..), runClassName, runClassNames) as Bulma
+import Bulma.Common (Is(..), runClassName, runClassNames) as Bulma
 import Bulma.Components.Navbar (navbar, navbarBrand, navbarEnd) as Bulma
 import Bulma.Elements.Button (button) as Bulma
 import Bulma.Elements.Title (title, subtitle, isSize) as Bulma

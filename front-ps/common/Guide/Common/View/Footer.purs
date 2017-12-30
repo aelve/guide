@@ -10,7 +10,7 @@ import Text.Smolder.HTML.Attributes (href, className) as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (text) as S
 import Bulma.Layout.Layout (footer) as Bulma
-import Bulma.Core (runClassName, runClassNames) as Bulma
+import Bulma.Common (runClassName, runClassNames) as Bulma
 import Bulma.Modifiers.Typography (hasAlignment, Alignment(..)) as Bulma
 import Bulma.Modifiers.Responsive (isInlineFlex) as Bulma
 import Bulma.Components.Navbar (navbar, navbarItem) as Bulma

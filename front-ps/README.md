@@ -1,4 +1,4 @@
-# [WIP] Guide's front-end
+# Guide's front-end
 
 ## Requirements
 

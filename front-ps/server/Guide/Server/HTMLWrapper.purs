@@ -14,7 +14,7 @@ import Text.Smolder.HTML (body, div, head, html, link, meta, script, style, titl
 import Text.Smolder.HTML.Attributes (charset, className, content, href, id, name, rel, src, type') as S
 import Text.Smolder.Markup ((!))
 import Text.Smolder.Markup (empty, text) as S
-import Bulma.Core (runClassName) as Bulma
+import Bulma.Common (runClassName) as Bulma
 import Bulma.Layout.Layout (container) as Bulma
 
 globalStyle :: CSS

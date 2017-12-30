@@ -7,18 +7,18 @@
     "output"
   ],
   "dependencies": {
-    "purescript-bulma": "https://github.com/sectore/purescript-bulma",
-    "purescript-prelude": "^3.1.0",
+    "purescript-prelude": "^3.1.1",
     "purescript-console": "^3.0.0",
-    "purescript-express": "^0.6.0",
+    "purescript-express": "^0.6.1",
     "purescript-node-process": "^5.0.0",
     "purescript-pux": "^12.0.0",
-    "purescript-aff": "^4.0.0",
+    "purescript-aff": "^4.0.1",
     "purescript-affjax": "^5.0.0",
     "purescript-argonaut-generic-codecs": "^6.0.4",
-    "purescript-profunctor-lenses": "^3.7.0",
+    "purescript-profunctor-lenses": "^3.8.0",
     "purescript-remotedata": "^2.2.0",
-    "purescript-isomorphic-fetch": "https://github.com/sectore/purescript-isomorphic-fetch.git#v0.2.0"
+    "purescript-isomorphic-fetch": "https://github.com/sectore/purescript-isomorphic-fetch.git#v0.2.0",
+    "purescript-bulma": "^1.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"
