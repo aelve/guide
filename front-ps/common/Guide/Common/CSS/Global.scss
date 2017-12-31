@@ -1,0 +1,62 @@
+
+.guide {
+
+  &-header {
+    padding: 2rem 0;
+  }
+
+  &-category {
+
+    &-column {
+      padding-bottom: 4rem;
+    }
+
+    &-headline {
+      color: $color1;
+      font-weight: $bold;
+    }
+
+    &-link {
+      color: $color2;
+      font-weight: $bold;
+    }
+
+    &-subheadline {
+      color: $color1;
+      font-weight: $bold;
+      margin-top: 1rem;
+      margin-bottm: 0;
+    }
+
+  }
+
+  &-categories {
+      &-finished {
+        padding-left: 2em;
+        .guide-category-link {
+          font-size: 1.8rem;
+        }
+      }
+      &-wip {
+        .guide-category-link {
+          font-size: 1rem;
+          padding-left: 1.5em;
+        }
+      }
+      &-stub {
+        .guide-category-link {
+          font-size: 1rem;
+          padding-left: 1.5em;
+        }
+      }
+  }
+
+  &-footer {
+      &-container {
+        border-top: 1px solid $color1;
+        padding-top: 1rem;
+      }
+  }
+
+
+}
