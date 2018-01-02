@@ -26,6 +26,9 @@ catColumn = catClass $ ClassPart "column"
 catLink :: ClassName
 catLink = catClass $ ClassPart "link"
 
+catLinkWrapper :: ClassName
+catLinkWrapper = catClass $ ClassPart "link-wrapper"
+
 catHeadline :: ClassName
 catHeadline = catClass $ ClassPart "headline"
 
