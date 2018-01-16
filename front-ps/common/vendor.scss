@@ -1,0 +1,25 @@
+@import "~bulma/sass/utilities/initial-variables.sass";
+// overrride everything of bluma variables here
+
+// colors
+$color0: white;
+$color1: black;
+$color2: #008ACE;
+
+$footer-background-color: $color0;
+
+$dark: $color1;
+$link: $color2;
+$link-hover: $color2;
+
+$title-color: $color1;
+$subtitle-color: $color1;
+// fonts
+$family-serif: sans-serif;
+$family-primary: $family-serif;
+// font weight
+$bold: 600;
+
+// import bulma from node-modules folder at least
+@import "~bulma/bulma";
+@import "./Guide/Common/CSS/Global.scss";
