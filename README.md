@@ -22,6 +22,18 @@ If you want to contribute but don't know where to start, grep the source for
 [ideas]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22not-fleshed-out+idea%22
 [design]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22design%22
 
+## Testing
+
+You need `chromedriver` and `selenium-server-standalone` installed (those are the package names on Arch Linux). Then you can do
+
+```
+$ java -jar /usr/share/selenium-server/selenium-server-standalone.jar
+```
+
+```
+$ stack test
+```
+
 ## Overview of the code
 
 ### Folder structure
