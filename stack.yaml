@@ -1,24 +1,22 @@
-resolver: lts-8.13
+resolver: lts-11.13
 
 packages:
 - location: .
-- location:
-    git: https://github.com/aelve/stache-plus
-    commit: 789aeabbf8069dec80647160f127d047e8f5a330
-  extra-dep: true
-- location:
-    git: https://github.com/aelve/safecopy-migrate
-    commit: 26e5f8c7f62ebce66ef19e5bd573af21c16fe2b1
-  extra-dep: true
 
 nix:
   shell-file: shell.nix
 
 extra-deps:
-- text-all-0.4.1.0
-- cmark-sections-0.3.0
-- patches-vector-0.1.5.4
+- text-all-0.4.2
+- cmark-sections-0.3.0.1
 - fmt-0.4.0.0
 - Spock-digestive-0.3.0.0
-- digestive-functors-0.8.2.0
-- servant-generic-0.1.0.0
+- digestive-functors-0.8.4.0
+- servant-generic-0.1.0.3
+- acid-state-0.14.3
+- git: https://github.com/neongreen/patches-vector
+  commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705
+- git: https://github.com/aelve/stache-plus
+  commit: e2a8d986bd4014f889d3fa60a64e8db0ea199885
+- git: https://github.com/aelve/safecopy-migrate
+  commit: c401315122f04624e5e848d77f9eaa948e38c21b

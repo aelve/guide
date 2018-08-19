@@ -102,7 +102,8 @@ import qualified Network.Wai as Wai
 -- Feeds
 import qualified Text.Atom.Feed        as Atom
 import qualified Text.Atom.Feed.Export as Atom
-import qualified Text.XML.Light.Output as XML
+import qualified Text.XML              as XMLC
+import qualified Data.XML.Types        as XML
 -- acid-state
 import Data.SafeCopy
 -- Template Haskell
@@ -445,7 +446,8 @@ includeCSS url = link_ [rel_ "stylesheet", type_ "text/css", href_ url]
 atomFeed :: MonadIO m => Atom.Feed -> ActionCtxT ctx m ()
 atomFeed feed = do
   setHeader "Content-Type" "application/atom+xml; charset=utf-8"
-  bytes $ T.toByteString (XML.ppElement (Atom.xmlFeed feed))
+  lazyBytes $ either (const "") (XMLC.renderLBS XMLC.def) $ XMLC.fromXMLDocument $
+    XML.Document (XML.Prologue [] Nothing []) (Atom.xmlFeed feed) []
 
 -- | Get details of the request:
 --

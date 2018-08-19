@@ -14,14 +14,13 @@ where
 
 
 import           BasePrelude            as X
-  hiding (Category, GeneralCategory, lazy, (&), Handler)
+  hiding (Category, GeneralCategory, lazy, Handler, diff, option)
 -- Lists
 import           Data.List.Extra        as X (dropEnd, takeEnd)
 import           Data.List.Index        as X
 -- Lenses
 import           Lens.Micro.Platform    as X
 -- Monads and monad transformers
-import           Control.Monad.IO.Class as X
 import           Control.Monad.Reader   as X
 import           Control.Monad.State    as X
 import           Control.Monad.Except   as X

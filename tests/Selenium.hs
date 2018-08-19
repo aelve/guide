@@ -56,11 +56,10 @@ module Selenium
 where
 
 
-import BasePrelude hiding (catch, bracket)
+import BasePrelude hiding (catch, bracket, (:|))
 -- Lenses
 import Lens.Micro.Platform
 -- Monads
-import Control.Monad.IO.Class
 import Control.Monad.Loops
 -- Containers
 import qualified Data.Set as Set

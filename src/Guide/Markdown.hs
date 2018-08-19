@@ -38,7 +38,7 @@ module Guide.Markdown
 where
 
 
-import Imports
+import Imports hiding (some)
 
 -- Text
 import qualified Data.Text.All as T
@@ -47,7 +47,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
 -- Parsing
 import Text.Megaparsec hiding (State)
-import Text.Megaparsec.Text
+import Text.Megaparsec.Char
 -- JSON
 import qualified Data.Aeson as A
 -- HTML
@@ -230,7 +230,7 @@ parseLink = either (Left . show) Right . parse p ""
     shortcut = some (alphaNumChar <|> char '-')
     opt      = char '(' *> some (noneOf [')']) <* char ')'
     text     = char ':' *> some anyChar
-    p :: Parser (Text, Maybe Text, Maybe Text)
+    p :: Parsec Void Text (Text, Maybe Text, Maybe Text)
     p = do
       char '@'
       (,,) <$> T.pack <$> shortcut

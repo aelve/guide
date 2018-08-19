@@ -2,6 +2,7 @@
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE MonoLocalBinds #-}
 
 
 module WebSpec (tests) where
@@ -9,7 +10,6 @@ module WebSpec (tests) where
 
 import BasePrelude hiding (catch, bracket)
 -- Monads
-import Control.Monad.IO.Class
 import Control.Monad.Loops
 -- Concurrency
 import qualified SlaveThread as Slave

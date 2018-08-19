@@ -11,7 +11,7 @@ author:              Artyom
 maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
-tested-with:         GHC == 8.0.1
+tested-with:         GHC == 8.2.2
 build-type:          Custom
 extra-source-files:
   CHANGELOG.md
@@ -85,11 +85,11 @@ library
     Imports
   build-depends:       Spock
                      , Spock-digestive
-                     , Spock-lucid == 0.3.*
+                     , Spock-lucid == 0.4.*
                      , acid-state == 0.14.*
-                     , aeson == 1.0.*
+                     , aeson == 1.2.*
                      , aeson-pretty
-                     , base >=4.9 && <4.10
+                     , base == 4.10.*
                      , base-prelude
                      , bytestring
                      , cereal
@@ -105,7 +105,7 @@ library
                      , ekg-core
                      , exceptions
                      , extra
-                     , feed >= 0.3.11 && < 0.4
+                     , feed == 1.0.*
                      , filemanip == 0.3.6.*
                      , filepath
                      , fmt == 0.4.*
@@ -122,7 +122,7 @@ library
                      , ilist
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
-                     , megaparsec == 5.*
+                     , megaparsec == 6.*
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
@@ -134,7 +134,7 @@ library
                      , reroute
                      , safe
                      , safecopy
-                     , safecopy-migrate
+                     , safecopy-migrate == 0.2.*
                      , say
                      , scrypt
                      , servant-generic
@@ -159,7 +159,8 @@ library
                      , wai-middleware-static
                      , wai-cors
                      , warp
-                     , xml
+                     , xml-conduit
+                     , xml-types
                      , xss-sanitize
   ghc-options:         -Wall -fno-warn-unused-do-bind
   hs-source-dirs:      src
@@ -185,7 +186,7 @@ test-suite tests
                        MergeSpec
                        Selenium
   type:                exitcode-stdio-1.0
-  build-depends:       QuickCheck < 2.10
+  build-depends:       QuickCheck < 3
                      , base < 5
                      , base-prelude
                      , cmark

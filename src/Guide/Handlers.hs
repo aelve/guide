@@ -26,7 +26,6 @@ import qualified Text.Feed.Util  as Feed
 import qualified Text.Atom.Feed  as Atom
 -- Text
 import qualified Data.Text.All as T
-import qualified Data.Text.Lazy.All as TL
 -- Web
 import Web.Spock hiding (head, get, renderRoute, text)
 import qualified Web.Spock as Spock
@@ -360,16 +359,15 @@ otherMethods = do
           where cmp = comparing (^.created) <> comparing (^.uid)
     let route = "feed" <//> categoryVar
     let feedUrl = baseUrl // Spock.renderRoute route (category^.uid)
-        feedTitle = Atom.TextString (T.unpack (category^.title) ++
-                                     " – Haskell – Aelve Guide")
+        feedTitle = Atom.TextString (category^.title <> " – Haskell – Aelve Guide")
         feedLastUpdate = case sortedItems of
-          (item:_) -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
-          _        -> ""
-    let feedBase = Atom.nullFeed (T.unpack feedUrl) feedTitle feedLastUpdate
+          item:_ -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
+          _      -> ""
+    let feedBase = Atom.nullFeed feedUrl feedTitle (T.toStrict feedLastUpdate)
     entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
     atomFeed $ feedBase {
       Atom.feedEntries = entries,
-      Atom.feedLinks   = [Atom.nullLink (T.unpack feedUrl)] }
+      Atom.feedLinks   = [Atom.nullLink feedUrl] }
 
 adminMethods :: AdminM ctx ()
 adminMethods = do
@@ -426,12 +424,12 @@ itemToFeedEntry
 itemToFeedEntry baseUrl category item = do
   entryContent <- Lucid.renderTextT (renderItemForFeed category item)
   return entryBase {
-    Atom.entryLinks = [Atom.nullLink (T.unpack entryLink)],
-    Atom.entryContent = Just (Atom.HTMLContent (TL.unpack entryContent)) }
+    Atom.entryLinks = [Atom.nullLink entryLink],
+    Atom.entryContent = Just (Atom.HTMLContent (T.toStrict entryContent)) }
   where
     entryLink = baseUrl //
                 format "{}#item-{}" (categorySlug category) (item^.uid)
     entryBase = Atom.nullEntry
-      (T.unpack (uidToText (item^.uid)))
-      (Atom.TextString (T.unpack (item^.name)))
-      (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created))
+      (uidToText (item^.uid))
+      (Atom.TextString (item^.name))
+      (T.toStrict (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)))

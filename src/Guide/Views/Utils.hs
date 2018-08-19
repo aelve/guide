@@ -58,7 +58,7 @@ module Guide.Views.Utils
 where
 
 
-import Imports
+import Imports hiding (some)
 
 -- Web
 import Web.Spock
@@ -90,7 +90,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Semigroup as Semigroup
 import qualified Data.List.NonEmpty as NonEmpty
 import Text.Megaparsec
-import Text.Megaparsec.Text
+import Text.Megaparsec.Char
 
 import Guide.App
 -- import Guide.Config
@@ -304,7 +304,7 @@ mustache f v = do
     error "View.mustache: no HTML templates found in templates/"
   parsed <- for templates $ \(tname, t) -> do
     let pname = fromString (T.unpack tname)
-    case compileMustacheText pname (T.toLazy t) of
+    case compileMustacheText pname t of
       Left e -> error $ printf "View.mustache: when parsing %s: %s"
                                tname (parseErrorPretty e)
       Right template -> return template
@@ -340,7 +340,7 @@ readWidget fp = liftIO $ do
       go (x:y:xs) = (T.strip (last x), unlinesSection (init y)) : go (y : xs)
       go _ = error $ "View.readWidget: couldn't read " ++ fp
   let sections = go (splitWhen isDivide (T.lines s))
-  let sectionTypeP :: Parser SectionType
+  let sectionTypeP :: Parsec Void Text SectionType
       sectionTypeP = choice [
         do string "HTML"
            HTML_ <$> choice [

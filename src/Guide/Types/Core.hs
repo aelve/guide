@@ -65,7 +65,6 @@ import qualified Data.Text.All as T
 import qualified Data.Set as S
 -- JSON
 import qualified Data.Aeson as A
-import qualified Data.Aeson.Types as A
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate

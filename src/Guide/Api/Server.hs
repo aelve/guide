@@ -17,7 +17,7 @@ import Servant
 import Servant.Generic
 import Network.Wai.Handler.Warp (run)
 import Network.Wai (Middleware)
-import  Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
   , corsOrigins, simpleCorsResourcePolicy)
 
 -- putStrLn that works well with concurrency
