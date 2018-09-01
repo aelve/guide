@@ -315,7 +315,7 @@ newtype Uid a = Uid {uidToText :: Text}
             T.Buildable, Hashable)
 
 instance A.ToJSON (Uid a) where
-  toJSON = toJSON . uidToText
+  toJSON = A.toJSON . uidToText
 
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a

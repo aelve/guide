@@ -75,11 +75,11 @@ type Api = ToServant (Site AsApi)
 
 -- | A "light-weight" client type of `Category`, which describes a category info
 data CCategoryInfo = CCategoryInfo
-  { cciUid     :: Uid Category
-  , cciTitle   :: Text
-  , cciCreated :: UTCTime
-  , cciGroup_  :: Text
-  , cciStatus  :: CategoryStatus
+  { cciUid     :: Uid Category          <?> "Category ID"
+  , cciTitle   :: Text                  <?> "Title"
+  , cciCreated :: UTCTime               <?> "When the category was created"
+  , cciGroup_  :: Text                  <?> "Category group ('grandcategory')"
+  , cciStatus  :: CategoryStatus        <?> "Status (done, in progress, ...)"
   }
   deriving (Show, Generic)
 
@@ -92,21 +92,21 @@ instance ToSchema CCategoryInfo where
 -- | Factory to create a `CCategoryInfo` from a `Category`
 toCategoryInfo :: Category -> CCategoryInfo
 toCategoryInfo Category{..} = CCategoryInfo
-  { cciUid     = _categoryUid
-  , cciTitle   = _categoryTitle
-  , cciCreated = _categoryCreated
-  , cciGroup_  = _categoryGroup_
-  , cciStatus  = _categoryStatus
+  { cciUid     = H _categoryUid
+  , cciTitle   = H _categoryTitle
+  , cciCreated = H _categoryCreated
+  , cciGroup_  = H _categoryGroup_
+  , cciStatus  = H _categoryStatus
   }
 
 -- | A "light-weight" client type of `Category`, which describes a category detail
 data CCategoryDetail = CCategoryDetail
-  { ccdUid :: Uid Category
-  , ccdTitle :: Text
-  , ccdGroup :: Text
-  , ccdDescription :: CMarkdown
-  , ccdItems :: [CItem]
-  , ccdStatus :: CategoryStatus
+  { ccdUid :: Uid Category              <?> "Category ID"
+  , ccdTitle :: Text                    <?> "Title"
+  , ccdGroup :: Text                    <?> "Category group ('grandcategory')"
+  , ccdStatus :: CategoryStatus         <?> "Status (done, in progress, ...)"
+  , ccdDescription :: CMarkdown         <?> "Category description/notes"
+  , ccdItems :: [CItem]                 <?> "All items in the category"
   }
   deriving (Show, Generic)
 
@@ -119,12 +119,12 @@ instance ToSchema CCategoryDetail where
 -- | Factory to create a `CCategoryDetail` from a `Category`
 toCCategoryDetail :: Category -> CCategoryDetail
 toCCategoryDetail Category{..} = CCategoryDetail
-  { ccdUid = _categoryUid
-  , ccdTitle = _categoryTitle
-  , ccdGroup = _categoryGroup_
-  , ccdDescription = toCMarkdown _categoryNotes
-  , ccdItems = fmap toCItem _categoryItems
-  , ccdStatus = _categoryStatus
+  { ccdUid         = H $ _categoryUid
+  , ccdTitle       = H $ _categoryTitle
+  , ccdGroup       = H $ _categoryGroup_
+  , ccdDescription = H $ toCMarkdown _categoryNotes
+  , ccdItems       = H $ fmap toCItem _categoryItems
+  , ccdStatus      = H $ _categoryStatus
   }
 
 -- | Client type of `Item`
@@ -189,8 +189,8 @@ toCTrait trait = CTrait
 
 -- | Client type of `Markdown`
 data CMarkdown = CMarkdown
-  { text :: Text
-  , html :: Text
+  { text :: Text <?> "Markdown source"
+  , html :: Text <?> "Rendered HTML"
   } deriving (Show, Generic)
 
 instance A.ToJSON CMarkdown
@@ -201,20 +201,20 @@ class ToCMardown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMardown MarkdownInline where
   toCMarkdown md = CMarkdown
-    { text = md^.mdSource
-    , html = T.decodeUtf8 $ md^.mdHtml
+    { text = H $ md^.mdSource
+    , html = H $ T.decodeUtf8 $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownBlock where
   toCMarkdown md = CMarkdown
-    { text = md^.mdSource
-    , html = T.decodeUtf8 $ md^.mdHtml
+    { text = H $ md^.mdSource
+    , html = H $ T.decodeUtf8 $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownTree where
   toCMarkdown md = CMarkdown
-    { text = md^.mdSource
-    , html = T.toStrict . renderText $ toHtml md
+    { text = H $ md^.mdSource
+    , html = H $ T.toStrict . renderText $ toHtml md
     }
 
 ----------------------------------------------------------------------------

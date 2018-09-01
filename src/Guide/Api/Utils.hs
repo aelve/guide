@@ -1,12 +1,24 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeApplications #-}
+
+
 module Guide.Api.Utils
   ( jsonOptions
   , schemaOptions
+  , type (<?>)(..)
   ) where
+
 
 import Imports
 
+import GHC.TypeLits
 import Data.Aeson
-import Data.Swagger (SchemaOptions, fromAesonOptions)
+import Data.Swagger hiding (fieldLabelModifier)
+import qualified Data.Text.All as T
+
 
 -- | Nice JSON options.
 --
@@ -21,3 +33,17 @@ jsonOptions = defaultOptions{ fieldLabelModifier = camelTo2 '_' . trim }
 -- | Swagger schema-generating options that match 'jsonOptions'.
 schemaOptions :: SchemaOptions
 schemaOptions = fromAesonOptions jsonOptions
+
+-- | A way to provide descriptions for record fields.
+newtype (<?>) (field :: *) (help :: Symbol) = H field
+  deriving (Generic, Show)
+
+instance ToJSON field => ToJSON (field <?> help) where
+  toJSON (H a) = toJSON a
+
+instance (KnownSymbol help, ToSchema a) => ToSchema (a <?> help) where
+  declareNamedSchema _ = do
+    NamedSchema n s <- declareNamedSchema (Proxy @a)
+    return $ NamedSchema n (s & description ?~ T.toStrict desc)
+    where
+      desc = symbolVal (Proxy @help)
