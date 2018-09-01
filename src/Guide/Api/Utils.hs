@@ -3,12 +3,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 
 module Guide.Api.Utils
   ( jsonOptions
   , schemaOptions
   , type (?)(..)
+  , BranchTag
   ) where
 
 
@@ -17,6 +20,8 @@ import Imports
 import GHC.TypeLits
 import Data.Aeson
 import Data.Swagger hiding (fieldLabelModifier)
+import Servant
+import Servant.Swagger
 import qualified Data.Text.All as T
 
 
@@ -47,3 +52,27 @@ instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
     return $ NamedSchema Nothing (s & description ?~ T.toStrict desc)
     where
       desc = symbolVal (Proxy @help)
+
+-- | A way to name branches of Swagger API.
+--
+-- Taken from <https://github.com/haskell-servant/servant-swagger/issues/73>
+data BranchTag (name :: Symbol) (desc :: Symbol)
+
+instance HasServer api ctx =>
+         HasServer (BranchTag name desc :> api) ctx where
+  type ServerT (BranchTag name desc :> api) m = ServerT api m
+  route _ = route (Proxy @api)
+  hoistServerWithContext _ = hoistServerWithContext (Proxy @api)
+
+instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
+         HasSwagger (BranchTag name desc :> api) where
+  toSwagger _ =
+    let tag =
+          Tag (T.toStrict $ symbolVal (Proxy @name))
+            ((\case
+                "" -> Nothing
+                t -> Just t) .
+             T.toStrict $
+             symbolVal (Proxy @desc))
+            Nothing
+     in toSwagger (Proxy @api) & applyTags [tag]

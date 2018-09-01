@@ -27,13 +27,26 @@ import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
 import Say (say)
 
 import Guide.State
-import Guide.Api.Types (Api, Site(..))
-import Guide.Api.Methods (getCategories, getCategory)
+import Guide.Api.Types
+import Guide.Api.Methods
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site
-  { _getCategories = getCategories db
-  , _getCategory   = getCategory db
+  { _categorySite = toServant (CategorySite
+      { _getCategories  = getCategories db
+      , _getCategory    = getCategory db
+      , _createCategory = createCategory db
+      , _deleteCategory = deleteCategory db }
+      :: CategorySite AsServer)
+
+  , _itemSite = toServant (ItemSite
+      { _createItem     = createItem db
+      , _deleteItem     = deleteItem db }
+      :: ItemSite AsServer)
+
+  , _traitSite = toServant (TraitSite
+      { _deleteTrait    = deleteTrait db }
+      :: TraitSite AsServer)
   }
 
 type FullApi =

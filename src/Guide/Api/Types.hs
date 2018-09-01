@@ -11,13 +11,20 @@
 
 
 module Guide.Api.Types
-  ( Api
+  (
+  -- * API
+    Api
+  , Site(..)
+  , CategorySite(..)
+  , ItemSite(..)
+  , TraitSite(..)
+
+  -- * View types
   , CCategoryInfo(..)
   , CCategoryDetail(..)
   , CItem(..)
   , CMarkdown(..)
   , CTrait(..)
-  , Site(..)
   , toCCategoryDetail
   , toCategoryInfo
   )
@@ -47,17 +54,78 @@ import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSo
 
 -- | The description of the served API.
 data Site route = Site
+  { _categorySite :: route :-
+      BranchTag "Categories" "Working with categories."
+      :> ToServant (CategorySite AsApi)
+  , _itemSite :: route :-
+      BranchTag "Items" "Working with items."
+      :> ToServant (ItemSite AsApi)
+  , _traitSite :: route :-
+      BranchTag "Item traits" "Working with item traits."
+      :> ToServant (TraitSite AsApi)
+  }
+  deriving (Generic)
+
+data CategorySite route = CategorySite
   { _getCategories :: route :-
-      Summary "Get all categories"
+      Summary "Get a list of available categories"
       :> "categories"
       :> Get '[JSON] [CCategoryInfo]
 
   , _getCategory :: route :-
-      Summary "Get details of a category, and its full contents"
+      Summary "Get full contents of a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
       :> Capture "id" (Uid Category)
       :> Get '[JSON] CCategoryDetail
+
+  , _createCategory :: route :-
+      Summary "Create a new category"
+      :> Description "Returns the ID of the created category.\n\n\
+                     \If a category with the same title already exists, \
+                     \returns its ID instead."
+      :> "category"
+      :> QueryParam' '[Required, Strict] "title" Text
+      :> Post '[JSON] (Uid Category)
+
+  , _deleteCategory :: route :-
+      Summary "Delete a category"
+      :> Description "Note: please ignore the 404 here, it's a bug \
+                     \in documentation. This endpoint does not return 404."
+      :> "category"
+      :> Capture "id" (Uid Category)
+      :> Delete '[JSON] NoContent
+  }
+  deriving (Generic)
+
+data ItemSite route = ItemSite
+  { _createItem :: route :-
+      Summary "Create a new item in the given category"
+      :> "item"
+      :> Capture "category" (Uid Category)
+      :> QueryParam' '[Required, Strict] "name" Text
+      :> Post '[JSON] (Uid Item)
+
+  , _deleteItem :: route :-
+      Summary "Delete an item"
+      :> Description "Note: please ignore the 404 here, it's a bug \
+                     \in documentation. This endpoint does not return 404."
+      :> "item"
+      :> Capture "id" (Uid Item)
+      :> Delete '[JSON] NoContent
+  }
+  deriving (Generic)
+
+data TraitSite route = TraitSite
+  { _deleteTrait :: route :-
+      Summary "Delete a trait"
+      :> Description "Note: please ignore the 404 here, it's a bug \
+                     \in documentation. This endpoint does not return 404."
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "id" (Uid Trait)
+      :> Delete '[JSON] NoContent
   }
   deriving (Generic)
 
@@ -233,15 +301,15 @@ instance ToParamSchema (Uid Trait) where
     & S.format ?~ "Trait ID"
 
 instance ToSchema (Uid Category) where
-  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Category") $ mempty
+  declareNamedSchema _ = pure $ NamedSchema (Just "CategoryID") $ mempty
     & S.type_ .~ SwaggerString
 
 instance ToSchema (Uid Item) where
-  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Item") $ mempty
+  declareNamedSchema _ = pure $ NamedSchema (Just "ItemID") $ mempty
     & S.type_ .~ SwaggerString
 
 instance ToSchema (Uid Trait) where
-  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Trait") $ mempty
+  declareNamedSchema _ = pure $ NamedSchema (Just "TraitID") $ mempty
     & S.type_ .~ SwaggerString
 
 instance ToSchema CategoryStatus
