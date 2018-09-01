@@ -43,7 +43,7 @@ instance ToJSON field => ToJSON (field <?> help) where
 
 instance (KnownSymbol help, ToSchema a) => ToSchema (a <?> help) where
   declareNamedSchema _ = do
-    NamedSchema n s <- declareNamedSchema (Proxy @a)
-    return $ NamedSchema n (s & description ?~ T.toStrict desc)
+    NamedSchema _ s <- declareNamedSchema (Proxy @a)
+    return $ NamedSchema Nothing (s & description ?~ T.toStrict desc)
     where
       desc = symbolVal (Proxy @help)

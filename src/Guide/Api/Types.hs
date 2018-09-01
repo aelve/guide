@@ -104,8 +104,8 @@ data CCategoryDetail = CCategoryDetail
   { ccdUid :: Uid Category              <?> "Category ID"
   , ccdTitle :: Text                    <?> "Title"
   , ccdGroup :: Text                    <?> "Category group ('grandcategory')"
-  , ccdStatus :: CategoryStatus         <?> "Status (done, in progress, ...)"
-  , ccdDescription :: CMarkdown         <?> "Category description/notes"
+  , ccdStatus :: CategoryStatus         <?> "Status, e.g. done, in progress, ..."
+  , ccdDescription :: CMarkdown         <?> "Category description/notes (Markdown)"
   , ccdItems :: [CItem]                 <?> "All items in the category"
   }
   deriving (Show, Generic)
@@ -221,13 +221,31 @@ instance ToCMardown MarkdownTree where
 -- Schema instances
 ----------------------------------------------------------------------------
 
-instance ToParamSchema (Uid a) where
+instance ToParamSchema (Uid Category) where
   toParamSchema _ = mempty
     & S.type_ .~ SwaggerString
-    & S.format ?~ "Text-based ID"
+    & S.format ?~ "Category ID"
 
-instance ToSchema (Uid a) where
-  declareNamedSchema _ = pure $ NamedSchema (Just "Uid") $ mempty
+instance ToParamSchema (Uid Item) where
+  toParamSchema _ = mempty
+    & S.type_ .~ SwaggerString
+    & S.format ?~ "Item ID"
+
+instance ToParamSchema (Uid Trait) where
+  toParamSchema _ = mempty
+    & S.type_ .~ SwaggerString
+    & S.format ?~ "Trait ID"
+
+instance ToSchema (Uid Category) where
+  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Category") $ mempty
+    & S.type_ .~ SwaggerString
+
+instance ToSchema (Uid Item) where
+  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Item") $ mempty
+    & S.type_ .~ SwaggerString
+
+instance ToSchema (Uid Trait) where
+  declareNamedSchema _ = pure $ NamedSchema (Just "Uid Trait") $ mempty
     & S.type_ .~ SwaggerString
 
 instance ToSchema CategoryStatus
