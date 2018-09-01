@@ -247,4 +247,9 @@ instance ToSchema (Uid Trait) where
 instance ToSchema CategoryStatus
 
 instance ToSchema ItemKind where
-  declareNamedSchema = genericDeclareNamedSchemaUnrestricted schemaOptions
+  declareNamedSchema _ = pure $ NamedSchema (Just "ItemKind") $ mempty
+    & S.type_ .~ SwaggerObject
+    & S.format ?~ "Can be one of the three things:\
+                  \ {tag: Library, contents: <package name>}\
+                  \ * {tag: Tool, contents: <package name>}\
+                  \ * {tag: Other}"
