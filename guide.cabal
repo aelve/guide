@@ -139,6 +139,9 @@ library
                      , scrypt
                      , servant-generic
                      , servant-server
+                     , servant-swagger
+                     , servant-swagger-ui
+                     , swagger2
                      , shortcut-links >= 0.4.2
                      , slave-thread
                      , split

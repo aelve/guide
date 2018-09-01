@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module Guide.Api.Types
   ( Api
@@ -27,6 +28,7 @@ import qualified Data.Text.All as T
 import Lucid (toHtml, renderText)
 import Servant
 import Servant.Generic
+import Data.Swagger as S
 
 import Guide.Types.Core (Category(..), CategoryStatus(..), Item(..), ItemKind
   , Trait, content, uid
@@ -40,16 +42,16 @@ import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSo
 
 -- | The description of the served API.
 data Site route = Site
-  {
-  -- | A list of all categories (the /haskell page). Returns a small info
-  -- about a category
-    _getCategories :: route :-
-      "categories"    :> Get '[JSON] (Either ApiError [CategoryInfo])
+  { _getCategories :: route :-
+      Summary "Get all categories"
+      :> "categories"
+      :> Get '[JSON] (Either ApiError [CategoryInfo])
 
-  -- | Details of a single category (and items in it, etc)
   , _getCategory :: route :-
-      "category"      :> Capture "id" (Uid Category)
-                      :> Get '[JSON] (Either ApiError CCategoryDetail)
+      Summary "Get details of a category, and its full contents"
+      :> "category"
+      :> Capture "id" (Uid Category)
+      :> Get '[JSON] (Either ApiError CCategoryDetail)
   }
   deriving (Generic)
 
@@ -73,10 +75,11 @@ newtype ApiError = ApiError Text
 
 instance A.FromJSON ApiError
 instance A.ToJSON ApiError
+instance ToSchema ApiError
 
 -- | A "light-weight" client type of `Category`, which describes a category info
 data CategoryInfo = CategoryInfo
-  { categoryInfoUid     :: Uid CategoryInfo
+  { categoryInfoUid     :: Uid Category
   , categoryInfoTitle   :: Text
   , categoryInfoCreated :: UTCTime
   , categoryInfoGroup_  :: Text
@@ -85,11 +88,12 @@ data CategoryInfo = CategoryInfo
   deriving (Show, Generic)
 
 instance A.ToJSON CategoryInfo
+instance ToSchema CategoryInfo
 
 -- | Factory to create a `CategoryInfo` from a `Category`
 toCategoryInfo :: Category -> CategoryInfo
 toCategoryInfo Category{..} = CategoryInfo
-  { categoryInfoUid     = bridgeUid _categoryUid
+  { categoryInfoUid     = _categoryUid
   , categoryInfoTitle   = _categoryTitle
   , categoryInfoCreated = _categoryCreated
   , categoryInfoGroup_  = _categoryGroup_
@@ -98,7 +102,7 @@ toCategoryInfo Category{..} = CategoryInfo
 
 -- | A "light-weight" client type of `Category`, which describes a category detail
 data CCategoryDetail = CCategoryDetail
-  { ccdUid :: Uid CCategoryDetail
+  { ccdUid :: Uid Category
   , ccdTitle :: Text
   , ccdGroup :: Text
   , ccdDescription :: CMarkdown
@@ -110,10 +114,12 @@ data CCategoryDetail = CCategoryDetail
 instance A.ToJSON CCategoryDetail where
   toJSON = A.genericToJSON A.defaultOptions
 
+instance ToSchema CCategoryDetail
+
 -- | Factory to create a `CCategoryDetail` from a `Category`
 toCCategoryDetail :: Category -> CCategoryDetail
 toCCategoryDetail Category{..} = CCategoryDetail
-  { ccdUid = bridgeUid _categoryUid
+  { ccdUid = _categoryUid
   , ccdTitle = _categoryTitle
   , ccdGroup = _categoryGroup_
   , ccdDescription = toCMarkdown _categoryNotes
@@ -123,7 +129,7 @@ toCCategoryDetail Category{..} = CCategoryDetail
 
 -- | Client type of `Item`
 data CItem = CItem
-  { ciUid :: Uid CItem
+  { ciUid :: Uid Item
   , ciName :: Text
   , ciCreated :: UTCTime
   , ciGroup :: Maybe Text
@@ -141,10 +147,12 @@ data CItem = CItem
 instance A.ToJSON CItem where
   toJSON = A.genericToJSON A.defaultOptions
 
+instance ToSchema CItem
+
 -- | Factory to create a `CItem` from an `Item`
 toCItem :: Item -> CItem
 toCItem Item{..} = CItem
-  { ciUid = bridgeUid _itemUid
+  { ciUid = _itemUid
   , ciName = _itemName
   , ciCreated = _itemCreated
   , ciGroup = _itemGroup_
@@ -161,18 +169,19 @@ toCItem Item{..} = CItem
 
 -- | Client type of `Trait`
 data CTrait = CTrait
-  { ctUid :: Uid CTrait
+  { ctUid :: Uid Trait
   , ctContent :: CMarkdown
   } deriving (Show, Generic)
-
 
 instance A.ToJSON CTrait where
   toJSON = A.genericToJSON A.defaultOptions
 
+instance ToSchema CTrait
+
 -- | Factory to create a `CTrait` from a `Trait`
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid = bridgeUid (trait ^. uid)
+  { ctUid = trait ^. uid
   , ctContent = toCMarkdown $ trait ^. content
   }
 
@@ -184,6 +193,8 @@ data CMarkdown = CMarkdown
 
 instance A.ToJSON CMarkdown where
   toJSON = A.genericToJSON A.defaultOptions
+
+instance ToSchema CMarkdown
 
 -- | Type class to create `CMarkdown`
 class ToCMardown md where toCMarkdown :: md -> CMarkdown
@@ -207,14 +218,17 @@ instance ToCMardown MarkdownTree where
     }
 
 ----------------------------------------------------------------------------
--- Helpers
+-- Schema instances
 ----------------------------------------------------------------------------
 
--- | It converts `Uid a` into a more client-side friendly type `Uid b`,
--- where `b` is compatible to bridge it w/ `purescript-bridge` w/o any mess.
---
--- For example: With `Uid Category` we have some issue to bridge
--- it into PureScript. By using `bridgeUid` we can transform this type
--- into a more client-side friendly `Uid CCategoryDetail`
-bridgeUid :: Uid a -> Uid b
-bridgeUid (Uid t) = Uid t
+instance ToParamSchema (Uid a) where
+  toParamSchema _ = mempty
+    & S.type_ .~ SwaggerString
+    & S.format ?~ "Text-based ID"
+
+instance ToSchema (Uid a)
+
+instance ToSchema CategoryStatus
+
+instance ToSchema ItemKind where
+  declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions

@@ -15,6 +15,8 @@ import Imports
 import Data.Acid as Acid
 import Servant
 import Servant.Generic
+import Servant.Swagger
+import Servant.Swagger.UI
 import Network.Wai.Handler.Warp (run)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
@@ -37,19 +39,28 @@ apiServer db = Site {
   _getCategory   = getCategory db
   }
 
+type FullApi =
+  Api :<|>
+  "docs" :> SwaggerSchemaUI "api" "swagger.json"
+
+fullServer :: DB -> Server FullApi
+fullServer db =
+  toServant (apiServer db) :<|>
+  swaggerSchemaUIServer (toSwagger (Proxy @Api))
+
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: AcidState GlobalState -> IO ()
 runApiServer db = do
   say "API is running on port 4400"
-  run 4400 $ corsPolicy $ serve (Proxy @Api) (toServant (apiServer db))
+  run 4400 $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
   where
     corsPolicy :: Middleware
     corsPolicy = cors (const $ Just policy)
     policy :: CorsResourcePolicy
     policy = simpleCorsResourcePolicy
-                -- TODO: Add Guides frontend address (and maybe others resources)
+                -- TODO: Add Guide's frontend address (and maybe others resources)
                 -- to list of `corsOrigins` to allow CORS requests
                 { corsOrigins = Just ([ "http://localhost:3333"
                                       -- ^ Guide's frontend running on localhost
