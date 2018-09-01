@@ -50,6 +50,7 @@ library
       Guide.Api.Server
       Guide.Api.Types
       Guide.Api.Error
+      Guide.Api.Utils
     Guide.Main
     Guide.ServerStuff
     Guide.Session

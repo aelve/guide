@@ -12,7 +12,7 @@
 
 module Guide.Api.Types
   ( Api
-  , CategoryInfo(..)
+  , CCategoryInfo(..)
   , CCategoryDetail(..)
   , CItem(..)
   , CMarkdown(..)
@@ -34,6 +34,7 @@ import Servant.Generic
 import Data.Swagger as S
 
 import Guide.Api.Error
+import Guide.Api.Utils
 import Guide.Types.Core
          ( Category(..), CategoryStatus(..), Item(..), ItemKind
          , Trait, content, uid )
@@ -49,7 +50,7 @@ data Site route = Site
   { _getCategories :: route :-
       Summary "Get all categories"
       :> "categories"
-      :> Get '[JSON] [CategoryInfo]
+      :> Get '[JSON] [CCategoryInfo]
 
   , _getCategory :: route :-
       Summary "Get details of a category, and its full contents"
@@ -73,26 +74,29 @@ type Api = ToServant (Site AsApi)
 ----------------------------------------------------------------------------
 
 -- | A "light-weight" client type of `Category`, which describes a category info
-data CategoryInfo = CategoryInfo
-  { categoryInfoUid     :: Uid Category
-  , categoryInfoTitle   :: Text
-  , categoryInfoCreated :: UTCTime
-  , categoryInfoGroup_  :: Text
-  , categoryInfoStatus  :: CategoryStatus
+data CCategoryInfo = CCategoryInfo
+  { cciUid     :: Uid Category
+  , cciTitle   :: Text
+  , cciCreated :: UTCTime
+  , cciGroup_  :: Text
+  , cciStatus  :: CategoryStatus
   }
   deriving (Show, Generic)
 
-instance A.ToJSON CategoryInfo
-instance ToSchema CategoryInfo
+instance A.ToJSON CCategoryInfo where
+  toJSON = A.genericToJSON jsonOptions
 
--- | Factory to create a `CategoryInfo` from a `Category`
-toCategoryInfo :: Category -> CategoryInfo
-toCategoryInfo Category{..} = CategoryInfo
-  { categoryInfoUid     = _categoryUid
-  , categoryInfoTitle   = _categoryTitle
-  , categoryInfoCreated = _categoryCreated
-  , categoryInfoGroup_  = _categoryGroup_
-  , categoryInfoStatus  = _categoryStatus
+instance ToSchema CCategoryInfo where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Factory to create a `CCategoryInfo` from a `Category`
+toCategoryInfo :: Category -> CCategoryInfo
+toCategoryInfo Category{..} = CCategoryInfo
+  { cciUid     = _categoryUid
+  , cciTitle   = _categoryTitle
+  , cciCreated = _categoryCreated
+  , cciGroup_  = _categoryGroup_
+  , cciStatus  = _categoryStatus
   }
 
 -- | A "light-weight" client type of `Category`, which describes a category detail
@@ -107,9 +111,10 @@ data CCategoryDetail = CCategoryDetail
   deriving (Show, Generic)
 
 instance A.ToJSON CCategoryDetail where
-  toJSON = A.genericToJSON A.defaultOptions
+  toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema CCategoryDetail
+instance ToSchema CCategoryDetail where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Factory to create a `CCategoryDetail` from a `Category`
 toCCategoryDetail :: Category -> CCategoryDetail
@@ -140,9 +145,10 @@ data CItem = CItem
   } deriving (Show, Generic)
 
 instance A.ToJSON CItem where
-  toJSON = A.genericToJSON A.defaultOptions
+  toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema CItem
+instance ToSchema CItem where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Factory to create a `CItem` from an `Item`
 toCItem :: Item -> CItem
@@ -169,9 +175,10 @@ data CTrait = CTrait
   } deriving (Show, Generic)
 
 instance A.ToJSON CTrait where
-  toJSON = A.genericToJSON A.defaultOptions
+  toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema CTrait
+instance ToSchema CTrait where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Factory to create a `CTrait` from a `Trait`
 toCTrait :: Trait -> CTrait
@@ -186,9 +193,7 @@ data CMarkdown = CMarkdown
   , html :: Text
   } deriving (Show, Generic)
 
-instance A.ToJSON CMarkdown where
-  toJSON = A.genericToJSON A.defaultOptions
-
+instance A.ToJSON CMarkdown
 instance ToSchema CMarkdown
 
 -- | Type class to create `CMarkdown`
@@ -228,4 +233,4 @@ instance ToSchema (Uid a) where
 instance ToSchema CategoryStatus
 
 instance ToSchema ItemKind where
-  declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions
+  declareNamedSchema = genericDeclareNamedSchemaUnrestricted schemaOptions

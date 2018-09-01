@@ -17,9 +17,9 @@ import Data.Acid as Acid
 import Guide.Types
 import Guide.State
 import Guide.Utils (Uid)
-import Guide.Api.Types (CategoryInfo, CCategoryDetail, toCategoryInfo, toCCategoryDetail)
+import Guide.Api.Types (CCategoryInfo, CCategoryDetail, toCategoryInfo, toCCategoryDetail)
 
-getCategories :: DB -> Handler [CategoryInfo]
+getCategories :: DB -> Handler [CCategoryInfo]
 getCategories db = do
   liftIO (Acid.query db GetCategories) <&> \xs ->
     map toCategoryInfo xs
