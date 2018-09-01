@@ -179,9 +179,9 @@ renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
                T.readFile "static/category-notes-template.md"
         else return (category^.notes)
       markdownEditor
-        [rows_ "10", class_ " editor "]
+        10 -- rows
         contents
-        (\val -> JS.submitCategoryNotes
-                   (this, category^.uid, category^.notes.mdSource, val))
-        (JS.switchSection (this, "normal" :: Text))
+        (\val -> JS.withThis JS.submitCategoryNotes
+          (this, category^.uid, category^.notes.mdSource, val))
+        (JS.withThis JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"

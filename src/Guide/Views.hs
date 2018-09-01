@@ -643,6 +643,9 @@ wrapPage pageTitle' page = doctypehtml_ $ do
         return false; };
       |]
     includeJS "/js/bundle.js"
+    -- TODO: don't use development build in production!
+    includeJS "https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"
+    includeJS "/components/AEditor.js"
     -- for modal dialogs
     includeJS "/magnific-popup.js"
     includeCSS "/magnific-popup.css"

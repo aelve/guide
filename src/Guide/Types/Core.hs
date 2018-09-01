@@ -126,13 +126,13 @@ hackageName _ Other       = pure Other
 
 instance A.ToJSON ItemKind where
   toJSON (Library x) = A.object [
-    "tag"         A..= ("Library" :: Text),
+    "tag"      A..= ("Library" :: Text),
     "contents" A..= x ]
   toJSON (Tool x) = A.object [
-    "tag"         A..= ("Tool" :: Text),
+    "tag"      A..= ("Tool" :: Text),
     "contents" A..= x ]
   toJSON Other = A.object [
-    "tag"         A..= ("Other" :: Text) ]
+    "tag"      A..= ("Other" :: Text) ]
 
 data ItemKind_v2
   = Library_v2 (Maybe Text)

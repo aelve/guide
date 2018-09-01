@@ -134,6 +134,14 @@ instance JSParams a => JSFunction (a -> JS) where
     let paramList = T.intercalate "," (map fromJS (jsParams args))
     in  JS $ format "{}({});" fName paramList
 
+-- This also produces a Javascript function call, but prefixes the function
+-- with "this."; this is needed for event handlers in Vue for some reason
+newtype WithThis a = WithThis { withThis :: a }
+
+instance JSFunction a => JSFunction (WithThis a) where
+  makeJSFunction fName fParams fDef = WithThis $
+    makeJSFunction ("this." <> fName) fParams fDef
+
 -- This isn't a standalone function and so it doesn't have to be listed in
 -- 'allJSFunctions'.
 assign :: ToJS x => JS -> x -> JS

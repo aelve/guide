@@ -75,6 +75,7 @@ import Text.Digestive (View)
 -- import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
+import Lucid.Base (makeAttribute)
 -- Files
 import qualified System.FilePath.Find as F
 -- -- Network
@@ -179,64 +180,59 @@ checkedIf p x = if p then with x [checked_] else x
 hiddenIf :: With w => Bool -> w -> w
 hiddenIf p x = if p then with x [style_ "display:none;"] else x
 
+-- | @v-bind@ from Vue.js
+vBind :: JS.ToJS a => Text -> a -> Attribute
+vBind x val = makeAttribute (":" <> x) (fromJS (JS.toJS val))
+
+-- | @v-on@ from Vue.js
+--
+-- You can access the event payload with @$event@.
+vOn :: Text -> JS -> Attribute
+vOn x js = makeAttribute ("@" <> x) (fromJS js)
+
 markdownEditor
   :: MonadIO m
-  => [Attribute]
+  => Int            -- ^ How many rows the editor should have
   -> MarkdownBlock  -- ^ Default text
-  -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
+  -> (JS -> JS)     -- ^ “Submit” handler, receiving a variable with the
+                    --   contents of the editor
   -> JS             -- ^ “Cancel” handler
   -> Text           -- ^ Instruction (e.g. “press Ctrl+Enter to save”)
   -> HtmlT m ()
-markdownEditor attr (view mdSource -> s) submit cancel instr = do
-  textareaUid <- randomLongUid
-  let val = JS $ "document.getElementById(\""+|textareaUid|+"\").value"
-  -- Autocomplete has to be turned off thanks to
-  -- <http://stackoverflow.com/q/8311455>.
-  textarea_ ([uid_ textareaUid,
-              autocomplete_ "off",
-              class_ "big fullwidth",
-              onCtrlEnter (submit val),
-              onEscape (JS.assign val s <> cancel) ]
-             ++ attr) $
-    toHtml s
-  button "Save" [class_ " save "] $
-    submit val
-  emptySpan "6px"
-  button "Cancel" [class_ " cancel "] $
-    JS.assign val s <>
-    cancel
-  emptySpan "6px"
-  span_ [class_ "edit-field-instruction"] (toHtml instr)
-  a_ [href_ "/markdown", target_ "_blank"] $
-    img_ [src_ "/markdown.svg", alt_ "markdown supported",
-          class_ " markdown-supported "]
+markdownEditor rows (view mdSource -> src) submit cancel instr = do
+  editorUid <- randomLongUid
+  term "a-editor" [uid_ editorUid,
+                   vBind "init-content" src,
+                   vBind "instruction" instr,
+                   vBind "rows" rows,
+                   vOn "submit-edit" (submit (JS "$event")),
+                   vOn "cancel-edit" cancel]
+    (pure ())
+  script_ (format "new Vue({el: '#{}'});" editorUid)
 
 smallMarkdownEditor
   :: MonadIO m
-  => [Attribute]
+  => Int            -- ^ How many rows the editor should have
   -> MarkdownInline -- ^ Default text
-  -> (JS -> JS)     -- ^ “Submit” handler, receiving the contents of the editor
+  -> (JS -> JS)     -- ^ “Submit” handler, receiving a variable with the
+                    --   contents of the editor
   -> Maybe JS       -- ^ “Cancel” handler (if “Cancel” is needed)
   -> Text           -- ^ Instruction (e.g. “press Enter to add”)
+  -> Maybe Text     -- ^ Placeholder
   -> HtmlT m ()
-smallMarkdownEditor attr (view mdSource -> s) submit mbCancel instr = do
-  textareaId <- randomLongUid
-  let val = JS $ "document.getElementById(\""+|textareaId|+"\").value"
-  textarea_ ([class_ "fullwidth", uid_ textareaId, autocomplete_ "off"] ++
-             [onEnter (submit val)] ++
-             [onEscape cancel | Just cancel <- [mbCancel]] ++
-             attr) $
-    toHtml s
-  br_ []
-  for_ mbCancel $ \cancel -> do
-    textButton "cancel" $
-      JS.assign val s <>
-      cancel
-  span_ [style_ "float:right"] $ do
-    span_ [class_ "edit-field-instruction"] (toHtml instr)
-    a_ [href_ "/markdown", target_ "_blank"] $
-      img_ [src_ "/markdown.svg", alt_ "markdown supported",
-            class_ " markdown-supported "]
+smallMarkdownEditor rows (view mdSource -> src) submit mbCancel instr mbPlaceholder = do
+  editorUid <- randomLongUid
+  term "a-editor-mini" ([uid_ editorUid,
+                         vBind "init-content" src,
+                         vBind "instruction" instr,
+                         vBind "rows" rows] ++
+                         map (vBind "placeholder") (maybeToList mbPlaceholder) ++
+                         [vOn "submit-edit" (submit (JS "$event"))] ++
+                         case mbCancel of {
+                           Nothing -> [vBind "allow-cancel" False];
+                           Just cancel -> [vOn "cancel-edit" cancel]; })
+    (pure ())
+  script_ (format "new Vue({el: '#{}'});" editorUid)
 
 thisNode :: MonadIO m => HtmlT m JQuerySelector
 thisNode = do

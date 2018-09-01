@@ -147,7 +147,7 @@ renderItemDescription item = cached (CacheItemDescription (item^.uid)) $
   mustache "item-description" $ A.object [
     "item" A..= item ]
 
--- | Render the “ecosystem” secion..
+-- | Render the “ecosystem” section.
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
 renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
@@ -174,11 +174,11 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
         [style_ "width:12px;opacity:0.5", class_ " edit-item-ecosystem "] $
         JS.switchSection (this, "normal" :: Text)
       markdownEditor
-        [rows_ "3", class_ " editor "]
+        3 -- rows
         (item^.ecosystem)
-        (\val -> JS.submitItemEcosystem
-                   (this, item^.uid, item^.ecosystem.mdSource, val))
-        (JS.switchSection (this, "normal" :: Text))
+        (\val -> JS.withThis JS.submitItemEcosystem
+          (this, item^.uid, item^.ecosystem.mdSource, val))
+        (JS.withThis JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
 -- | Render the “traits” section.
@@ -205,12 +205,14 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
           mapM_ (renderTrait (item^.uid)) (item^.pros)
         section "editable" [] $ do
           smallMarkdownEditor
-            [rows_ "3", placeholder_ "add pro"]
+            3 -- rows
             (toMarkdownInline "")
-            (\val -> JS.addPro (JS.selectUid listUid, item^.uid, val) <>
-                     JS.assign val ("" :: Text))
+            -- TODO: clearing the editor should be moved into 'addPro' and
+            -- done only if the request succeeds
+            (\val -> JS.withThis JS.addPro (JS.selectUid listUid, item^.uid, val))
             Nothing
             "press Ctrl+Enter or Enter to add"
+            (Just "add pro") -- placeholder
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 
@@ -231,12 +233,14 @@ renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
           mapM_ (renderTrait (item^.uid)) (item^.cons)
         section "editable" [] $ do
           smallMarkdownEditor
-            [rows_ "3", placeholder_ "add con"]
+            3 -- rows
             (toMarkdownInline "")
-            (\val -> JS.addCon (JS.selectUid listUid, item^.uid, val) <>
-                     JS.assign val ("" :: Text))
+            -- TODO: clearing the editor should be moved into 'addCon' and
+            -- done only if the request succeeds
+            (\val -> JS.withThis JS.addCon (JS.selectUid listUid, item^.uid, val))
             Nothing
             "press Ctrl+Enter or Enter to add"
+            (Just "add con") -- placeholder
           textButton "edit off" $
             JS.switchSectionsEverywhere(this, "normal" :: Text)
 

@@ -47,6 +47,19 @@ $ stack test
   * `favicon` – code used to generate a favicon
   * `guidejs` – client side JavaScript
 
+### Frontend
+
+To lint Vue.js components, you need to do:
+
+```bash
+npm install --global eslint eslint-plugin-vue@next
+cd static/components
+eslint .
+```
+
+Maybe there's a better way than `npm install --global`, I don't know. I'm
+not a Node.js guy.
+
 ### Notes
 
 When you see something like
