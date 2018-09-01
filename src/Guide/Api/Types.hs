@@ -59,11 +59,9 @@ type Api = ToServant (Site AsApi)
 
 ----------------------------------------------------------------------------
 -- Client types
-
--- These are more "light-weight" Haskell types of `Guide`,
--- which can be bridged into PureScript types by using `purescript-bridge`
--- w/o any issues.
-
+--
+-- These are more "light-weight" Haskell types of `Guide`.
+--
 -- Furthermore using these "light-weight" types we keep all data small
 -- to send these over the wire w/o having deep nested data,
 -- we might not need on front-end.
