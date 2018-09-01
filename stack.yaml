@@ -19,6 +19,7 @@ extra-deps:
 - cmark-sections-0.3.0.1
 - acid-state-0.14.3
 - servant-swagger-ui-redoc-0.3.0.1.21.2
+- servant-swagger-ui-0.3.0.3.13.2
 - file-embed-lzma-0
 - servant-0.14.1
 - servant-swagger-1.1.5

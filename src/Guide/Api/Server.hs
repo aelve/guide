@@ -17,6 +17,7 @@ import Servant
 import Servant.API.Generic
 import Servant.Server.Generic
 import Servant.Swagger
+import Servant.Swagger.UI
 import Servant.Swagger.UI.ReDoc
 import Data.Swagger.Lens
 import Network.Wai.Handler.Warp (run)
@@ -52,14 +53,18 @@ apiServer db = Site
 
 type FullApi =
   Api :<|>
-  SwaggerSchemaUI "api" "swagger.json"
+  SwaggerSchemaUI "api" "swagger.json" :<|>
+  SwaggerSchemaUI "try" "swagger.json"
 
 fullServer :: DB -> Server FullApi
 fullServer db =
   toServant (apiServer db) :<|>
-  redocSchemaUIServer (toSwagger (Proxy @Api)
-                         & info.title   .~ "Aelve Guide API"
-                         & info.version .~ "alpha")
+  redocSchemaUIServer doc :<|>
+  swaggerSchemaUIServer doc
+  where
+    doc = toSwagger (Proxy @Api)
+            & info.title   .~ "Aelve Guide API"
+            & info.version .~ "alpha"
 
 -- | Serve the API on port 4400.
 --
@@ -77,5 +82,7 @@ runApiServer db = do
                 -- to list of `corsOrigins` to allow CORS requests
                 { corsOrigins = Just ([ "http://localhost:3333"
                                       -- ^ Guide's frontend running on localhost
+                                      , "http://localhost:4400"
+                                      -- ^ The /try endpoint of the API
                                       ], True)
                 }
