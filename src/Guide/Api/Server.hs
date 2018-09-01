@@ -17,6 +17,7 @@ import Servant
 import Servant.Generic
 import Servant.Swagger
 import Servant.Swagger.UI.ReDoc
+import Data.Swagger.Lens
 import Network.Wai.Handler.Warp (run)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
@@ -42,7 +43,9 @@ type FullApi =
 fullServer :: DB -> Server FullApi
 fullServer db =
   toServant (apiServer db) :<|>
-  redocSchemaUIServer (toSwagger (Proxy @Api))
+  redocSchemaUIServer (toSwagger (Proxy @Api)
+                         & info.title   .~ "Aelve Guide API"
+                         & info.version .~ "alpha")
 
 -- | Serve the API on port 4400.
 --
