@@ -108,7 +108,7 @@ import Imports
 import qualified Data.Map as M
 import qualified Data.Set as S
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- Network
 import Data.IP
 -- acid-state
@@ -245,26 +245,26 @@ traitById uid' = singular $
   (pros.each . filtered (hasUid uid')) `failing`
   (cons.each . filtered (hasUid uid')) `failing`
   error ("traitById: couldn't find trait with uid " ++
-         T.unpack (uidToText uid'))
+         toString (uidToText uid'))
 
 categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
   categories.each . filtered (hasUid catId) `failing`
   error ("categoryById: couldn't find category with uid " ++
-         T.unpack (uidToText catId))
+         toString (uidToText catId))
 
 itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
   categories.each . items.each . filtered (hasUid itemId) `failing`
   error ("itemById: couldn't find item with uid " ++
-         T.unpack (uidToText itemId))
+         toString (uidToText itemId))
 
 findCategoryByItem :: Uid Item -> GlobalState -> Category
 findCategoryByItem itemId s =
   fromMaybe (error err) (find hasItem (s^.categories))
   where
     err = "findCategoryByItem: couldn't find category with item with uid " ++
-          T.unpack (uidToText itemId)
+          toString (uidToText itemId)
     hasItem category = itemId `elem` (category^..items.each.uid)
 
 -- | 'PublicDB' contains all safe data from 'GlobalState'.

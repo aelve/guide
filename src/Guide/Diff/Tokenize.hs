@@ -14,13 +14,13 @@ where
 import Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 import Data.List.Split
 
 
 -- | Break text into tokens.
 tokenize :: Text -> [Text]
-tokenize = consolidate . map T.toStrict . break' . T.toString
+tokenize = consolidate . map toText . break' . toString
 
 -- | Break a string into words, spaces, and special characters.
 break' :: String -> [String]
@@ -84,7 +84,7 @@ consolidate [] = []
 
 -- | Helpful view pattern for matching operators
 op :: [Text] -> (Text, [Text])
-op = over _1 mconcat . span (isOpToken . T.unpack)
+op = over _1 mconcat . span (isOpToken . toString)
   where
     isOpToken [c] = c `elem` (":!#$%&*+./<=>?@\\^|-~" :: String)
     isOpToken _   = False

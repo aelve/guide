@@ -16,8 +16,6 @@ where
 
 import Imports
 
--- text
-import qualified Data.Text.All as T
 -- JSON
 import qualified Data.Aeson as A
 -- network
@@ -33,7 +31,7 @@ import Guide.Utils
 getArchivalStatus :: Manager -> Url -> IO (Either String ArchivalStatus)
 getArchivalStatus manager lnk =
   handle (pure . Left . show @HttpException) $ do
-    req <- setQueryString [("url", Just (T.toByteString lnk))] <$>
+    req <- setQueryString [("url", Just (toByteString lnk))] <$>
                parseRequest waybackUrl
     fromJsonWith responseParser . responseBody <$!> httpLbs req manager
   where

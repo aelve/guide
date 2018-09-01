@@ -19,7 +19,7 @@ HTML
           title  = "edit summary"
           class  = "edit-item-description"
           action = [| editItemDescription(
-                        {{{%js item.uid.uidToText}}},
+                        {{{%js item.uid}}},
                         {{{%js item.description.text}}}); |] }}
     <div class="notes-like">
       {{# item.description.text}}
@@ -38,7 +38,7 @@ HTML
           src    = "/pencil.svg"
           title  = "quit editing summary"
           class  = "edit-item-description"
-          action = [| stopEditingItemDescription({{{%js item.uid.uidToText}}}); |] }}
+          action = [| stopEditingItemDescription({{{%js item.uid}}}); |] }}
     <div class="editor"></div>
   </div>
 </div>

@@ -11,7 +11,7 @@ author:              Artyom
 maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
-tested-with:         GHC == 8.2.2
+tested-with:         GHC == 8.4
 build-type:          Custom
 extra-source-files:
   CHANGELOG.md
@@ -85,13 +85,14 @@ library
     Guide.Routes
   other-modules:
     Imports
+    To
   build-depends:       Spock
                      , Spock-digestive
-                     , Spock-lucid == 0.4.*
-                     , acid-state == 0.14.*
-                     , aeson == 1.2.*
+                     , Spock-lucid
+                     , acid-state
+                     , aeson
                      , aeson-pretty
-                     , base == 4.10.*
+                     , base < 5
                      , base-prelude
                      , bytestring
                      , cereal
@@ -110,10 +111,10 @@ library
                      , feed == 1.0.*
                      , filemanip == 0.3.6.*
                      , filepath
-                     , fmt == 0.4.*
+                     , fmt
                      , focus
                      , friendly-time == 0.4.*
-                     , fsnotify == 0.2.*
+                     , fsnotify
                      , hashable
                      , haskell-src-meta
                      , http-api-data
@@ -139,7 +140,7 @@ library
                      , safecopy-migrate == 0.2.*
                      , say
                      , scrypt
-                     , servant-generic
+                     , servant
                      , servant-server
                      , servant-swagger
                      , servant-swagger-ui-redoc
@@ -152,7 +153,6 @@ library
                      , stm-containers >= 0.2.14 && < 0.3
                      , template-haskell
                      , text
-                     , text-all >= 0.4.1.0 && < 0.5
                      , time >= 1.5
                      , transformers
                      , uniplate
@@ -210,7 +210,7 @@ test-suite tests
                      , quickcheck-text < 0.2
                      , slave-thread
                      , tagsoup < 1
-                     , text-all
+                     , text
                      , transformers
                      , webdriver >= 0.8.4 && < 0.9
   hs-source-dirs:      tests

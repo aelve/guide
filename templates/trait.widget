@@ -5,9 +5,9 @@ A list item containing a trait (pro/con), together with some JS that lets the us
 
 Required context:
 
-  * item.uid.uidToText
+  * item.uid
 
-  * trait.uid.uidToText
+  * trait.uid
     trait.content.html
     trait.content.text
 
@@ -15,7 +15,7 @@ Required context:
 HTML
 ============================================================
 
-<li id="trait-{{trait.uid.uidToText}}">
+<li id="trait-{{trait.uid}}">
 
   <div class="section normal editable shown noscript-shown">
     {{{trait.content.html}}}
@@ -26,22 +26,22 @@ HTML
       {{> small-control
             src    = "/arrow-thick-top.svg"
             title  = "move trait up"
-            action = [| moveTrait("up",{{{%js item.uid.uidToText}}},{{{%js trait.uid.uidToText}}}); |] }}
+            action = [| moveTrait("up",{{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
       {{> small-control
             src    = "/arrow-thick-bottom.svg"
             title  = "move trait down"
-            action = [| moveTrait("down",{{{%js item.uid.uidToText}}},{{{%js trait.uid.uidToText}}}); |] }}
+            action = [| moveTrait("down",{{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
       {{> space px=16}}
       {{> small-control
             src    = "/pencil.svg"
             title  = "edit trait"
-            action = [| editTrait({{{%js item.uid.uidToText}}}, {{{%js trait.uid.uidToText}}},
+            action = [| editTrait({{{%js item.uid}}}, {{{%js trait.uid}}},
                                   {{{%js trait.content.text}}}); |] }}
       {{> space px=16}}
       {{> small-control
             src    = "/x.svg"
             title  = "delete trait"
-            action = [| deleteTrait({{{%js item.uid.uidToText}}},{{{%js trait.uid.uidToText}}}); |] }}
+            action = [| deleteTrait({{{%js item.uid}}},{{{%js trait.uid}}}); |] }}
     </div>
   </div>
 

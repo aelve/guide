@@ -7,8 +7,8 @@ module MergeSpec (tests) where
 
 import BasePrelude
 -- Text
-import qualified Data.Text.All as T
-import Data.Text.All (Text)
+import qualified Data.Text as T
+import Data.Text (Text)
 -- Testing
 import Test.Hspec
 import Test.Hspec.QuickCheck

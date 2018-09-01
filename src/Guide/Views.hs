@@ -38,9 +38,9 @@ import Guide.Views.Category as X
 
 import Imports
 
-import Data.Monoid ((<>))
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
@@ -246,7 +246,7 @@ renderStats globalState acts = do
   let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
         where
           err = error ("renderStats: couldn't find category with uid = " ++
-                       T.unpack (uidToText catId))
+                       toString (uidToText catId))
   table_ [class_ "sortable"] $ do
     thead_ $ tr_ $ do
       th_ [class_ "sorttable_nosort"] "Category"
@@ -376,13 +376,13 @@ renderEdit globalState edit = do
   let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
         where
           err = error ("renderEdit: couldn't find category with uid = " ++
-                       T.unpack (uidToText catId))
+                       toString (uidToText catId))
   let findItem itemId = (category, item)
         where
           getItems = view (items <> itemsDeleted)
           ourCategory = any (hasUid itemId) . getItems
           err = error ("renderEdit: couldn't find item with uid = " ++
-                       T.unpack (uidToText itemId))
+                       toString (uidToText itemId))
           category = fromMaybe err (find ourCategory allCategories)
           item = fromJust (find (hasUid itemId) (getItems category))
   let findTrait itemId traitId = (category, item, trait)
@@ -390,7 +390,7 @@ renderEdit globalState edit = do
           (category, item) = findItem itemId
           getTraits = view (cons <> consDeleted <> pros <> prosDeleted)
           err = error ("renderEdit: couldn't find trait with uid = " ++
-                       T.unpack (uidToText traitId))
+                       toString (uidToText traitId))
           trait = fromMaybe err (find (hasUid traitId) (getTraits item))
 
   let printCategory catId = do
@@ -851,8 +851,8 @@ renderAdminLinks globalState = do
     div_ [id_ "stats"] $ do
       manager  <- liftIO $ newManager tlsManagerSettings
       fullList <- liftIO $ forM allLinks $ \(lnk, location) -> do
-            lnkStatus <- if isURI (T.unpack lnk) then (do
-                        request <- parseRequest $ T.unpack lnk
+            lnkStatus <- if isURI (toString lnk) then (do
+                        request <- parseRequest $ toString lnk
                         status' <- responseStatus <$> httpNoBody request manager
                         print (lnk, status')
                         pure $ case status' of
@@ -930,7 +930,7 @@ renderArchivalStatus = \case
   Left err -> "couldn't get info from archive.org: " <> toHtml err
   Right ArchivalStatus{..}
     | asAvailable -> do
-        a_ [href_ asUrl] (toHtml (T.toStrict (dateDashF asTimestamp)))
+        a_ [href_ asUrl] (toHtml (toText (dateDashF asTimestamp)))
         unless (asStatus == "200") $
           toHtml (format " (status: {})" asStatus :: Text)
     | otherwise -> "unavailable"

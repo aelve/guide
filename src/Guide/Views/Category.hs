@@ -23,7 +23,7 @@ where
 import Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text.IO as T
 -- HTML
 import Lucid hiding (for_)
 

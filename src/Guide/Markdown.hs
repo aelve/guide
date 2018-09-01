@@ -41,7 +41,7 @@ where
 import Imports hiding (some)
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- ByteString
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString as BS
@@ -102,9 +102,9 @@ renderMD :: [MD.Node] -> ByteString
 renderMD ns
   -- See https://github.com/jgm/cmark/issues/147
   | any isInlineNode ns =
-      T.toByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
+      toByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
   | otherwise =
-      T.toByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+      toByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
@@ -203,13 +203,13 @@ shortcutLinks node@(MD.Node pos (LINK url title) ns) | "@" <- T.take 1 url =
           MD.Node pos (LINK link title) (map shortcutLinks ns)
         Warning warnings link ->
           let warningText = "[warnings when processing shortcut link: " <>
-                            T.pack (intercalate ", " warnings) <> "]"
+                            toText (intercalate ", " warnings) <> "]"
               warningNode = MD.Node Nothing (TEXT warningText) []
           in  MD.Node pos (LINK link title)
                              (warningNode : map shortcutLinks ns)
         Failure err ->
           let errorText = "[error when processing shortcut link: " <>
-                          T.pack err <> "]"
+                          toText err <> "]"
           in  MD.Node Nothing (TEXT errorText) []
 shortcutLinks (MD.Node pos tp ns) =
   MD.Node pos tp (map shortcutLinks ns)
@@ -233,9 +233,9 @@ parseLink = either (Left . show) Right . parse p ""
     p :: Parsec Void Text (Text, Maybe Text, Maybe Text)
     p = do
       char '@'
-      (,,) <$> T.pack <$> shortcut
-           <*> optional (T.pack <$> opt)
-           <*> optional (T.pack <$> text)
+      (,,) <$> toText <$> shortcut
+           <*> optional (toText <$> opt)
+           <*> optional (toText <$> text)
 
 toMarkdownInline :: Text -> MarkdownInline
 toMarkdownInline s = MarkdownInline {
@@ -306,11 +306,11 @@ instance Show MarkdownTree where
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
     "text" A..= (md^.mdSource),
-    "html" A..= T.toStrict (md^.mdHtml) ]
+    "html" A..= toText (md^.mdHtml) ]
 instance A.ToJSON MarkdownBlock where
   toJSON md = A.object [
     "text" A..= (md^.mdSource),
-    "html" A..= T.toStrict (md^.mdHtml) ]
+    "html" A..= toText (md^.mdHtml) ]
 instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
     "text" A..= (md^.mdSource) ]

@@ -14,7 +14,8 @@ import Imports
 
 import Data.Acid as Acid
 import Servant
-import Servant.Generic
+import Servant.API.Generic
+import Servant.Server.Generic
 import Servant.Swagger
 import Servant.Swagger.UI.ReDoc
 import Data.Swagger.Lens

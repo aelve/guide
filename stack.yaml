@@ -1,4 +1,4 @@
-resolver: lts-11.13
+resolver: lts-12.4
 
 packages:
 - location: .
@@ -7,19 +7,30 @@ nix:
   shell-file: shell.nix
 
 extra-deps:
-- text-all-0.4.2
-- cmark-sections-0.3.0.1
-- fmt-0.4.0.0
+- Spock-0.13.0.0
+- Spock-core-0.13.0.0
 - Spock-digestive-0.3.0.0
 - digestive-functors-0.8.4.0
-- servant-generic-0.1.0.3
+- Spock-lucid-0.4.0.1
+- reroute-0.5.0.0
+- cmark-0.5.6
+- cmark-highlight-0.2.0.0
+- fmt-0.6
+- cmark-sections-0.3.0.1
 - acid-state-0.14.3
 - servant-swagger-ui-redoc-0.3.0.1.21.2
 - file-embed-lzma-0
+- servant-0.14.1
+- servant-swagger-1.1.5
 - servant-swagger-ui-core-0.3.1
+- swagger2-2.3
 - git: https://github.com/neongreen/patches-vector
   commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705
 - git: https://github.com/aelve/stache-plus
-  commit: e2a8d986bd4014f889d3fa60a64e8db0ea199885
+  commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
 - git: https://github.com/aelve/safecopy-migrate
   commit: c401315122f04624e5e848d77f9eaa948e38c21b
+- git: https://github.com/neongreen/webdriver-utils
+  commit: 34a7ae7358ec738cc8ab94569693f7571433f153
+  subdirs:
+  - hspec-webdriver

@@ -18,7 +18,8 @@ module Guide.JS where
 import Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
+import qualified Data.Text.Lazy.Builder as B
 -- Interpolation
 import NeatInterpolation
 
@@ -27,7 +28,7 @@ import Guide.Utils
 
 -- | Javascript code.
 newtype JS = JS {fromJS :: Text}
-  deriving (Show, T.Buildable, Monoid)
+  deriving (Show, Buildable, Semigroup, Monoid)
 
 -- | A concatenation of all Javascript functions defined in this module.
 allJSFunctions :: JS
@@ -72,9 +73,9 @@ instance ToJS JS where
 instance ToJS Text where
   toJS = JS . escapeJSString
 instance ToJS Integer where
-  toJS = JS . T.show
+  toJS = JS . toText . show
 instance ToJS Int where
-  toJS = JS . T.show
+  toJS = JS . toText . show
 instance ToJS (Uid a) where
   toJS = toJS . uidToText
 
@@ -124,7 +125,7 @@ instance JSFunction JS where
   makeJSFunction fName fParams fDef =
     let paramList = T.intercalate "," fParams
     in JS $ format "function "+|fName|+"("+|paramList|+") {\n"
-                +|indent 2 (build fDef)|+
+                +|indentF 2 (build fDef)|+
             "}\n"
 
 -- This generates a function that takes arguments and produces a Javascript
@@ -699,12 +700,12 @@ saveToArchiveOrg =
 
 escapeJSString :: Text -> Text
 escapeJSString s =
-    T.toStrict $
-    T.bsingleton '"' <> quote s <> T.bsingleton '"'
+    toText $
+    B.singleton '"' <> quote s <> B.singleton '"'
   where
     quote q = case T.uncons t of
-      Nothing       -> T.toBuilder h
-      Just (!c, t') -> T.toBuilder h <> escape c <> quote t'
+      Nothing       -> toBuilder h
+      Just (!c, t') -> toBuilder h <> escape c <> quote t'
       where
         (h, t) = T.break isEscape q
     -- 'isEscape' doesn't mention \n, \r and \t because they are handled by
@@ -720,12 +721,12 @@ escapeJSString s =
     escape '\t' = "\\t"
     escape c
       | c < '\x20' || c == '\x2028' || c == '\x2029' =
-          "\\u" <> T.left 4 '0' (T.hex (fromEnum c))
+          "\\u" <> padLeftF 4 '0' (hexF (fromEnum c))
       | otherwise =
-          T.bsingleton c
+          B.singleton c
 
 newtype JQuerySelector = JQuerySelector Text
-  deriving (ToJS, T.Buildable)
+  deriving (ToJS, Buildable)
 
 selectId :: Text -> JQuerySelector
 selectId x = JQuerySelector $ format "#{}" x

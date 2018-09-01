@@ -8,13 +8,16 @@ the "Prelude".)
 module Imports
 (
   module X,
-  LByteString
+  LByteString,
+  LText,
 )
 where
 
 
 import           BasePrelude            as X
   hiding (Category, GeneralCategory, lazy, Handler, diff, option)
+-- Conversions
+import           To                     as X
 -- Lists
 import           Data.List.Extra        as X (dropEnd, takeEnd)
 import           Data.List.Index        as X
@@ -28,7 +31,7 @@ import           Control.Monad.Except   as X
 import           Data.ByteString        as X (ByteString)
 import           Data.Map               as X (Map)
 import           Data.Set               as X (Set)
-import           Data.Text.All          as X (LText, Text)
+import           Data.Text              as X (Text)
 -- Time
 import           Data.Time              as X
 -- Files
@@ -38,11 +41,12 @@ import           System.FilePath        as X
 import           Control.DeepSeq        as X
 -- Hashable
 import           Data.Hashable          as X
--- Lazy bytestring
+-- Lazy
 import qualified Data.ByteString.Lazy   as BSL
+import qualified Data.Text.Lazy         as TL
 -- Formatting
 import           Fmt                    as X
 
 
 type LByteString = BSL.ByteString
--- LText is already provided by Data.Text.All
+type LText = TL.Text

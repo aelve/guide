@@ -10,7 +10,7 @@ where
 import Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- Sets
 import qualified Data.Set as S
 

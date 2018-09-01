@@ -69,7 +69,8 @@ import Data.List.Split
 import qualified Data.Map as M
 -- import Data.Tree
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 -- digestive-functors
 import Text.Digestive (View)
 -- import NeatInterpolation
@@ -299,7 +300,7 @@ mustache f v = do
   when (null templates) $
     error "View.mustache: no HTML templates found in templates/"
   parsed <- for templates $ \(tname, t) -> do
-    let pname = fromString (T.unpack tname)
+    let pname = fromString (toString tname)
     case compileMustacheText pname t of
       Left e -> error $ printf "View.mustache: when parsing %s: %s"
                                tname (parseErrorPretty e)
@@ -340,13 +341,13 @@ readWidget fp = liftIO $ do
       sectionTypeP = choice [
         do string "HTML"
            HTML_ <$> choice [
-             string ": " >> (T.pack <$> some anyChar),
-             return (T.pack (takeBaseName fp)) ],
+             string ": " >> (toText <$> some anyChar),
+             return (toText (takeBaseName fp)) ],
         string "JS" $> JS_,
         string "CSS" $> CSS_,
         string "Description" $> Description_,
         do string "Note ["
-           Note_ . T.pack <$> someTill anyChar (char ']') ]
+           Note_ . toText <$> someTill anyChar (char ']') ]
   let parseSectionType t = case parse (sectionTypeP <* eof) fp t of
         Right x -> x
         Left e -> error $ printf "invalid section name: '%s'\n%s"

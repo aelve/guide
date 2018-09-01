@@ -17,7 +17,6 @@ import GHC.TypeLits
 import Servant
 import Servant.Swagger
 import Data.Swagger
-import qualified Data.Text.All as T
 
 
 -- Taken from https://github.com/haskell-servant/servant-swagger/issues/59
@@ -34,11 +33,11 @@ instance
       code = natVal (Proxy :: Proxy code)
       desc = symbolVal (Proxy :: Proxy desc)
       responseSchema = mempty
-        & description .~ T.toStrict desc
+        & description .~ toText desc
 
 instance HasLink sub => HasLink (ErrorResponse code desc :> sub) where
-    type MkLink (ErrorResponse code desc :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (ErrorResponse code desc :> sub) a = MkLink sub a
+    toLink f _ l = toLink f (Proxy :: Proxy sub) l
 
 instance HasServer api ctx => HasServer (ErrorResponse code desc :> api) ctx where
   type ServerT (ErrorResponse code desc :> api) m = ServerT api m

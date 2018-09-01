@@ -33,7 +33,7 @@ import Imports
 import qualified Data.Map as M
 import Data.Tree
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text.IO as T
 -- HTML
 import Lucid hiding (for_)
 -- JSON

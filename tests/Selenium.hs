@@ -64,8 +64,8 @@ import Control.Monad.Loops
 -- Containers
 import qualified Data.Set as Set
 -- Text
-import Data.Text.All (Text)
-import qualified Data.Text.All as T
+import Data.Text (Text)
+import qualified Data.Text as T
 -- Testing
 import Test.Hspec.WebDriver hiding
   (getText, shouldHaveAttr, shouldHaveText, click, cssProp, attr,
@@ -88,7 +88,7 @@ getLink s = do
   linkElems <- selectAll ((e :& "a") :| (e :// "a"))
   links <- nub . catMaybes <$> mapM (flip attr "href") linkElems
   case links of
-    [x] -> return (T.toString x)
+    [x] -> return (T.unpack x)
     []  -> expectationFailure $
              printf "expected %s to contain a link" (show s)
     _   -> expectationFailure $
@@ -349,7 +349,7 @@ fontSize s = do
   case mbProp of
     Nothing -> expectationFailure $
                  printf "expected %s to have font-size" (show s)
-    Just fs -> case reads (T.toString fs) of
+    Just fs -> case reads (T.unpack fs) of
       [(d, "px")] -> return d
       _ -> expectationFailure $
              printf "couldn't parse font-size of %s: %s" (show s) (show fs)

@@ -34,10 +34,9 @@ module Guide.Api.Types
 import Imports
 
 import qualified Data.Aeson as A
-import qualified Data.Text.All as T
 import Lucid (toHtml, renderText)
 import Servant
-import Servant.Generic
+import Servant.API.Generic
 import Data.Swagger as S
 
 import Guide.Api.Error
@@ -56,13 +55,13 @@ import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSo
 data Site route = Site
   { _categorySite :: route :-
       BranchTag "Categories" "Working with categories."
-      :> ToServant (CategorySite AsApi)
+      :> ToServant CategorySite AsApi
   , _itemSite :: route :-
       BranchTag "Items" "Working with items."
-      :> ToServant (ItemSite AsApi)
+      :> ToServant ItemSite AsApi
   , _traitSite :: route :-
       BranchTag "Item traits" "Working with item traits."
-      :> ToServant (TraitSite AsApi)
+      :> ToServant TraitSite AsApi
   }
   deriving (Generic)
 
@@ -129,7 +128,7 @@ data TraitSite route = TraitSite
   }
   deriving (Generic)
 
-type Api = ToServant (Site AsApi)
+type Api = ToServant Site AsApi
 
 ----------------------------------------------------------------------------
 -- Client types
@@ -266,19 +265,19 @@ class ToCMardown md where toCMarkdown :: md -> CMarkdown
 instance ToCMardown MarkdownInline where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
-    , html = H $ T.decodeUtf8 $ md^.mdHtml
+    , html = H $ toText $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownBlock where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
-    , html = H $ T.decodeUtf8 $ md^.mdHtml
+    , html = H $ toText $ md^.mdHtml
     }
 
 instance ToCMardown MarkdownTree where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
-    , html = H $ T.toStrict . renderText $ toHtml md
+    , html = H $ toText . renderText $ toHtml md
     }
 
 ----------------------------------------------------------------------------

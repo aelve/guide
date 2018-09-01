@@ -25,7 +25,7 @@ import qualified Text.Feed.Types as Feed
 import qualified Text.Feed.Util  as Feed
 import qualified Text.Atom.Feed  as Atom
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- Web
 import Web.Spock hiding (head, get, renderRoute, text)
 import qualified Web.Spock as Spock
@@ -363,7 +363,7 @@ otherMethods = do
         feedLastUpdate = case sortedItems of
           item:_ -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
           _      -> ""
-    let feedBase = Atom.nullFeed feedUrl feedTitle (T.toStrict feedLastUpdate)
+    let feedBase = Atom.nullFeed feedUrl feedTitle (toText feedLastUpdate)
     entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
     atomFeed $ feedBase {
       Atom.feedEntries = entries,
@@ -380,7 +380,7 @@ adminMethods = do
     (edit, _) <- dbQuery (GetEdit n)
     res <- undoEdit edit
     case res of
-      Left err -> Spock.text (T.pack err)
+      Left err -> Spock.text (toText err)
       Right () -> do invalidateCacheForEdit edit
                      dbUpdate (RemovePendingEdit n)
                      Spock.text ""
@@ -425,11 +425,11 @@ itemToFeedEntry baseUrl category item = do
   entryContent <- Lucid.renderTextT (renderItemForFeed category item)
   return entryBase {
     Atom.entryLinks = [Atom.nullLink entryLink],
-    Atom.entryContent = Just (Atom.HTMLContent (T.toStrict entryContent)) }
+    Atom.entryContent = Just (Atom.HTMLContent (toText entryContent)) }
   where
     entryLink = baseUrl //
                 format "{}#item-{}" (categorySlug category) (item^.uid)
     entryBase = Atom.nullEntry
       (uidToText (item^.uid))
       (Atom.TextString (item^.name))
-      (T.toStrict (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)))
+      (toText (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)))

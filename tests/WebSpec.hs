@@ -14,8 +14,8 @@ import Control.Monad.Loops
 -- Concurrency
 import qualified SlaveThread as Slave
 -- Text
-import Data.Text.All (Text)
-import qualified Data.Text.All as T
+import Data.Text (Text)
+import qualified Data.Text as T
 -- Files
 import System.Directory
 -- URLs
@@ -472,14 +472,14 @@ markdownTests = session "markdown" $ using [chromeCaps] $ do
 
 parseCategoryURL :: String -> WD (String, String)
 parseCategoryURL url = do
-  case T.stripPrefix "/haskell/" (T.toStrict url) of
+  case T.stripPrefix "/haskell/" (T.pack url) of
     Nothing -> expectationFailure $
                  printf "%s doesn't start with /haskell/" (show url)
     Just u -> do
       let (slug, catId) = T.breakOnEnd "-" u
       slug `shouldSatisfy` ("not null", not . T.null)
       T.last slug `shouldBe` '-'
-      return (T.toString (T.init slug), T.toString catId)
+      return (T.unpack (T.init slug), T.unpack catId)
 
 openGuide :: String -> SpecWith (WdTestSession ())
 openGuide s = wd ("load " ++ s) (openGuidePage s)

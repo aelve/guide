@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
 
@@ -22,7 +23,6 @@ import Data.Aeson
 import Data.Swagger hiding (fieldLabelModifier)
 import Servant
 import Servant.Swagger
-import qualified Data.Text.All as T
 
 
 -- | Nice JSON options.
@@ -49,7 +49,7 @@ instance ToJSON field => ToJSON (field ? help) where
 instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
   declareNamedSchema _ = do
     NamedSchema _ s <- declareNamedSchema (Proxy @a)
-    return $ NamedSchema Nothing (s & description ?~ T.toStrict desc)
+    return $ NamedSchema Nothing (s & description ?~ toText desc)
     where
       desc = symbolVal (Proxy @help)
 
@@ -68,11 +68,11 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
          HasSwagger (BranchTag name desc :> api) where
   toSwagger _ =
     let tag =
-          Tag (T.toStrict $ symbolVal (Proxy @name))
+          Tag (toText $ symbolVal (Proxy @name))
             ((\case
                 "" -> Nothing
                 t -> Just t) .
-             T.toStrict $
+             toText $
              symbolVal (Proxy @desc))
             Nothing
      in toSwagger (Proxy @api) & applyTags [tag]

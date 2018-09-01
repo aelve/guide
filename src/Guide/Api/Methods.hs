@@ -10,8 +10,8 @@ import Imports
 
 import Servant
 import Data.Acid as Acid
-import qualified Data.Text.All as T
-import Data.Text.All (Text)
+import qualified Data.Text as T
+import Data.Text (Text)
 
 import Guide.Types
 import Guide.State

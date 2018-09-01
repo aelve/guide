@@ -9,8 +9,9 @@ import BasePrelude
 -- Lenses
 import Lens.Micro.Platform
 -- Text
-import qualified Data.Text.All as T
-import Data.Text.All (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import Data.Text (Text)
 -- HTML
 import Text.HTML.TagSoup hiding (sections)
 import Lucid (ToHtml, toHtml, renderText)
@@ -144,7 +145,7 @@ getTags :: Text -> [Text]
 getTags html = nub [t | TagOpen t _ <- parseTags html]
 
 htmlToText :: ToHtml a => a -> Text
-htmlToText = T.toStrict . renderText . toHtml
+htmlToText = TL.toStrict . renderText . toHtml
 
 allMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 allMarkdowns f = do

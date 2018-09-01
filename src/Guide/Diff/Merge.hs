@@ -14,7 +14,7 @@ where
 import Imports
 
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- Vector
 import qualified Data.Vector as V
 -- Diffing

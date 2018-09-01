@@ -86,7 +86,7 @@ Vue.component('CategoryItemInfoEdit', {
     // We use 'autocomplete=off' everywhere due to this:
     // http://stackoverflow.com/q/8311455
     template: `
-<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid.uidToText}}', this); return false;">
+<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
   <label for="name">Name</label>
   <input id="name" name="name" value="{{item.name}}"
           type="text" autocomplete="off">
@@ -127,7 +127,7 @@ Vue.component('CategoryItemInfoEdit', {
   <div class="form-btn-group">
     <input value="Save" class="save" type="submit">
     <input value="Cancel" class="cancel" type="button"
-          onclick="itemInfoCancelEdit('{{item.uid.uidToText}}');">
+          onclick="itemInfoCancelEdit('{{item.uid}}');">
   </div>
 </form>
 `,

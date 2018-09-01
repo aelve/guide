@@ -29,7 +29,8 @@ import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import NeatInterpolation (text)
 -- Web
 import Web.Spock hiding (head, get, text)
@@ -249,20 +250,20 @@ guideApp waiMetrics = do
               guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
             |]
         js <- getJS
-        Spock.bytes $ T.toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
+        Spock.bytes $ toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
-        Spock.bytes $ T.toByteString (styleToCss pygments)
+        Spock.bytes $ toByteString (styleToCss pygments)
       Spock.get "/css.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
-        Spock.bytes $ T.toByteString css
+        Spock.bytes $ toByteString css
       Spock.get "/admin.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
         admincss <- liftIO $ T.readFile "static/admin.css"
-        Spock.bytes $ T.toByteString (css <> admincss)
+        Spock.bytes $ toByteString (css <> admincss)
 
       -- Main page
       Spock.get root $
@@ -350,7 +351,7 @@ loginAction = do
       lucidWithConfig $ renderRegister formHtml
     (v, Just Login {..}) -> do
       loginAttempt <- dbQuery $
-        LoginUser loginEmail (T.toByteString loginUserPassword)
+        LoginUser loginEmail (toByteString loginUserPassword)
       case loginAttempt of
         Right user -> do
           modifySession (sessionUserID .~ Just (user ^. userID))
@@ -376,7 +377,7 @@ signupAction = do
       lucidWithConfig $ renderRegister formHtml
     (v, Just UserRegistration {..}) -> do
       user <- makeUser registerUserName registerUserEmail
-                       (T.toByteString registerUserPassword)
+                       (toByteString registerUserPassword)
       success <- dbUpdate $ CreateUser user
       if success
         then do
@@ -467,6 +468,6 @@ installTerminationCatcher thread = void $ do
 createAdminUser :: GuideApp ()
 createAdminUser = do
   dbUpdate DeleteAllUsers
-  pass <- T.toByteString . _adminPassword <$> getConfig
+  pass <- toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)

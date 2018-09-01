@@ -81,7 +81,7 @@ import qualified Data.Set as S
 -- Randomness
 import System.Random
 -- Text
-import qualified Data.Text.All as T
+import qualified Data.Text as T
 -- Bytestring
 import qualified Data.ByteString.Lazy as BSL
 -- JSON
@@ -177,7 +177,7 @@ sanitiseUrl :: Url -> Maybe Url
 sanitiseUrl u
   | not (sanitaryURI u) = Nothing
   | otherwise =
-      Just $ case URI.uriScheme <$> parse (T.toString u) of
+      Just $ case URI.uriScheme <$> parse (toString u) of
         Nothing -> "http://" <> u
         Just "" -> "http://" <> u
         _       -> u
@@ -254,24 +254,24 @@ data ReferrerView
 instance Show ReferrerView where
   show (RefSearchEngine searchEngine keyword)
     = show searchEngine <> showKeyword keyword
-  show (RefUrl url) = T.toString url
+  show (RefUrl url) = toString url
 
 showKeyword :: Text -> String
 showKeyword "" = ""
-showKeyword kw = " (\"" <> T.toString kw <> "\")"
+showKeyword kw = " (\"" <> toString kw <> "\")"
 
 extractQuery :: Url -> Maybe Query
 extractQuery url = getQuery <$> parse url
   where
-    getQuery = parseQuery . T.toByteString . URI.uriQuery
-    parse = URI.parseURI . T.toString
+    getQuery = parseQuery . toByteString . URI.uriQuery
+    parse = URI.parseURI . toString
 
 -- TODO: different search engines have different parameters, we should use
 -- right ones instead of just trying “whatever fits”
 extractKeyword :: Url -> Maybe Text
 extractKeyword url
   = case extractQuery url of
-      Just query -> T.toStrict <$> lookupQuery query
+      Just query -> toText <$> lookupQuery query
       Nothing    -> Nothing
   where
     lookupQuery :: [(ByteString, Maybe ByteString)] -> Maybe ByteString
@@ -286,9 +286,9 @@ toReferrerView url
       Just se -> RefSearchEngine se (fromMaybe "" keyword)
       Nothing -> RefUrl url
   where
-    uri = URI.parseURI $ T.toString url
+    uri = URI.parseURI $ toString url
     uriAuth = URI.uriAuthority =<< uri
-    domain = T.toStrict . URI.uriRegName <$> uriAuth
+    domain = toText . URI.uriRegName <$> uriAuth
     keyword = extractKeyword url
 
 ----------------------------------------------------------------------------
@@ -312,7 +312,7 @@ sockAddrToIP _ = Nothing
 newtype Uid a = Uid {uidToText :: Text}
   deriving (Generic, Eq, Ord, Show, Data,
             ToHttpApiData, FromHttpApiData,
-            T.Buildable, Hashable)
+            Buildable, Hashable)
 
 instance A.ToJSON (Uid a) where
   toJSON = A.toJSON . uidToText
@@ -327,7 +327,7 @@ instance SafeCopy (Uid a) where
   kind = base
 
 instance IsString (Uid a) where
-  fromString = Uid . T.toStrict
+  fromString = Uid . toText
 
 -- | Generate a random text of given length from characters @a-z@ and digits.
 randomText :: MonadIO m => Int -> m Text
@@ -341,7 +341,7 @@ randomText n = liftIO $ do
         return $ if i < 10 then toEnum (fromEnum '0' + i)
                            else toEnum (fromEnum 'a' + i - 10)
   xs <- replicateM (n-1) randomChar
-  return (T.toStrict (x:xs))
+  return (toText (x:xs))
 
 -- For probability tables, see
 -- https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
@@ -410,14 +410,14 @@ instance AsJson LByteString where
   toJsonPretty = A.encodePretty
 
 instance AsJson Text where
-  fromJson = A.eitherDecode . T.toLByteString
-  toJson = T.toStrict . A.encodeToLazyText
-  toJsonPretty = T.toStrict . A.encodePrettyToTextBuilder
+  fromJson = A.eitherDecode . toLByteString
+  toJson = toText . A.encodeToLazyText
+  toJsonPretty = toText . A.encodePrettyToTextBuilder
 
 instance AsJson LText where
-  fromJson = A.eitherDecode . T.toLByteString
+  fromJson = A.eitherDecode . toLByteString
   toJson = A.encodeToLazyText
-  toJsonPretty = T.toLazy . A.encodePrettyToTextBuilder
+  toJsonPretty = toLText . A.encodePrettyToTextBuilder
 
 instance AsJson A.Value where
   fromJsonWith p v = case A.iparse p v of
@@ -461,7 +461,7 @@ getRequestDetails = do
                                  (Spock.header "X-Forwarded-For")
   mbIP <- case mbForwardedFor of
     Nothing -> sockAddrToIP . Wai.remoteHost <$> Spock.request
-    Just ff -> case readMaybe (T.unpack ip) of
+    Just ff -> case readMaybe (toString ip) of
       Nothing -> error ("couldn't read Forwarded-For address: " ++
                         show ip ++ " (full header: " ++
                         show ff ++ ")")

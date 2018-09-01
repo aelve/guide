@@ -79,25 +79,25 @@ HTML: item-info-controls
           src    = "/arrow-thick-top.svg"
           title  = "move item up"
           class  = "move-item-up"
-          action = [| moveItem("up", {{{%js item.uid.uidToText}}}); |] }}
+          action = [| moveItem("up", {{{%js item.uid}}}); |] }}
     {{> img-button
           src    = "/arrow-thick-bottom.svg"
           title  = "move item down"
           class  = "move-item-down"
-          action = [| moveItem("down", {{{%js item.uid.uidToText}}}); |] }}
+          action = [| moveItem("down", {{{%js item.uid}}}); |] }}
   </span>
   <span>
     {{> img-button
           src    = "/cog.svg"
           title  = "edit item info"
           class  = "edit-item-info"
-          action = [| editItemInfo({{{%js item.uid.uidToText}}}); |] }}
+          action = [| editItemInfo({{{%js item.uid}}}); |] }}
     {{> space em=0.4 }}
     {{> img-button
           src    = "/x.svg"
           title  = "delete item"
           class  = "delete-item"
-          action = [| deleteItem({{{%js item.uid.uidToText}}}); |] }}
+          action = [| deleteItem({{{%js item.uid}}}); |] }}
   </span>
 </div>
 
@@ -177,7 +177,7 @@ CSS
 HTML: item-info-edit-form
 ------------------------------------------------------------
 {{! "autocomplete=off" everywhere: http://stackoverflow.com/q/8311455 }}
-<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid.uidToText}}', this); return false;">
+<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
   <label for="name">
     Name
   </label>
@@ -228,7 +228,7 @@ HTML: item-info-edit-form
   <div class="form-btn-group">
     <input value="Save" class="save" type="submit">
     <input value="Cancel" class="cancel" type="button"
-          onclick="itemInfoCancelEdit('{{item.uid.uidToText}}');">
+          onclick="itemInfoCancelEdit('{{item.uid}}');">
   </div>
 </form>
 
