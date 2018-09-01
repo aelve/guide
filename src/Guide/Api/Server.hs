@@ -16,7 +16,7 @@ import Data.Acid as Acid
 import Servant
 import Servant.Generic
 import Servant.Swagger
-import Servant.Swagger.UI
+import Servant.Swagger.UI.ReDoc
 import Network.Wai.Handler.Warp (run)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
@@ -37,12 +37,12 @@ apiServer db = Site
 
 type FullApi =
   Api :<|>
-  "docs" :> SwaggerSchemaUI "api" "swagger.json"
+  SwaggerSchemaUI "api" "swagger.json"
 
 fullServer :: DB -> Server FullApi
 fullServer db =
   toServant (apiServer db) :<|>
-  swaggerSchemaUIServer (toSwagger (Proxy @Api))
+  redocSchemaUIServer (toSwagger (Proxy @Api))
 
 -- | Serve the API on port 4400.
 --

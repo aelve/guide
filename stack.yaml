@@ -14,6 +14,9 @@ extra-deps:
 - digestive-functors-0.8.4.0
 - servant-generic-0.1.0.3
 - acid-state-0.14.3
+- servant-swagger-ui-redoc-0.3.0.1.21.2
+- file-embed-lzma-0
+- servant-swagger-ui-core-0.3.1
 - git: https://github.com/neongreen/patches-vector
   commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705
 - git: https://github.com/aelve/stache-plus
