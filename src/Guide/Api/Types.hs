@@ -54,13 +54,13 @@ import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSo
 -- | The description of the served API.
 data Site route = Site
   { _categorySite :: route :-
-      BranchTag "Categories" "Working with categories."
+      BranchTag "01. Categories" "Working with categories."
       :> ToServant CategorySite AsApi
   , _itemSite :: route :-
-      BranchTag "Items" "Working with items."
+      BranchTag "02. Items" "Working with items."
       :> ToServant ItemSite AsApi
   , _traitSite :: route :-
-      BranchTag "Item traits" "Working with item traits."
+      BranchTag "03. Item traits" "Working with item traits."
       :> ToServant TraitSite AsApi
   }
   deriving (Generic)
@@ -68,11 +68,14 @@ data Site route = Site
 data CategorySite route = CategorySite
   { _getCategories :: route :-
       Summary "Get a list of available categories"
+      :> Description "Primarily useful for displaying the main page. \
+                     \The returned list is lightweight and doesn't contain \
+                     \categories' contents."
       :> "categories"
       :> Get '[JSON] [CCategoryInfo]
 
   , _getCategory :: route :-
-      Summary "Get full contents of a category"
+      Summary "Get contents of a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
       :> Capture "id" (Uid Category)
@@ -100,6 +103,7 @@ data CategorySite route = CategorySite
 data ItemSite route = ItemSite
   { _createItem :: route :-
       Summary "Create a new item in the given category"
+      :> Description "Returns the ID of the created item."
       :> "item"
       :> Capture "category" (Uid Category)
       :> QueryParam' '[Required, Strict] "name" Text
