@@ -1,0 +1,46 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+
+module Guide.Api.Error
+  ( ErrorResponse
+  ) where
+
+
+import Imports
+
+import GHC.TypeLits
+import Servant
+import Servant.Swagger
+import Data.Swagger
+import qualified Data.Text.All as T
+
+
+-- Taken from https://github.com/haskell-servant/servant-swagger/issues/59
+data ErrorResponse (code :: Nat) (description :: Symbol)
+
+instance
+  ( HasSwagger api
+  , KnownNat code
+  , KnownSymbol desc )
+  => HasSwagger (ErrorResponse code desc :> api) where
+  toSwagger _ = toSwagger (Proxy :: Proxy api)
+    & setResponse (fromInteger code) (return responseSchema)
+    where
+      code = natVal (Proxy :: Proxy code)
+      desc = symbolVal (Proxy :: Proxy desc)
+      responseSchema = mempty
+        & description .~ T.toStrict desc
+
+instance HasLink sub => HasLink (ErrorResponse code desc :> sub) where
+    type MkLink (ErrorResponse code desc :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasServer api ctx => HasServer (ErrorResponse code desc :> api) ctx where
+  type ServerT (ErrorResponse code desc :> api) m = ServerT api m
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s

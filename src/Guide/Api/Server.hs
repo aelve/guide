@@ -30,13 +30,9 @@ import Guide.Api.Types (Api, Site(..))
 import Guide.Api.Methods (getCategories, getCategory)
 
 apiServer :: DB -> Site AsServer
-apiServer db = Site {
-  -- NB. we do @fmap Right@ because some handlers return ApiError and others
-  -- don't. The reason we add 'Right' here and not in those handlers is that
-  -- it makes the signatures of those handlers better reflect their
-  -- properties (i.e. whether they can fail or not).
-  _getCategories = getCategories db        & fmap Right,
-  _getCategory   = getCategory db
+apiServer db = Site
+  { _getCategories = getCategories db
+  , _getCategory   = getCategory db
   }
 
 type FullApi =
