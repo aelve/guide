@@ -32,6 +32,6 @@ extra-deps:
 - git: https://github.com/aelve/safecopy-migrate
   commit: c401315122f04624e5e848d77f9eaa948e38c21b
 - git: https://github.com/neongreen/webdriver-utils
-  commit: 34a7ae7358ec738cc8ab94569693f7571433f153
+  commit: db4a9027e62550c9d27110f36ae26c712acfbe95
   subdirs:
   - hspec-webdriver
