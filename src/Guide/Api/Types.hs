@@ -75,11 +75,11 @@ type Api = ToServant (Site AsApi)
 
 -- | A "light-weight" client type of `Category`, which describes a category info
 data CCategoryInfo = CCategoryInfo
-  { cciUid     :: Uid Category          <?> "Category ID"
-  , cciTitle   :: Text                  <?> "Title"
-  , cciCreated :: UTCTime               <?> "When the category was created"
-  , cciGroup_  :: Text                  <?> "Category group ('grandcategory')"
-  , cciStatus  :: CategoryStatus        <?> "Status (done, in progress, ...)"
+  { cciUid     :: Uid Category          ? "Category ID"
+  , cciTitle   :: Text                  ? "Category title"
+  , cciCreated :: UTCTime               ? "When the category was created"
+  , cciGroup_  :: Text                  ? "Category group ('grandcategory')"
+  , cciStatus  :: CategoryStatus        ? "Status (done, in progress, ...)"
   }
   deriving (Show, Generic)
 
@@ -101,12 +101,12 @@ toCategoryInfo Category{..} = CCategoryInfo
 
 -- | A "light-weight" client type of `Category`, which describes a category detail
 data CCategoryDetail = CCategoryDetail
-  { ccdUid :: Uid Category              <?> "Category ID"
-  , ccdTitle :: Text                    <?> "Title"
-  , ccdGroup :: Text                    <?> "Category group ('grandcategory')"
-  , ccdStatus :: CategoryStatus         <?> "Status, e.g. done, in progress, ..."
-  , ccdDescription :: CMarkdown         <?> "Category description/notes (Markdown)"
-  , ccdItems :: [CItem]                 <?> "All items in the category"
+  { ccdUid :: Uid Category              ? "Category ID"
+  , ccdTitle :: Text                    ? "Category title"
+  , ccdGroup :: Text                    ? "Category group ('grandcategory')"
+  , ccdStatus :: CategoryStatus         ? "Status, e.g. done, in progress, ..."
+  , ccdDescription :: CMarkdown         ? "Category description/notes (Markdown)"
+  , ccdItems :: [CItem]                 ? "All items in the category"
   }
   deriving (Show, Generic)
 
@@ -129,19 +129,17 @@ toCCategoryDetail Category{..} = CCategoryDetail
 
 -- | Client type of `Item`
 data CItem = CItem
-  { ciUid :: Uid Item
-  , ciName :: Text
-  , ciCreated :: UTCTime
-  , ciGroup :: Maybe Text
-  , ciDescription :: CMarkdown
-  , ciPros :: [CTrait]
-  , ciProsDeleted :: [CTrait]
-  , ciCons :: [CTrait]
-  , ciConsDeleted :: [CTrait]
-  , ciEcosystem :: CMarkdown
-  , ciNotes :: CMarkdown
-  , ciLink :: Maybe Url
-  , ciKind :: ItemKind
+  { ciUid :: Uid Item                   ? "Item ID"
+  , ciName :: Text                      ? "Item name"
+  , ciCreated :: UTCTime                ? "When the item was created"
+  , ciGroup :: Maybe Text               ? "Item group"
+  , ciDescription :: CMarkdown          ? "Item summary (Markdown)"
+  , ciPros :: [CTrait]                  ? "Pros (positive traits)"
+  , ciCons :: [CTrait]                  ? "Cons (negative traits)"
+  , ciEcosystem :: CMarkdown            ? "The ecosystem description (Markdown)"
+  , ciNotes :: CMarkdown                ? "Notes (Markdown)"
+  , ciLink :: Maybe Url                 ? "Link to the official site, if exists"
+  , ciKind :: ItemKind                  ? "Item kind, e.g. library, ..."
   } deriving (Show, Generic)
 
 instance A.ToJSON CItem where
@@ -153,25 +151,23 @@ instance ToSchema CItem where
 -- | Factory to create a `CItem` from an `Item`
 toCItem :: Item -> CItem
 toCItem Item{..} = CItem
-  { ciUid = _itemUid
-  , ciName = _itemName
-  , ciCreated = _itemCreated
-  , ciGroup = _itemGroup_
-  , ciDescription = toCMarkdown _itemDescription
-  , ciPros = fmap toCTrait _itemPros
-  , ciProsDeleted = fmap toCTrait _itemProsDeleted
-  , ciCons = fmap toCTrait _itemCons
-  , ciConsDeleted = fmap toCTrait _itemConsDeleted
-  , ciEcosystem = toCMarkdown _itemEcosystem
-  , ciNotes = toCMarkdown _itemNotes
-  , ciLink = _itemLink
-  , ciKind = _itemKind
+  { ciUid         = H $ _itemUid
+  , ciName        = H $ _itemName
+  , ciCreated     = H $ _itemCreated
+  , ciGroup       = H $ _itemGroup_
+  , ciDescription = H $ toCMarkdown _itemDescription
+  , ciPros        = H $ fmap toCTrait _itemPros
+  , ciCons        = H $ fmap toCTrait _itemCons
+  , ciEcosystem   = H $ toCMarkdown _itemEcosystem
+  , ciNotes       = H $ toCMarkdown _itemNotes
+  , ciLink        = H $ _itemLink
+  , ciKind        = H $ _itemKind
   }
 
 -- | Client type of `Trait`
 data CTrait = CTrait
-  { ctUid :: Uid Trait
-  , ctContent :: CMarkdown
+  { ctUid :: Uid Trait                  ? "Trait ID"
+  , ctContent :: CMarkdown              ? "Trait text (Markdown)"
   } deriving (Show, Generic)
 
 instance A.ToJSON CTrait where
@@ -183,14 +179,14 @@ instance ToSchema CTrait where
 -- | Factory to create a `CTrait` from a `Trait`
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid = trait ^. uid
-  , ctContent = toCMarkdown $ trait ^. content
+  { ctUid     = H $ trait ^. uid
+  , ctContent = H $ toCMarkdown $ trait ^. content
   }
 
 -- | Client type of `Markdown`
 data CMarkdown = CMarkdown
-  { text :: Text <?> "Markdown source"
-  , html :: Text <?> "Rendered HTML"
+  { text :: Text                        ? "Markdown source"
+  , html :: Text                        ? "Rendered HTML"
   } deriving (Show, Generic)
 
 instance A.ToJSON CMarkdown

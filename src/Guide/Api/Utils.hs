@@ -8,7 +8,7 @@
 module Guide.Api.Utils
   ( jsonOptions
   , schemaOptions
-  , type (<?>)(..)
+  , type (?)(..)
   ) where
 
 
@@ -35,13 +35,13 @@ schemaOptions :: SchemaOptions
 schemaOptions = fromAesonOptions jsonOptions
 
 -- | A way to provide descriptions for record fields.
-newtype (<?>) (field :: *) (help :: Symbol) = H field
+newtype (?) (field :: *) (help :: Symbol) = H field
   deriving (Generic, Show)
 
-instance ToJSON field => ToJSON (field <?> help) where
+instance ToJSON field => ToJSON (field ? help) where
   toJSON (H a) = toJSON a
 
-instance (KnownSymbol help, ToSchema a) => ToSchema (a <?> help) where
+instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
   declareNamedSchema _ = do
     NamedSchema _ s <- declareNamedSchema (Proxy @a)
     return $ NamedSchema Nothing (s & description ?~ T.toStrict desc)
