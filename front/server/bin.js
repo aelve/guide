@@ -13,9 +13,9 @@ const app = new Koa()
 app.use(proxy({
   host: config.apiUrl,
   match: /^\/api\//,
-  // map: function (path) {
-  //   return path.replace('/api', '')
-  // }
+  map: function (path) {
+    return path.replace('/api', '')
+  }
 }))
 app.use(bodyparser())
 
