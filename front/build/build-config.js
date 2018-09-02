@@ -1,7 +1,7 @@
 const path = require('path')
 const moment = require('moment')
 
-const appName = '@Vert/Vue-SSR-Template'
+const appName = 'Aelve Guide'
 const clientPort = 4000
 const ssrPort = 5000
 const distPath = rootResolve('./dist')
