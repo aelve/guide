@@ -1,0 +1,22 @@
+<!--
+   {{title}}
+   Build time: {{renderTime}}
+   Environment: {{process.env.NODE_ENV}}
+   SSR Enabled: {{isSSR}}
+-->
+<!DOCTYPE html>
+<html lang="zh-cmn-hans">
+  <head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <script>
+      window.__SSR_IS_ON__ = true
+    </script>
+  </head>
+
+  <body>
+    <div id="app">
+      <!--vue-ssr-outlet-->
+    </div>
+  </body>
+</html>

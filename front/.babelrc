@@ -1,22 +1,21 @@
 {
   "presets": [
-    ["env", { "modules": false }],
-    ["stage-2"]
+    ["env", {
+      "targets": {
+        "browsers": ["last 3 versions", "> 2%", "ie >= 10", "Firefox >= 30", "Chrome >= 30"]
+      },
+      "modules": false,
+      "loose": true,
+      "useBuiltIns": true
+    }],
+    "stage-2"
   ],
   "plugins": [
-    "transform-runtime",
-    ["transform-imports", {
-      "vuetify": {
-        "transform": "vuetify/es5/components/${member}",
-        "preventFullImport": true
-      }
-    }]
+    "transform-runtime"
   ],
-  "comments": false,
   "env": {
     "test": {
-      "presets": ["env", "stage-2"],
-      "plugins": ["istanbul"]
+      "plugins": ["transform-es2015-modules-commonjs"]
     }
   }
 }
