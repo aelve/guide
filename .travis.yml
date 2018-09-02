@@ -17,37 +17,43 @@ cache:
     - .stack-work
   timeout: 1000
 
-matrix:
+jobs:
   include:
-    - env: ARGS=""
-    - env: ARGS="--resolver nightly"
+    - stage: "Build dependencies"
+      before_script:
+        - mkdir -p ~/.local/bin
+        - export PATH=$HOME/.local/bin:$PATH
+        - >-
+          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
+          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+      script:
+        - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
 
-  allow_failures:
-    - env: ARGS="--resolver nightly"
-
-before_install:
-- mkdir -p ~/.local/bin
-- export PATH=$HOME/.local/bin:$PATH
-- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
-- wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
-- unzip chromedriver_linux64.zip
-- chmod +x chromedriver
-- sudo mv -f chromedriver /usr/local/share/chromedriver
-- sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
-- sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
-
-before_script:
-- sh -e /etc/init.d/xvfb start
-- export DISPLAY=:99.0
-- travis_retry wget http://selenium-release.storage.googleapis.com/3.6/selenium-server-standalone-3.6.0.jar
-- java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
-- sleep 15
-
-script:
- - scripts/buildjs.sh
- - stack $ARGS --no-terminal --install-ghc build --test -j2
- - scripts/test-official.sh $ARGS
+    - stage: "Build and test the project"
+      before_script:
+        # Install Stack
+        - mkdir -p ~/.local/bin
+        - export PATH=$HOME/.local/bin:$PATH
+        - >-
+          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
+          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        # Install chromedriver
+        - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
+        - unzip chromedriver_linux64.zip
+        - chmod +x chromedriver
+        - sudo mv -f chromedriver /usr/local/share/chromedriver
+        - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
+        - sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
+        # Run selenium-server
+        - sh -e /etc/init.d/xvfb start
+        - export DISPLAY=:99.0
+        - travis_retry wget http://selenium-release.storage.googleapis.com/3.6/selenium-server-standalone-3.6.0.jar
+        - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
+        - sleep 15
+      script:
+        - scripts/buildjs.sh
+        - stack --no-terminal test
+        - scripts/test-official.sh
 
 notifications:
   slack:
