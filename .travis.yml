@@ -15,6 +15,7 @@ cache:
   directories:
     - $HOME/.stack
     - .stack-work
+  timeout: 1000
 
 matrix:
   include:
