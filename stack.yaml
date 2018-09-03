@@ -25,6 +25,7 @@ extra-deps:
 - servant-swagger-1.1.5
 - servant-swagger-ui-core-0.3.1
 - swagger2-2.3
+- lzma-clib-5.2.2
 - git: https://github.com/neongreen/patches-vector
   commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705
 - git: https://github.com/aelve/stache-plus

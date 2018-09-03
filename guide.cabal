@@ -157,7 +157,7 @@ library
                      , time >= 1.5
                      , transformers
                      , uniplate
-                     , unix
+                     , signal
                      , utf8-string
                      , vector
                      , wai

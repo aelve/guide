@@ -54,8 +54,8 @@ import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
 import qualified SlaveThread as Slave
--- Catching signals
-import System.Posix.Signals
+-- Catching Ctrl-C and termination
+import System.Signal
 -- Watching the templates directory
 import qualified System.FSNotify as FSNotify
 -- putStrLn that works well with concurrency
@@ -458,8 +458,8 @@ installTerminationCatcher
   :: ThreadId  -- ^ Thread to kill when the signal comes
   -> IO ()
 installTerminationCatcher thread = void $ do
-  installHandler sigINT  (CatchOnce (throwTo thread CtrlC))       Nothing
-  installHandler sigTERM (CatchOnce (throwTo thread ServiceStop)) Nothing
+  installHandler sigINT  (throwTo thread CtrlC)
+  installHandler sigTERM (throwTo thread ServiceStop)
 
 -- | Create an admin user (with login “admin”, email “admin@guide.aelve.com”
 -- and password specified in the config).
