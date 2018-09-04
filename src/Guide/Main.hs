@@ -458,8 +458,8 @@ installTerminationCatcher
   :: ThreadId  -- ^ Thread to kill when the signal comes
   -> IO ()
 installTerminationCatcher thread = void $ do
-  installHandler sigINT  (throwTo thread CtrlC)
-  installHandler sigTERM (throwTo thread ServiceStop)
+  installHandler sigINT  (\_ -> throwTo thread CtrlC)
+  installHandler sigTERM (\_ -> throwTo thread ServiceStop)
 
 -- | Create an admin user (with login “admin”, email “admin@guide.aelve.com”
 -- and password specified in the config).
