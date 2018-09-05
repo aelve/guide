@@ -1,6 +1,5 @@
 <template>
   <v-app>
-    <v-toolbar app></v-toolbar>
     <v-content>
       <v-container fluid>
         <router-view></router-view>
@@ -11,14 +10,15 @@
 </template>
 
 <script lang="ts">
-import { AppComponent, Component } from "@vert/core";
-import axios from "axios";
+import Component from 'vue-class-component'
+import Vue from 'vue'
 
 @Component
-export default class RootComponent extends AppComponent {
-  async mounted() {
-    const { data: categories } = await axios.get("api/categories");
-    console.log(categories);
-  }
-}
+export default class RootComponent extends Vue {}
 </script>
+
+<style>
+.flex-1 {
+  flex: 1
+}
+</style>

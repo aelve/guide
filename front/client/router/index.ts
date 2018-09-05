@@ -6,8 +6,7 @@ function createRouter () {
     fallback: false,
     scrollBehavior: () => ({ x: 0, y: 0 }),
     routes: [
-      { path: '/', component: () => import('../page/index/index.vue') },
-      { path: '/about/:name', component: () => import('../page/about/index.vue') }
+      { path: '/', component: () => import('../page/Index.vue') },
     ]
   })
 }
