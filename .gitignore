@@ -24,7 +24,7 @@ TAGS
 *.swo
 *#
 state/
-config.json
+/config.json
 
 # IDE/support
 .idea/
