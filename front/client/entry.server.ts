@@ -1,4 +1,5 @@
 import 'reflect-metadata'
+import _get from 'lodash/get'
 import { createApp } from './app'
 
 export default context => {
@@ -18,7 +19,9 @@ export default context => {
       }
 
       Promise.all(matchedComponents.map((Component) => {
-        const asyncDataFunc = Component['asyncData'] || (Component['options'] || {})['asyncData']
+        const asyncDataFunc = Component['asyncData']
+          || _get(Component, 'options.asyncData')
+          || _get(Component, 'options.methods.asyncData')
         if (typeof asyncDataFunc === 'function') {
           return asyncDataFunc({
             store,
