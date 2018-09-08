@@ -6,6 +6,8 @@ const { clientPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
 
 module.exports = {
+  mode: isDev ? 'development' : 'production',
+
   output: {
     publicPath: isDev
       ? `//localhost:${clientPort}/`  // Please bind this hostname to 127.0.0.1 when developing.
