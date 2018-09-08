@@ -7,7 +7,7 @@ const bodyparser = require('koa-bodyparser')
 const { ssrPort } = require('../build/build-config')
 const proxy = require('koa-proxy')
 
-const config = require('./config.json')
+const config = require('../config.json')
 
 const app = new Koa()
 app.use(proxy({
