@@ -1,4 +1,5 @@
 const webpack = require('webpack')
+const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 
@@ -19,7 +20,8 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js'
+      'vue$': 'vue/dist/vue.esm.js',
+      client: path.resolve(__dirname, '../client/')
     }
   },
 

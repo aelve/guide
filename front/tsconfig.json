@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "client/*": [
+        "client/*"
+      ]
+    },
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
     "module": "esnext",
-    "target": "es2016",
+    "target": "es5",
+    "strict": true,
     "sourceMap": true,
+    "declaration": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "lib": [
