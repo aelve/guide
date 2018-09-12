@@ -6,7 +6,7 @@
       justify-space-between
     >
       <v-flex
-        class="mr-3"
+        class="mr-3 mt-4"
         column
         xs12
         sm5
@@ -69,7 +69,11 @@ export default class Categories extends Vue {
 .category-group {
   text-align: left;
 }
+.category-title:not(:last-child) {
+  margin-bottom: 5px;
+}
 .category-title {
+  display: block;
   text-decoration-line: none;
 }
 .category-title:hover {
