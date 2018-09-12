@@ -20,9 +20,11 @@
           <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
           <a
             class="category-title"
+            target="_blank" 
+            rel="noopener noreferrer" 
             v-for="(category, index) in groupCategories"
             :key="index"
-            href="#"
+            :href="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 subheading font-weight-bold"
@@ -39,8 +41,10 @@
 
 <script lang="ts">
 import _groupBy from 'lodash/groupBy'
+import _toKebabCase from 'lodash/kebabCase'
 import Vue from 'vue'
 import Component from 'vue-class-component'
+import { ICategory } from 'client/service/Category'
 
 @Component
 export default class Categories extends Vue {
@@ -54,6 +58,9 @@ export default class Categories extends Vue {
   }
   get groups() {
     return _groupBy(this.categories, 'group')
+  }
+  getCategoryUrl(category: ICategory): string {
+    return `${_toKebabCase(category.title)}-${category.uid}`
   }
 }
 </script>
