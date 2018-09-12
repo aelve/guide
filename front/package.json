@@ -59,6 +59,7 @@
     "stylus-loader": "^3.0.2",
     "ts-loader": "^4.4.2",
     "typescript": "^2.9.2",
+    "@types/lodash": "^4.14.116",
     "url-loader": "^1.0.1",
     "vue-loader": "^15.2.4",
     "vue-style-loader": "^4.1.0",
