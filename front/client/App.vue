@@ -18,7 +18,9 @@ export default class RootComponent extends Vue {}
 </script>
 
 <style>
-.flex-1 {
-  flex: 1
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
 }
 </style>
