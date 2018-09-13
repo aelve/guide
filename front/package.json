@@ -13,6 +13,7 @@
     "start:prod": "cross-env NODE_ENV=production node server/bin.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.3.1",
     "@junyiz/koa-proxy-pass": "^1.2.1",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
