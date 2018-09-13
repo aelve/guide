@@ -1,4 +1,5 @@
 const webpack = require('webpack')
+const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 
@@ -6,6 +7,8 @@ const { clientPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
 
 module.exports = {
+  mode: isDev ? 'development' : 'production',
+
   output: {
     publicPath: isDev
       ? `//localhost:${clientPort}/`  // Please bind this hostname to 127.0.0.1 when developing.
@@ -17,7 +20,8 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js'
+      'vue$': 'vue/dist/vue.esm.js',
+      client: path.resolve(__dirname, '../client/')
     }
   },
 

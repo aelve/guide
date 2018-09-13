@@ -1,5 +1,6 @@
 <template>
   <v-app>
+    <toolbar></toolbar>
     <v-content>
       <v-container fluid>
         <router-view></router-view>
@@ -13,12 +14,20 @@
 import Component from 'vue-class-component'
 import Vue from 'vue'
 
-@Component
+import Toolbar from './components/Toolbar.vue'
+
+@Component({
+  components: {
+    Toolbar
+  }
+})
 export default class RootComponent extends Vue {}
 </script>
 
 <style>
-.flex-1 {
-  flex: 1
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
 }
 </style>

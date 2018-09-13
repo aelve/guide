@@ -1,7 +1,15 @@
 import Vuex from 'vuex'
+import category from 'client/store/modules/category'
 
-function createStore () {
+function createStore() {
+  // TODO loggins mutations in dev
   return new Vuex.Store({
+    state: {},
+    actions: {},
+    mutations: {},
+    modules: {
+      category
+    }
   })
 }
 

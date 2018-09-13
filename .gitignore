@@ -17,23 +17,27 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
-TAGS
 .DS_Store
 *~
 *.swp
 *.swo
 *#
-state/
-config.json
 
 # IDE/support
 .idea/
 .ideaHaskellLib/
 guide.iml
 .vscode/
+TAGS
 tags
 
-# JavaScript
-guidejs/node_modules/
-front/node_modules/
-static/js/
+# backend database
+/state/
+
+# backend config
+/config.json
+
+# frontend
+/guidejs/node_modules/
+/front/node_modules/
+/static/js/

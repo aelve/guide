@@ -12,8 +12,6 @@ const baseConfig = require('./webpack.base.conf')
 const isProduction = process.env.NODE_ENV === 'production'
 
 const webpackConfig = merge(baseConfig, {
-  mode: process.env.NODE_ENV,
-
   entry: {
     app: rootResolve('./client/entry.client.ts')
   },

@@ -1,28 +1,37 @@
 <template>
-  <v-container
-    grid-list-md 
-    text-xs-center
-  >
-    <v-layout row wrap>
+  <v-container grid-list-md>
+    <v-layout
+      row
+      wrap
+      justify-space-between
+    >
       <v-flex
-        class="flex-1"
-        v-for="(categories, index) in chunkedCategories" 
+        class="mr-3 mt-4"
+        column
+        xs12
+        sm5
+        md3
+        lg3
+        xl1
+        v-for="(groupCategories, groupName, index) in groups" 
         :key="index"
       >
-        <div
-          class="categoryGroup"
-          v-for="(groupCategories, index) in categories" 
-          :key="index"
-        >
-          <h1> {{ groupCategories[0].group }} </h1>
-          <a href="#"> 
-            <h4 
-              class="ml-2" 
-              v-for="(category, index) in groupCategories" 
+        <div class="category-group">
+          <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
+          <a
+            class="category-title"
+            target="_blank" 
+            rel="noopener noreferrer" 
+            v-for="(category, index) in groupCategories"
+            :key="index"
+            :href="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 subheading font-weight-bold"
               :key="index"
-            > 
+            >
               {{ category.title }} 
-            </h4>
+            </h6>
           </a>
         </div>
       </v-flex>
@@ -31,31 +40,43 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
 import _groupBy from 'lodash/groupBy'
-import _chunk from 'lodash/chunk'
+import _toKebabCase from 'lodash/kebabCase'
 import Vue from 'vue'
 import Component from 'vue-class-component'
+import { ICategory } from 'client/service/Category'
 
 @Component
-export default class Index extends Vue {
-  categories = []
-
-  async mounted() {
-    const { data: categories } = await axios.get("api/categories")
-    this.categories = Object.values(_groupBy(categories, 'group'))
+export default class Categories extends Vue {
+  // TODO add type for store
+  async asyncData({ store }) {
+    return store.dispatch('category/loadCategoryList')
   }
-  // Returns any number of categories devided to setted number of arrays
-  // Its usefull for rendering predifined number of columns 
-  get chunkedCategories() {
-    const numberOfArrayToDevideTo = 3
-    return _chunk(this.categories, Math.ceil(this.categories.length/numberOfArrayToDevideTo))
+  // TODO create state getter and replace to it
+  get categories() {
+    return this.$store.state.category.categoryList
+  }
+  get groups() {
+    return _groupBy(this.categories, 'group')
+  }
+  getCategoryUrl(category: ICategory): string {
+    return `${_toKebabCase(category.title)}-${category.uid}`
   }
 }
 </script>
 
-<style scoped> 
-.categoryGroup {
+<style scoped>
+.category-group {
   text-align: left;
+}
+.category-title:not(:last-child) {
+  margin-bottom: 5px;
+}
+.category-title {
+  display: block;
+  text-decoration-line: none;
+}
+.category-title:hover {
+  text-decoration-line: underline;
 }
 </style>
