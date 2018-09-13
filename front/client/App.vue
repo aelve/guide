@@ -5,16 +5,21 @@
         <router-view></router-view>
       </v-container>
     </v-content>
-    <v-footer app></v-footer>
+    <a-footer />
   </v-app>
 </template>
 
 <script lang="ts">
-import Component from 'vue-class-component'
 import Vue from 'vue'
+import Component from 'vue-class-component'
+import AFooter from 'client/components/AFooter.vue'
 
-@Component
-export default class RootComponent extends Vue {}
+@Component({
+  components: {
+    AFooter
+  }
+})
+export default class RootComponent extends Vue { }
 </script>
 
 <style>
