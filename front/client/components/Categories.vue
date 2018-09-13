@@ -18,13 +18,12 @@
       >
         <div class="category-group">
           <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
-          <a
+          <a-link
             class="category-title"
-            target="_blank" 
-            rel="noopener noreferrer" 
             v-for="(category, index) in groupCategories"
             :key="index"
-            :href="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+            openInNewTab
+            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 subheading font-weight-bold"
@@ -32,7 +31,7 @@
             >
               {{ category.title }} 
             </h6>
-          </a>
+          </a-link>
         </div>
       </v-flex>
     </v-layout>
@@ -69,14 +68,10 @@ export default class Categories extends Vue {
 .category-group {
   text-align: left;
 }
-.category-title:not(:last-child) {
-  margin-bottom: 5px;
-}
 .category-title {
   display: block;
-  text-decoration-line: none;
 }
-.category-title:hover {
-  text-decoration-line: underline;
+.category-title:not(:last-child) {
+  margin-bottom: 5px;
 }
 </style>
