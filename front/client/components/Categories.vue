@@ -20,14 +20,51 @@
           <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
           <a-link
             class="category-title"
-            v-for="(category, index) in groupCategories"
-            :key="index"
             openInNewTab
+            v-for="category in groupCategories[CategoryStatus.finished]"
+            :key="category.uid"
             :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 subheading font-weight-bold"
-              :key="index"
+            >
+              {{ category.title }} 
+            </h6>
+          </a-link>
+          <h6
+            class="ml-2 body-2 font-weight-bold"
+            v-if="groupCategories[CategoryStatus.inProgress]"
+          >
+            In progress
+          </h6>
+          <a-link
+            class="category-title ml-3"
+            openInNewTab
+            v-for="category in groupCategories[CategoryStatus.inProgress]"
+            :key="category.uid"
+            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 subheading font-weight-bold"
+            >
+              {{ category.title }} 
+            </h6>
+          </a-link>
+          <h6
+            class="ml-2 body-2 font-weight-bold"
+            v-if="groupCategories[CategoryStatus.inProgress]"
+          >
+            To be written
+          </h6>
+          <a-link
+            class="category-title ml-3"
+            openInNewTab
+            v-for="category in groupCategories[CategoryStatus.toBeWritten]"
+            :key="category.uid"
+            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 subheading font-weight-bold"
             >
               {{ category.title }} 
             </h6>
@@ -43,10 +80,12 @@ import _groupBy from 'lodash/groupBy'
 import _toKebabCase from 'lodash/kebabCase'
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { ICategory } from 'client/service/Category'
+import { ICategory, CategoryStatus } from 'client/service/Category'
+
 
 @Component
 export default class Categories extends Vue {
+  CategoryStatus = CategoryStatus
   // TODO add type for store
   async asyncData({ store }) {
     return store.dispatch('category/loadCategoryList')
@@ -56,7 +95,15 @@ export default class Categories extends Vue {
     return this.$store.state.category.categoryList
   }
   get groups() {
-    return _groupBy(this.categories, 'group')
+    const groupedByGroupName: Object = _groupBy(this.categories, 'group')
+    Object.entries(groupedByGroupName).forEach(([key, value]: [string, ICategory[]]) => {
+      groupedByGroupName[key] = this.groupByCategoriesByStatus(value)
+    })
+    console.log(groupedByGroupName)
+    return groupedByGroupName
+  }
+  groupByCategoriesByStatus(categories: ICategory[]): object {
+    return _groupBy(categories, 'status')
   }
   getCategoryUrl(category: ICategory): string {
     return `${_toKebabCase(category.title)}-${category.uid}`

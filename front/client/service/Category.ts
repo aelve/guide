@@ -7,13 +7,20 @@ class CategoryService {
   }
 }
 
+export enum CategoryStatus {
+  finished = 'CategoryFinished',
+  inProgress = 'CategoryWIP',
+  toBeWritten = 'CategoryStub'
+
+}
 export interface ICategory {
   created: string
   group: string
-  status: string
+  status: CategoryStatus
   title: string
   uid: string
 }
+
 
 const categoryServiceInstance = new CategoryService()
 
