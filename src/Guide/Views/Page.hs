@@ -186,7 +186,6 @@ footerDef _page = do
         mkLink "source" "https://github.com/aelve/guide"
         "/"
         mkLink "issue tracker" "https://github.com/aelve/guide/issues"
-    , mkLink "rules" "/unwritten-rules"
     , do 
         "licensed under "
         mkLink "CC+ BY-SA 4.0" "/license"
