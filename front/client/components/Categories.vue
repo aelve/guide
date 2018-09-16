@@ -6,33 +6,83 @@
       justify-space-between
     >
       <v-flex
-        class="mr-3 mt-4"
+        class="mr-3 mt-3"
         column
         xs12
         sm5
         md3
         lg3
         xl1
-        v-for="(groupCategories, groupName, index) in groups" 
+        v-for="(groupCategories, groupName, index) in groups"
         :key="index"
       >
         <div class="category-group">
-          <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
-          <a
+          <h4 class="mb-2 display-1 font-weight-black">
+            {{ groupName }}
+          </h4>
+          <!-- TODO remove duplicates of same a-links -->
+          <a-link
             class="category-title"
-            target="_blank" 
-            rel="noopener noreferrer" 
-            v-for="(category, index) in groupCategories"
-            :key="index"
-            :href="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+            openInNewTab
+            v-for="category in groupCategories[CategoryStatus.finished]"
+            :key="category.uid"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 subheading font-weight-bold"
-              :key="index"
             >
-              {{ category.title }} 
+              {{ category.title }}
             </h6>
-          </a>
+          </a-link>
+
+          <h6
+            class="ml-2 mb-1 body-2 font-weight-bold"
+            v-if="groupCategories[CategoryStatus.inProgress]"
+          >
+            In progress
+          </h6>
+          <a-link
+            class="category-title ml-3"
+            openInNewTab
+            v-for="category in groupCategories[CategoryStatus.inProgress]"
+            :key="category.uid"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 body-1 font-weight-bold"
+            >
+              {{ category.title }}
+            </h6>
+          </a-link>
+
+          <h6
+            class="ml-2 mb-1 body-2 font-weight-bold"
+            v-if="groupCategories[CategoryStatus.toBeWritten]"
+          >
+            To be written
+          </h6>
+          <a-link
+            class="category-title ml-3"
+            openInNewTab
+            v-for="category in groupCategories[CategoryStatus.toBeWritten]"
+            :key="category.uid"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 body-1 font-weight-bold"
+            >
+              {{ category.title }}
+            </h6>
+          </a-link>
+
+          <add-category-dialog
+            :groupName="groupName"
+          >
+            <v-btn class="ml-2 pl-0" flat color="grey">
+              <v-icon class="mr-1" left>add</v-icon>
+              Add new category
+            </v-btn>
+          </add-category-dialog>
         </div>
       </v-flex>
     </v-layout>
@@ -44,10 +94,16 @@ import _groupBy from 'lodash/groupBy'
 import _toKebabCase from 'lodash/kebabCase'
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { ICategory } from 'client/service/Category'
+import { ICategory, CategoryStatus } from 'client/service/Category'
+import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 
-@Component
+@Component({
+  components: {
+    AddCategoryDialog
+  }
+})
 export default class Categories extends Vue {
+  CategoryStatus = CategoryStatus
   // TODO add type for store
   async asyncData({ store }) {
     return store.dispatch('category/loadCategoryList')
@@ -57,7 +113,14 @@ export default class Categories extends Vue {
     return this.$store.state.category.categoryList
   }
   get groups() {
-    return _groupBy(this.categories, 'group')
+    const groupedByGroupName: object = _groupBy(this.categories, 'group')
+    Object.entries(groupedByGroupName).forEach(([key, value]: [string, ICategory[]]) => {
+      groupedByGroupName[key] = this.groupByCategoriesByStatus(value)
+    })
+    return groupedByGroupName
+  }
+  groupByCategoriesByStatus(categories: ICategory[]): object {
+    return _groupBy(categories, 'status')
   }
   getCategoryUrl(category: ICategory): string {
     return `${_toKebabCase(category.title)}-${category.uid}`
@@ -69,14 +132,11 @@ export default class Categories extends Vue {
 .category-group {
   text-align: left;
 }
-.category-title:not(:last-child) {
-  margin-bottom: 5px;
-}
 .category-title {
   display: block;
-  text-decoration-line: none;
+  line-height: 1.2;
 }
-.category-title:hover {
-  text-decoration-line: underline;
+.category-title:not(:last-child) {
+  margin-bottom: 5px;
 }
 </style>

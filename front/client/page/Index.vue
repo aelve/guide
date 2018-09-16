@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Categories from '../components/Categories.vue'
+import Categories from 'client/components/Categories.vue'
 import Component from 'vue-class-component'
 
 @Component({
