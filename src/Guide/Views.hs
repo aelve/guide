@@ -676,13 +676,9 @@ wrapPage pageTitle' page = doctypehtml_ $ do
       page
     div_ [id_ "footer"] $ do
       mapM_ (div_ [class_ "footer-item"]) $
-        [ do "made by "
-             mkLink "Aelve" "https://aelve.com"
-        , do mkLink "source" "https://github.com/aelve/guide"
-             "/"
-             mkLink "issue tracker" "https://github.com/aelve/guide/issues"
-        , do "licensed under "
-             mkLink "CC+ BY-SA 4.0" "/license"
+        [ "made by " >> mkLink "Aelve" "https://aelve.com"
+        , mkLink "source" "https://github.com/aelve/guide" >> " on GitHub"
+        , "licensed under " >> mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
 -- | Render the search box.

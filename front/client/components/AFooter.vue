@@ -25,13 +25,7 @@
         >
           source
         </a-link>
-        /
-        <a-link
-          openInNewTab
-          url="https://github.com/aelve/guide/issues"
-        >
-          issue tracker
-        </a-link>
+        on GitHub
       </span>
       <span>
         licensed under
