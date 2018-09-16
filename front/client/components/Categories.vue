@@ -52,7 +52,7 @@
           </a-link>
           <h6
             class="ml-2 body-2 font-weight-bold"
-            v-if="groupCategories[CategoryStatus.inProgress]"
+            v-if="groupCategories[CategoryStatus.toBeWritten]"
           >
             To be written
           </h6>
