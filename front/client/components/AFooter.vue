@@ -41,14 +41,6 @@
           Rules
         </a-link>
       </span>
-      <span class="mr-3">
-        <a-link
-          openInNewTab
-          url="http://aelve.com:4801/donate"
-        >
-          Donate
-        </a-link>
-      </span>
       <span>
         licensed under
         <a-link

@@ -279,10 +279,6 @@ guideApp waiMetrics = do
           s <- dbQuery GetGlobalState
           lucidIO $ renderAdminLinks s
 
-      -- Donation page
-      Spock.get "donate" $
-        lucidWithConfig renderDonate
-
       -- Static pages
       Spock.get "unwritten-rules" $ lucidWithConfig $
         renderStaticMd "Unwritten rules" "unwritten-rules.md"
