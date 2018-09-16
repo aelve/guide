@@ -13,9 +13,9 @@
         made by 
         <a-link
           openInNewTab
-          url="https://artyom.me/"
+          url="https://aelve.com/"
         >
-          Artyom
+          Aelve
         </a-link>
       </span>
       <span class="mr-3">

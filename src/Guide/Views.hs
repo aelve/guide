@@ -677,7 +677,7 @@ wrapPage pageTitle' page = doctypehtml_ $ do
     div_ [id_ "footer"] $ do
       mapM_ (div_ [class_ "footer-item"]) $
         [ do "made by "
-             mkLink "Artyom" "https://artyom.me"
+             mkLink "Aelve" "https://aelve.com"
         , do mkLink "source" "https://github.com/aelve/guide"
              "/"
              mkLink "issue tracker" "https://github.com/aelve/guide/issues"
