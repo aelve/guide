@@ -17,7 +17,10 @@
         :key="index"
       >
         <div class="category-group">
-          <h4 class="display-1 font-weight-black"> {{ groupName }} </h4>
+          <h4 class="mb-2 display-1 font-weight-black"> 
+            {{ groupName }}
+          </h4>
+
           <a-link
             class="category-title"
             openInNewTab
@@ -31,6 +34,7 @@
               {{ category.title }} 
             </h6>
           </a-link>
+
           <h6
             class="ml-2 body-2 font-weight-bold"
             v-if="groupCategories[CategoryStatus.inProgress]"
@@ -50,6 +54,7 @@
               {{ category.title }} 
             </h6>
           </a-link>
+
           <h6
             class="ml-2 body-2 font-weight-bold"
             v-if="groupCategories[CategoryStatus.toBeWritten]"
