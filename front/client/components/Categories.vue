@@ -95,11 +95,10 @@ export default class Categories extends Vue {
     return this.$store.state.category.categoryList
   }
   get groups() {
-    const groupedByGroupName: Object = _groupBy(this.categories, 'group')
+    const groupedByGroupName: object = _groupBy(this.categories, 'group')
     Object.entries(groupedByGroupName).forEach(([key, value]: [string, ICategory[]]) => {
       groupedByGroupName[key] = this.groupByCategoriesByStatus(value)
     })
-    console.log(groupedByGroupName)
     return groupedByGroupName
   }
   groupByCategoriesByStatus(categories: ICategory[]): object {
