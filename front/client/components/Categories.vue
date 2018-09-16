@@ -20,13 +20,13 @@
           <h4 class="mb-2 display-1 font-weight-black"> 
             {{ groupName }}
           </h4>
-
+          <!-- TODO remove duplicates of same a-links -->
           <a-link
             class="category-title"
             openInNewTab
             v-for="category in groupCategories[CategoryStatus.finished]"
             :key="category.uid"
-            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 subheading font-weight-bold"
@@ -46,7 +46,7 @@
             openInNewTab
             v-for="category in groupCategories[CategoryStatus.inProgress]"
             :key="category.uid"
-            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 body-1 font-weight-bold"
@@ -66,7 +66,7 @@
             openInNewTab
             v-for="category in groupCategories[CategoryStatus.toBeWritten]"
             :key="category.uid"
-            :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
+            :url="`http://aelve.com:4801/haskell/${getCategoryUrl(category)}`"
           >
             <h6
               class="ml-2 body-1 font-weight-bold"
