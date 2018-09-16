@@ -6,6 +6,7 @@ import { sync } from 'vuex-router-sync'
 import ALink from 'client/components/ALink.vue'
 import 'vuetify/dist/vuetify.css' // Ensure you are using css-loader
 import '@fortawesome/fontawesome-free/css/all.css'
+import 'material-design-icons-iconfont/dist/material-design-icons.css'
 
 import AppComponent from './App.vue'
 import { createRouter } from './router'
