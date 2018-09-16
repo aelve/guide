@@ -36,7 +36,7 @@
           </a-link>
 
           <h6
-            class="ml-2 body-2 font-weight-bold"
+            class="ml-2 mb-1 body-2 font-weight-bold"
             v-if="groupCategories[CategoryStatus.inProgress]"
           >
             In progress
@@ -49,14 +49,14 @@
             :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
           >
             <h6
-              class="ml-2 subheading font-weight-bold"
+              class="ml-2 body-1 font-weight-bold"
             >
               {{ category.title }} 
             </h6>
           </a-link>
 
           <h6
-            class="ml-2 body-2 font-weight-bold"
+            class="ml-2 mb-1 body-2 font-weight-bold"
             v-if="groupCategories[CategoryStatus.toBeWritten]"
           >
             To be written
@@ -69,7 +69,7 @@
             :url="`https://guide.aelve.com/haskell/${getCategoryUrl(category)}`"
           >
             <h6
-              class="ml-2 subheading font-weight-bold"
+              class="ml-2 body-1 font-weight-bold"
             >
               {{ category.title }} 
             </h6>
