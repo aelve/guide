@@ -13,11 +13,11 @@
         md3
         lg3
         xl1
-        v-for="(groupCategories, groupName, index) in groups" 
+        v-for="(groupCategories, groupName, index) in groups"
         :key="index"
       >
         <div class="category-group">
-          <h4 class="mb-2 display-1 font-weight-black"> 
+          <h4 class="mb-2 display-1 font-weight-black">
             {{ groupName }}
           </h4>
           <!-- TODO remove duplicates of same a-links -->
@@ -31,7 +31,7 @@
             <h6
               class="ml-2 subheading font-weight-bold"
             >
-              {{ category.title }} 
+              {{ category.title }}
             </h6>
           </a-link>
 
@@ -51,7 +51,7 @@
             <h6
               class="ml-2 body-1 font-weight-bold"
             >
-              {{ category.title }} 
+              {{ category.title }}
             </h6>
           </a-link>
 
@@ -71,9 +71,18 @@
             <h6
               class="ml-2 body-1 font-weight-bold"
             >
-              {{ category.title }} 
+              {{ category.title }}
             </h6>
           </a-link>
+
+          <add-category-dialog
+            :groupName="groupName"
+          >
+            <v-btn class="ml-2 pl-0" flat color="grey">
+              <v-icon class="mr-1" left>add</v-icon>
+              Add new category
+            </v-btn>
+          </add-category-dialog>
         </div>
       </v-flex>
     </v-layout>
@@ -86,9 +95,13 @@ import _toKebabCase from 'lodash/kebabCase'
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { ICategory, CategoryStatus } from 'client/service/Category'
+import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 
-
-@Component
+@Component({
+  components: {
+    AddCategoryDialog
+  }
+})
 export default class Categories extends Vue {
   CategoryStatus = CategoryStatus
   // TODO add type for store

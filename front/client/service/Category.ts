@@ -5,6 +5,15 @@ class CategoryService {
     const { data } = await axios.get("api/categories", {})
     return data
   }
+
+  async  createCategory({ title }: ICategory): Promise<ICategory[]> {
+    const { data } = await axios.post('api/category', null, {
+      params: {
+        title
+      }
+    })
+    return data
+  }
 }
 
 export enum CategoryStatus {
@@ -14,11 +23,11 @@ export enum CategoryStatus {
 
 }
 export interface ICategory {
-  created: string
-  group: string
-  status: CategoryStatus
-  title: string
-  uid: string
+  created?: string
+  group?: string
+  status?: CategoryStatus
+  title?: string
+  uid?: string
 }
 
 
