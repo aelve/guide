@@ -15,7 +15,12 @@
         xl1
         v-for="(groupCategories, groupName, index) in groups"
         :key="index"
-      >
+      > 
+        <!-- TODO remove when links refactored -->
+        <router-link to="/haskell">
+          <button class="test-btn">Test Article</button>
+        </router-link>
+        
         <div class="category-group">
           <h4 class="mb-2 display-1 font-weight-black">
             {{ groupName }}
@@ -138,5 +143,13 @@ export default class Categories extends Vue {
 }
 .category-title:not(:last-child) {
   margin-bottom: 5px;
+}
+.test-btn {
+  background: #000;
+  color: #fff;
+  padding: 8px 14px 7px;
+  border-radius: 25px;
+  text-transform: uppercase;
+  margin: 0 0 20px;
 }
 </style>
