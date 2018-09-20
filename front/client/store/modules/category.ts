@@ -15,6 +15,11 @@ const actions: ActionTree<CategoryState, any> = {
   async loadCategoryList({ commit }: ActionContext<CategoryState, any>): Promise<any> {
     const data: ICategory[] = await CategoryService.getCategoryList()
     commit('setCategoryList', data)
+  },
+
+  async loadCategoryItem({ commit }: ActionContext<CategoryState, any>): Promise<any> {
+    const data: ICategory[] = await CategoryService.getCategoryItem()
+    commit('setCategoryItem', data)
   }
 }
 

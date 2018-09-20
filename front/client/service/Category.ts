@@ -14,6 +14,13 @@ class CategoryService {
     })
     return data
   }
+
+  async getCategoryItem(): Promise<ICategory[]> {
+    const { data } = await axios.get('api/category/sth6l9jl', {})
+    console.log(data.items);
+
+    return data;
+  }
 }
 
 export enum CategoryStatus {
@@ -27,7 +34,8 @@ export interface ICategory {
   group?: string
   status?: CategoryStatus
   title?: string
-  uid?: string
+  uid?: string,
+  items: any[]
 }
 
 

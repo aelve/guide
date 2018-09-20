@@ -1,15 +1,15 @@
 <template>
-  <articleTest />
+  <article-item />
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import Article from 'client/components/Article.vue'
+import ArticleItem from 'client/components/Article.vue'
 import Component from 'vue-class-component'
 
 @Component({
   components: {
-    Article
+    ArticleItem
   }
 })
 
