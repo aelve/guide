@@ -1,10 +1,13 @@
 <template>
   <v-container>
-    <!-- {{ article.notes }} `-->
-    <h1>TEST BLYAT</h1>
+    <div v-html="getCategoryDescription"></div>
+    <br>
+    <br>
+    <br>
     <p> {{ getCategory }} </p>
-    <p>more more more text</p>
-    <p> {{ getCategoryDescription }} </p>
+    <div v-for="(ecosystem, index) in getCategory" :key="index">
+      {{ ecosystem.description }}
+    </div>
   </v-container>
 </template>
 
@@ -17,42 +20,23 @@ import Component from 'vue-class-component'
 export default class ArticleItem extends Vue {
 
   async asyncData({ store }) {
-    return store.dispatch('category/loadCategoryItem')
+    return store.dispatch('categoryItem/loadCategoryItem')
   }
 
   get getCategory () {
-    return typeof this.$store.state.category.categoryList
+    return typeof this.$store.state.categoryItem.categoryItemList
   }
 
   get getCategoryDescription() {
-    // let rawDescription = this.$store.state.category.categoryList.description.html;
-
-    // let parsedDescription = new DOMParser().parseFromString(rawDescription)
-
-    // return typeof this.$store.state.category.categoryList.description.html
-    // return parsedDescription
-    return this.$store.state.category.categoryList
+    const description = this.$store.state.categoryItem.categoryItemList.description.html;
+    return description
   }
 
-  // const computed = {
-  //   getCategory: function() {
-  //     const categoryData = this.$store.state.category.categoryList.items;
+  get getCategoryItems() {
+    const items = this.$store.state.categoryItem.categoryItemList.items
+    const parsedItems = items.map((item:any) => {return item.ecosystem.html})
 
-  //     // categoryData.map() => {
-
-  //     // }
-
-  //     return this.$store.state.category.categoryList.items
-  //   },
-
-  //   getCategoryDescription: function() {
-  //     return this.$store.state.category.categoryList.description.html
-  //   }
-  // }
-
-  // stripHtml() {
-  //   const categoryData: any[] = computed.getCategory();
-  // }
-  // const parser = new DOMParser()
+    return parsedItems
+  }
 }
 </script>

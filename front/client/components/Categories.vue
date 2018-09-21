@@ -17,9 +17,9 @@
         :key="index"
       > 
         <!-- TODO remove when links refactored -->
-        <router-link to="/haskell">
+        <!-- <router-link to="/haskell">
           <button class="test-btn">Test Article</button>
-        </router-link>
+        </router-link> -->
         
         <div class="category-group">
           <h4 class="mb-2 display-1 font-weight-black">
