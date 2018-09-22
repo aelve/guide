@@ -36,21 +36,22 @@ getCategory db catId =
     Nothing  -> throwError err404
     Just cat -> pure (toCCategoryFull cat)
 
--- | Create a new category, given the title.
+-- | Create a new category, given the title and the grandparent (aka group).
 --
 -- Returns the ID of the created category (or of the existing one if the
 -- category with this title exists already).
-createCategory :: DB -> Text -> Handler (Uid Category)
-createCategory db title' = do
+createCategory :: DB -> Text -> Text -> Handler (Uid Category)
+createCategory db title' group' = do
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery db GetGlobalState
-  let hasSameTitle cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-  case find hasSameTitle cats of
+  let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+                     && T.toCaseFold (cat^.group_) == T.toCaseFold group'
+  case find isDuplicate cats of
     Just c  -> return (c^.uid)
     Nothing -> do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
-      (_edit, newCategory) <- dbUpdate db (AddCategory catId title' time)
+      (_edit, newCategory) <- dbUpdate db (AddCategory catId title' group' time)
       -- TODO addEdit edit
       return (newCategory^.uid)
 
