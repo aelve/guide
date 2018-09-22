@@ -144,7 +144,6 @@ library
                      , servant-server
                      , servant-swagger
                      , servant-swagger-ui
-                     , servant-swagger-ui-redoc
                      , swagger2
                      , shortcut-links >= 0.4.2
                      , slave-thread
