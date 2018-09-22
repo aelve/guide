@@ -1,9 +1,11 @@
 <template>
-  <v-text-field v-model="searchInput" 
-                class="toollbar-search" 
-                label="Search" 
-                @keyup.enter.native="processSearchInput"
-                dark solo></v-text-field>
+  <v-text-field 
+    v-model="searchInput" 
+    class="toollbar-search" 
+    label="Search" 
+    @keyup.enter.native="processSearchInput"
+    dark 
+    solo />
 </template>
 
 <script lang="ts">
@@ -15,10 +17,7 @@ export default class SearchField extends Vue {
   searchInput:string = ''
 
   processSearchInput() {
-    window.open('`http://aelve.com:4801/haskell/?q=${this.searchInput}`', '_blank')
-    console.log(this.searchInput);
-    
-    return this.searchInput
+    window.open(`http://aelve.com:4801/haskell/?q=${this.searchInput}`, '_blank')
   }
 }
 </script>
