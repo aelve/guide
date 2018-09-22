@@ -22,17 +22,26 @@ extra-deps:
 - servant-swagger-ui-0.3.0.3.13.2
 - file-embed-lzma-0
 - servant-0.14.1
-- servant-swagger-1.1.5
 - servant-swagger-ui-core-0.3.1
 - swagger2-2.3
 - lzma-clib-5.2.2
-- git: https://github.com/neongreen/patches-vector
-  commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705
+
 - git: https://github.com/aelve/stache-plus
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
+
 - git: https://github.com/aelve/safecopy-migrate
   commit: c401315122f04624e5e848d77f9eaa948e38c21b
+
+# Fork of 'servant-swagger' with some changes (see its README)
+- git: https://github.com/aelve/servant-swagger
+  commit: 09e124d03606ec54d50e3029ea86d096575d545c
+
+# Fork of 'hspec-webdriver' that builds
 - git: https://github.com/neongreen/webdriver-utils
   commit: db4a9027e62550c9d27110f36ae26c712acfbe95
   subdirs:
   - hspec-webdriver
+
+# Fork of 'patches-vector' that builds
+- git: https://github.com/neongreen/patches-vector
+  commit: 9bb704cf7f14cff9ef76a5d177e4e56ceee24705

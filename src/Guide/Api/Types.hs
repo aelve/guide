@@ -92,14 +92,13 @@ data CategorySite route = CategorySite
       :> Description "Returns the ID of the created category.\n\n\
                      \If a category with the same title already exists, \
                      \returns its ID instead."
+      :> ErrorResponse 400 "'title' not provided"
       :> "category"
       :> QueryParam' '[Required, Strict] "title" Text
       :> Post '[JSON] (Uid Category)
 
   , _deleteCategory :: route :-
       Summary "Delete a category"
-      :> Description "Note: please ignore the 404 here, it's a bug \
-                     \in documentation. This endpoint does not return 404."
       :> "category"
       :> Capture "id" (Uid Category)
       :> Delete '[JSON] NoContent
@@ -111,6 +110,7 @@ data ItemSite route = ItemSite
   { _createItem :: route :-
       Summary "Create a new item in the given category"
       :> Description "Returns the ID of the created item."
+      :> ErrorResponse 400 "'name' not provided"
       :> "item"
       :> Capture "category" (Uid Category)
       :> QueryParam' '[Required, Strict] "name" Text
@@ -118,8 +118,6 @@ data ItemSite route = ItemSite
 
   , _deleteItem :: route :-
       Summary "Delete an item"
-      :> Description "Note: please ignore the 404 here, it's a bug \
-                     \in documentation. This endpoint does not return 404."
       :> "item"
       :> Capture "id" (Uid Item)
       :> Delete '[JSON] NoContent
@@ -130,8 +128,6 @@ data ItemSite route = ItemSite
 data TraitSite route = TraitSite
   { _deleteTrait :: route :-
       Summary "Delete a trait"
-      :> Description "Note: please ignore the 404 here, it's a bug \
-                     \in documentation. This endpoint does not return 404."
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
@@ -145,6 +141,7 @@ data SearchSite route = SearchSite
   { _search :: route :-
       Summary "Search categories and items"
       :> Description "Returns at most 100 search results"
+      :> ErrorResponse 400 "'query' not provided"
       :> "search"
       :> QueryParam' '[Required, Strict] "query" Text
       :> Get '[JSON] [CSearchResult]
