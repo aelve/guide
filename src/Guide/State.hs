@@ -345,13 +345,14 @@ getTrait itemId traitId = view (itemById itemId . traitById traitId)
 addCategory
   :: Uid Category    -- ^ New category's id
   -> Text            -- ^ Title
+  -> Text            -- ^ Group
   -> UTCTime         -- ^ Creation time
   -> Acid.Update GlobalState (Edit, Category)
-addCategory catId title' created' = do
+addCategory catId title' group' created' = do
   let newCategory = Category {
         _categoryUid = catId,
         _categoryTitle = title',
-        _categoryGroup_ = "Miscellaneous",
+        _categoryGroup_ = group',
         _categoryEnabledSections = S.fromList [
             ItemProsConsSection,
             ItemEcosystemSection,
@@ -363,7 +364,7 @@ addCategory catId title' created' = do
         _categoryItems = [],
         _categoryItemsDeleted = [] }
   categories %= (newCategory :)
-  let edit = Edit'AddCategory catId title'
+  let edit = Edit'AddCategory catId title' group'
   return (edit, newCategory)
 
 addItem

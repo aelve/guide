@@ -16,8 +16,8 @@ import Data.Text (Text)
 import Guide.Types
 import Guide.State
 import Guide.Utils
-import Guide.Api.Types (CCategoryInfo, CCategoryDetail, toCategoryInfo, toCCategoryDetail)
-
+import Guide.Api.Types
+import qualified Guide.Search as Search
 
 ----------------------------------------------------------------------------
 -- Categories
@@ -27,30 +27,31 @@ import Guide.Api.Types (CCategoryInfo, CCategoryDetail, toCategoryInfo, toCCateg
 getCategories :: DB -> Handler [CCategoryInfo]
 getCategories db = do
   dbQuery db GetCategories <&> \xs ->
-    map toCategoryInfo xs
+    map toCCategoryInfo xs
 
 -- | Get a single category and all of its items.
-getCategory :: DB -> Uid Category -> Handler CCategoryDetail
+getCategory :: DB -> Uid Category -> Handler CCategoryFull
 getCategory db catId =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing  -> throwError err404
-    Just cat -> pure (toCCategoryDetail cat)
+    Just cat -> pure (toCCategoryFull cat)
 
--- | Create a new category, given the title.
+-- | Create a new category, given the title and the grandparent (aka group).
 --
 -- Returns the ID of the created category (or of the existing one if the
 -- category with this title exists already).
-createCategory :: DB -> Text -> Handler (Uid Category)
-createCategory db title' = do
+createCategory :: DB -> Text -> Text -> Handler (Uid Category)
+createCategory db title' group' = do
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery db GetGlobalState
-  let hasSameTitle cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-  case find hasSameTitle cats of
+  let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+                     && T.toCaseFold (cat^.group_) == T.toCaseFold group'
+  case find isDuplicate cats of
     Just c  -> return (c^.uid)
     Nothing -> do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
-      (_edit, newCategory) <- dbUpdate db (AddCategory catId title' time)
+      (_edit, newCategory) <- dbUpdate db (AddCategory catId title' group' time)
       -- TODO addEdit edit
       return (newCategory^.uid)
 
@@ -105,6 +106,18 @@ deleteTrait db itemId traitId = do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
   -- TODO: mapM_ addEdit mbEdit
+
+----------------------------------------------------------------------------
+-- Search
+----------------------------------------------------------------------------
+
+-- | Site-wide search.
+--
+-- Returns at most 100 results.
+search :: DB -> Text -> Handler [CSearchResult]
+search db searchQuery = do
+  gs <- dbQuery db GetGlobalState
+  pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
 ----------------------------------------------------------------------------
 -- Utils

@@ -13,9 +13,9 @@
         made by 
         <a-link
           openInNewTab
-          url="https://artyom.me/"
+          url="https://aelve.com/"
         >
-          Artyom
+          Aelve
         </a-link>
       </span>
       <span class="mr-3">
@@ -25,29 +25,7 @@
         >
           source
         </a-link>
-        /
-        <a-link
-          openInNewTab
-          url="https://github.com/aelve/guide/issues"
-        >
-          issue tracker
-        </a-link>
-      </span>
-      <span class="mr-3">
-        <a-link
-          openInNewTab
-          url="http://aelve.com:4801/unwritten-rules"
-        >
-          Rules
-        </a-link>
-      </span>
-      <span class="mr-3">
-        <a-link
-          openInNewTab
-          url="http://aelve.com:4801/donate"
-        >
-          Donate
-        </a-link>
+        on GitHub
       </span>
       <span>
         licensed under

@@ -144,7 +144,6 @@ library
                      , servant-server
                      , servant-swagger
                      , servant-swagger-ui
-                     , servant-swagger-ui-redoc
                      , swagger2
                      , shortcut-links >= 0.4.2
                      , slave-thread
@@ -183,6 +182,7 @@ library
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
+                     , TypeApplications
                      , NoImplicitPrelude
 
 test-suite tests
