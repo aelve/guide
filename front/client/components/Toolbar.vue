@@ -3,7 +3,7 @@
     <v-toolbar-side-icon></v-toolbar-side-icon>
     <v-toolbar-title>Aelve Guide</v-toolbar-title>
     <v-spacer></v-spacer>
-    <!-- <search></search> -->
+    <search-field />
     <v-toolbar-items class="hidden-sm-and-down">
       <v-btn v-on:click="getApi" flat>Login</v-btn>
     </v-toolbar-items>
@@ -12,13 +12,13 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import Search from './Search.vue';
+import SearchField from 'client/components/Search.vue';
 import Component from 'vue-class-component';
 import axios from "axios";
 
 @Component({
   components: {
-    Search
+    SearchField
   }
 })
 export default class Toolbar extends Vue {

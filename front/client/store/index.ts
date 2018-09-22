@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 import category from 'client/store/modules/category'
+import categoryItem from 'client/store/modules/categoryItem'
 
 function createStore() {
   // TODO loggins mutations in dev
@@ -8,7 +9,8 @@ function createStore() {
     actions: {},
     mutations: {},
     modules: {
-      category
+      category,
+      categoryItem
     }
   })
 }
