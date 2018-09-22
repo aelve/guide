@@ -411,8 +411,9 @@ renderEdit globalState edit = do
 
   case edit of
     -- Add
-    Edit'AddCategory _catId title' -> p_ $ do
+    Edit'AddCategory _catId title' group' -> p_ $ do
       "added category " >> quote (toHtml title')
+      " to group " >> quote (toHtml group')
     Edit'AddItem catId _itemId name' -> p_ $ do
       "added item " >> printItem _itemId
       " (initially called " >> quote (toHtml name') >> ")"

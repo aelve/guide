@@ -274,7 +274,7 @@ addMethods = do
       Nothing -> do
         catId <- randomShortUid
         time <- liftIO getCurrentTime
-        (edit, newCategory) <- dbUpdate (AddCategory catId title' time)
+        (edit, newCategory) <- dbUpdate (AddCategory catId title' "Miscellaneous" time)
         invalidateCache' (CacheCategory catId)
         addEdit edit
         return newCategory
