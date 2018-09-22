@@ -5,7 +5,12 @@
     <v-spacer></v-spacer>
     <search-field />
     <v-toolbar-items class="hidden-sm-and-down">
-      <v-btn v-on:click="getApi" flat>Login</v-btn>
+      <v-btn
+        flat
+        v-on:click="getApi"
+      >
+        Login
+      </v-btn>
     </v-toolbar-items>
   </v-toolbar>
 </template>
