@@ -4,9 +4,13 @@
     <br>
     <br>
     <br>
-    <p> {{ getCategory }} </p>
-    <div v-for="(ecosystem, index) in getCategory" :key="index">
-      {{ ecosystem.description }}
+    <div v-for="(ecosystem, group, name, notes, pros, description, cons, index) in getCategory" :key="index"
+      class="category-item">
+      <div class="category-item">
+        <!-- {{ description.html }}
+        <br> -->
+        {{ ecosystem.html }}
+      </div>
     </div>
   </v-container>
 </template>
@@ -24,7 +28,7 @@ export default class ArticleItem extends Vue {
   }
 
   get getCategory () {
-    return typeof this.$store.state.categoryItem.categoryItemList
+    return this.$store.state.categoryItem.categoryItemList
   }
 
   get getCategoryDescription() {
@@ -40,3 +44,12 @@ export default class ArticleItem extends Vue {
   }
 }
 </script>
+
+<style scoped>
+  .category-item {
+    background: #878787;
+    padding: 15px 20px;
+    margin: 0 0 30px;
+  }
+</style>
+

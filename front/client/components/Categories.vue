@@ -1,5 +1,10 @@
 <template>
   <v-container grid-list-md>
+    <!-- TODO remove when links refactored -->
+    <router-link to="/haskell">
+      <button class="test-btn">Test Article</button>
+    </router-link>
+    
     <v-layout
       row
       wrap
@@ -16,11 +21,6 @@
         v-for="(groupCategories, groupName, index) in groups"
         :key="index"
       > 
-        <!-- TODO remove when links refactored -->
-        <!-- <router-link to="/haskell">
-          <button class="test-btn">Test Article</button>
-        </router-link> -->
-        
         <div class="category-group">
           <h4 class="mb-2 display-1 font-weight-black">
             {{ groupName }}
