@@ -95,7 +95,7 @@ export default class AddCategoryDialog extends Vue {
     // TODO handle errors
     const createdId = await CategoryService.createCategory({
       title: this.categoryName,
-      group: this.groupName
+      group: this.groupNameInternal
     })
     this.$store.dispatch('category/loadCategoryList')
     window.open(`http://aelve.com:4801/haskell/${createdId}`, '_blank')
