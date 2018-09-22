@@ -153,7 +153,7 @@ addEdit ed = do
 -- been deleted; this should change.
 undoEdit :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
          => Edit -> m (Either String ())
-undoEdit (Edit'AddCategory catId _) = do
+undoEdit (Edit'AddCategory catId _ _) = do
   void <$> dbUpdate (DeleteCategory catId)
 undoEdit (Edit'AddItem _catId itemId _) = do
   void <$> dbUpdate (DeleteItem itemId)
@@ -245,7 +245,7 @@ invalidateCacheForEdit
 invalidateCacheForEdit ed = do
   gs <- dbQuery GetGlobalState
   mapM_ (invalidateCache gs) $ case ed of
-    Edit'AddCategory catId _ ->
+    Edit'AddCategory catId _ _ ->
         [CacheCategory catId]
     -- Normally invalidateCache should invalidate item's category
     -- automatically, but in this case it's *maybe* possible that the item

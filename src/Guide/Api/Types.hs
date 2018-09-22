@@ -90,11 +90,16 @@ data CategorySite route = CategorySite
   , _createCategory :: route :-
       Summary "Create a new category"
       :> Description "Returns the ID of the created category.\n\n\
-                     \If a category with the same title already exists, \
-                     \returns its ID instead."
+                     \If a category with the same title already exists \
+                     \in the group, returns its ID instead."
       :> ErrorResponse 400 "'title' not provided"
       :> "category"
-      :> QueryParam' '[Required, Strict] "title" Text
+      :> QueryParam' '[Required, Strict,
+                       Description "Title of the newly created category"]
+           "title" Text
+      :> QueryParam' '[Required, Strict,
+                       Description "Group to put the category into"]
+           "group" Text
       :> Post '[JSON] (Uid Category)
 
   , _deleteCategory :: route :-

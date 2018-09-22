@@ -6,10 +6,11 @@ class CategoryService {
     return data
   }
 
-  async  createCategory({ title }: ICategory): Promise<ICategory[]> {
+  async  createCategory({ title, group }: ICategory): Promise<ICategory[]> {
     const { data } = await axios.post('api/category', null, {
       params: {
-        title
+        title,
+        group
       }
     })
     return data
