@@ -49,6 +49,10 @@ apiServer db = Site
   , _traitSite = toServant (TraitSite
       { _deleteTrait    = deleteTrait db }
       :: TraitSite AsServer)
+
+  , _searchSite = toServant (SearchSite
+      { _search         = search db }
+      :: SearchSite AsServer)
   }
 
 type FullApi =

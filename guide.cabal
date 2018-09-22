@@ -183,6 +183,7 @@ library
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
+                     , TypeApplications
                      , NoImplicitPrelude
 
 test-suite tests

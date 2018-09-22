@@ -18,15 +18,18 @@ module Guide.Api.Types
   , CategorySite(..)
   , ItemSite(..)
   , TraitSite(..)
+  , SearchSite(..)
 
   -- * View types
-  , CCategoryInfo(..)
-  , CCategoryDetail(..)
-  , CItem(..)
-  , CMarkdown(..)
-  , CTrait(..)
-  , toCCategoryDetail
-  , toCategoryInfo
+  , CCategoryInfo(..), toCCategoryInfo
+  , CCategoryFull(..), toCCategoryFull
+  , CItemInfo(..), toCItemInfo
+  , CItemFull(..), toCItemFull
+  , CMarkdown(..), toCMarkdown
+  , CTrait(..), toCTrait
+
+  -- * Search
+  , CSearchResult(..), toCSearchResult
   )
   where
 
@@ -41,9 +44,8 @@ import Data.Swagger as S
 
 import Guide.Api.Error
 import Guide.Api.Utils
-import Guide.Types.Core
-         ( Category(..), CategoryStatus(..), Item(..), ItemKind
-         , Trait, content, uid )
+import Guide.Types.Core as G
+import Guide.Search
 import Guide.Utils (Uid(..), Url)
 import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSource)
 
@@ -62,9 +64,13 @@ data Site route = Site
   , _traitSite :: route :-
       BranchTag "03. Item traits" "Working with item traits."
       :> ToServant TraitSite AsApi
+  , _searchSite :: route :-
+      BranchTag "04. Search" "Site-wide search."
+      :> ToServant SearchSite AsApi
   }
   deriving (Generic)
 
+-- | Working with categories
 data CategorySite route = CategorySite
   { _getCategories :: route :-
       Summary "Get a list of available categories"
@@ -79,7 +85,7 @@ data CategorySite route = CategorySite
       :> ErrorResponse 404 "Category not found"
       :> "category"
       :> Capture "id" (Uid Category)
-      :> Get '[JSON] CCategoryDetail
+      :> Get '[JSON] CCategoryFull
 
   , _createCategory :: route :-
       Summary "Create a new category"
@@ -100,6 +106,7 @@ data CategorySite route = CategorySite
   }
   deriving (Generic)
 
+-- | Working with items
 data ItemSite route = ItemSite
   { _createItem :: route :-
       Summary "Create a new item in the given category"
@@ -119,6 +126,7 @@ data ItemSite route = ItemSite
   }
   deriving (Generic)
 
+-- | Working with item traits
 data TraitSite route = TraitSite
   { _deleteTrait :: route :-
       Summary "Delete a trait"
@@ -132,19 +140,31 @@ data TraitSite route = TraitSite
   }
   deriving (Generic)
 
+-- | Site-wide search
+data SearchSite route = SearchSite
+  { _search :: route :-
+      Summary "Search categories and items"
+      :> Description "Returns at most 100 search results"
+      :> "search"
+      :> QueryParam' '[Required, Strict] "query" Text
+      :> Get '[JSON] [CSearchResult]
+  }
+  deriving (Generic)
+
 type Api = ToServant Site AsApi
 
 ----------------------------------------------------------------------------
 -- Client types
 --
--- These are more "light-weight" Haskell types of `Guide`.
+-- These are more "light-weight" Haskell types of 'Guide'.
 --
 -- Furthermore using these "light-weight" types we keep all data small
 -- to send these over the wire w/o having deep nested data,
 -- we might not need on front-end.
 ----------------------------------------------------------------------------
 
--- | A "light-weight" client type of `Category`, which describes a category info
+-- | A "light-weight" client type of 'Category', which describes a category
+-- but doesn't give the notes or the items.
 data CCategoryInfo = CCategoryInfo
   { cciUid     :: Uid Category          ? "Category ID"
   , cciTitle   :: Text                  ? "Category title"
@@ -160,9 +180,9 @@ instance A.ToJSON CCategoryInfo where
 instance ToSchema CCategoryInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Factory to create a `CCategoryInfo` from a `Category`
-toCategoryInfo :: Category -> CCategoryInfo
-toCategoryInfo Category{..} = CCategoryInfo
+-- | Factory to create a 'CCategoryInfo' from a 'Category'
+toCCategoryInfo :: Category -> CCategoryInfo
+toCCategoryInfo Category{..} = CCategoryInfo
   { cciUid     = H _categoryUid
   , cciTitle   = H _categoryTitle
   , cciCreated = H _categoryCreated
@@ -170,72 +190,100 @@ toCategoryInfo Category{..} = CCategoryInfo
   , cciStatus  = H _categoryStatus
   }
 
--- | A "light-weight" client type of `Category`, which describes a category detail
-data CCategoryDetail = CCategoryDetail
-  { ccdUid :: Uid Category              ? "Category ID"
-  , ccdTitle :: Text                    ? "Category title"
-  , ccdGroup :: Text                    ? "Category group ('grandcategory')"
-  , ccdStatus :: CategoryStatus         ? "Status, e.g. done, in progress, ..."
-  , ccdDescription :: CMarkdown         ? "Category description/notes (Markdown)"
-  , ccdItems :: [CItem]                 ? "All items in the category"
+-- | A "light-weight" client type of 'Category', which gives all available
+-- information about a category
+data CCategoryFull = CCategoryFull
+  { ccfUid :: Uid Category              ? "Category ID"
+  , ccfTitle :: Text                    ? "Category title"
+  , ccfGroup :: Text                    ? "Category group ('grandcategory')"
+  , ccfStatus :: CategoryStatus         ? "Status, e.g. done, in progress, ..."
+  , ccfDescription :: CMarkdown         ? "Category description/notes (Markdown)"
+  , ccfItems :: [CItemFull]             ? "All items in the category"
   }
   deriving (Show, Generic)
 
-instance A.ToJSON CCategoryDetail where
+instance A.ToJSON CCategoryFull where
   toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema CCategoryDetail where
+instance ToSchema CCategoryFull where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Factory to create a `CCategoryDetail` from a `Category`
-toCCategoryDetail :: Category -> CCategoryDetail
-toCCategoryDetail Category{..} = CCategoryDetail
-  { ccdUid         = H $ _categoryUid
-  , ccdTitle       = H $ _categoryTitle
-  , ccdGroup       = H $ _categoryGroup_
-  , ccdDescription = H $ toCMarkdown _categoryNotes
-  , ccdItems       = H $ fmap toCItem _categoryItems
-  , ccdStatus      = H $ _categoryStatus
+-- | Factory to create a 'CCategoryFull' from a 'Category'
+toCCategoryFull :: Category -> CCategoryFull
+toCCategoryFull Category{..} = CCategoryFull
+  { ccfUid         = H $ _categoryUid
+  , ccfTitle       = H $ _categoryTitle
+  , ccfGroup       = H $ _categoryGroup_
+  , ccfDescription = H $ toCMarkdown _categoryNotes
+  , ccfItems       = H $ fmap toCItemFull _categoryItems
+  , ccfStatus      = H $ _categoryStatus
   }
 
--- | Client type of `Item`
-data CItem = CItem
-  { ciUid :: Uid Item                   ? "Item ID"
-  , ciName :: Text                      ? "Item name"
-  , ciCreated :: UTCTime                ? "When the item was created"
-  , ciGroup :: Maybe Text               ? "Item group"
-  , ciDescription :: CMarkdown          ? "Item summary (Markdown)"
-  , ciPros :: [CTrait]                  ? "Pros (positive traits)"
-  , ciCons :: [CTrait]                  ? "Cons (negative traits)"
-  , ciEcosystem :: CMarkdown            ? "The ecosystem description (Markdown)"
-  , ciNotes :: CMarkdown                ? "Notes (Markdown)"
-  , ciLink :: Maybe Url                 ? "Link to the official site, if exists"
-  , ciKind :: ItemKind                  ? "Item kind, e.g. library, ..."
+-- | A lightweight info type about an 'Item'
+data CItemInfo = CItemInfo
+  { ciiUid :: Uid Item                   ? "Item ID"
+  , ciiName :: Text                      ? "Item name"
+  , ciiCreated :: UTCTime                ? "When the item was created"
+  , ciiGroup :: Maybe Text               ? "Item group"
+  , ciiLink :: Maybe Url                 ? "Link to the official site, if exists"
+  , ciiKind :: ItemKind                  ? "Item kind, e.g. library, ..."
   } deriving (Show, Generic)
 
-instance A.ToJSON CItem where
+instance A.ToJSON CItemInfo where
   toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema CItem where
+instance ToSchema CItemInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Factory to create a `CItem` from an `Item`
-toCItem :: Item -> CItem
-toCItem Item{..} = CItem
-  { ciUid         = H $ _itemUid
-  , ciName        = H $ _itemName
-  , ciCreated     = H $ _itemCreated
-  , ciGroup       = H $ _itemGroup_
-  , ciDescription = H $ toCMarkdown _itemDescription
-  , ciPros        = H $ fmap toCTrait _itemPros
-  , ciCons        = H $ fmap toCTrait _itemCons
-  , ciEcosystem   = H $ toCMarkdown _itemEcosystem
-  , ciNotes       = H $ toCMarkdown _itemNotes
-  , ciLink        = H $ _itemLink
-  , ciKind        = H $ _itemKind
+-- | Client type of 'Item'
+data CItemFull = CItemFull
+  { cifUid :: Uid Item                   ? "Item ID"
+  , cifName :: Text                      ? "Item name"
+  , cifCreated :: UTCTime                ? "When the item was created"
+  , cifGroup :: Maybe Text               ? "Item group"
+  , cifDescription :: CMarkdown          ? "Item summary (Markdown)"
+  , cifPros :: [CTrait]                  ? "Pros (positive traits)"
+  , cifCons :: [CTrait]                  ? "Cons (negative traits)"
+  , cifEcosystem :: CMarkdown            ? "The ecosystem description (Markdown)"
+  , cifNotes :: CMarkdown                ? "Notes (Markdown)"
+  , cifLink :: Maybe Url                 ? "Link to the official site, if exists"
+  , cifKind :: ItemKind                  ? "Item kind, e.g. library, ..."
+  } deriving (Show, Generic)
+
+instance A.ToJSON CItemFull where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CItemFull where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Factory to create a 'CItemInfo' from an 'Item'
+toCItemInfo :: Item -> CItemInfo
+toCItemInfo Item{..} = CItemInfo
+  { ciiUid         = H $ _itemUid
+  , ciiName        = H $ _itemName
+  , ciiCreated     = H $ _itemCreated
+  , ciiGroup       = H $ _itemGroup_
+  , ciiLink        = H $ _itemLink
+  , ciiKind        = H $ _itemKind
   }
 
--- | Client type of `Trait`
+-- | Factory to create a 'CItemFull' from an 'Item'
+toCItemFull :: Item -> CItemFull
+toCItemFull Item{..} = CItemFull
+  { cifUid         = H $ _itemUid
+  , cifName        = H $ _itemName
+  , cifCreated     = H $ _itemCreated
+  , cifGroup       = H $ _itemGroup_
+  , cifDescription = H $ toCMarkdown _itemDescription
+  , cifPros        = H $ fmap toCTrait _itemPros
+  , cifCons        = H $ fmap toCTrait _itemCons
+  , cifEcosystem   = H $ toCMarkdown _itemEcosystem
+  , cifNotes       = H $ toCMarkdown _itemNotes
+  , cifLink        = H $ _itemLink
+  , cifKind        = H $ _itemKind
+  }
+
+-- | Client type of 'Trait'
 data CTrait = CTrait
   { ctUid :: Uid Trait                  ? "Trait ID"
   , ctContent :: CMarkdown              ? "Trait text (Markdown)"
@@ -247,14 +295,14 @@ instance A.ToJSON CTrait where
 instance ToSchema CTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Factory to create a `CTrait` from a `Trait`
+-- | Factory to create a 'CTrait' from a 'Trait'
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
   { ctUid     = H $ trait ^. uid
   , ctContent = H $ toCMarkdown $ trait ^. content
   }
 
--- | Client type of `Markdown`
+-- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
   { text :: Text                        ? "Markdown source"
   , html :: Text                        ? "Rendered HTML"
@@ -263,25 +311,92 @@ data CMarkdown = CMarkdown
 instance A.ToJSON CMarkdown
 instance ToSchema CMarkdown
 
--- | Type class to create `CMarkdown`
-class ToCMardown md where toCMarkdown :: md -> CMarkdown
+-- | Type class to create 'CMarkdown'
+class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
-instance ToCMardown MarkdownInline where
+instance ToCMarkdown MarkdownInline where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
     , html = H $ toText $ md^.mdHtml
     }
 
-instance ToCMardown MarkdownBlock where
+instance ToCMarkdown MarkdownBlock where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
     , html = H $ toText $ md^.mdHtml
     }
 
-instance ToCMardown MarkdownTree where
+instance ToCMarkdown MarkdownTree where
   toCMarkdown md = CMarkdown
     { text = H $ md^.mdSource
     , html = H $ toText . renderText $ toHtml md
+    }
+
+----------------------------------------------------------------------------
+-- Search client types
+----------------------------------------------------------------------------
+
+-- | Client type of 'SearchResult'
+data CSearchResult
+  -- | Match was found in category title
+  = CSRCategoryResult CSRCategory
+  -- | Match was found in the item
+  | CSRItemResult CSRItem
+  deriving (Show, Generic)
+
+instance A.ToJSON CSearchResult where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CSearchResult where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | A category was found.
+data CSRCategory = CSRCategory
+  { csrcInfo         :: CCategoryInfo  ? "Info about the category"
+  , csrcDescription  :: CMarkdown      ? "Category description"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CSRCategory where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CSRCategory where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | An item was found.
+data CSRItem = CSRItem
+  { csriCategory    :: CCategoryInfo    ? "Category that the item belongs to"
+  , csriInfo        :: CItemInfo        ? "Info about the item"
+  , csriDescription :: Maybe CMarkdown  ? "Item description (if the match was found there)"
+  , csriEcosystem   :: Maybe CMarkdown  ? "Item ecosystem (if the match was found there)"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CSRItem where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CSRItem where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+toCSearchResult :: SearchResult -> CSearchResult
+toCSearchResult (SRCategory cat) =
+  CSRCategoryResult $ CSRCategory
+    { csrcInfo        = H $ toCCategoryInfo cat
+    , csrcDescription = H $ toCMarkdown (cat ^. G.notes)
+    }
+toCSearchResult (SRItem cat item) =
+  CSRItemResult $ CSRItem
+    { csriCategory    = H $ toCCategoryInfo cat
+    , csriInfo        = H $ toCItemInfo item
+    , csriDescription = H $ Just (toCMarkdown (item ^. G.description))
+    , csriEcosystem   = H $ Nothing
+    }
+-- TODO: currently if there are matches in both description and category,
+-- we'll show two matches instead of one
+toCSearchResult (SRItemEcosystem cat item) =
+  CSRItemResult $ CSRItem
+    { csriCategory    = H $ toCCategoryInfo cat
+    , csriInfo        = H $ toCItemInfo item
+    , csriDescription = H $ Nothing
+    , csriEcosystem   = H $ Just (toCMarkdown (item ^. ecosystem))
     }
 
 ----------------------------------------------------------------------------

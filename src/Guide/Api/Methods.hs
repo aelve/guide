@@ -16,8 +16,8 @@ import Data.Text (Text)
 import Guide.Types
 import Guide.State
 import Guide.Utils
-import Guide.Api.Types (CCategoryInfo, CCategoryDetail, toCategoryInfo, toCCategoryDetail)
-
+import Guide.Api.Types
+import qualified Guide.Search as Search
 
 ----------------------------------------------------------------------------
 -- Categories
@@ -27,14 +27,14 @@ import Guide.Api.Types (CCategoryInfo, CCategoryDetail, toCategoryInfo, toCCateg
 getCategories :: DB -> Handler [CCategoryInfo]
 getCategories db = do
   dbQuery db GetCategories <&> \xs ->
-    map toCategoryInfo xs
+    map toCCategoryInfo xs
 
 -- | Get a single category and all of its items.
-getCategory :: DB -> Uid Category -> Handler CCategoryDetail
+getCategory :: DB -> Uid Category -> Handler CCategoryFull
 getCategory db catId =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing  -> throwError err404
-    Just cat -> pure (toCCategoryDetail cat)
+    Just cat -> pure (toCCategoryFull cat)
 
 -- | Create a new category, given the title.
 --
@@ -105,6 +105,18 @@ deleteTrait db itemId traitId = do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
   -- TODO: mapM_ addEdit mbEdit
+
+----------------------------------------------------------------------------
+-- Search
+----------------------------------------------------------------------------
+
+-- | Site-wide search.
+--
+-- Returns at most 100 results.
+search :: DB -> Text -> Handler [CSearchResult]
+search db searchQuery = do
+  gs <- dbQuery db GetGlobalState
+  pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
 ----------------------------------------------------------------------------
 -- Utils
