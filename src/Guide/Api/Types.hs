@@ -140,7 +140,7 @@ data TraitSite route = TraitSite
 data SearchSite route = SearchSite
   { _search :: route :-
       Summary "Search categories and items"
-      :> Description "Returns at most 100 search results"
+      :> Description "Note: returns at most 100 search results."
       :> ErrorResponse 400 "'query' not provided"
       :> "search"
       :> QueryParam' '[Required, Strict] "query" Text
@@ -342,10 +342,27 @@ data CSearchResult
   deriving (Show, Generic)
 
 instance A.ToJSON CSearchResult where
-  toJSON = A.genericToJSON jsonOptions
+  toJSON = \case
+    CSRCategoryResult cat -> A.object
+      [ "tag" A..= ("Category" :: Text)
+      , "contents" A..= cat
+      ]
+    CSRItemResult item -> A.object
+      [ "tag" A..= ("Item" :: Text)
+      , "contents" A..= item
+      ]
 
 instance ToSchema CSearchResult where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
+    { constructorTagModifier = \case
+        "CSRCategoryResult" -> "Category"
+        "CSRItemResult" -> "Item"
+        other -> error ("CSearchResult schema: unknown tag " <> show other)
+    }
+    & mapped.mapped.schema.S.description ?~
+        "The docs lie. The true schema for this type is an object with two \
+        \parameters 'tag' and 'contents', where 'tag' is one of keys listed \
+        \in this doc, and 'contents' is the object."
 
 -- | A category was found.
 data CSRCategory = CSRCategory
