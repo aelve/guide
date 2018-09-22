@@ -19,8 +19,10 @@ module Guide.Api.Utils
 import Imports
 
 import GHC.TypeLits
+import GHC.Generics
 import Data.Aeson
 import Data.Swagger hiding (fieldLabelModifier)
+import Data.Swagger.Internal.Schema
 import Servant
 import Servant.Swagger
 
@@ -52,6 +54,9 @@ instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
     return $ NamedSchema Nothing (s & description ?~ toText desc)
     where
       desc = symbolVal (Proxy @help)
+
+instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, ToSchema c) => GToSchema (S1 s (K1 i (Maybe c ? help))) where
+  gdeclareNamedSchema opts _ = fmap unnamed . withFieldSchema opts (Proxy2 :: Proxy2 s (K1 i (Maybe c ? help))) False
 
 -- | A way to name branches of Swagger API.
 --
