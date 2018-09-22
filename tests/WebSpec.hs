@@ -71,7 +71,7 @@ mainPageTests = session "main page" $ using [chromeCaps] $ do
       height `shouldBeInRange` (30, 70)
     wd "overflows when shrunk" $ do
       -- and now it shall be overflowing
-      setWindowSize (600, 500)
+      setWindowSize (400, 500)
       footer <- select "#footer"
       (_, height) <- elemSize footer
       height `shouldBeInRange` (71, 140)

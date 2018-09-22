@@ -179,18 +179,9 @@ footerDef
   -> HtmlT m ()
 footerDef _page = do
   mapM_ (div_ [class_ "footer-item"]) $
-    [ do 
-        "made by "
-        mkLink "Artyom" "https://artyom.me"
-    , do 
-        mkLink "source" "https://github.com/aelve/guide"
-        "/"
-        mkLink "issue tracker" "https://github.com/aelve/guide/issues"
-    , mkLink "rules" "/unwritten-rules"
-    , mkLink "donate" "/donate"
-    , do 
-        "licensed under "
-        mkLink "CC+ BY-SA 4.0" "/license"
+    [ "made by " >> mkLink "Aelve" "https://aelve.com"
+    , mkLink "source" "https://github.com/aelve/guide" >> " on GitHub"
+    , "licensed under " >> mkLink "CC+ BY-SA 4.0" "/license"
     ]
 
 

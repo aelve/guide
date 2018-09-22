@@ -17,7 +17,6 @@ module Guide.Views
   renderRoot,
   renderAdmin,
   renderAdminLinks,
-  renderDonate,
   renderCategoryPage,
   renderHaskellRoot,
 
@@ -604,12 +603,6 @@ renderNoScriptWarning =
       you won't be able to edit anything.
       |]
 
--- | Render the </donate> page.
-renderDonate
-  :: (MonadIO m, MonadReader Config m) => HtmlT m ()
-renderDonate = wrapPage "Donate to Artyom" $ do
-  toHtmlRaw =<< liftIO (readFile "static/donate.html")
-
 -- | Render any page that is a static piece of Markdown.
 renderStaticMd
   :: (MonadIO m, MonadReader Config m)
@@ -680,15 +673,9 @@ wrapPage pageTitle' page = doctypehtml_ $ do
       page
     div_ [id_ "footer"] $ do
       mapM_ (div_ [class_ "footer-item"]) $
-        [ do "made by "
-             mkLink "Artyom" "https://artyom.me"
-        , do mkLink "source" "https://github.com/aelve/guide"
-             "/"
-             mkLink "issue tracker" "https://github.com/aelve/guide/issues"
-        , mkLink "rules" "/unwritten-rules"
-        , mkLink "donate" "/donate"
-        , do "licensed under "
-             mkLink "CC+ BY-SA 4.0" "/license"
+        [ "made by " >> mkLink "Aelve" "https://aelve.com"
+        , mkLink "source" "https://github.com/aelve/guide" >> " on GitHub"
+        , "licensed under " >> mkLink "CC+ BY-SA 4.0" "/license"
         ]
 
 -- | Render the search box.
