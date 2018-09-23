@@ -1,13 +1,27 @@
 <template>
   <v-container>
-    <div v-html="getCategoryDescription"></div>
-    <br>
-    <br>
-    <br>
-    <div v-for="(value, index) in getCategoryItems" :key="index"
-      class="category-item">
-      <div class="category-item">
-        <div></div>
+    <div class="article-content">
+      <div v-html="getCategoryDescription"></div>
+      <br>
+      <br>
+      <br>
+      <div v-for="(value, index) in getCategoryItems" :key="index"
+        class="article-item">
+        <div class="article-header">
+          <p class="article-hd-textlg">{{ value.kind.contents }}</p>
+          <a-link openInNewTab :url="`http://hackage.haskell.org/package/${value.kind.contents}`" class="article-header-link">
+            (Hackage)
+          </a-link>
+          <p class="article-hd-textsm">{{ value.group }}</p>
+          <div class="article-header-icons">
+            <i class="fas fa-arrow-up"></i>
+            <i class="fas fa-arrow-down"></i>
+            <div class="header-func-icons">
+              <i class="fas fa-cogs"></i>
+              <i class="fas fa-times"></i>
+            </div>
+          </div>
+        </div>
         <p class="article-section-title">Summary</p>
         <div v-html="value.description.html"></div>
         <div class="flex-wrapper">
@@ -63,10 +77,23 @@ export default class ArticleItem extends Vue {
 </script>
 
 <style scoped>
-  .category-item {
+  .article-content {
+    width: 800px;
+    margin: 0 auto;
+  }
+
+  .article-item {
     background: #DFDFDF;
     padding: 15px 20px;
     margin: 0 0 30px;
+  }
+
+  .article-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    margin: -15px -20px 15px;
+    background: #C8C8C8;
   }
 
   .flex-wrapper {
@@ -88,6 +115,68 @@ export default class ArticleItem extends Vue {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
+  }
+
+  .article-hd-textlg {
+    font-size: 22px;
+  }
+
+  .article-hd-textsm {
+    font-size: 18px;
+  }
+
+  .article-header-link {
+    font-size: 22px;
+    padding: 0 32px 0 8px;
+  }
+
+  .article-header-icons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  .article-header-icons >>> i {
+    margin-right: 5px;
+    font-size: 18px;
+    color: #979797;
+    cursor: pointer;
+    transition: all ease-in-out .25s;
+  }
+
+  .article-header-icons >>> i:nth-last-child(1) {
+    margin: 0;
+  }
+
+  .article-header-icons >>> i:hover {
+    color: #000;
+  } 
+
+  .header-func-icons {
+    padding-left: 20px;
+  }
+
+  /* TODO undestand why it is not working */
+  .sourceCode {
+    min-width: 100%;
+    padding: 8px;
+  }
+
+  @media screend and (max-width: 768px) {
+    .article-content {
+      width: 100%;
+    }
+    .article-hd-textlg {
+      font-size: 20px;
+    }
+    .article-hd-textsm {
+      font-size: 16px;
+    }
+    .article-header-link {
+      font-size: 20px;
+      padding: 0 32px 0 8px;
+    }
   }
 </style>
 

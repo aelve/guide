@@ -33,4 +33,7 @@ export default class RootComponent extends Vue {}
 *:after {
   box-sizing: border-box;
 }
+p {
+  margin: 0;
+}
 </style>
