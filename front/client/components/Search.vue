@@ -26,4 +26,7 @@ export default class SearchField extends Vue {
 .toollbar-search >>> div {
   margin-bottom: 0 !important;
 }
+.toollbar-search >>> label {
+  font-size: 18px;
+}
 </style>
