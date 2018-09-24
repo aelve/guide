@@ -36,4 +36,9 @@ export default class RootComponent extends Vue {}
 p {
   margin: 0;
 }
+code.sourceCode {
+  min-width: 100%;
+  padding: 8px;
+  margin: 0 0 15px;
+}
 </style>

@@ -1,10 +1,14 @@
 <template>
   <v-container>
-    <div class="article-content">
-      <div v-html="getCategoryDescription"></div>
-      <br>
-      <br>
-      <br>
+    <div class="article-wrapper">
+      <div class="article-top">
+        <i class="fas fa-rss"></i>
+        <div class="article-top-data" v-for="(value, key) in getCategory" :key="key">
+          <a class="article-top-link" href="https://guide.aelve.com/haskell/lenses-sth6l9jl">{{value.title}}</a>
+          <p class="article-top-group">{{value.group}}</p>
+        </div>
+      </div>
+      <div class="article-description" v-html="getCategoryDescription"></div>
       <div v-for="(value, index) in getCategoryItems" :key="index"
         class="article-item">
         <div class="article-header">
@@ -22,26 +26,32 @@
             </div>
           </div>
         </div>
-        <p class="article-section-title">Summary</p>
-        <div v-html="value.description.html"></div>
-        <div class="flex-wrapper">
-          <div class="width-50">
-            <p class="article-section-title">Pros</p>
-            <ul v-for="(value, index) in value.pros" :key="index">
-              <li v-html="value.content.html"></li>
-            </ul>
+        <div class="article-content">
+          <p class="article-section-title">Summary</p>
+          <div class="article-description" v-html="value.description.html"></div>
+          <div class="flex-wrapper article-section pros-cons-box">
+            <div class="width-50">
+              <p class="article-section-title">Pros</p>
+              <ul v-for="(value, index) in value.pros" :key="index">
+                <li v-html="value.content.html"></li>
+              </ul>
+            </div>
+            <div class="width-50">
+              <p class="article-section-title">Cons</p>
+              <ul v-for="(value, index) in value.cons" :key="index">
+                <li v-html="value.content.html"></li>
+              </ul>
+            </div>
           </div>
-          <div class="width-50">
-            <p class="article-section-title">Cons</p>
-            <ul v-for="(value, index) in value.cons" :key="index">
-              <li v-html="value.content.html"></li>
-            </ul>
+          <div class="article-section">
+            <p class="article-section-title">Ecosystem</p>
+            <div v-html="value.ecosystem.html"></div>
+          </div>
+          <div class="article-section notes-box">
+            <p class="article-section-title">Notes</p>
+            <div v-html="value.notes.html"></div>
           </div>
         </div>
-        <p class="article-section-title">Ecosystem</p>
-        <div v-html="value.ecosystem.html"></div>
-        <p class="article-section-title">Notes</p>
-        <div v-html="value.notes.html"></div>
       </div>
     </div>
   </v-container>
@@ -60,7 +70,9 @@ export default class ArticleItem extends Vue {
   }
 
   get getCategory () {
-    return this.$store.state.categoryItem.categoryItemList
+    // why this returns items[]?
+    // return this.$store.state.categoryItem.categoryItemList
+    return this.$store.state.categoryItem
   }
 
   get getCategoryDescription() {
@@ -77,15 +89,96 @@ export default class ArticleItem extends Vue {
 </script>
 
 <style scoped>
-  .article-content {
+  .article-top {
+    display: flex;
+    align-items: center;
+    margin: 0 0 45px;
+  }
+
+  .article-top-data {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+
+  .article-top >>> i {
+    margin-right: 15px;
+    font-size: 18px;
+    color: #979797;
+    cursor: pointer;
+    transition: all ease-in-out .25s;
+  }
+
+  .article-top >>> i:hover {
+    color: #000;
+  }
+
+  .article-top-link {
+    font-size: 24px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #979797;
+    cursor: pointer;
+    transition: all ease-in-out .25s;
+    margin-right: 15px;
+  }
+
+  .article-top-group {
+    font-size: 24px;
+  }
+
+  .article-top-link:hover {
+    color: #000;
+    color: #979797;
+  }
+
+  .article-wrapper {
     width: 800px;
     margin: 0 auto;
   }
 
+  .article-content >>> p {
+    font-size: 16px;
+    margin: 0 0 10px;
+  }
+
+  .article-content >>> li {
+    font-size: 16px;
+  }
+
+  .article-description {
+    margin: 10px 0 60px;
+  }
+
+  .article-description >>> p {
+    margin: 0;
+  }
+
+  .article-description >>> p {
+    margin: 0 0 15px;
+    font-size: 16px;
+  }
+
+  .article-description >>> h1 {
+    margin: 25px 0 5px;
+  }
+
+  .article-section {
+    margin: 30px 0;
+  }
+
+  .article-section.pros-cons-box, .article-section.notes-box >>> li {
+    margin: 0 0 5px;
+  }
+
+  .article-section.notes-box >>> h1 {
+    margin: 20px 0;
+  }
+
   .article-item {
-    background: #DFDFDF;
+    background: #E5E5E5;
     padding: 15px 20px;
-    margin: 0 0 30px;
+    margin: 0 0 80px;
   }
 
   .article-header {
@@ -112,8 +205,8 @@ export default class ArticleItem extends Vue {
 
   .article-section-title {
     display: block;
-    margin: 0;
-    font-size: 18px;
+    margin: 0 0 8px;
+    font-size: 22px!important;
     font-weight: 600;
   }
 
@@ -158,14 +251,14 @@ export default class ArticleItem extends Vue {
   }
 
   /* TODO undestand why it is not working */
-  .sourceCode {
-    min-width: 100%;
-    padding: 8px;
-  }
+
 
   @media screend and (max-width: 768px) {
     .article-content {
       width: 100%;
+    }
+    .article-item {
+      margin: 0 0 30px;
     }
     .article-hd-textlg {
       font-size: 20px;
