@@ -120,7 +120,7 @@ export default class ArticleItem extends Vue {
     color: #979797;
     cursor: pointer;
     transition: all ease-in-out .25s;
-    margin-right: 15px;
+    margin-right: 30px;
   }
 
   .article-top-group {
