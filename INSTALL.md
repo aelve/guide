@@ -19,6 +19,8 @@ The `config.json` file contains the config (it will be created at the 1st start)
 
 # How to install locally
 
+First install NPM (important!). Then do:
+
     $ stack build
     $ stack exec guide
 
@@ -31,6 +33,8 @@ I'm going to use Digitalocean and Ubuntu, but you can use anything else.
 Create a droplet with Ubuntu. Install Stack (this command will import a GPG key, add Stack's repository, and run `apt-get`):
 
     $ curl -sSL https://get.haskellstack.org/ | sh
+
+Install NPM.
 
 Clone and build `guide`:
 
