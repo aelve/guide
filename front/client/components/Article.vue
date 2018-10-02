@@ -23,8 +23,8 @@ import Component from 'vue-class-component'
 @Component
 export default class ArticleItem extends Vue {
 
-  async asyncData({ store }) {
-    return store.dispatch('categoryItem/loadCategoryItem')
+  async asyncData() {
+    return this.$store.dispatch('categoryItem/loadCategoryItem')
   }
 
   get getCategory () {

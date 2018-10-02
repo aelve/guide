@@ -1,26 +1,10 @@
-/* tslint:disable:ordered-imports */
-
 import 'reflect-metadata'
 import 'babel-polyfill'
-import Vue from 'vue'
+import _get from 'lodash/get'
 
 import { createApp } from './app'
 
 const { app, router, store } = createApp()
-
-Vue.mixin({
-  beforeRouteUpdate (to, from, next) {
-    const { asyncData } = this.$options
-    if (typeof asyncData === 'function') {
-      asyncData.call(this, {
-        store: this.$store,
-        route: to
-      }).then(next).catch(next)
-    } else {
-      next()
-    }
-  }
-})
 
 const STATE_KEY = '__INITIAL_STATE__'
 const SSR_ENABLED = window['__SSR_IS_ON__']
@@ -34,35 +18,44 @@ if (!SSR_ENABLED) {
 }
 
 router.onReady(() => {
+  // TODO get rid of SSR_ENABLED constant
   if (SSR_ENABLED) {
     registerBeforeResolve()
   }
   app.$mount('#app')
 })
 
-function registerBeforeResolve () {
-  router.beforeResolve((to, from, next) => {
-    const matched = router.getMatchedComponents(to)
-    const prevMatched = router.getMatchedComponents(from)
-
-    let diffed = false
-    const activated = matched.filter((c, i) => {
-      return diffed || (diffed = (prevMatched[i] !== c))
-    })
-
-    if (!activated.length) {
-      return next()
+function registerBeforeResolve() {
+  router.afterEach(async (to, from) => {
+    for (const matchedRoute of to.matched) {
+      const componentsInstances = Object.values(matchedRoute.instances)
+        .filter(Boolean)
+      const matchedComponentsAndChildren = componentsInstances
+        .reduce((acc, matchedComponent) => {
+          const componentAndItsChildren = getComponentAndItsChildren(matchedComponent)
+          acc = acc.concat(componentAndItsChildren)
+          return acc
+        }, [])
+      matchedComponentsAndChildren.map(component => {
+        if (typeof component.asyncData === 'function') {
+          return component.$nextTick(() => component.asyncData())
+        }
+      })
     }
-
-    Promise.all(activated.map(Component => {
-      const asyncDataFunc = Component['asyncData'] ||
-        (Component['options']　|| {})['asyncData']
-
-      if (typeof asyncDataFunc === 'function') {
-        return asyncDataFunc({ store, route: to })
-      }
-    })).then(() => {
-      next()
-    }).catch(next)
   })
+}
+
+function getComponentAndItsChildren(component, result?) {
+  if (!result) {
+    result = []
+  }
+  if (!result.includes(component)) {
+    result.push(component)
+  }
+  const children = Object.values(component.$children)
+    // Parent component is also presents in components object
+    .filter(x => x !== component)
+  children.forEach(x => getComponentAndItsChildren(x, result))
+
+  return result
 }

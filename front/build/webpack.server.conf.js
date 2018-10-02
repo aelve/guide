@@ -5,10 +5,12 @@ const merge = require('webpack-merge')
 const nodeExternals = require('webpack-node-externals')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const VueServerPlugin = require('vue-server-renderer/server-plugin')
-
-const { distPath, env } = require('./build-config')
+const axios = require('axios')
+const { distPath, env, ssrPort } = require('./build-config')
 const { cssLoader, stylusLoader } = require('./style-loader.conf')
 const baseConfig = require('./webpack.base.conf')
+
+axios.defaults.baseURL = `http://localhost:${ssrPort}`
 
 const webpackConfig = merge(baseConfig, {
   mode: process.env.NODE_ENV,
@@ -16,7 +18,7 @@ const webpackConfig = merge(baseConfig, {
   target: 'node',
 
   entry: rootResolve('./client/entry.server.ts'),
-  
+
   output: {
     path: distPath,
     filename: 'server-build.js',

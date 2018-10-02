@@ -110,8 +110,8 @@ import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 export default class Categories extends Vue {
   CategoryStatus = CategoryStatus
   // TODO add type for store
-  async asyncData({ store }) {
-    return store.dispatch('category/loadCategoryList')
+  async asyncData() {
+    return this.$store.dispatch('category/loadCategoryList')
   }
   // TODO create state getter and replace to it
   get categories() {

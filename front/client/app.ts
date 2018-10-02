@@ -7,11 +7,15 @@ import ALink from 'client/components/ALink.vue'
 import 'vuetify/dist/vuetify.css' // Ensure you are using css-loader
 import '@fortawesome/fontawesome-free/css/all.css'
 import 'material-design-icons-iconfont/dist/material-design-icons.css'
+import axios from 'axios'
 
 import AppComponent from './App.vue'
 import { createRouter } from './router'
 import { createStore } from './store'
 
+// webpack DefinePlugin constant, see build/webpack.base.conf.js for
+declare var BASE_URL: string
+axios.defaults.baseURL = BASE_URL
 
 function initVue() {
   Vue.use(VueRouter)
@@ -29,9 +33,7 @@ function createApp() {
   const app = new Vue({
     router,
     store,
-    render(h) {
-      return h(AppComponent)
-    }
+    render: h => h(AppComponent)
   })
 
   return {
