@@ -36,13 +36,15 @@ module Guide.Api.Types
 
 import Imports
 
+import Data.Tree (Forest, Tree)
 import Lucid (renderText, toHtml)
 import Servant
 import Servant.API.Generic
 
 import Guide.Api.Error
 import Guide.Api.Utils
-import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSource)
+import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, markdownTreeMdTOC, mdHtml,
+                       mdSource, renderMD)
 import Guide.Search
 import Guide.Types.Core as G
 import Guide.Utils (Uid (..), Url)
@@ -240,17 +242,18 @@ instance ToSchema CItemInfo where
 
 -- | Client type of 'Item'
 data CItemFull = CItemFull
-  { cifUid         :: Uid Item   ? "Item ID"
-  , cifName        :: Text       ? "Item name"
-  , cifCreated     :: UTCTime    ? "When the item was created"
-  , cifGroup       :: Maybe Text ? "Item group"
-  , cifDescription :: CMarkdown  ? "Item summary (Markdown)"
-  , cifPros        :: [CTrait]   ? "Pros (positive traits)"
-  , cifCons        :: [CTrait]   ? "Cons (negative traits)"
-  , cifEcosystem   :: CMarkdown  ? "The ecosystem description (Markdown)"
-  , cifNotes       :: CMarkdown  ? "Notes (Markdown)"
-  , cifLink        :: Maybe Url  ? "Link to the official site, if exists"
-  , cifKind        :: ItemKind   ? "Item kind, e.g. library, ..."
+  { cifUid         :: Uid Item         ? "Item ID"
+  , cifName        :: Text             ? "Item name"
+  , cifCreated     :: UTCTime          ? "When the item was created"
+  , cifGroup       :: Maybe Text       ? "Item group"
+  , cifDescription :: CMarkdown        ? "Item summary (Markdown)"
+  , cifPros        :: [CTrait]         ? "Pros (positive traits)"
+  , cifCons        :: [CTrait]         ? "Cons (negative traits)"
+  , cifEcosystem   :: CMarkdown        ? "The ecosystem description (Markdown)"
+  , cifNotes       :: CMarkdown        ? "Notes (Markdown)"
+  , cifLink        :: Maybe Url        ? "Link to the official site, if exists"
+  , cifKind        :: ItemKind         ? "Item kind, e.g. library, ..."
+  , cifToc         :: Forest CMarkdown ? "Table of Contents"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -284,7 +287,14 @@ toCItemFull Item{..} = CItemFull
   , cifNotes       = H $ toCMarkdown _itemNotes
   , cifLink        = H $ _itemLink
   , cifKind        = H $ _itemKind
+  , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
+  where
+    treeToCMD = fmap
+        (\(nodes, source) -> CMarkdown
+            (H source)
+            (H $ toText $ renderMD nodes)
+        )
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -459,3 +469,6 @@ instance ToSchema ItemKind where
                   \ {tag: Library, contents: <package name>}\
                   \ * {tag: Tool, contents: <package name>}\
                   \ * {tag: Other}"
+
+instance ToSchema a => ToSchema (Tree a) where
+    declareNamedSchema = genericDeclareNamedSchema schemaOptions
