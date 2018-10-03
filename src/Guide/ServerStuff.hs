@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 
 {- |
@@ -36,18 +36,19 @@ where
 import Imports
 
 -- Web
-import Web.Spock hiding (head, get, text)
-import qualified Web.Spock as Spock
-import Web.Routing.Combinators (PathState(..))
+import Web.Routing.Combinators (PathState (..))
+import Web.Spock hiding (get, head, text)
 -- acid-state
 import Data.Acid as Acid
 
+import Guide.Cache
 import Guide.Config
+import Guide.Markdown
 import Guide.State
 import Guide.Types
-import Guide.Cache
 import Guide.Utils
-import Guide.Markdown
+
+import qualified Web.Spock as Spock
 
 
 -- | Global state of the site.

@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 {- |
 All rest API handlers.
@@ -17,33 +17,31 @@ where
 
 import Imports
 
--- Containers
-import qualified Data.Map as M
-import qualified Data.Set as S
--- Feeds
-import qualified Text.Feed.Types as Feed
-import qualified Text.Feed.Util  as Feed
-import qualified Text.Atom.Feed  as Atom
--- Text
-import qualified Data.Text as T
 -- Web
-import Web.Spock hiding (head, get, renderRoute, text)
-import qualified Web.Spock as Spock
-import Web.Spock.Lucid
 import Lucid hiding (for_)
-import qualified Network.HTTP.Types.Status as HTTP
+import Web.Spock hiding (get, head, renderRoute, text)
+import Web.Spock.Lucid
 
 import Guide.App
-import Guide.ServerStuff
-import Guide.Config
 import Guide.Cache
+import Guide.Config
 import Guide.Diff (merge)
 import Guide.Markdown
+import Guide.Routes
+import Guide.ServerStuff
 import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.Views
-import Guide.Routes
+
+import qualified Data.Map as M
+import qualified Data.Set as S
+import qualified Data.Text as T
+import qualified Network.HTTP.Types.Status as HTTP
+import qualified Text.Atom.Feed as Atom
+import qualified Text.Feed.Types as Feed
+import qualified Text.Feed.Util as Feed
+import qualified Web.Spock as Spock
 
 methods :: GuideM ctx ()
 methods = do
@@ -415,7 +413,7 @@ getLoggedInUser :: GuideAction ctx (Maybe User)
 getLoggedInUser = do
   sess <- readSession
   case sess ^. sessionUserID of
-    Nothing -> return Nothing
+    Nothing   -> return Nothing
     Just uid' -> dbQuery $ GetUser uid'
 
 itemToFeedEntry

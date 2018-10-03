@@ -30,25 +30,23 @@ where
 import Imports
 
 -- Containers
-import qualified Data.Map as M
 import Data.Tree
--- Text
-import qualified Data.Text.IO as T
 -- HTML
 import Lucid hiding (for_)
--- JSON
-import qualified Data.Aeson as A
--- Markdown
-import qualified CMark as MD
 
-import Guide.Types.Core
-import Guide.JS (JS(..))
-import qualified Guide.JS as JS
 import Guide.Cache
+import Guide.JS (JS (..))
 import Guide.Markdown
+import Guide.Types.Core
 import Guide.Utils
 import Guide.Views.Utils
 
+import qualified CMark as MD
+import qualified Data.Aeson as A
+import qualified Data.Map as M
+import qualified Data.Text.IO as T
+
+import qualified Guide.JS as JS
 
 ----------------------------------------------------------------------------
 -- Main functions
@@ -119,8 +117,8 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
   let itemkindname :: Text
       itemkindname = case item^.kind of
         Library{} -> "library"
-        Tool{} -> "tool"
-        Other{} -> "other"
+        Tool{}    -> "tool"
+        Other{}   -> "other"
   mustache "item-info" $ A.object [
     "category" A..= cat,
     "item" A..= item,

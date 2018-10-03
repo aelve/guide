@@ -1,10 +1,11 @@
-{-# LANGUAGE ConstraintKinds, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies    #-}
 
 {- |
 App module defines types used by the Spock framework.
 
 -}
-module Guide.App 
+module Guide.App
 where
 
 -- hvect
@@ -12,9 +13,9 @@ import Data.HVect
 -- Spock
 import Web.Spock
 
-import Guide.Types.User (User)
-import Guide.Types.Session (GuideData)
 import Guide.ServerStuff (ServerState)
+import Guide.Types.Session (GuideData)
+import Guide.Types.User (User)
 
 -- | Type of connection, currently unused. (Acid-State DB stored in 'ServerState')
 type GuideConn        = ()

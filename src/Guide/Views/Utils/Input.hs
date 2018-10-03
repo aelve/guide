@@ -5,31 +5,30 @@
 Lucid rendering for inputs and form fields.
 -}
 module Guide.Views.Utils.Input
-( 
-  inputText, 
-  inputTextArea, 
-  inputPassword, 
-  inputHidden, 
-  inputSelect, 
-  inputRadio, 
-  inputCheckbox, 
-  inputFile, 
-  inputSubmit, 
-  label, 
-  form, 
-  errorList, 
-  childErrorList, 
+(
+  inputText,
+  inputTextArea,
+  inputPassword,
+  inputHidden,
+  inputSelect,
+  inputRadio,
+  inputCheckbox,
+  inputFile,
+  inputSubmit,
+  label,
+  form,
+  errorList,
+  childErrorList,
   ifSingleton
 )
 where
 
 import Imports hiding (for_)
 
-import           Control.Monad               (forM_, when)
-import           Data.Text                   (Text, pack)
-import           Lucid
-
-import           Text.Digestive.View
+import Control.Monad (forM_, when)
+import Data.Text (Text, pack)
+import Lucid
+import Text.Digestive.View
 
 ifSingleton :: Bool -> a -> [a]
 ifSingleton False _ = []
@@ -173,5 +172,5 @@ errorList ref view = case errors ref view of
 childErrorList :: Monad m => Text -> View (HtmlT m ()) -> HtmlT m ()
 childErrorList ref view = case childErrors ref view of
     []   -> mempty
-    errs -> ul_ [class_ "digestive-functors-error-list"] $ forM_ errs $ \e -> 
+    errs -> ul_ [class_ "digestive-functors-error-list"] $ forM_ errs $ \e ->
               li_ [class_ "digestive-functors-error"] e

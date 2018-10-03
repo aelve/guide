@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE PatternSynonyms   #-}
 
 
 -- | Prepare text for diffing or merging by breaking it into tokens (like
@@ -14,8 +14,9 @@ where
 import Imports
 
 -- Text
-import qualified Data.Text as T
 import Data.List.Split
+
+import qualified Data.Text as T
 
 
 -- | Break text into tokens.

@@ -17,16 +17,16 @@ where
 import Imports hiding ((.=))
 
 -- JSON
-import Data.Aeson               as Aeson
+import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty as Aeson hiding (Config)
--- ByteString
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
 -- Default
 import Data.Default
 
 import Guide.Utils
 
+-- ByteString
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 
 -- | Site config. Stored in @config.json@.
 data Config = Config {
