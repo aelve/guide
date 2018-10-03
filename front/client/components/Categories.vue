@@ -80,16 +80,21 @@
             </h6>
           </a-link>
 
-          <add-category-dialog
-            :groupName="groupName"
+          <v-btn
+            class="ml-2 pl-0"
+            color="grey"
+            flat
+            @click.native="openAddCategoryDialog(groupName)"
           >
-            <v-btn class="ml-2 pl-0" flat color="grey">
-              <v-icon class="mr-1" left>add</v-icon>
-              Add new category
-            </v-btn>
-          </add-category-dialog>
+            <v-icon class="mr-1" left>add</v-icon>
+            Add new category
+          </v-btn>
         </div>
       </v-flex>
+      <add-category-dialog
+        v-model="isAddGroupDialogOpen"
+        :groupName="addCategoryGroupName"
+      />
     </v-layout>
   </v-container>
 </template>
@@ -109,6 +114,8 @@ import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 })
 export default class Categories extends Vue {
   CategoryStatus = CategoryStatus
+  addCategoryGroupName: string = ''
+  isAddGroupDialogOpen: boolean = false
   // TODO add type for store
   async asyncData() {
     return this.$store.dispatch('category/loadCategoryList')
@@ -123,6 +130,10 @@ export default class Categories extends Vue {
       groupedByGroupName[key] = this.groupCategoriesByStatus(value)
     })
     return groupedByGroupName
+  }
+  openAddCategoryDialog(groupName: string) {
+    this.addCategoryGroupName = groupName
+    this.isAddGroupDialogOpen = true
   }
   groupCategoriesByStatus(categories: ICategory[]): object {
     return _groupBy(categories, 'status')
