@@ -64,7 +64,9 @@ jobs:
         # Install dependencies
         - cd front
         - npm install
-        - sh -e /etc/init.d/xvfb start
+        - "export DISPLAY=:99.0"
+        - "sh -e /etc/init.d/xvfb start"
+        - sleep 3
         - fluxbox >/dev/null 2>&1 &
       script:
         # Run testcafe e2e testing
