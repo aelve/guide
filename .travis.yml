@@ -60,6 +60,8 @@ jobs:
         # Install dependencies
         - cd front
         - npm install
+        - sh -e /etc/init.d/xvfb start
+        - fluxbox >/dev/null 2>&1 &
       script:
         # Run testcafe e2e testing
         - npm run test
