@@ -4,11 +4,15 @@ language: c
 
 addons:
   apt:
+    sources:
+    - google-chrome
     packages:
     # GHC
     - libgmp-dev
     # Selenium
     - xvfb
+    # Testcafe
+    - google-chrome-stable fluxbox
   chrome: stable
 
 cache:
