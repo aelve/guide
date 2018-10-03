@@ -55,6 +55,15 @@ jobs:
         - stack --no-terminal test
         - scripts/test-official.sh
 
+    - stage: "Install and test vue frontend"
+      before_script:
+        # Install dependencies
+        - cd front
+        - npm install
+      script:
+        # Run testcafe e2e testing
+        - npm run test
+
 notifications:
   slack:
     secure: BgQpUYFmvXrf7HVBP/fefS/8UVwES800+fT+ufgJX8b2HMx2FvaWVsdv3ErKAryLE0B3fwmvforWugTdgLO3kq66YUgSt51SNQOBLkMVGubIoQsgvr3Ernu+Wpw1DyoMkXQH9q9O9rfCIc4IwkQCEHqu5SVRqdOd5px/CHFl/ktTI22JkT8ap/Be53qjlB2U2sWUf4GxYXq0V/gGF6fDwsUwTVKFb14RfSDrOgK5Vlce2GRf3gNr1C/j7A7EHIR/Z+rNd2hvv69cFw6TRc3s39QmP8XPe3SLZPIHTZ8vRveX1SZioMeEy747r5rHd9vylEjxWtVHhvP9fOt693+woXa8ZAl5uVRgB6S4mTWLZ+LAbqhaCmDGJYr9GrrBMoqWvJiMuBX3ZvHptsAc6O2l/fxZQU3otTE++SmHkhbyoDQkcPCjXPDUi/ZlnoLc5zfMAfApcsZZ8b9t47z12H0O4uDZd2YiNPiQJ1iUA6R879LH3pcxPB3RaoWsfXzv/klkKrU/V2K4SXD9j4/bmAFArlig+dar+Dm44L/a3/G7vbU1lQIa1bG0EqB36qgUS3UCkuy2ppti/JTHpkYx7HVF2BipoCjOVvfBl9G8RkvcQIhyuCfOGm7WL1TjrKVMccIEGJKhm7OO6wOZYCBfAI5zILxi8XEJAIvBm9NywhQlwxI=

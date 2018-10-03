@@ -1,5 +1,5 @@
 import { Selector } from 'testcafe';
-// import VueSelector from 'testcafe-vue-selectors';
+import VueSelector from 'testcafe-vue-selectors';
 
 fixture `Index`
   .page `http://localhost:5000`;
@@ -11,11 +11,20 @@ test('Navigate to category page', async navigateCategory => {
 });
 
 test('Test search input', async inputSearch => {
+  // !!! Testcafe-vue-selectors currently dont support vue cumponents loaded by vue-loader
+  // const searchInput = VueSelector('v-text-field');
+  // await inputSearch
+  //   .typeText(searchInput, 'Haskell')
+  // .pressKey('enter')
+  //   .expect(searchInput.value).eql('Haskell')
+
   const searchInput = Selector('input[aria-label="Search"]');
 
   await inputSearch
     .typeText(searchInput, 'Haskell')
     .expect(searchInput.value).eql('Haskell')
+    .pressKey('enter')
+    .navigateTo('http://aelve.com:4801/haskell/?q=Haskell')
 })
 
 // test('Open add category popup', async t => {
