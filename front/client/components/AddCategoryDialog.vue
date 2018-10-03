@@ -72,6 +72,7 @@ export default class AddCategoryDialog extends Vue {
 
   @Watch('value')
   onOpen(newVal: string) {
+    this.categoryName = ''
     this.groupNameInternal = this.groupName
   }
 
