@@ -25,8 +25,8 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
-import Guide.Utils
 import Guide.Types.Core
+import Guide.Utils
 
 
 -- | Edits made by users. It should always be possible to undo an edit.
@@ -37,31 +37,31 @@ data Edit
       editCategoryTitle :: Text,
       editCategoryGroup :: Text }
   | Edit'AddItem {
-      editCategoryUid   :: Uid Category,
-      editItemUid       :: Uid Item,
-      editItemName      :: Text }
+      editCategoryUid :: Uid Category,
+      editItemUid     :: Uid Item,
+      editItemName    :: Text }
   | Edit'AddPro {
-      editItemUid       :: Uid Item,
-      editTraitId       :: Uid Trait,
-      editTraitContent  :: Text }
+      editItemUid      :: Uid Item,
+      editTraitId      :: Uid Trait,
+      editTraitContent :: Text }
   | Edit'AddCon {
-      editItemUid       :: Uid Item,
-      editTraitId       :: Uid Trait,
-      editTraitContent  :: Text }
+      editItemUid      :: Uid Item,
+      editTraitId      :: Uid Trait,
+      editTraitContent :: Text }
 
   -- Change category properties
   | Edit'SetCategoryTitle {
-      editCategoryUid       :: Uid Category,
-      editCategoryTitle     :: Text,
-      editCategoryNewTitle  :: Text }
+      editCategoryUid      :: Uid Category,
+      editCategoryTitle    :: Text,
+      editCategoryNewTitle :: Text }
   | Edit'SetCategoryGroup {
-      editCategoryUid       :: Uid Category,
-      editCategoryGroup     :: Text,
-      editCategoryNewGroup  :: Text }
+      editCategoryUid      :: Uid Category,
+      editCategoryGroup    :: Text,
+      editCategoryNewGroup :: Text }
   | Edit'SetCategoryNotes {
-      editCategoryUid       :: Uid Category,
-      editCategoryNotes     :: Text,
-      editCategoryNewNotes  :: Text }
+      editCategoryUid      :: Uid Category,
+      editCategoryNotes    :: Text,
+      editCategoryNewNotes :: Text }
   | Edit'SetCategoryStatus {
       editCategoryUid       :: Uid Category,
       editCategoryStatus    :: CategoryStatus,
@@ -73,34 +73,34 @@ data Edit
 
   -- Change item properties
   | Edit'SetItemName {
-      editItemUid            :: Uid Item,
-      editItemName           :: Text,
-      editItemNewName        :: Text }
+      editItemUid     :: Uid Item,
+      editItemName    :: Text,
+      editItemNewName :: Text }
   | Edit'SetItemLink {
-      editItemUid            :: Uid Item,
-      editItemLink           :: Maybe Url,
-      editItemNewLink        :: Maybe Url }
+      editItemUid     :: Uid Item,
+      editItemLink    :: Maybe Url,
+      editItemNewLink :: Maybe Url }
   | Edit'SetItemGroup {
-      editItemUid            :: Uid Item,
-      editItemGroup          :: Maybe Text,
-      editItemNewGroup       :: Maybe Text }
+      editItemUid      :: Uid Item,
+      editItemGroup    :: Maybe Text,
+      editItemNewGroup :: Maybe Text }
   | Edit'SetItemKind {
-      editItemUid            :: Uid Item,
-      editItemKind           :: ItemKind,
-      editItemNewKind        :: ItemKind }
+      editItemUid     :: Uid Item,
+      editItemKind    :: ItemKind,
+      editItemNewKind :: ItemKind }
 
   | Edit'SetItemDescription {
       editItemUid            :: Uid Item,
       editItemDescription    :: Text,
       editItemNewDescription :: Text }
   | Edit'SetItemNotes {
-      editItemUid            :: Uid Item,
-      editItemNotes          :: Text,
-      editItemNewNotes       :: Text }
+      editItemUid      :: Uid Item,
+      editItemNotes    :: Text,
+      editItemNewNotes :: Text }
   | Edit'SetItemEcosystem {
-      editItemUid            :: Uid Item,
-      editItemEcosystem      :: Text,
-      editItemNewEcosystem   :: Text }
+      editItemUid          :: Uid Item,
+      editItemEcosystem    :: Text,
+      editItemNewEcosystem :: Text }
 
   -- Change trait properties
   | Edit'SetTraitContent {
@@ -111,15 +111,15 @@ data Edit
 
   -- Delete
   | Edit'DeleteCategory {
-      editCategoryUid       :: Uid Category,
-      editCategoryPosition  :: Int }
+      editCategoryUid      :: Uid Category,
+      editCategoryPosition :: Int }
   | Edit'DeleteItem {
-      editItemUid           :: Uid Item,
-      editItemPosition      :: Int }
+      editItemUid      :: Uid Item,
+      editItemPosition :: Int }
   | Edit'DeleteTrait {
-      editItemUid           :: Uid Item,
-      editTraitUid          :: Uid Trait,
-      editTraitPosition     :: Int }
+      editItemUid       :: Uid Item,
+      editTraitUid      :: Uid Trait,
+      editTraitPosition :: Int }
 
   -- Other
   | Edit'MoveItem {

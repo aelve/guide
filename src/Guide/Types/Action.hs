@@ -30,9 +30,9 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
-import Guide.Utils
 import Guide.Types.Core
 import Guide.Types.Edit
+import Guide.Utils
 
 
 data Action

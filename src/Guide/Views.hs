@@ -1,9 +1,9 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE QuasiQuotes         #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ExplicitForAll      #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 
 {- |
@@ -31,15 +31,12 @@ where
 
 -- Reexporting children modules
 import Guide.Views.Auth as X
-import Guide.Views.Page as X
-import Guide.Views.Item as X
 import Guide.Views.Category as X
+import Guide.Views.Item as X
+import Guide.Views.Page as X
 
 import Imports
 
--- Text
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
@@ -47,30 +44,32 @@ import Lucid hiding (for_)
 import Data.IP
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
-import Network.HTTP.Types.Status (Status(..))
+import Network.HTTP.Types.Status (Status (..))
 import Network.URI (isURI)
 -- Time
 import Data.Time.Format.Human
--- Mustache (templates)
-import qualified Data.Aeson as A
--- CMark
-import qualified CMark as MD
 -- Generic traversal (for finding links in content)
 import Data.Generics.Uniplate.Data (universeBi)
 
+import Guide.Archival
+import Guide.Cache
 import Guide.Config
+import Guide.Diff hiding (DiffChunk)
+import Guide.JS (JS (..))
+import Guide.Markdown
+import Guide.Search
 import Guide.State
 import Guide.Types
-import Guide.Search
 import Guide.Utils
-import Guide.JS (JS(..))
-import qualified Guide.JS as JS
-import Guide.Markdown
-import Guide.Archival
-import Guide.Diff hiding (DiffChunk)
-import qualified Guide.Diff as Diff
-import Guide.Cache
 import Guide.Views.Utils
+
+import qualified CMark as MD
+import qualified Data.Aeson as A
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+
+import qualified Guide.Diff as Diff
+import qualified Guide.JS as JS
 
 {- Note [autosize]
 ~~~~~~~~~~~~~~~~~~
@@ -576,7 +575,7 @@ renderHaskellRoot globalState mbSearchQuery =
       autocomplete_ "off",
       onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
-      Nothing -> renderCategoryList (globalState^.categories)
+      Nothing     -> renderCategoryList (globalState^.categories)
       Just query' -> renderSearchResults (search query' globalState)
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
@@ -809,11 +808,11 @@ data LinkStatus = OK | Unparseable | Broken String deriving Show
 
 data LinkInfo = LinkInfo {
   -- | Link itself
-  linkUrl :: Url,
+  linkUrl            :: Url,
   -- | A description of where the link is in Guide
-  linkLocation :: Text,
+  linkLocation       :: Text,
   -- | Link status (ok, unparseable, etc)
-  linkStatus :: LinkStatus,
+  linkStatus         :: LinkStatus,
   -- | Link status on archive.org (if archive.org is available)
   linkArchivalStatus :: Either String ArchivalStatus
   }

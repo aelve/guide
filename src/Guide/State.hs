@@ -1,8 +1,8 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -104,28 +104,27 @@ where
 
 import Imports
 
--- Containers
-import qualified Data.Map as M
-import qualified Data.Set as S
--- Text
-import qualified Data.Text as T
 -- Network
 import Data.IP
 -- acid-state
-import Data.SafeCopy hiding (kind)
-import Data.SafeCopy.Migrate
 import Data.Acid as Acid
 import Data.Acid.Local as Acid
+import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 --
 import Web.Spock.Internal.SessionManager (SessionId)
 
-import Guide.Utils
 import Guide.Markdown
+import Guide.Types.Action
 import Guide.Types.Core
 import Guide.Types.Edit
-import Guide.Types.Action
 import Guide.Types.Session
 import Guide.Types.User
+import Guide.Utils
+
+import qualified Data.Map as M
+import qualified Data.Set as S
+import qualified Data.Text as T
 
 
 {- Note [extending types]
@@ -209,19 +208,19 @@ emptyState = GlobalState {
   _dirty = True }
 
 data GlobalState = GlobalState {
-  _categories :: [Category],
+  _categories        :: [Category],
   _categoriesDeleted :: [Category],
-  _actions :: [(Action, ActionDetails)],
+  _actions           :: [(Action, ActionDetails)],
   -- | Pending edits, newest first
-  _pendingEdits :: [(Edit, EditDetails)],
+  _pendingEdits      :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
-  _editIdCounter :: Int,
+  _editIdCounter     :: Int,
   -- | Sessions
-  _sessionStore :: Map SessionId GuideSession,
+  _sessionStore      :: Map SessionId GuideSession,
   -- | Users
-  _users :: Map (Uid User) User,
+  _users             :: Map (Uid User) User,
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
-  _dirty :: Bool }
+  _dirty             :: Bool }
   deriving (Show)
 
 deriveSafeCopySorted 8 'extension ''GlobalState

@@ -22,22 +22,21 @@ where
 import Imports
 
 -- Vector
-import qualified Data.Vector as V
 import Data.Vector (Vector)
--- Diffing
-import qualified Data.Patch as PV
 
-import Guide.Diff.Tokenize (tokenize)
 import Guide.Diff.Merge (merge)
+import Guide.Diff.Tokenize (tokenize)
 
+import qualified Data.Patch as PV
+import qualified Data.Vector as V
 
 -- | Result of a diff.
 data Diff = Diff {
   diffContextAbove :: [Text],   -- ^ Context (unchanged parts)
                                 --    above the differing part
   diffContextBelow :: [Text],   -- ^ Context below the differing part
-  diffLeft  :: [DiffChunk],     -- ^ Will contain only 'Deleted' and 'Plain'
-  diffRight :: [DiffChunk]      -- ^ Will contain only 'Added' and 'Plain'
+  diffLeft         :: [DiffChunk],     -- ^ Will contain only 'Deleted' and 'Plain'
+  diffRight        :: [DiffChunk]      -- ^ Will contain only 'Added' and 'Plain'
   }
   deriving (Show)
 
@@ -129,7 +128,7 @@ trimDiff a b =
     -- since chunks in 'a' contain Deleted and Plain, and chunks in 'b'
     -- contain Added and Plain, the only equal parts will be Plain
     getPlain (Plain x) = x
-    getPlain x = error ("trimDiff: impossible: " ++ show x)
+    getPlain x         = error ("trimDiff: impossible: " ++ show x)
 
 ----------------------------------------------------------------------------
 -- Utils

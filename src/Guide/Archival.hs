@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 
 -- | Methods for working with archive.org. Right now the admin interface
@@ -13,16 +13,15 @@ module Guide.Archival
 )
 where
 
-
 import Imports
 
--- JSON
-import qualified Data.Aeson as A
 -- network
 import Network.HTTP.Client
 
 import Guide.Utils
 
+-- JSON
+import qualified Data.Aeson as A
 
 -- | Get status of a link on archive.org.
 --

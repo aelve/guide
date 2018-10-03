@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 {- |
@@ -15,16 +15,16 @@ import Text.Digestive
 -- lucid
 import Lucid hiding (for_)
 
-import Guide.Views.Page
-import Guide.Views.Utils
 import Guide.Config
 import Guide.Types.User
+import Guide.Views.Page
+import Guide.Views.Utils
 
 -- | Fields used by this form/view.
 data UserRegistration = UserRegistration {
-  registerUserName  :: Text,
-  registerUserEmail :: Text,
-  registerUserPassword :: Text,
+  registerUserName               :: Text,
+  registerUserEmail              :: Text,
+  registerUserPassword           :: Text,
   registerUserPasswordValidation :: Text }
 
 -- | Creates a digestive functor over the fields in 'UserRegistration'
@@ -38,7 +38,7 @@ registerForm = UserRegistration
 -- | Render input elements for a 'UserRegistration'
 -- Note: This does not include the 'Form' element.
 --
--- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection. 
+-- Use 'Guide.Server.protectForm' to render the appropriate form element with CSRF protection.
 registerFormView :: MonadIO m => View (HtmlT m ()) -> HtmlT m ()
 registerFormView view = do
   div_ $ do
@@ -68,11 +68,11 @@ registerView :: (MonadIO m) => User -> HtmlT m ()
 registerView user = do
   div_ $ do
     -- TODO: Make nicer.
-    "You are registered and logged in as " 
+    "You are registered and logged in as "
     toHtml (user ^. userName)
 
 renderRegister :: (MonadIO m, MonadReader Config m) => HtmlT m () -> HtmlT m ()
 renderRegister content = do
-  renderPage $ 
+  renderPage $
     pageDef & pageTitle .~ "Aelve Guide"
             & pageContent .~ content

@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 {- |
 A type for users. Currently unused.
@@ -28,22 +28,22 @@ import Imports
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 -- scrypt
-import Crypto.Scrypt (Pass (..), EncryptedPass (..), encryptPassIO', getEncryptedPass, verifyPass')
+import Crypto.Scrypt (EncryptedPass (..), Pass (..), encryptPassIO', getEncryptedPass, verifyPass')
 
 import Guide.Utils
 
 
 data User = User {
   -- | Unique, pseudorandom identifier for user.
-  _userID          :: Uid User,
+  _userID       :: Uid User,
   -- | Unique username for user.
-  _userName        :: Text,
+  _userName     :: Text,
   -- | Unique email address for user.
-  _userEmail       :: Text,
+  _userEmail    :: Text,
   -- | Scrypt generated password field, contains salt + hash.
-  _userPassword    :: Maybe ByteString,
+  _userPassword :: Maybe ByteString,
   -- | Flag set if user is an administrator.
-  _userIsAdmin     :: Bool
+  _userIsAdmin  :: Bool
   }
   deriving (Show)
 
@@ -64,10 +64,10 @@ makeUser username email password = do
 
 -- | Verifies a given password corresponds to a user's encrypted password.
 verifyUser :: User -> ByteString -> Bool
-verifyUser user password = 
+verifyUser user password =
   case user ^. userPassword of
     Just encPass -> verifyPass' (Pass password) (EncryptedPass encPass)
-    Nothing -> False
+    Nothing      -> False
 
 -- | Looks at two users, and returns true if all unique fields are different.
 canCreateUser :: User -> User -> Bool

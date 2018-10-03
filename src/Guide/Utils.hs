@@ -1,11 +1,11 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -76,43 +76,41 @@ import Imports
 
 -- Monads and monad transformers
 import Control.Monad.Catch
--- Containers
-import qualified Data.Set as S
 -- Randomness
 import System.Random
--- Text
-import qualified Data.Text as T
--- Bytestring
-import qualified Data.ByteString.Lazy as BSL
--- JSON
-import qualified Data.Aeson as A
-import qualified Data.Aeson.Text as A
-import qualified Data.Aeson.Types as A
-import qualified Data.Aeson.Internal as A
-import qualified Data.Aeson.Encode.Pretty as A
 -- Network
-import qualified Network.Socket as Network
 import Data.IP
 -- Web
 import Lucid hiding (for_)
-import Web.Spock as Spock
 import Text.HTML.SanitizeXSS (sanitaryURI)
 import Web.HttpApiData
-import qualified Network.Wai as Wai
+import Web.Spock as Spock
 -- Feeds
-import qualified Text.Atom.Feed        as Atom
-import qualified Text.Atom.Feed.Export as Atom
-import qualified Text.XML              as XMLC
-import qualified Data.XML.Types        as XML
 -- acid-state
 import Data.SafeCopy
 -- Template Haskell
 import Language.Haskell.TH
+-- needed for parsing urls
+import Network.HTTP.Types (Query, parseQuery)
+
+import qualified Data.Aeson as A
+import qualified Data.Aeson.Encode.Pretty as A
+import qualified Data.Aeson.Internal as A
+import qualified Data.Aeson.Text as A
+import qualified Data.Aeson.Types as A
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Set as S
+import qualified Data.Text as T
+import qualified Data.XML.Types as XML
+import qualified Network.Socket as Network
+import qualified Network.Wai as Wai
+import qualified Text.Atom.Feed as Atom
+import qualified Text.Atom.Feed.Export as Atom
+import qualified Text.XML as XMLC
+
 -- needed for 'sanitiseUrl'
 import qualified Codec.Binary.UTF8.String as UTF8
 import qualified Network.URI as URI
--- needed for parsing urls
-import Network.HTTP.Types (Query, parseQuery)
 
 ----------------------------------------------------------------------------
 -- Lists
@@ -121,12 +119,12 @@ import Network.HTTP.Types (Query, parseQuery)
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]
 moveUp p (x:y:xs) = if p y then y : x : xs else x : moveUp p (y:xs)
-moveUp _ xs = xs
+moveUp _ xs       = xs
 
 -- | Move the -1st element that satisfies the predicate- down.
 moveDown :: (a -> Bool) -> [a] -> [a]
 moveDown p (x:y:xs) = if p x then y : x : xs else x : moveDown p (y:xs)
-moveDown _ xs = xs
+moveDown _ xs       = xs
 
 -- | Delete the first element that satisfies the predicate (if such an
 -- element is present).
@@ -302,7 +300,7 @@ deriveSafeCopySimple 0 'base ''IP
 sockAddrToIP :: Network.SockAddr -> Maybe IP
 sockAddrToIP (Network.SockAddrInet  _   x)   = Just (IPv4 (fromHostAddress x))
 sockAddrToIP (Network.SockAddrInet6 _ _ x _) = Just (IPv6 (fromHostAddress6 x))
-sockAddrToIP _ = Nothing
+sockAddrToIP _                               = Nothing
 
 ----------------------------------------------------------------------------
 -- Uid

@@ -7,5 +7,5 @@ module Guide.Views.Auth
 )
 where
 
-import Guide.Views.Auth.Register as X
 import Guide.Views.Auth.Login as X
+import Guide.Views.Auth.Register as X

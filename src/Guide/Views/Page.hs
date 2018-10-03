@@ -1,7 +1,7 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 
 {- |
@@ -31,22 +31,21 @@ where
 
 import Imports
 
--- Text
-import qualified Data.Text as T
-import NeatInterpolation
--- Web
 import Lucid hiding (for_)
+import NeatInterpolation
 
 import Guide.Config
+import Guide.JS (JS (..))
+import Guide.Utils
+import Guide.Views.Utils
 -- import Guide.State
 -- import Guide.Types
-import Guide.Utils
-import Guide.JS (JS(..))
-import qualified Guide.JS as JS
 -- import Guide.Markdown
 -- import Guide.Cache
 
-import Guide.Views.Utils
+import qualified Data.Text as T
+
+import qualified Guide.JS as JS
 
 
 -- |Record for the parts of a page, for rendering in a standard template.
@@ -54,27 +53,27 @@ data Page m = Page {
     -- | Title for the root of a site.
     -- By default displays before the page name in the <title>
     -- and header of page, e.g. "Aelve Guide"
-    _pageTitle :: Text,
+    _pageTitle     :: Text,
     -- | Name of a particular page.
     -- Displays after the title, e.g. "Haskell" or "Login"
-    _pageName :: Maybe Text,
+    _pageName      :: Maybe Text,
     -- | Url accessed by clicking header text.
     _pageHeaderUrl :: Url,
     -- | Subtitle element.
     -- By default displays immediately below the "Title | Name" header.
-    _pageSubtitle :: Page m -> HtmlT m (),
+    _pageSubtitle  :: Page m -> HtmlT m (),
     -- | Scripts to load in the <head> tag.
-    _pageScripts :: [Url],
+    _pageScripts   :: [Url],
     -- | Stylesheets to load in the <head> tag.
-    _pageStyles :: [Url],
+    _pageStyles    :: [Url],
     -- | Contents of <head> tag
-    _pageHeadTag :: Page m -> HtmlT m (),
+    _pageHeadTag   :: Page m -> HtmlT m (),
     -- | Header element to display at the top of the body element.
-    _pageHeader :: Page m -> HtmlT m (),
+    _pageHeader    :: Page m -> HtmlT m (),
     -- | Content element to display in the center of the template.
-    _pageContent :: HtmlT m (),
+    _pageContent   :: HtmlT m (),
     -- | Footer element to display at bottom of the body element.
-    _pageFooter :: Page m -> HtmlT m ()
+    _pageFooter    :: Page m -> HtmlT m ()
   }
 
 makeLenses ''Page
@@ -105,7 +104,7 @@ pageDef = Page {
     _pageFooter = footerDef
   }
 
-subtitleDef 
+subtitleDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()
@@ -119,7 +118,7 @@ subtitleDef _page = pure ()
       Just l  -> " • " >> mkLink "discuss the site" l
   -}
 
-headTagDef 
+headTagDef
   :: (MonadIO m, MonadReader Config m)
   => Page m
   -> HtmlT m ()
@@ -159,7 +158,7 @@ headTagDef page = do
     document.head.appendChild(sheet);
     |]
 
-headerDef 
+headerDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()
@@ -167,13 +166,13 @@ headerDef page = do
   div_ $ do
     let nameHtml = case _pageName page of
           Just name -> span_ (" | " >> toHtml name)
-          Nothing -> mempty
+          Nothing   -> mempty
     h1_ $ mkLink (toHtml (_pageTitle page) >> nameHtml) (_pageHeaderUrl page)
     (_pageSubtitle page) page
   div_ [class_ "auth-link-container"] $ do
     a_ [href_ "/auth"] "login/logout"
 
-footerDef 
+footerDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()

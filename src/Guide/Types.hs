@@ -13,9 +13,9 @@ module Guide.Types
 )
 where
 
-import Guide.Types.Hue
+import Guide.Types.Action
 import Guide.Types.Core
 import Guide.Types.Edit
-import Guide.Types.Action
-import Guide.Types.User
+import Guide.Types.Hue
 import Guide.Types.Session
+import Guide.Types.User

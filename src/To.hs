@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances, GADTs #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 
 module To
@@ -16,8 +17,9 @@ import Prelude
 import Data.Text
 import Data.Text.Encoding
 import Data.Text.Encoding.Error
-import qualified Data.Text.Lazy.Builder as B
 import Data.Text.Lazy.Builder (Builder)
+
+import qualified Data.Text.Lazy.Builder as B
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
@@ -25,8 +27,8 @@ import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 
-import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy.UTF8 as UTF8L
+import qualified Data.ByteString.UTF8 as UTF8
 
 
 class ToText t where

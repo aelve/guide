@@ -14,16 +14,16 @@ where
 
 import Imports
 
--- Concurrent map
-import qualified STMContainers.Map as STMMap
-import qualified Focus
 -- Lucid
 import Lucid.Base
 
-import Guide.Types
 import Guide.State
+import Guide.Types
 import Guide.Utils
 
+-- Concurrent map
+import qualified Focus
+import qualified STMContainers.Map as STMMap
 
 {- | The cache is a (concurrent) map of rendered HTML for various pages and
 pieces of pages.

@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE QuasiQuotes        #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 
 {- |
@@ -59,20 +59,17 @@ where
 
 import Imports
 
--- Text
-import qualified Data.Text as T
--- Containers
-import qualified Data.Set as S
--- JSON
-import qualified Data.Aeson as A
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
 import Guide.Markdown
-import Guide.Utils
 import Guide.Types.Hue
+import Guide.Utils
 
+import qualified Data.Aeson as A
+import qualified Data.Set as S
+import qualified Data.Text as T
 
 ----------------------------------------------------------------------------
 -- General notes on code
@@ -92,7 +89,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 
 -- | A trait (pro or con). Traits are stored in items.
 data Trait = Trait {
-  _traitUid :: Uid Trait,
+  _traitUid     :: Uid Trait,
   _traitContent :: MarkdownInline }
   deriving (Show, Generic, Data)
 
@@ -145,8 +142,8 @@ deriveSafeCopy 2 'base ''ItemKind_v2
 instance Migrate ItemKind where
   type MigrateFrom ItemKind = ItemKind_v2
   migrate (Library_v2 x) = Library x
-  migrate (Tool_v2 x) = Tool x
-  migrate Other_v2 = Other
+  migrate (Tool_v2 x)    = Tool x
+  migrate Other_v2       = Other
 
 -- | Different kinds of sections inside items. This type is only used for
 -- '_categoryEnabledSections'.
@@ -219,33 +216,33 @@ deriveSafeCopySimple 1 'base ''CategoryStatus_v1
 
 instance Migrate CategoryStatus where
   type MigrateFrom CategoryStatus = CategoryStatus_v1
-  migrate CategoryStub_v1 = CategoryStub
-  migrate CategoryWIP_v1 = CategoryWIP
+  migrate CategoryStub_v1       = CategoryStub
+  migrate CategoryWIP_v1        = CategoryWIP
   migrate CategoryMostlyDone_v1 = CategoryFinished
-  migrate CategoryFinished_v1 = CategoryFinished
+  migrate CategoryFinished_v1   = CategoryFinished
 
 -- | A category
 data Category = Category {
-  _categoryUid          :: Uid Category,
-  _categoryTitle        :: Text,
+  _categoryUid             :: Uid Category,
+  _categoryTitle           :: Text,
   -- | When the category was created
-  _categoryCreated      :: UTCTime,
+  _categoryCreated         :: UTCTime,
   -- | The “grandcategory” of the category (“meta”, “basics”, etc)
-  _categoryGroup_       :: Text,
-  _categoryStatus       :: CategoryStatus,
-  _categoryNotes        :: MarkdownBlock,
+  _categoryGroup_          :: Text,
+  _categoryStatus          :: CategoryStatus,
+  _categoryNotes           :: MarkdownBlock,
   -- | Items stored in the category
-  _categoryItems        :: [Item],
+  _categoryItems           :: [Item],
   -- | Items that were deleted from the category. We keep them here to make
   -- it easier to restore them
-  _categoryItemsDeleted :: [Item],
+  _categoryItemsDeleted    :: [Item],
   -- | Enabled sections in this category. E.g, if this set contains
   -- 'ItemNotesSection', then notes will be shown for each item
   _categoryEnabledSections :: Set ItemSection,
   -- | All groups of items belonging to the category, as well as their
   -- colors. Storing colors explicitly lets us keep colors consistent when
   -- all items in a group are deleted
-  _categoryGroups :: Map Text Hue
+  _categoryGroups          :: Map Text Hue
   }
   deriving (Show, Generic, Data)
 
