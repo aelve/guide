@@ -1,9 +1,9 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 
 module Guide.Api.Error
@@ -13,10 +13,10 @@ module Guide.Api.Error
 
 import Imports
 
+import Data.Swagger
 import GHC.TypeLits
 import Servant
 import Servant.Swagger
-import Data.Swagger
 
 
 -- Taken from https://github.com/haskell-servant/servant-swagger/issues/59

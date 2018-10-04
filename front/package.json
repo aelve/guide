@@ -32,7 +32,7 @@
     "vue-meta": "^1.5.0",
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
-    "vue-server-renderer": "^2.5.16",
+    "vue-server-renderer": "https://github.com/aelve/vue-server-renderer",
     "vuetify": "^1.2.1",
     "vuex": "^3.0.1",
     "vuex-router-sync": "^5.0.0"

@@ -3,7 +3,7 @@ const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 
-const { clientPort } = require('./build-config')
+const { clientPort, ssrPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
 
 module.exports = {
@@ -87,6 +87,9 @@ module.exports = {
       /moment[\/\\]locale$/,
       /zh-cn/
     ),
+    new webpack.DefinePlugin({
+      BASE_URL: JSON.stringify(`http://localhost:${ssrPort}`)
+    }),
 
     new FriendlyErrorsPlugin(),
 

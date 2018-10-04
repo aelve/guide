@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 
 module Guide.Types.Session
@@ -22,18 +22,16 @@ where
 
 import Imports
 
--- Spock
-import Web.Spock.Internal.SessionManager (SessionId)
-import qualified Web.Spock.Internal.SessionManager as Spock
--- Spock Session wrapper
-import Data.Time.Clock ( UTCTime(..) )
-import qualified Data.Text as T
--- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
+import Data.Time.Clock (UTCTime (..))
+import Web.Spock.Internal.SessionManager (SessionId)
 
-import Guide.Utils
 import Guide.Types.User
+import Guide.Utils
+
+import qualified Data.Text as T
+import qualified Web.Spock.Internal.SessionManager as Spock
 
 
 type SpockSession conn st = Spock.Session conn GuideData st
@@ -53,10 +51,10 @@ emptyGuideData = GuideData {
   _sessionUserID = Nothing }
 
 data GuideSession = GuideSession {
-  _sess_id :: !SessionId,
-  _sess_csrfToken :: !T.Text,
+  _sess_id         :: !SessionId,
+  _sess_csrfToken  :: !T.Text,
   _sess_validUntil :: !UTCTime,
-  _sess_data :: !GuideData }
+  _sess_data       :: !GuideData }
   deriving (Show, Eq)
 
 deriveSafeCopySorted 0 'base ''GuideSession

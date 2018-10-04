@@ -13,14 +13,11 @@ where
 
 import Imports
 
--- Text
-import qualified Data.Text as T
--- Vector
-import qualified Data.Vector as V
--- Diffing
-import qualified Data.Patch as PV
-
 import Guide.Diff.Tokenize
+
+import qualified Data.Patch as PV
+import qualified Data.Text as T
+import qualified Data.Vector as V
 
 
 -- | An implementation of a 3-way diff and merge.

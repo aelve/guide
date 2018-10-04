@@ -1,5 +1,5 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
 
 
 module Guide.Routes
@@ -16,8 +16,8 @@ module Guide.Routes
 ) where
 
 
+import Web.Routing.Combinators (PathState (Open))
 import Web.Spock (Path, (<//>))
-import Web.Routing.Combinators (PathState(Open))
 
 
 haskellRoute :: Path '[] 'Open

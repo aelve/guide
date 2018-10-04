@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -22,19 +22,19 @@ where
 
 import Imports
 
--- Text
-import qualified Data.Text.IO as T
 -- HTML
 import Lucid hiding (for_)
 
-import Guide.Types.Core
-import qualified Guide.JS as JS
 import Guide.Cache
 import Guide.Markdown
+import Guide.Types.Core
 import Guide.Utils
-import Guide.Views.Utils
 import Guide.Views.Item
+import Guide.Views.Utils
 
+import qualified Data.Text.IO as T
+
+import qualified Guide.JS as JS
 
 ----------------------------------------------------------------------------
 -- Main functions

@@ -31,7 +31,7 @@ const urlsToSkip = [
 ]
 
 module.exports = async function handler (ctx) {
-  const url = ctx.path
+  const url = ctx.url
 
   // Skip favicon.
   if (urlsToSkip.indexOf(url) > -1) {

@@ -1,10 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 {- |
 The main module.
@@ -22,61 +22,59 @@ where
 
 import Imports
 
--- ByteString
-import qualified Data.ByteString as BS
 -- Lists
 import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Text
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import NeatInterpolation (text)
 -- Web
-import Web.Spock hiding (head, get, text)
-import qualified Web.Spock as Spock
+import Lucid hiding (for_)
+import Network.Wai.Middleware.Static (addBase, staticPolicy)
+import Web.Spock hiding (get, head, text)
 import Web.Spock.Config
 import Web.Spock.Lucid
-import Lucid hiding (for_)
-import Network.Wai.Middleware.Static (staticPolicy, addBase)
 -- Spock-digestive
 import Web.Spock.Digestive (runForm)
 -- Highlighting
-import CMark.Highlight (styleToCss, pygments)
--- Monitoring
-import qualified System.Remote.Monitoring as EKG
-import qualified Network.Wai.Metrics      as EKG
-import qualified System.Metrics.Gauge     as EKG.Gauge
+import CMark.Highlight (pygments, styleToCss)
 -- acid-state
 import Data.Acid as Acid
 import Data.SafeCopy as SafeCopy
 import Data.Serialize.Get as Cereal
 -- IO
 import System.IO
-import qualified SlaveThread as Slave
 -- Catching Ctrl-C and termination
 import System.Signal
--- Watching the templates directory
-import qualified System.FSNotify as FSNotify
 -- putStrLn that works well with concurrency
 import Say (say)
 -- HVect
 import Data.HVect hiding (length)
 
-import Guide.App
 import Guide.Api (runApiServer)
-import Guide.ServerStuff
-import Guide.Handlers
+import Guide.App
+import Guide.Cache
 import Guide.Config
+import Guide.Handlers
+import Guide.JS (JS (..), allJSFunctions)
+import Guide.Routes (authRoute, haskellRoute)
+import Guide.ServerStuff
+import Guide.Session
 import Guide.State
 import Guide.Types
-import Guide.Views
-import Guide.Views.Utils (getJS, getCSS, protectForm, getCsrfHeader)
-import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
-import Guide.Cache
-import Guide.Session
-import Guide.Routes (authRoute, haskellRoute)
+import Guide.Views
+import Guide.Views.Utils (getCSS, getCsrfHeader, getJS, protectForm)
+
+import qualified Data.ByteString as BS
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+import qualified Network.Wai.Metrics as EKG
+import qualified SlaveThread as Slave
+import qualified System.FSNotify as FSNotify
+import qualified System.Metrics.Gauge as EKG.Gauge
+import qualified System.Remote.Monitoring as EKG
+import qualified Web.Spock as Spock
 
 
 {- Note [acid-state]
@@ -389,7 +387,7 @@ authHook = do
   oldCtx <- getContext
   maybeUser <- getLoggedInUser
   case maybeUser of
-    Nothing -> Spock.text "Not logged in."
+    Nothing   -> Spock.text "Not logged in."
     Just user -> return (user :&: oldCtx)
 
 adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ': xs))

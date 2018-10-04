@@ -1,6 +1,7 @@
 <template>
   <v-dialog
-    v-model="isDialogOpen"
+    :value="value"
+    @input="close"
     max-width="500px"
   >
 
@@ -14,10 +15,10 @@
           v-model="isValid"
           @keydown.native.enter="submit"
         >
-        <!-- v-if="isDialogOpen" - cause  without it autofocus triggers on first modal open
+        <!-- v-if="value" - cause without it autofocus triggers on first modal open
           https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
           <v-text-field
-            v-if="isDialogOpen"
+            v-if="value"
             class="mb-2"
             label="Category name"
             autofocus
@@ -44,7 +45,7 @@
         <v-btn
           flat
           color="primary"
-          @click.native="isDialogOpen = false"
+          @click.native="close"
         >
           Cancel
         </v-btn>
@@ -60,31 +61,23 @@ import { CategoryService } from 'client/service/Category'
 @Component
 export default class AddCategoryDialog extends Vue {
   @Prop(String) groupName!: string
+  @Prop(Boolean) value!: boolean
 
   groupNameInternal: string = this.groupName || ''
   categoryName: string = ''
   categoryValidationRules: Function[] = [
     (x: string) => !!x || `Category name can't be empty`
   ]
-  isDialogOpen: boolean = false
   isValid: boolean = false
 
-  @Watch('groupName')
-  onGroupNameChanged(newVal: string) {
-    this.groupNameInternal = newVal
+  @Watch('value')
+  onOpen(newVal: string) {
+    this.categoryName = ''
+    this.groupNameInternal = this.groupName
   }
 
-  @Watch('isDialogOpen')
-  onDialogOpenHide(isOpen: boolean) {
-    isOpen ? this.onOpen() : this.onClose()
-  }
-
-  onOpen() {
-    this.groupNameInternal = this.groupName || ''
-  }
-
-  onClose() {
-    this.$refs.form.reset()
+  close() {
+    this.$emit('input', false)
   }
 
   async submit() {
@@ -99,7 +92,7 @@ export default class AddCategoryDialog extends Vue {
     })
     this.$store.dispatch('category/loadCategoryList')
     window.open(`http://aelve.com:4801/haskell/${createdId}`, '_blank')
-    this.isDialogOpen = false
+    this.close()
   }
 }
 </script>

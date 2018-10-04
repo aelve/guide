@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE TypeOperators     #-}
 
 
 module Guide.Api.Server
@@ -12,24 +12,25 @@ module Guide.Api.Server
 
 import Imports
 
-import Data.Acid as Acid
+import Data.Swagger.Lens
+import Network.Wai (Middleware)
+import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
+                                    simpleCorsResourcePolicy)
 import Servant
 import Servant.API.Generic
 import Servant.Server.Generic
 import Servant.Swagger
 import Servant.Swagger.UI
-import Data.Swagger.Lens
-import Network.Wai.Handler.Warp (run)
-import Network.Wai (Middleware)
-import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors
-  , corsOrigins, simpleCorsResourcePolicy)
 
 -- putStrLn that works well with concurrency
 import Say (say)
 
-import Guide.State
-import Guide.Api.Types
 import Guide.Api.Methods
+import Guide.Api.Types
+import Guide.State
+
+import Data.Acid as Acid
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site

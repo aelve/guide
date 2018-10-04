@@ -1,8 +1,8 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
 
 -- TODO: try to make it more type-safe somehow?
 
@@ -17,13 +17,12 @@ module Guide.JS where
 
 import Imports
 
--- Text
-import qualified Data.Text as T
-import qualified Data.Text.Lazy.Builder as B
--- Interpolation
 import NeatInterpolation
 
 import Guide.Utils
+
+import qualified Data.Text as T
+import qualified Data.Text.Lazy.Builder as B
 
 
 -- | Javascript code.

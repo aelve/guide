@@ -1,22 +1,23 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module Guide.Api.Methods where
 
 
 import Imports
 
-import Servant
 import Data.Acid as Acid
-import qualified Data.Text as T
 import Data.Text (Text)
+import Servant
 
-import Guide.Types
-import Guide.State
-import Guide.Utils
 import Guide.Api.Types
+import Guide.State
+import Guide.Types
+import Guide.Utils
+
+import qualified Data.Text as T
 import qualified Guide.Search as Search
 
 ----------------------------------------------------------------------------

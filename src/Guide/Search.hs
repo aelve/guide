@@ -9,14 +9,12 @@ where
 
 import Imports
 
--- Text
-import qualified Data.Text as T
--- Sets
-import qualified Data.Set as S
-
-import Guide.Types
-import Guide.State
 import Guide.Markdown
+import Guide.State
+import Guide.Types
+
+import qualified Data.Set as S
+import qualified Data.Text as T
 
 
 -- | A search result.

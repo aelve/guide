@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 
 {- |
@@ -19,10 +19,9 @@ where
 
 import Imports
 
--- JSON
-import qualified Data.Aeson as A
--- acid-state
 import Data.SafeCopy hiding (kind)
+
+import qualified Data.Aeson as A
 
 
 data Hue = NoHue | Hue Int
@@ -31,7 +30,7 @@ data Hue = NoHue | Hue Int
 deriveSafeCopySimple 1 'extension ''Hue
 
 instance A.ToJSON Hue where
-  toJSON NoHue = A.toJSON (0 :: Int)
+  toJSON NoHue   = A.toJSON (0 :: Int)
   toJSON (Hue n) = A.toJSON n
 
 data Hue_v0 = NoHue_v0 | Hue_v0 Int
@@ -40,7 +39,7 @@ deriveSafeCopy 0 'base ''Hue_v0
 
 instance Migrate Hue where
   type MigrateFrom Hue = Hue_v0
-  migrate NoHue_v0 = NoHue
+  migrate NoHue_v0   = NoHue
   migrate (Hue_v0 i) = Hue i
 
 instance Show Hue where

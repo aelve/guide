@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 
 {- |
@@ -13,15 +13,15 @@ import Imports
 -- digestive-functors
 import Text.Digestive
 -- lucid
-import Lucid hiding (for_)
-import Guide.Views.Page
-import Guide.Views.Utils
 import Guide.Config
 import Guide.Types.User
+import Guide.Views.Page
+import Guide.Views.Utils
+import Lucid hiding (for_)
 
 -- | Fields used by this form.
 data Login = Login {
-  loginEmail :: Text,
+  loginEmail        :: Text,
   loginUserPassword :: Text }
 
 -- | Creates a digestive functor over the fields in 'UserRegistration'

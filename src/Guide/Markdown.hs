@@ -1,8 +1,8 @@
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 
 {- |
@@ -40,25 +40,16 @@ where
 
 import Imports hiding (some)
 
--- Text
-import qualified Data.Text as T
--- ByteString
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString as BS
 -- Parsing
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char
--- JSON
-import qualified Data.Aeson as A
 -- HTML
 import Lucid
 import Text.HTML.SanitizeXSS
 -- Containers
 import Data.Tree
-import qualified Data.Set as S
 -- Markdown
 import CMark hiding (Node)
-import qualified CMark as MD
 import CMark.Highlight
 import CMark.Sections
 import ShortcutLinks
@@ -67,6 +58,13 @@ import ShortcutLinks.All (hackage)
 import Data.SafeCopy
 
 import Guide.Utils
+
+import qualified CMark as MD
+import qualified Data.Aeson as A
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Set as S
+import qualified Data.Text as T
 
 
 data MarkdownInline = MarkdownInline {

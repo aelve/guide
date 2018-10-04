@@ -1,6 +1,6 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 {- |
 Various HTML utils, Mustache utils, etc.
@@ -65,12 +65,6 @@ import Web.Spock
 import Web.Spock.Config
 -- Lists
 import Data.List.Split
--- Containers
-import qualified Data.Map as M
--- import Data.Tree
--- Text
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 -- digestive-functors
 import Text.Digestive (View)
 -- import NeatInterpolation
@@ -78,7 +72,6 @@ import Text.Digestive (View)
 import Lucid hiding (for_)
 import Lucid.Base (makeAttribute)
 -- Files
-import qualified System.FilePath.Find as F
 -- -- Network
 -- import Data.IP
 -- -- Time
@@ -86,25 +79,32 @@ import qualified System.FilePath.Find as F
 -- -- Markdown
 -- import qualified CMark as MD
 -- Mustache (templates)
-import Text.Mustache.Plus
-import qualified Data.Aeson as A
-import qualified Data.ByteString.Lazy.Char8 as BS
-import qualified Data.Semigroup as Semigroup
-import qualified Data.List.NonEmpty as NonEmpty
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import Text.Mustache.Plus
 
 import Guide.App
--- import Guide.Config
--- import Guide.State
+import Guide.JS (JQuerySelector, JS (..))
+import Guide.Markdown
 import Guide.Types
 import Guide.Utils
-import Guide.JS (JS(..), JQuerySelector)
-import qualified Guide.JS as JS
-import Guide.Markdown
+-- import Guide.Config
+-- import Guide.State
 -- import Guide.Cache
 
 import Guide.Views.Utils.Input
+
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map as M
+import qualified Data.Semigroup as Semigroup
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+import qualified System.FilePath.Find as F
+
+import qualified Guide.JS as JS
+
 
 -- | Add a script that does something on page load.
 onPageLoad :: Monad m => JS -> HtmlT m ()
@@ -230,7 +230,7 @@ smallMarkdownEditor rows (view mdSource -> src) submit mbCancel instr mbPlacehol
                          map (vBind "placeholder") (maybeToList mbPlaceholder) ++
                          [vOn "submit-edit" (submit (JS "$event"))] ++
                          case mbCancel of {
-                           Nothing -> [vBind "allow-cancel" False];
+                           Nothing     -> [vBind "allow-cancel" False];
                            Just cancel -> [vOn "cancel-edit" cancel]; })
     (pure ())
   script_ (format "new Vue({el: '#{}'});" editorUid)
@@ -335,7 +335,7 @@ readWidget fp = liftIO $ do
                       T.length line >= 20
   let go (x:y:[]) = [(T.strip (last x), unlinesSection y)]
       go (x:y:xs) = (T.strip (last x), unlinesSection (init y)) : go (y : xs)
-      go _ = error $ "View.readWidget: couldn't read " ++ fp
+      go _        = error $ "View.readWidget: couldn't read " ++ fp
   let sections = go (splitWhen isDivide (T.lines s))
   let sectionTypeP :: Parsec Void Text SectionType
       sectionTypeP = choice [

@@ -1,10 +1,10 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -36,18 +36,19 @@ module Guide.Api.Types
 
 import Imports
 
-import qualified Data.Aeson as A
-import Lucid (toHtml, renderText)
+import Lucid (renderText, toHtml)
 import Servant
 import Servant.API.Generic
-import Data.Swagger as S
 
 import Guide.Api.Error
 import Guide.Api.Utils
-import Guide.Types.Core as G
-import Guide.Search
-import Guide.Utils (Uid(..), Url)
 import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSource)
+import Guide.Search
+import Guide.Types.Core as G
+import Guide.Utils (Uid (..), Url)
+
+import qualified Data.Aeson as A
+import Data.Swagger as S
 
 ----------------------------------------------------------------------------
 -- Routes
@@ -168,11 +169,11 @@ type Api = ToServant Site AsApi
 -- | A "light-weight" client type of 'Category', which describes a category
 -- but doesn't give the notes or the items.
 data CCategoryInfo = CCategoryInfo
-  { cciUid     :: Uid Category          ? "Category ID"
-  , cciTitle   :: Text                  ? "Category title"
-  , cciCreated :: UTCTime               ? "When the category was created"
-  , cciGroup_  :: Text                  ? "Category group ('grandcategory')"
-  , cciStatus  :: CategoryStatus        ? "Status (done, in progress, ...)"
+  { cciUid     :: Uid Category   ? "Category ID"
+  , cciTitle   :: Text           ? "Category title"
+  , cciCreated :: UTCTime        ? "When the category was created"
+  , cciGroup_  :: Text           ? "Category group ('grandcategory')"
+  , cciStatus  :: CategoryStatus ? "Status (done, in progress, ...)"
   }
   deriving (Show, Generic)
 
@@ -195,12 +196,12 @@ toCCategoryInfo Category{..} = CCategoryInfo
 -- | A "light-weight" client type of 'Category', which gives all available
 -- information about a category
 data CCategoryFull = CCategoryFull
-  { ccfUid :: Uid Category              ? "Category ID"
-  , ccfTitle :: Text                    ? "Category title"
-  , ccfGroup :: Text                    ? "Category group ('grandcategory')"
-  , ccfStatus :: CategoryStatus         ? "Status, e.g. done, in progress, ..."
-  , ccfDescription :: CMarkdown         ? "Category description/notes (Markdown)"
-  , ccfItems :: [CItemFull]             ? "All items in the category"
+  { ccfUid         :: Uid Category   ? "Category ID"
+  , ccfTitle       :: Text           ? "Category title"
+  , ccfGroup       :: Text           ? "Category group ('grandcategory')"
+  , ccfStatus      :: CategoryStatus ? "Status, e.g. done, in progress, ..."
+  , ccfDescription :: CMarkdown      ? "Category description/notes (Markdown)"
+  , ccfItems       :: [CItemFull]    ? "All items in the category"
   }
   deriving (Show, Generic)
 
@@ -223,12 +224,12 @@ toCCategoryFull Category{..} = CCategoryFull
 
 -- | A lightweight info type about an 'Item'
 data CItemInfo = CItemInfo
-  { ciiUid :: Uid Item                   ? "Item ID"
-  , ciiName :: Text                      ? "Item name"
-  , ciiCreated :: UTCTime                ? "When the item was created"
-  , ciiGroup :: Maybe Text               ? "Item group"
-  , ciiLink :: Maybe Url                 ? "Link to the official site, if exists"
-  , ciiKind :: ItemKind                  ? "Item kind, e.g. library, ..."
+  { ciiUid     :: Uid Item   ? "Item ID"
+  , ciiName    :: Text       ? "Item name"
+  , ciiCreated :: UTCTime    ? "When the item was created"
+  , ciiGroup   :: Maybe Text ? "Item group"
+  , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
+  , ciiKind    :: ItemKind   ? "Item kind, e.g. library, ..."
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
@@ -239,17 +240,17 @@ instance ToSchema CItemInfo where
 
 -- | Client type of 'Item'
 data CItemFull = CItemFull
-  { cifUid :: Uid Item                   ? "Item ID"
-  , cifName :: Text                      ? "Item name"
-  , cifCreated :: UTCTime                ? "When the item was created"
-  , cifGroup :: Maybe Text               ? "Item group"
-  , cifDescription :: CMarkdown          ? "Item summary (Markdown)"
-  , cifPros :: [CTrait]                  ? "Pros (positive traits)"
-  , cifCons :: [CTrait]                  ? "Cons (negative traits)"
-  , cifEcosystem :: CMarkdown            ? "The ecosystem description (Markdown)"
-  , cifNotes :: CMarkdown                ? "Notes (Markdown)"
-  , cifLink :: Maybe Url                 ? "Link to the official site, if exists"
-  , cifKind :: ItemKind                  ? "Item kind, e.g. library, ..."
+  { cifUid         :: Uid Item   ? "Item ID"
+  , cifName        :: Text       ? "Item name"
+  , cifCreated     :: UTCTime    ? "When the item was created"
+  , cifGroup       :: Maybe Text ? "Item group"
+  , cifDescription :: CMarkdown  ? "Item summary (Markdown)"
+  , cifPros        :: [CTrait]   ? "Pros (positive traits)"
+  , cifCons        :: [CTrait]   ? "Cons (negative traits)"
+  , cifEcosystem   :: CMarkdown  ? "The ecosystem description (Markdown)"
+  , cifNotes       :: CMarkdown  ? "Notes (Markdown)"
+  , cifLink        :: Maybe Url  ? "Link to the official site, if exists"
+  , cifKind        :: ItemKind   ? "Item kind, e.g. library, ..."
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -287,8 +288,8 @@ toCItemFull Item{..} = CItemFull
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
-  { ctUid :: Uid Trait                  ? "Trait ID"
-  , ctContent :: CMarkdown              ? "Trait text (Markdown)"
+  { ctUid     :: Uid Trait ? "Trait ID"
+  , ctContent :: CMarkdown ? "Trait text (Markdown)"
   } deriving (Show, Generic)
 
 instance A.ToJSON CTrait where
@@ -306,8 +307,8 @@ toCTrait trait = CTrait
 
 -- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
-  { text :: Text                        ? "Markdown source"
-  , html :: Text                        ? "Rendered HTML"
+  { text :: Text ? "Markdown source"
+  , html :: Text ? "Rendered HTML"
   } deriving (Show, Generic)
 
 instance A.ToJSON CMarkdown
@@ -371,8 +372,8 @@ instance ToSchema CSearchResult where
 
 -- | A category was found.
 data CSRCategory = CSRCategory
-  { csrcInfo         :: CCategoryInfo  ? "Info about the category"
-  , csrcDescription  :: CMarkdown      ? "Category description"
+  { csrcInfo        :: CCategoryInfo ? "Info about the category"
+  , csrcDescription :: CMarkdown     ? "Category description"
   } deriving (Show, Generic)
 
 instance A.ToJSON CSRCategory where
@@ -383,10 +384,10 @@ instance ToSchema CSRCategory where
 
 -- | An item was found.
 data CSRItem = CSRItem
-  { csriCategory    :: CCategoryInfo    ? "Category that the item belongs to"
-  , csriInfo        :: CItemInfo        ? "Info about the item"
-  , csriDescription :: Maybe CMarkdown  ? "Item description (if the match was found there)"
-  , csriEcosystem   :: Maybe CMarkdown  ? "Item ecosystem (if the match was found there)"
+  { csriCategory    :: CCategoryInfo   ? "Category that the item belongs to"
+  , csriInfo        :: CItemInfo       ? "Info about the item"
+  , csriDescription :: Maybe CMarkdown ? "Item description (if the match was found there)"
+  , csriEcosystem   :: Maybe CMarkdown ? "Item ecosystem (if the match was found there)"
   } deriving (Show, Generic)
 
 instance A.ToJSON CSRItem where
