@@ -34,3 +34,24 @@ test('Test search input', async inputSearch => {
 
 //   await t.click(addCategoryBtn).expect(addCatDialogVue.state.isDialogOpen).eql(true);
 // });
+
+test('Add category', async addCategory => {
+  // const catBtn = VueSelector('b');
+  // const rootVue = VueSelector();
+  // console.log(catBtn);
+  // const catInput = Selector('input[aria-label="Category name"]');
+  let num = Math.floor(Math.random() * 10000);
+  let catName = 'mytest-' + num;
+  
+  await addCategory
+    // .click(catBtn)
+    // button[*data-v-4e53f99f]
+    .click('.category-group button')
+    .typeText('input[aria-label="Category name"]', 'mytest-' + catName)
+    // .click('.add-cat-submit')
+    // .expect(Selector('.category group > a > .body-1').innerText).contains(catName)
+    // 'h6[data-v-4e53f99f]'
+  await addCategory
+    .click('.add-cat-submit')
+  //   .expect(Selector('.category group > a > .body-1').innerText).contains(catName);
+})

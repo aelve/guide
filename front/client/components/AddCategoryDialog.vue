@@ -37,6 +37,7 @@
         <v-btn
           flat
           color="primary"
+          class="add-cat-submit"
           :disabled="!isValid"
           @click.native="submit"
         >
