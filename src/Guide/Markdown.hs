@@ -16,7 +16,7 @@ module Guide.Markdown
   MarkdownInline(..),
   MarkdownBlock(..),
   MarkdownTree(..),
-  Heading (..),
+  Heading(..),
 
   -- * Lenses
   mdHtml,
@@ -87,6 +87,7 @@ data MarkdownTree = MarkdownTree {
   markdownTreeMdTOC      :: Forest Heading }
   deriving (Generic, Data)
 
+-- | Table-of-contents heading
 data Heading = Heading
     { headingMd   :: MarkdownInline
     , headingSlug :: Text

@@ -253,7 +253,7 @@ data CItemFull = CItemFull
   , cifNotes       :: CMarkdown                ? "Notes (Markdown)"
   , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
   , cifKind        :: ItemKind                 ? "Item kind, e.g. library, ..."
-  , cifToc         :: Forest (CMarkdown, Text) ? "Table of Contents"
+  , cifToc         :: Forest CHeading          ? "Table of contents"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -290,9 +290,7 @@ toCItemFull Item{..} = CItemFull
   , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
   where
-    treeToCMD = fmap
-        (\(Heading mdIn slug) -> (toCMarkdown mdIn, slug)
-        )
+    treeToCMD = fmap toCHeading
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -342,6 +340,20 @@ instance ToCMarkdown MarkdownTree where
     { text = H $ md^.mdSource
     , html = H $ toText . renderText $ toHtml md
     }
+
+data CHeading = CHeading
+  { chContent :: CMarkdown    ? "Rendered heading"
+  , chSlug    :: Text         ? "In-page anchor for linking"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CHeading
+instance ToSchema CHeading
+
+toCHeading :: Heading -> CHeading
+toCHeading h = CHeading
+  { chContent = H $ toCMarkdown $ headingMd h
+  , chSlug    = H $ headingSlug h
+  }
 
 ----------------------------------------------------------------------------
 -- Search client types
