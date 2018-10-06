@@ -45,6 +45,8 @@ executable guide
 library
   exposed-modules:
     Guide.App
+      Guide.App.Error
+      Guide.App.Monad
     Guide.Api
       Guide.Api.Methods
       Guide.Api.Server
@@ -184,6 +186,10 @@ library
                      , DeriveGeneric
                      , TypeApplications
                      , NoImplicitPrelude
+                     , GeneralizedNewtypeDeriving
+                     , ConstraintKinds
+                     , InstanceSigs
+                     , DerivingStrategies
 
 test-suite tests
   main-is:             Main.hs

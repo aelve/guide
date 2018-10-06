@@ -6,6 +6,9 @@ packages:
 nix:
   shell-file: shell.nix
 
+ghc-options:
+  "$locals": -fhide-source-paths
+
 extra-deps:
 - Spock-0.13.0.0
 - Spock-core-0.13.0.0
