@@ -134,11 +134,10 @@ tests = describe "Markdown" $ do
                          subForest = [] }]}]}
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
-      let headingInline = toMarkdownInline "foo"
       (toMarkdownTree "i-" s ^. mdTOC) `shouldBe` [
-        Node {rootLabel = Heading headingInline "i-foo",
+        Node {rootLabel = Heading (toMarkdownInline "# foo\n\n") "i-foo",
               subForest = [
-                 Node {rootLabel = Heading headingInline "i-foo_",
+                 Node {rootLabel = Heading (toMarkdownInline "## foo\n\n") "i-foo_",
                        subForest = [] }]}]
 
 getTags :: Text -> [Text]

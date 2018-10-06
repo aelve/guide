@@ -318,8 +318,7 @@ instance Show MarkdownBlock where
   show = show . view mdSource
 instance Show MarkdownTree where
   show = show . view mdSource
-instance Show Heading where
-  show (Heading hIn txt) = "Heading " ++ show hIn ++ " " ++ show txt
+deriving instance Show Heading
 
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
