@@ -16,6 +16,7 @@ module Guide.Markdown
   MarkdownInline(..),
   MarkdownBlock(..),
   MarkdownTree(..),
+  Heading(..),
 
   -- * Lenses
   mdHtml,
@@ -71,7 +72,7 @@ data MarkdownInline = MarkdownInline {
   markdownInlineMdSource   :: Text,
   markdownInlineMdHtml     :: ByteString,
   markdownInlineMdMarkdown :: ![MD.Node] }
-  deriving (Generic, Data)
+  deriving (Generic, Data, Eq)
 
 data MarkdownBlock = MarkdownBlock {
   markdownBlockMdSource   :: Text,
@@ -83,8 +84,14 @@ data MarkdownTree = MarkdownTree {
   markdownTreeMdSource   :: Text,
   markdownTreeMdTree     :: !(Document Text ByteString),
   markdownTreeMdIdPrefix :: Text,
-  markdownTreeMdTOC      :: Forest ([MD.Node], Text) }
+  markdownTreeMdTOC      :: Forest Heading }
   deriving (Generic, Data)
+
+-- | Table-of-contents heading
+data Heading = Heading
+    { headingMd   :: MarkdownInline
+    , headingSlug :: Text
+    } deriving (Generic, Data, Eq)
 
 makeFields ''MarkdownInline
 makeFields ''MarkdownBlock
@@ -270,9 +277,20 @@ toMarkdownTree idPrefix s = MarkdownTree {
     tree = renderContents . slugifyDocument slugify $
              nodesToDocument (WithSource s blocks)
     --
-    toc :: Forest ([MD.Node], Text)  -- (heading, slug)
+    toc :: Forest Heading
     toc = sections tree
-            & each.each %~ (\Section{..} -> (stripSource heading, headingAnn))
+            & each.each
+            %~ (\Section{..} -> Heading (nodesToMdInline heading) headingAnn)
+
+    nodesToMdInline :: WithSource [MD.Node] -> MarkdownInline
+    nodesToMdInline (WithSource src nodes) = MarkdownInline
+        { markdownInlineMdSource   = src
+        , markdownInlineMdHtml     = html
+        , markdownInlineMdMarkdown = inlines
+        }
+      where
+        inlines = extractInlines nodes
+        html = renderMD inlines
 
 renderContents :: Document a b -> Document a ByteString
 renderContents doc = doc {
@@ -300,6 +318,7 @@ instance Show MarkdownBlock where
   show = show . view mdSource
 instance Show MarkdownTree where
   show = show . view mdSource
+deriving instance Show Heading
 
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
