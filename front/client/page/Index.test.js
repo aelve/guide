@@ -53,5 +53,6 @@ test('Add category', async addCategory => {
     // 'h6[data-v-4e53f99f]'
   await addCategory
     .click('.add-cat-submit')
+    .expect(Selector('.group').innerText).contains('Basics');
   //   .expect(Selector('.category group > a > .body-1').innerText).contains(catName);
 })
