@@ -9,15 +9,15 @@ import BasePrelude
 -- Lenses
 import Lens.Micro.Platform
 -- Text
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import Data.Text (Text)
 -- HTML
+import Lucid (ToHtml, renderText, toHtml)
 import Text.HTML.TagSoup hiding (sections)
-import Lucid (ToHtml, toHtml, renderText)
 -- Markdown
 import CMark hiding (Node)
-import qualified CMark as MD (Node(..))
+import qualified CMark as MD (Node (..))
 import CMark.Sections
 import Data.Tree
 -- Testing
@@ -134,11 +134,11 @@ tests = describe "Markdown" $ do
                          subForest = [] }]}]}
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
-      let headingMD = MD.Node Nothing (TEXT "foo") []
+      let headingInline = toMarkdownInline "foo"
       (toMarkdownTree "i-" s ^. mdTOC) `shouldBe` [
-        Node {rootLabel = ([headingMD],"i-foo"),
+        Node {rootLabel = Heading headingInline "i-foo",
               subForest = [
-                 Node {rootLabel = ([headingMD],"i-foo_"),
+                 Node {rootLabel = Heading headingInline "i-foo_",
                        subForest = [] }]}]
 
 getTags :: Text -> [Text]

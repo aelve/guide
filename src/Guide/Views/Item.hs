@@ -41,7 +41,6 @@ import Guide.Types.Core
 import Guide.Utils
 import Guide.Views.Utils
 
-import qualified CMark as MD
 import qualified Data.Aeson as A
 import qualified Data.Map as M
 import qualified Data.Text.IO as T
@@ -262,10 +261,10 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
     a_ [href_ notesLink] $
       strong_ "Notes"
 
-    let renderTree :: Monad m => Forest ([MD.Node], Text) -> HtmlT m ()
+    let renderTree :: Monad m => Forest Heading -> HtmlT m ()
         renderTree [] = return ()
         renderTree xs = ul_ $ do
-          for_ xs $ \(Node (is, id') children) -> li_ $ do
+          for_ xs $ \(Node {-(is, id')-} (Heading hMd id') children) -> li_ $ do
             let handler = fromJS (JS.expandItemNotes [item^.uid])
                 -- The link has to be absolute because sometimes we are
                 -- looking at items from pages different from the proper
@@ -278,7 +277,7 @@ renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
                 -- start happening and then it's better to be prepared.
                 fullLink = categoryLink category <> "#" <> id'
             a_ [href_ fullLink, onclick_ handler] $
-              toHtmlRaw (renderMD is)
+              toHtmlRaw (markdownInlineMdHtml hMd)
             renderTree children
     let renderTOC = do
           let toc = item^.notes.mdTOC
