@@ -276,19 +276,19 @@ toMarkdownTree idPrefix s = MarkdownTree {
     tree = renderContents . slugifyDocument slugify $
              nodesToDocument (WithSource s blocks)
     --
-    toc :: Forest Heading  -- (heading, slug)
+    toc :: Forest Heading
     toc = sections tree
             & each.each
-            %~ (\Section{..} -> Heading (nodesToMdInline $ stripSource heading) headingAnn)
+            %~ (\Section{..} -> Heading (nodesToMdInline heading) headingAnn)
 
-    nodesToMdInline :: [MD.Node] -> MarkdownInline
-    nodesToMdInline n = MarkdownInline
-        { markdownInlineMdSource   = stringify n
+    nodesToMdInline :: WithSource [MD.Node] -> MarkdownInline
+    nodesToMdInline (WithSource src nodes) = MarkdownInline
+        { markdownInlineMdSource   = src
         , markdownInlineMdHtml     = html
         , markdownInlineMdMarkdown = inlines
         }
       where
-        inlines = extractInlines n
+        inlines = extractInlines nodes
         html = renderMD inlines
 
 renderContents :: Document a b -> Document a ByteString
