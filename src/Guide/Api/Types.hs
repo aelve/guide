@@ -313,32 +313,35 @@ toCTrait trait = CTrait
 
 -- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
-  { text :: Text ? "Markdown source"
-  , html :: Text ? "Rendered HTML"
+  { cmdText :: Text ? "Markdown source"
+  , cmdHtml :: Text ? "Rendered HTML"
   } deriving (Show, Generic)
 
-instance A.ToJSON CMarkdown
-instance ToSchema CMarkdown
+instance A.ToJSON CMarkdown where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CMarkdown where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Type class to create 'CMarkdown'
 class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMarkdown MarkdownInline where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText $ md^.mdHtml
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText $ md^.mdHtml
     }
 
 instance ToCMarkdown MarkdownBlock where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText $ md^.mdHtml
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText $ md^.mdHtml
     }
 
 instance ToCMarkdown MarkdownTree where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText . renderText $ toHtml md
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText . renderText $ toHtml md
     }
 
 data CHeading = CHeading
@@ -346,8 +349,11 @@ data CHeading = CHeading
   , chSlug    :: Text         ? "In-page anchor for linking"
   } deriving (Show, Generic)
 
-instance A.ToJSON CHeading
-instance ToSchema CHeading
+instance A.ToJSON CHeading where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CHeading where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 toCHeading :: Heading -> CHeading
 toCHeading h = CHeading
