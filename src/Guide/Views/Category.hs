@@ -51,7 +51,7 @@ renderCategory category = cached (CacheCategory (category^.uid)) $ do
       thisNode
     textInput [
       class_ " add-item ",
-      placeholder_ "add an item",
+      placeholder_ "+ new item",
       autocomplete_ "off",
       onEnter $ JS.addItem (itemsNode, category^.uid, inputValue) <>
                 clearInput ]
