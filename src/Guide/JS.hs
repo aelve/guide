@@ -458,6 +458,9 @@ addCategoryAndRedirect =
     $.post("/haskell/add/category", {content: content, group: group})
      .done(function (url) {
         window.location.href = url;
+      })
+     .fail(function (xhr) {
+        alert("Couldn't add a page: " + xhr.responseText);
       });
   |]
 

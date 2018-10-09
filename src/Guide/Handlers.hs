@@ -267,21 +267,26 @@ addMethods = do
   Spock.post (addRoute <//> "category") $ do
     title' <- param' "content"
     group' <- param' "group"
-    -- If the category exists already, don't create it
-    cats <- view categories <$> dbQuery GetGlobalState
-    let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-                       && T.toCaseFold (cat^.group_) == T.toCaseFold group'
-    category <- case find isDuplicate cats of
-      Just c  -> return c
-      Nothing -> do
-        catId <- randomShortUid
-        time <- liftIO getCurrentTime
-        (edit, newCategory) <- dbUpdate (AddCategory catId title' group' time)
-        invalidateCache' (CacheCategory catId)
-        addEdit edit
-        return newCategory
-    -- And now send the URL of the new (or old) category
-    Spock.text ("/haskell/" <> categorySlug category)
+    -- If the title is empty, that's bad
+    let badTitle = do
+          setStatus HTTP.status400
+          Spock.text "Title must not be empty!"
+    if T.null title' then badTitle else do
+      -- If the category exists already, don't create it
+      cats <- view categories <$> dbQuery GetGlobalState
+      let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+                         && T.toCaseFold (cat^.group_) == T.toCaseFold group'
+      category <- case find isDuplicate cats of
+        Just c  -> return c
+        Nothing -> do
+          catId <- randomShortUid
+          time <- liftIO getCurrentTime
+          (edit, newCategory) <- dbUpdate (AddCategory catId title' group' time)
+          invalidateCache' (CacheCategory catId)
+          addEdit edit
+          return newCategory
+      -- And now send the URL of the new (or old) category
+      Spock.text ("/haskell/" <> categorySlug category)
 
   -- New item in a category
   Spock.post (addRoute <//> categoryVar <//> "item") $ \catId -> do
