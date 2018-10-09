@@ -557,8 +557,6 @@ haskellHeader = div_ [id_ "header"] $ do
   div_ $ do
     h1_ $ mkLink ("Aelve Guide " >> span_ "| Haskell") "/haskell"
     renderSubtitle
-  div_ [class_ "auth-link-container"] $ do
-    a_ [href_ "/auth"] "login/logout"
 
 -- | Render </haskell>.
 renderHaskellRoot

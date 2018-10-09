@@ -105,7 +105,7 @@ pageDef = Page {
     _pageFooter = footerDef
   }
 
-subtitleDef 
+subtitleDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()
@@ -119,7 +119,7 @@ subtitleDef _page = pure ()
       Just l  -> " • " >> mkLink "discuss the site" l
   -}
 
-headTagDef 
+headTagDef
   :: (MonadIO m, MonadReader Config m)
   => Page m
   -> HtmlT m ()
@@ -159,7 +159,7 @@ headTagDef page = do
     document.head.appendChild(sheet);
     |]
 
-headerDef 
+headerDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()
@@ -170,10 +170,8 @@ headerDef page = do
           Nothing -> mempty
     h1_ $ mkLink (toHtml (_pageTitle page) >> nameHtml) (_pageHeaderUrl page)
     (_pageSubtitle page) page
-  div_ [class_ "auth-link-container"] $ do
-    a_ [href_ "/auth"] "login/logout"
 
-footerDef 
+footerDef
   :: MonadIO m
   => Page m
   -> HtmlT m ()
