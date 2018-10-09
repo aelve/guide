@@ -453,9 +453,9 @@ makeItemNotesEditor =
 -- if it exists already).
 addCategoryAndRedirect :: JSFunction a => a
 addCategoryAndRedirect =
-  makeJSFunction "addCategoryAndRedirect" ["s"]
+  makeJSFunction "addCategoryAndRedirect" ["content", "group"]
   [text|
-    $.post("/haskell/add/category", {content: s})
+    $.post("/haskell/add/category", {content: content, group: group})
      .done(function (url) {
         window.location.href = url;
       });

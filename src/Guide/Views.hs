@@ -570,11 +570,6 @@ renderHaskellRoot globalState mbSearchQuery =
     haskellHeader
     renderNoScriptWarning
     renderSearch mbSearchQuery
-    textInput [
-      placeholder_ "add a category",
-      class_ "add-category",
-      autocomplete_ "off",
-      onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
       Nothing -> renderCategoryList (globalState^.categories)
       Just query' -> renderSearchResults (search query' globalState)
@@ -697,8 +692,9 @@ renderCategoryList allCats = cached CacheCategoryList $ do
   div_ [id_ "categories"] $
     for_ (groupWith (view group_) allCats) $ \catsInGroup ->
       div_ [class_ "category-group"] $ do
+        let group' = catsInGroup^?!_head.group_
         -- Grandcategory name
-        h2_ $ toHtml (catsInGroup^?!_head.group_)
+        h2_ $ toHtml group'
         -- Finished categories
         do let cats = filter ((== CategoryFinished) . view status) catsInGroup
            unless (null cats) $
@@ -718,6 +714,12 @@ renderCategoryList allCats = cached CacheCategoryList $ do
                h3_ "To be written"
                p_ $ sequence_ $ intersperse ", " $
                  map mkCategoryLink cats
+        -- The "add category" button
+        do textInput [
+             placeholder_ "+ new page",
+             class_ "add-category",
+             autocomplete_ "off",
+             onEnter $ JS.addCategoryAndRedirect [inputValue, JS.toJS group'] ]
   where
     -- TODO: this link shouldn't be absolute [absolute-links]
     mkCategoryLink :: Category -> HtmlT IO ()

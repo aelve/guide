@@ -266,15 +266,17 @@ addMethods = do
   -- New category
   Spock.post (addRoute <//> "category") $ do
     title' <- param' "content"
+    group' <- param' "group"
     -- If the category exists already, don't create it
     cats <- view categories <$> dbQuery GetGlobalState
-    let hasSameTitle cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-    category <- case find hasSameTitle cats of
+    let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+                       && T.toCaseFold (cat^.group_) == T.toCaseFold group'
+    category <- case find isDuplicate cats of
       Just c  -> return c
       Nothing -> do
         catId <- randomShortUid
         time <- liftIO getCurrentTime
-        (edit, newCategory) <- dbUpdate (AddCategory catId title' "Miscellaneous" time)
+        (edit, newCategory) <- dbUpdate (AddCategory catId title' group' time)
         invalidateCache' (CacheCategory catId)
         addEdit edit
         return newCategory

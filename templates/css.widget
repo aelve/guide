@@ -418,3 +418,11 @@ textarea.fullwidth {
   margin-top: 10px;
   font-size: 90%;
 }
+
+.add-category {
+  font-weight: 200;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+  padding: 2px 5px;
+  padding-bottom: 4px;
+}

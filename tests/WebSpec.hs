@@ -334,7 +334,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
         setItemGroup "one" itemC
         do [aCol, bCol, cCol] <- getColors
            aCol `shouldNotBe` cCol; bCol `shouldBe` cCol
-        
+
     -- TODO: kind
     -- TODO: site
 
