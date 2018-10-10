@@ -30,7 +30,6 @@ import Safe (headDef)
 import Control.Monad.Morph
 -- Text
 import qualified Data.Text.All as T
-import NeatInterpolation (text)
 -- Web
 import Web.Spock hiding (head, get, text)
 import qualified Web.Spock as Spock
@@ -70,7 +69,7 @@ import Guide.Config
 import Guide.State
 import Guide.Types
 import Guide.Views
-import Guide.Views.Utils (getJS, getCSS, protectForm, getCsrfHeader)
+import Guide.Views.Utils (getJS, getCSS, protectForm)
 import Guide.JS (JS(..), allJSFunctions)
 import Guide.Utils
 import Guide.Cache
@@ -224,7 +223,7 @@ mainWith config = do
           }
       return cfg {
         spc_maxRequestSize = Just (1024*1024),
-        spc_csrfProtection = True,
+        spc_csrfProtection = False,
         spc_sessionCfg = sessionCfg }
     when (_prerender config) $ prerenderPages config db
     say "Spock is running on port 8080"
@@ -244,12 +243,8 @@ guideApp waiMetrics = do
       -- Javascript
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
-        (csrfTokenName, csrfTokenValue) <- getCsrfHeader
-        let jqueryCsrfProtection = [text|
-              guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
-            |]
         js <- getJS
-        Spock.bytes $ T.toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
+        Spock.bytes $ T.toByteString (fromJS allJSFunctions <> js)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
