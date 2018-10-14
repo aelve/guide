@@ -7,7 +7,9 @@
 {-# LANGUAGE TypeOperators       #-}
 
 {- |
-The main module.
+Description : The main module that starts the server.
+
+This module provides two functions that are of interest:
 
   * Run 'main' to actually start the server.
   * Run 'mainWith' to run it with a custom config.
