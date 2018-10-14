@@ -261,7 +261,7 @@ guideApp waiMetrics = do
 
       -- Main page
       Spock.get root $
-        lucidWithConfig renderRoot
+        Spock.redirect "/haskell"
 
       -- Admin page
       prehook authHook $ prehook adminHook $ do
