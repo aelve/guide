@@ -173,16 +173,12 @@ enabled, and in this case the relevant tag will always be “shown” and not
 
 -- | Render the subtitle below the “Aelve Guide” header that is present on
 -- every page.
-renderSubtitle :: Monad m => HtmlT m ()
-renderSubtitle = pure ()
-  {- previous version of the subtitle
-  -----------------------------------
-  div_ [class_ "subtitle"] $ do
-    "alpha version • don't post on Reddit yet"
-    lift (asks _discussLink) >>= \case
-      Nothing -> return ()
-      Just l  -> " • " >> mkLink "discuss the site" l
-  -}
+renderSubtitle :: (MonadReader Config m) => HtmlT m ()
+renderSubtitle =
+  lift (asks _discussLink) >>= \case
+    Nothing -> return ()
+    Just l  -> div_ [class_ "subtitle"] $
+                 mkLink "join the chatroom" l
 
 -- | Render the main page (<https://guide.aelve.com>).
 renderRoot :: (MonadIO m, MonadReader Config m) => HtmlT m ()
