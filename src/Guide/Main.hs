@@ -213,7 +213,7 @@ mainWith config = do
       store <- newAcidSessionStore db
       let sessionCfg = SessionCfg {
             sc_cookieName = "spockcookie",
-            sc_sessionTTL = 3600,
+            sc_sessionTTL = 3600*24*30,
             sc_sessionIdEntropy = 64,
             sc_sessionExpandTTL = True,
             sc_emptySession = emptyGuideData,
