@@ -134,7 +134,18 @@ data ItemSite route = ItemSite
 
 -- | Working with item traits
 data TraitSite route = TraitSite
-  { _deleteTrait :: route :-
+  { _setTrait :: route :-
+      Summary "Create a new trait in the given item"
+      :> Description "Returns the ID of the created trait."
+      :> ErrorResponse 400 "'text' not provided"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "id" (Uid Trait)
+      :> QueryParam' '[Required, Strict] "text" Text
+      :> Post '[JSON] (Uid Trait)
+
+  , _deleteTrait :: route :-
       Summary "Delete a trait"
       :> "item"
       :> Capture "item" (Uid Item)
