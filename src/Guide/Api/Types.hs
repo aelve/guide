@@ -14,11 +14,12 @@ module Guide.Api.Types
   (
   -- * API
     Api
-  , Site(..)
   , CategorySite(..)
   , ItemSite(..)
-  , TraitSite(..)
   , SearchSite(..)
+  , Site(..)
+  , TraitSite(..)
+  , TraitType (..)
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
@@ -134,16 +135,26 @@ data ItemSite route = ItemSite
 
 -- | Working with item traits
 data TraitSite route = TraitSite
-  { _setTrait :: route :-
+  { _createTrait :: route :-
       Summary "Create a new trait in the given item"
       :> Description "Returns the ID of the created trait."
       :> ErrorResponse 400 "'text' not provided"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
-      :> Capture "id" (Uid Trait)
+      :> Capture "type" TraitType
       :> QueryParam' '[Required, Strict] "text" Text
       :> Post '[JSON] (Uid Trait)
+
+  , _setTrait :: route :-
+      Summary "Update a trait in the given item"
+      :> Description "Returns nothing"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "id" (Uid Trait)
+      :> ReqBody '[JSON] Text
+      :> Put '[JSON] NoContent
 
   , _deleteTrait :: route :-
       Summary "Delete a trait"
@@ -168,6 +179,27 @@ data SearchSite route = SearchSite
   deriving (Generic)
 
 type Api = ToServant Site AsApi
+
+-- | Trait type (Pro/Con) and instancies.
+data TraitType = Pro | Con
+    deriving (Show, Generic)
+
+instance ToSchema TraitType where
+    declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+instance ToParamSchema TraitType where
+    toParamSchema _ = mempty
+        & S.type_ .~ SwaggerString
+        & S.format ?~ "Trait type"
+
+instance ToHttpApiData TraitType where
+    toUrlPiece = toText . show
+
+instance FromHttpApiData TraitType where
+    parseUrlPiece t = case t of
+        "Pro" -> Right Pro
+        "Con" -> Right Con
+        _     -> Left "Invalid trait type!"
 
 ----------------------------------------------------------------------------
 -- Client types

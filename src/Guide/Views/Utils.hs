@@ -339,14 +339,16 @@ readWidget fp = liftIO $ do
   let sections = go (splitWhen isDivide (T.lines s))
   let sectionTypeP :: Parsec Void Text SectionType
       sectionTypeP = choice [
-        do string "HTML"
+        do
+           _ <- string "HTML"
            HTML_ <$> choice [
              string ": " >> (toText <$> some anyChar),
              return (toText (takeBaseName fp)) ],
         string "JS" $> JS_,
         string "CSS" $> CSS_,
         string "Description" $> Description_,
-        do string "Note ["
+        do
+           _ <- string "Note ["
            Note_ . toText <$> someTill anyChar (char ']') ]
   let parseSectionType t = case parse (sectionTypeP <* eof) fp t of
         Right x -> x

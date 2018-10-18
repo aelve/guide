@@ -105,9 +105,20 @@ deleteItem db itemId = uncache db (CacheItem itemId) $ do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
+createTrait :: DB -> Uid Item -> TraitType -> Text -> Handler (Uid Trait)
+createTrait db itemId traitType text = do
+    traitId <- randomShortUid
+    (_edit, _newTrait) <- case traitType of
+        Con -> dbUpdate db (AddCon itemId traitId text)
+        Pro -> dbUpdate db (AddPro itemId traitId text)
+    invalidateCache' db (CacheItemTraits itemId)
+    pure traitId
+
+-- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
 setTrait db itemId traitId text = do
-    (_edit, _newItem) <- dbUpdate db (SetTraitContent itemId traitId text)
+    (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
+    invalidateCache' db (CacheItemTraits itemId)
     pure NoContent
 
 -- | Delete a trait (pro/con).

@@ -47,7 +47,8 @@ apiServer db = Site
       :: ItemSite AsServer)
 
   , _traitSite = toServant (TraitSite
-      { _setTrait       = setTrait db
+      { _createTrait    = createTrait db
+      , _setTrait       = setTrait db
       , _deleteTrait    = deleteTrait db }
       :: TraitSite AsServer)
 
