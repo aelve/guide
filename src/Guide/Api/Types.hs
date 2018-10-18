@@ -143,12 +143,11 @@ data TraitSite route = TraitSite
       :> Capture "item" (Uid Item)
       :> "trait"
       :> Capture "type" TraitType
-      :> QueryParam' '[Required, Strict] "text" Text
+      :> ReqBody '[JSON] Text
       :> Post '[JSON] (Uid Trait)
 
   , _setTrait :: route :-
       Summary "Update a trait in the given item"
-      :> Description "Returns nothing"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
@@ -180,7 +179,7 @@ data SearchSite route = SearchSite
 
 type Api = ToServant Site AsApi
 
--- | Trait type (Pro/Con) and instancies.
+-- | Trait type (Pro/Con) and instances.
 data TraitType = Pro | Con
     deriving (Show, Generic)
 
@@ -193,12 +192,12 @@ instance ToParamSchema TraitType where
         & S.format ?~ "Trait type"
 
 instance ToHttpApiData TraitType where
-    toUrlPiece = toText . show
+    toUrlPiece = toText . map toLower . show
 
 instance FromHttpApiData TraitType where
     parseUrlPiece t = case t of
-        "Pro" -> Right Pro
-        "Con" -> Right Con
+        "pro" -> Right Pro
+        "con" -> Right Con
         _     -> Left "Invalid trait type!"
 
 ----------------------------------------------------------------------------
