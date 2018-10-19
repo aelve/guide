@@ -371,7 +371,7 @@ adminMethods :: AdminM ctx ()
 adminMethods = do
   -- Accept an edit
   Spock.post (adminRoute <//> "edit" <//> var <//> "accept") $ \n -> do
-    dbUpdate (RemovePendingEdit n)
+    _ <- dbUpdate (RemovePendingEdit n)
     return ()
   -- Undo an edit
   Spock.post (adminRoute <//> "edit" <//> var <//> "undo") $ \n -> do
@@ -380,7 +380,7 @@ adminMethods = do
     case res of
       Left err -> Spock.text (toText err)
       Right () -> do invalidateCacheForEdit edit
-                     dbUpdate (RemovePendingEdit n)
+                     _ <- dbUpdate (RemovePendingEdit n)
                      Spock.text ""
   -- Accept a range of edits
   Spock.post (adminRoute <//> "edits" <//> var <//> var <//> "accept") $ \m n -> do
@@ -394,7 +394,7 @@ adminMethods = do
       case res of
         Left err -> return (Just ((edit, details), Just err))
         Right () -> do invalidateCacheForEdit edit
-                       dbUpdate (RemovePendingEdit (editId details))
+                       _ <- dbUpdate (RemovePendingEdit (editId details))
                        return Nothing
     case failed of
       [] -> Spock.text ""

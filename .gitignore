@@ -39,5 +39,6 @@ tags
 
 # frontend
 /guidejs/node_modules/
+/guidejs/package-lock.json
 /front/node_modules/
 /static/js/
