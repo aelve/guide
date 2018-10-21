@@ -59,8 +59,8 @@ createCategory db title' group' = do
       return catId
 
 -- | Edit categoty's note.
-setCategoryNote :: DB -> Uid Category -> Text -> Handler NoContent
-setCategoryNote db catId note = uncache db (CacheCategoryNotes catId) $ do
+setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
+setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
     (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
     pure NoContent
 

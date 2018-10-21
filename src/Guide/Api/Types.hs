@@ -105,11 +105,12 @@ data CategorySite route = CategorySite
            "group" Text
       :> Post '[JSON] (Uid Category)
 
-  , _setCategoryNote :: route :-
-      Summary "Edit category`s note"
+  , _setCategoryNotes :: route :-
+      Summary "Edit category's note"
       :> ErrorResponse 404 "Category not found"
       :> "category"
       :> Capture "id" (Uid Category)
+      :> "notes"
       :> ReqBody '[JSON] Text
       :> Put '[JSON] NoContent
 
