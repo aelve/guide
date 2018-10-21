@@ -143,9 +143,115 @@ export default class ArticleContent extends Vue {
     background: #C8C8C8;
   }
 
+  .flex-wrapper {
+    display: flex;
+  }
+
+  .width-50 {
+    width: 50%;
+    padding-right: 20px;
+  }
+
+  .width-50:nth-last-child(1) {
+    padding-right: 0;
+    padding-left: 20px;
+  }
+
+  .article-section-title {
+    display: block;
+    margin: 0 0 8px;
+    font-size: 22px!important;
+    font-weight: 600;
+  }
+
+  .article-hd-textlg {
+    font-size: 22px;
+  }
+
+  .article-hd-textsm {
+    font-size: 18px;
+  }
+
+  .article-header-link {
+    font-size: 22px;
+    padding: 0 32px 0 8px;
+  }
+
+  .article-header-icons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  .article-header-icons >>> i {
+    margin-right: 5px;
+    font-size: 18px;
+    color: #979797;
+    cursor: pointer;
+    transition: all ease-in-out .25s;
+  }
+
+  .article-header-icons >>> i:nth-last-child(1) {
+    margin: 0;
+  }
+
+  .article-header-icons >>> i:hover {
+    color: #000;
+  }
+
+  .header-func-icons {
+    padding-left: 20px;
+  }
+
+  .notes-toc-item >>> p {
+    margin: 0;
+  }
+
+  .notes-toc-item >>> a {
+    text-decoration: none;
+    transition: all ease-in-out .25s;
+  }
+
+  .notes-toc-item >>> a:hover {
+    color: #7eb2e5; 
+  } 
+
+  .notes-settings {
+    display: flex;
+    width: 100%;
+    padding: 0 0 12px;
+  }
+
+  .notes-settings-btn:nth-last-child(1) {
+    margin-left: 20px;
+  }
+
+  .notes-content {
+    overflow: hidden;
+    height: 0;
+  }
+
+  .notes-content.open {
+    height: 100%;
+  }
+
   @media screend and (max-width: 768px) {
     .article-content {
       width: 100%;
+    }
+    .article-item {
+      margin: 0 0 30px;
+    }
+    .article-hd-textlg {
+      font-size: 20px;
+    }
+    .article-hd-textsm {
+      font-size: 16px;
+    }
+    .article-header-link {
+      font-size: 20px;
+      padding: 0 32px 0 8px;
     }
   }
 </style>
