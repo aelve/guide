@@ -35,10 +35,11 @@ import Data.Acid as Acid
 apiServer :: DB -> Site AsServer
 apiServer db = Site
   { _categorySite = toServant (CategorySite
-      { _getCategories  = getCategories db
-      , _getCategory    = getCategory db
-      , _createCategory = createCategory db
-      , _deleteCategory = deleteCategory db }
+      { _getCategories   = getCategories db
+      , _getCategory     = getCategory db
+      , _createCategory  = createCategory db
+      , _setCategoryNote = setCategoryNote db
+      , _deleteCategory  = deleteCategory db }
       :: CategorySite AsServer)
 
   , _itemSite = toServant (ItemSite
