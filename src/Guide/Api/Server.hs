@@ -39,6 +39,7 @@ apiServer db = Site
       , _getCategory      = getCategory db
       , _createCategory   = createCategory db
       , _setCategoryNotes = setCategoryNotes db
+      , _setCategoryInfo  = setCategoryInfo db
       , _deleteCategory   = deleteCategory db }
       :: CategorySite AsServer)
 

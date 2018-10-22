@@ -158,6 +158,13 @@ deriveSafeCopySimple 0 'base ''ItemSection
 instance A.ToJSON ItemSection where
   toJSON = A.genericToJSON A.defaultOptions
 
+instance A.FromJSON ItemSection where
+  parseJSON v = case v of
+    "ItemProsConsSection" -> pure ItemProsConsSection
+    "ItemEcosystemSection" -> pure ItemEcosystemSection
+    "ItemNotesSection" -> pure ItemNotesSection
+    _ -> fail "Invalid ItemSection"
+
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
@@ -205,6 +212,13 @@ deriveSafeCopySimple 2 'extension ''CategoryStatus
 
 instance A.ToJSON CategoryStatus where
   toJSON = A.genericToJSON A.defaultOptions
+
+instance A.FromJSON CategoryStatus where
+  parseJSON v = case v of
+    "CategoryStub" -> pure CategoryStub
+    "CategoryWIP" -> pure CategoryWIP
+    "CategoryFinished" -> pure CategoryFinished
+    _ -> fail "Invalid CategoryStatus"
 
 data CategoryStatus_v1
   = CategoryStub_v1

@@ -48,6 +48,8 @@ newtype (?) (field :: *) (help :: Symbol) = H field
 instance ToJSON field => ToJSON (field ? help) where
   toJSON (H a) = toJSON a
 
+instance FromJSON field => FromJSON (field ? help)
+
 instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
   declareNamedSchema _ = do
     NamedSchema _ s <- declareNamedSchema (Proxy @a)

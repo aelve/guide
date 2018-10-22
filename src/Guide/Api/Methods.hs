@@ -13,11 +13,13 @@ import Data.Text (Text)
 import Servant
 
 import Guide.Api.Types
+import Guide.Api.Utils
 import Guide.Cache
 import Guide.State
 import Guide.Types
 import Guide.Utils
 
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Guide.Search as Search
 
@@ -63,6 +65,20 @@ setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
 setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
     (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
     pure NoContent
+
+-- | Edit category`s info (title, group, status, sections (pro/con, ecosystem, note))
+setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
+setCategoryInfo db catId CCategoryInfoEdit {..} =
+    uncache db (CacheCategoryInfo catId) $ do
+        _ <- dbUpdate db $ (\(H cTitle) -> SetCategoryTitle catId cTitle) ccieTitle
+        _ <- dbUpdate db $ (\(H cGroup) -> SetCategoryGroup catId cGroup) ccieGroup
+        _ <- dbUpdate db $ (\(H cStatus) -> SetCategoryStatus catId cStatus) ccieStatus
+        oldEnabledSections <- view enabledSections <$> dbQuery db (GetCategory catId)
+        let newEnabledSections = (\(H sections) -> sections) ccieSections
+        _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
+            (newEnabledSections S.\\ oldEnabledSections)
+            (oldEnabledSections S.\\ newEnabledSections)
+        pure NoContent
 
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent

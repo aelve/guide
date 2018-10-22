@@ -19,10 +19,13 @@ module Guide.Api.Types
   , SearchSite(..)
   , Site(..)
   , TraitSite(..)
+
+  -- Type for backend
   , TraitType (..)
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
+  , CCategoryInfoEdit(..), toCCategoryInfoEdit
   , CCategoryFull(..), toCCategoryFull
   , CItemInfo(..), toCItemInfo
   , CItemFull(..), toCItemFull
@@ -114,6 +117,18 @@ data CategorySite route = CategorySite
       :> ReqBody '[JSON] Text
       :> Put '[JSON] NoContent
 
+  , _setCategoryInfo :: route :-
+      Summary "Set category's fields"
+      :> Description "Set category fields:\
+                     \Edit title, group, choose status,\
+                     \enable or disable pro/con, ecosystem, notes fields."
+      :> ErrorResponse 404 "Category not found"
+      :> "category"
+      :> Capture "id" (Uid Category)
+      :> "info"
+      :> ReqBody '[JSON] CCategoryInfoEdit
+      :> Put '[JSON] NoContent
+
   , _deleteCategory :: route :-
       Summary "Delete a category"
       :> "category"
@@ -186,6 +201,10 @@ data SearchSite route = SearchSite
   deriving (Generic)
 
 type Api = ToServant Site AsApi
+
+--------------------------------------------------------------------------
+-- Additional types for routes
+--------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
 data TraitType = Pro | Con
@@ -273,6 +292,40 @@ toCCategoryFull Category{..} = CCategoryFull
   , ccfItems       = H $ fmap toCItemFull _categoryItems
   , ccfStatus      = H $ _categoryStatus
   }
+
+data CCategoryInfoEdit = CCategoryInfoEdit
+    { ccieTitle    :: Text           ? "Category title"
+    , ccieGroup    :: Text           ? "Category group ('grandcategory')"
+    , ccieStatus   :: CategoryStatus ? "Status (done, in progress, ...)"
+    , ccieSections :: (Set ItemSection) ? "Enable/disable item sections"
+    }
+    deriving (Show, Generic)
+
+instance A.ToJSON CCategoryInfoEdit where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CCategoryInfoEdit where
+  parseJSON = A.withObject "CCategoryInfoEdit" $ \o -> do
+    ccieTitle    <- o A..: "title"
+    ccieGroup    <- o A..: "group"
+    ccieStatus   <- o A..: "status"
+    ccieSections <- o A..: "sections"
+    pure CCategoryInfoEdit{..}
+
+instance ToSchema CCategoryInfoEdit where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Factory to create a 'CCategoryInfoEdit' from a 'Category'
+toCCategoryInfoEdit :: Category -> CCategoryInfoEdit
+toCCategoryInfoEdit Category{..} = CCategoryInfoEdit
+  { ccieTitle  = H _categoryTitle
+  , ccieGroup  = H _categoryGroup_
+  , ccieStatus = H _categoryStatus
+  , ccieSections = H _categoryEnabledSections
+  }
+
+instance ToSchema ItemSection where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | A lightweight info type about an 'Item'
 data CItemInfo = CItemInfo
