@@ -10,8 +10,25 @@
       </div>
       <!-- <div class="article-description" v-html="getCategoryDescription"></div> -->
       <!-- TODO куда то пропал category description - разобраться -->
-      <div class="article-description" v-html="getCategoryDescription"></div>
-      <article-content v-bind:contentItem = "getCategoryItems" />
+      <!-- <div class="article-description" v-html="getCategoryDescription"></div> -->
+      <div v-for="(value, index) in getCategoryItems" :key="index">
+        <!-- troubleshooting -->
+        <article-content 
+          :kind = "value.kind.contents" 
+          :group="value.group" 
+          :itemDescription="value.description.html"
+          :pros="value.pros"
+          :cons="value.cons"
+          :ecosystem="value.ecosystem.html"
+          :tocArray="value.toc"
+          :toc="value"
+          :tocItemContent="value.content"
+          :tocAnchor="value.slug"
+          :notes="value.notes.html"
+          :prosItem="value.content.html"
+          :consItem="value.content.html"
+        />
+      </div>
     </div>
   </v-container>
 </template>
@@ -123,6 +140,12 @@ export default class ArticleItem extends Vue {
     margin: 0 auto;
   }
 
+  .article-item {
+    background: #E5E5E5;
+    padding: 15px 20px;
+    margin: 0 0 80px;
+  }
+
   /* TODO разобраться что это за стили */
   .article-section {
     margin: 30px 0;
@@ -136,4 +159,10 @@ export default class ArticleItem extends Vue {
     margin: 20px 0;
   }
   /* END TODO */
+  @media screend and (max-width: 768px) {
+    .article-item {
+      margin: 0 0 30px;
+    }
+  }
+
 </style>
