@@ -44,8 +44,7 @@ import Servant.API.Generic
 
 import Guide.Api.Error
 import Guide.Api.Utils
-import Guide.Markdown (Heading (..), MarkdownBlock, MarkdownInline, MarkdownTree, markdownTreeMdTOC,
-                       mdHtml, mdSource)
+import Guide.Markdown
 import Guide.Search
 import Guide.Types.Core as G
 import Guide.Utils (Uid (..), Url)
@@ -468,7 +467,14 @@ toCSearchResult :: SearchResult -> CSearchResult
 toCSearchResult (SRCategory cat) =
   CSRCategoryResult $ CSRCategory
     { csrcInfo        = H $ toCCategoryInfo cat
-    , csrcDescription = H $ toCMarkdown (cat ^. G.notes)
+    , csrcDescription = H $ toCMarkdown $
+        -- Extract the part before the first heading, to avoid showing the
+        -- full description (we assume that the full description is too long
+        -- and that the preface will accurately represent what the category
+        -- is about).
+        --
+        -- TODO: just extract the first paragraph, not the preface.
+        extractPreface $ toMarkdownTree "" $ cat^.G.notes.mdSource
     }
 toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
@@ -477,8 +483,8 @@ toCSearchResult (SRItem cat item) =
     , csriDescription = H $ Just (toCMarkdown (item ^. G.description))
     , csriEcosystem   = H $ Nothing
     }
--- TODO: currently if there are matches in both description and category,
--- we'll show two matches instead of one
+-- TODO: currently if there are matches in both item description and item
+-- ecosystem, we'll show two matches instead of one
 toCSearchResult (SRItemEcosystem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
