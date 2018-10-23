@@ -46,46 +46,58 @@ getCategory db catId =
 -- category with this title exists already).
 createCategory :: DB -> Text -> Text -> Handler (Uid Category)
 createCategory db title' group' = do
-  -- If the category exists already, don't create it
-  cats <- view categories <$> dbQuery db GetGlobalState
-  let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-                     && T.toCaseFold (cat^.group_) == T.toCaseFold group'
-  case find isDuplicate cats of
-    Just c  -> return (c^.uid)
-    Nothing -> do
-      catId <- randomShortUid
-      time <- liftIO getCurrentTime
-      (_edit, _newCategory) <- dbUpdate db (AddCategory catId title' group' time)
-      invalidateCache' db (CacheCategory catId)
-      -- TODO addEdit edit
-      return catId
+    if T.null title' then throwError (err404 {errBody = "Title is empty"})
+    else do
+        -- If the category exists already, don't create it
+        cats <- view categories <$> dbQuery db GetGlobalState
+        let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
+                           && T.toCaseFold (cat^.group_) == T.toCaseFold group'
+        case find isDuplicate cats of
+          Just c  -> return (c^.uid)
+          Nothing -> do
+            catId <- randomShortUid
+            time <- liftIO getCurrentTime
+            (_edit, _newCategory) <- dbUpdate db (AddCategory catId title' group' time)
+            invalidateCache' db (CacheCategory catId)
+            -- TODO addEdit edit
+            return catId
 
 -- | Edit categoty's note.
 setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
 setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
-    (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
-    pure NoContent
+    dbQuery db (GetCategoryMaybe catId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Category not found"})
+        Just _ -> do
+            (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
+    -- TODO diff and merge
+            pure NoContent
 
--- | Edit category`s info (title, group, status, sections (pro/con, ecosystem, note))
+-- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
-setCategoryInfo db catId CCategoryInfoEdit {..} =
-    uncache db (CacheCategoryInfo catId) $ do
-        _ <- dbUpdate db $ (\(H cTitle) -> SetCategoryTitle catId cTitle) ccieTitle
-        _ <- dbUpdate db $ (\(H cGroup) -> SetCategoryGroup catId cGroup) ccieGroup
-        _ <- dbUpdate db $ (\(H cStatus) -> SetCategoryStatus catId cStatus) ccieStatus
-        oldEnabledSections <- view enabledSections <$> dbQuery db (GetCategory catId)
-        let newEnabledSections = (\(H sections) -> sections) ccieSections
-        _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
-            (newEnabledSections S.\\ oldEnabledSections)
-            (oldEnabledSections S.\\ newEnabledSections)
-        pure NoContent
+setCategoryInfo db catId CCategoryInfoEdit {..} = uncache db (CacheCategoryInfo catId) $ do
+    dbQuery db (GetCategoryMaybe catId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Category not found"})
+        Just _ -> do
+            -- TODO diff and merge
+            _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
+            _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
+            _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+            oldEnabledSections <- view enabledSections <$> dbQuery db (GetCategory catId)
+            let newEnabledSections = unH ccieSections
+            _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
+                (newEnabledSections S.\\ oldEnabledSections)
+                (oldEnabledSections S.\\ newEnabledSections)
+            pure NoContent
 
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent
 deleteCategory db catId = uncache db (CacheCategory catId) $ do
-  _mbEdit <- dbUpdate db (DeleteCategory catId)
-  pure NoContent
-  -- TODO mapM_ addEdit mbEdit
+    dbQuery db (GetCategoryMaybe catId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Category not found"})
+        Just _ -> do
+            _mbEdit <- dbUpdate db (DeleteCategory catId)
+            pure NoContent
+            -- TODO mapM_ addEdit mbEdit
 
 ----------------------------------------------------------------------------
 -- Items
@@ -97,19 +109,22 @@ deleteCategory db catId = uncache db (CacheCategory catId) $ do
 -- with duplicated names.
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
 createItem db catId name' = do
-  -- TODO: do something if the category doesn't exist (e.g. has been
-  -- already deleted)
-  itemId <- randomShortUid
-  -- If the item name looks like a Hackage library, assume it's a Hackage
-  -- library.
-  let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-      looksLikeLibrary = T.all isAllowedChar name'
-      kind' = if looksLikeLibrary then Library (Just name') else Other
-  time <- liftIO getCurrentTime
-  (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-  invalidateCache' db (CacheItem itemId)
-  -- TODO: addEdit edit
-  pure itemId
+    dbQuery db (GetCategoryMaybe catId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Category not found"})
+        Just _ -> do
+            if T.null name' then throwError (err404 {errBody = "Name is empty"})
+            else do
+                itemId <- randomShortUid
+                -- If the item name looks like a Hackage library, assume it's a Hackage
+                -- library.
+                let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
+                    looksLikeLibrary = T.all isAllowedChar name'
+                    kind' = if looksLikeLibrary then Library (Just name') else Other
+                time <- liftIO getCurrentTime
+                (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
+                invalidateCache' db (CacheItem itemId)
+                -- TODO: addEdit edit
+                pure itemId
 
 -- TODO: move an item
 
@@ -129,18 +144,21 @@ deleteItem db itemId = uncache db (CacheItem itemId) $ do
 -- | Create a trait (pro/con).
 createTrait :: DB -> Uid Item -> TraitType -> Text -> Handler (Uid Trait)
 createTrait db itemId traitType text = do
-    traitId <- randomShortUid
-    (_edit, _newTrait) <- case traitType of
-        Con -> dbUpdate db (AddCon itemId traitId text)
-        Pro -> dbUpdate db (AddPro itemId traitId text)
-    invalidateCache' db (CacheItemTraits itemId)
--- TODO: mapM_ addEdit mbEdit
-    pure traitId
+    if T.null text then throwError (err404 {errBody = "Name is empty"})
+    else do
+        traitId <- randomShortUid
+        (_edit, _newTrait) <- case traitType of
+            Con -> dbUpdate db (AddCon itemId traitId text)
+            Pro -> dbUpdate db (AddPro itemId traitId text)
+        invalidateCache' db (CacheItemTraits itemId)
+        -- TODO: mapM_ addEdit mbEdit
+        pure traitId
 
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
 setTrait db itemId traitId text = uncache db (CacheItemTraits itemId) $ do
     (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
+    -- TODO diff and merge
     pure NoContent
 
 -- | Delete a trait (pro/con).

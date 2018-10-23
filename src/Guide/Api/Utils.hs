@@ -12,6 +12,7 @@ module Guide.Api.Utils
   ( jsonOptions
   , schemaOptions
   , type (?)(..)
+  , unH
   , BranchTag
   ) where
 
@@ -48,7 +49,8 @@ newtype (?) (field :: *) (help :: Symbol) = H field
 instance ToJSON field => ToJSON (field ? help) where
   toJSON (H a) = toJSON a
 
-instance FromJSON field => FromJSON (field ? help)
+instance FromJSON field => FromJSON (field ? help) where
+    parseJSON f = H <$> parseJSON f
 
 instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
   declareNamedSchema _ = do
@@ -59,6 +61,10 @@ instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
 
 instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, ToSchema c) => GToSchema (S1 s (K1 i (Maybe c ? help))) where
   gdeclareNamedSchema opts _ = fmap unnamed . withFieldSchema opts (Proxy2 :: Proxy2 s (K1 i (Maybe c ? help))) False
+
+-- | Runner for 'field ? help'
+unH :: forall field help . (field ? help) -> field
+unH (H field) = field
 
 -- | A way to name branches of Swagger API.
 --
