@@ -21,12 +21,7 @@
           :cons="value.cons"
           :ecosystem="value.ecosystem.html"
           :tocArray="value.toc"
-          :toc="value"
-          :tocItemContent="value.content"
-          :tocAnchor="value.slug"
           :notes="value.notes.html"
-          :prosItem="value.content.html"
-          :consItem="value.content.html"
         />
       </div>
     </div>
@@ -60,17 +55,14 @@ export default class ArticleItem extends Vue {
     return this.$store.state.categoryItem
   }
 // TODO - Andreys changes - implement! try 3d option or completely rewrite - still bug exists
-  get getCategoryDescription() {
-    if (!this.$store.state.categoryItem.categoryItemList.description === undefined) {
-      const description = this.$store.state.categoryItem.categoryItemList.description.html
-      return description
-    }
-  }
+  // get getCategoryDescription() {
+  //   if (!this.$store.state.categoryItem.categoryItemList.description === undefined) {
+  //     return this.$store.state.categoryItem.categoryItemList.description.html
+  //   }
+  // }
 
   get getCategoryItems() {
-    const items = this.$store.state.categoryItem.categoryItemList.items
-
-    return items
+    return this.$store.state.categoryItem.categoryItemList.items
   }
 
   // expandNotes() {  
@@ -138,12 +130,6 @@ export default class ArticleItem extends Vue {
   .article-wrapper {
     width: 800px;
     margin: 0 auto;
-  }
-
-  .article-item {
-    background: #E5E5E5;
-    padding: 15px 20px;
-    margin: 0 0 80px;
   }
 
   /* TODO разобраться что это за стили */

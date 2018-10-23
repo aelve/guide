@@ -22,13 +22,13 @@
         <div class="width-50">
           <p class="article-section-title">Pros</p>
           <ul v-if="pros" v-for="(value, index) in pros" :key="index">
-            <li v-html="prosItem"></li>
+            <li v-html="value.content.html"></li>
           </ul>
         </div>
         <div class="width-50">
           <p class="article-section-title">Cons</p>
           <ul v-if="cons" v-for="(value, index) in cons" :key="index">
-            <li v-html="consItem"></li>
+            <li v-html="value.content.html"></li>
           </ul>
         </div>
       </div>
@@ -40,20 +40,20 @@
         <p class="article-section-title">Notes</p>
         <div class="notes-settings">
           <!-- TODO change a to vue markup element -->
-          <a href="" class="notes-settings-btn">expand notes</a>
-          <a href="" class="notes-settings-btn" style="display: none;">collapse notes</a>
-          <a href="" class="notes-settings-btn">edit notes</a>
+          <button href="" class="notes-settings-btn" @click="expandNotes()">expand notes</button>
+          <button href="" class="notes-settings-btn" @click="collapseNotes()">collapse notes</button>
+          <button href="" class="notes-settings-btn" style="display: none;">edit notes</button>
         </div>
         <!-- Notes ToC -->
         <div v-for="(value, index) in tocArray" :key="index">
           <!-- TODO refactor v-for from ul to li -->
-          <!-- <ul v-for="(value, index) in toc" :key="index">
-            <li class="notes-toc-item" v-if="tocItemContent !== undefined">
-              <a :href="`#${tocAnchor}`" @click="expandNotes()">
-                <p>{{tocItem}}</p>
+          <ul v-for="(value, index) in value" :key="index">
+            <li class="notes-toc-item" v-if="value.content !== undefined">
+              <a :href="`#${value.slug}`" @click="expandNotes()">
+                <p>{{value.content.html}}</p>
               </a>
             </li>
-          </ul> -->
+          </ul>
           <!-- <ul v-for="(value, index) in value" :key="index">
             <li class="notes-toc-item" v-if="value.content !== undefined">
               <a :href="`#${value.slug}`" @click="notes = value.notes.html">
@@ -89,21 +89,17 @@ export default class ArticleContent extends Vue {
   @Prop(String) group!: string
   @Prop(String) itemDescription!: string
   @Prop(Array)  pros!: [any]
-  @Prop(String) prosItem!: string
   @Prop(Array)  cons!: [any]
-  @Prop(String) consItem!: string
   @Prop(String) ecosystem!: string
   @Prop(Array) tocArray!: [any]
-  @Prop(Object) toc!: object
   @Prop(Object) tocItemContent!: object
-  @Prop(String) tocAnchor!: string
-  @Prop(String) tocItem!: string
   @Prop(String) notes!: string
 
   isNoteExpanded: boolean = false
 
   expandNotes() {  
     this.isNoteExpanded = true
+    return false
   }
 
   collapseNotes() {
@@ -137,6 +133,12 @@ export default class ArticleContent extends Vue {
 
   .article-description >>> h1 {
     margin: 25px 0 5px;
+  }
+
+  .article-item {
+    background: #E5E5E5;
+    padding: 15px 20px 25px;
+    margin: 0 0 80px;
   }
 
   .article-header {
@@ -227,8 +229,12 @@ export default class ArticleContent extends Vue {
     padding: 0 0 12px;
   }
 
-  .notes-settings-btn:nth-last-child(1) {
+  .notes-settings-btn {
     margin-left: 20px;
+  }
+
+  .notes-settings-btn:nth-child(1) {
+    margin-left: 0;
   }
 
   .notes-content {
