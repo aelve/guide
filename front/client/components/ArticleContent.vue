@@ -54,13 +54,6 @@
               </a>
             </li>
           </ul>
-          <!-- <ul v-for="(value, index) in value" :key="index">
-            <li class="notes-toc-item" v-if="value.content !== undefined">
-              <a :href="`#${value.slug}`" @click="notes = value.notes.html">
-                <p>{{value.content.html}}</p>
-              </a>
-            </li>
-          </ul> -->
         </div>
         <!-- Notes block - TODO add expand functionality -->
         <div
@@ -68,9 +61,6 @@
           v-bind:class="{ open: isNoteExpanded }" 
           v-html="notes">
         </div>
-        <!-- <div 
-          v-html="notes">
-        </div>  -->
       </div>
     </div>
   </div>
@@ -99,7 +89,7 @@ export default class ArticleContent extends Vue {
 
   expandNotes() {  
     this.isNoteExpanded = true
-    return false
+    // return false
   }
 
   collapseNotes() {
@@ -133,6 +123,18 @@ export default class ArticleContent extends Vue {
 
   .article-description >>> h1 {
     margin: 25px 0 5px;
+  }
+
+  .article-section {
+    margin: 30px 0;
+  }
+
+  .article-section.pros-cons-box, .article-section.notes-box >>> li {
+    margin: 0 0 5px;
+  }
+
+  .article-section.notes-box >>> h1 {
+    margin: 20px 0;
   }
 
   .article-item {
@@ -231,6 +233,19 @@ export default class ArticleContent extends Vue {
 
   .notes-settings-btn {
     margin-left: 20px;
+    padding: 3px 8px 2px;
+    background: #212121;
+    border-radius: 4px;
+    color: #fff;
+    transition: all ease-in-out .25s;
+  }
+
+  .notes-settings-btn:hover {
+    background: #424242;
+  }
+
+  .notes-settings-btn:focus, .notes-settings-btn:active {
+    outline: none;
   }
 
   .notes-settings-btn:nth-child(1) {

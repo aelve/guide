@@ -8,11 +8,11 @@
           <p class="article-top-group">{{value.group}}</p>
         </div>
       </div>
-      <!-- <div class="article-description" v-html="getCategoryDescription"></div> -->
-      <!-- TODO куда то пропал category description - разобраться -->
-      <!-- <div class="article-description" v-html="getCategoryDescription"></div> -->
+      <div v-if="categoryDescription !==''" class="article-description">
+        <div v-html="getCategoryDescription"></div>
+      </div>
+      <!-- <div>{{getCategoryDescription}}</div> -->
       <div v-for="(value, index) in getCategoryItems" :key="index">
-        <!-- troubleshooting -->
         <article-content 
           :kind = "value.kind.contents" 
           :group="value.group" 
@@ -33,53 +33,29 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
 
-// Idea 2 - вынести блок с частью статьи в отдельный компонент
-
 @Component({
   components: {
     ArticleContent
   }
 })
 export default class ArticleItem extends Vue {
-  // isNoteExpanded: boolean = false
-  // description: string = ''
-  notes: string = ''
+  categoryDescription: string = ''
 
   async asyncData() {
     return this.$store.dispatch('categoryItem/loadCategoryItem')
   }
 
   get getCategory () {
-    // why this returns items[]?
-    // return this.$store.state.categoryItem.categoryItemList
     return this.$store.state.categoryItem
   }
-// TODO - Andreys changes - implement! try 3d option or completely rewrite - still bug exists
-  // get getCategoryDescription() {
-  //   if (!this.$store.state.categoryItem.categoryItemList.description === undefined) {
-  //     return this.$store.state.categoryItem.categoryItemList.description.html
-  //   }
-  // }
 
   get getCategoryItems() {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
-  // expandNotes() {  
-  //   this.isNoteExpanded = true
-  // }
-
-  // collapseNotes() {
-  //   this.isNoteExpanded = false
-  // }
-  // get categoryToc() {
-  //   const toc = this.$store.state.categoryItem.categoryItemList
-  //   console.log('-------------------------------');
-    
-  //   console.log(toc);
-    
-  //   return toc
-  // } 
+  get getCategoryDescription() {
+    return this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
+  }
 }
 </script>
 
@@ -132,19 +108,6 @@ export default class ArticleItem extends Vue {
     margin: 0 auto;
   }
 
-  /* TODO разобраться что это за стили */
-  .article-section {
-    margin: 30px 0;
-  }
-
-  .article-section.pros-cons-box, .article-section.notes-box >>> li {
-    margin: 0 0 5px;
-  }
-
-  .article-section.notes-box >>> h1 {
-    margin: 20px 0;
-  }
-  /* END TODO */
   @media screend and (max-width: 768px) {
     .article-item {
       margin: 0 0 30px;
