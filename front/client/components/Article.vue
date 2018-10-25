@@ -8,10 +8,9 @@
           <p class="article-top-group">{{value.group}}</p>
         </div>
       </div>
-      <div v-if="categoryDescription !==''" class="article-description">
-        <div v-html="getCategoryDescription"></div>
+      <div v-if="categoryDescription !== ''" class="article-description">
+        <div v-html="categoryDescription"></div>
       </div>
-      <!-- <div>{{getCategoryDescription}}</div> -->
       <div v-for="(value, index) in getCategoryItems" :key="index">
         <article-content 
           :kind = "value.kind.contents" 
@@ -39,10 +38,13 @@ import ArticleContent from 'client/components/ArticleContent.vue'
   }
 })
 export default class ArticleItem extends Vue {
+  // description: boolean = false
   categoryDescription: string = ''
 
   async asyncData() {
-    return this.$store.dispatch('categoryItem/loadCategoryItem')
+    return this.$store.dispatch('categoryItem/loadCategoryItem').then(() => {
+      this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
+    })
   }
 
   get getCategory () {
@@ -53,8 +55,8 @@ export default class ArticleItem extends Vue {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
-  get getCategoryDescription() {
-    return this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
+  created() {
+    this.asyncData()
   }
 }
 </script>
@@ -106,6 +108,18 @@ export default class ArticleItem extends Vue {
   .article-wrapper {
     width: 800px;
     margin: 0 auto;
+  }
+
+  .article-description {
+    margin: 0 0 60px;
+  }
+
+  .article-description >>> p {
+    font-size: 16px;
+  }
+
+  .article-description >>> h1 {
+    margin: 20px 0 5px;
   }
 
   @media screend and (max-width: 768px) {
