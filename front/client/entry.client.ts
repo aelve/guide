@@ -1,3 +1,4 @@
+import Vue from 'vue'
 import 'reflect-metadata'
 import 'babel-polyfill'
 import _get from 'lodash/get'
@@ -27,21 +28,23 @@ router.onReady(() => {
 
 function registerBeforeResolve() {
   router.afterEach(async (to, from) => {
-    for (const matchedRoute of to.matched) {
-      const componentsInstances = Object.values(matchedRoute.instances)
-        .filter(Boolean)
-      const matchedComponentsAndChildren = componentsInstances
-        .reduce((acc, matchedComponent) => {
-          const componentAndItsChildren = getComponentAndItsChildren(matchedComponent)
-          acc = acc.concat(componentAndItsChildren)
-          return acc
-        }, [])
-      matchedComponentsAndChildren.map(component => {
-        if (typeof component.asyncData === 'function') {
-          return component.$nextTick(() => component.asyncData())
-        }
-      })
-    }
+    Vue.nextTick(() => {
+      for (const matchedRoute of to.matched) {
+        const componentsInstances = Object.values(matchedRoute.instances)
+          .filter(Boolean)
+        const matchedComponentsAndChildren = componentsInstances
+          .reduce((acc, matchedComponent) => {
+            const componentAndItsChildren = getComponentAndItsChildren(matchedComponent)
+            acc = acc.concat(componentAndItsChildren)
+            return acc
+          }, [])
+        matchedComponentsAndChildren.map(component => {
+          if (typeof component.asyncData === 'function') {
+            return component.$nextTick(() => component.asyncData())
+          }
+        })
+      }
+    })
   })
 }
 

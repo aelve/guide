@@ -13,6 +13,7 @@ import Data.Text (Text)
 import Servant
 
 import Guide.Api.Types
+import Guide.Cache
 import Guide.State
 import Guide.Types
 import Guide.Utils
@@ -52,13 +53,14 @@ createCategory db title' group' = do
     Nothing -> do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
-      (_edit, newCategory) <- dbUpdate db (AddCategory catId title' group' time)
+      (_edit, _newCategory) <- dbUpdate db (AddCategory catId title' group' time)
+      invalidateCache' db (CacheCategory catId)
       -- TODO addEdit edit
-      return (newCategory^.uid)
+      return catId
 
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent
-deleteCategory db catId = do
+deleteCategory db catId = uncache db (CacheCategory catId) $ do
   _mbEdit <- dbUpdate db (DeleteCategory catId)
   pure NoContent
   -- TODO mapM_ addEdit mbEdit
@@ -83,6 +85,7 @@ createItem db catId name' = do
       kind' = if looksLikeLibrary then Library (Just name') else Other
   time <- liftIO getCurrentTime
   (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
+  invalidateCache' db (CacheItem itemId)
   -- TODO: addEdit edit
   pure itemId
 
@@ -90,7 +93,7 @@ createItem db catId name' = do
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent
-deleteItem db itemId = do
+deleteItem db itemId = uncache db (CacheItem itemId) $ do
   _mbEdit <- dbUpdate db (DeleteItem itemId)
   pure NoContent
   -- TODO: mapM_ addEdit mbEdit
@@ -101,12 +104,29 @@ deleteItem db itemId = do
 
 -- TODO: move a trait
 
+-- | Create a trait (pro/con).
+createTrait :: DB -> Uid Item -> TraitType -> Text -> Handler (Uid Trait)
+createTrait db itemId traitType text = do
+    traitId <- randomShortUid
+    (_edit, _newTrait) <- case traitType of
+        Con -> dbUpdate db (AddCon itemId traitId text)
+        Pro -> dbUpdate db (AddPro itemId traitId text)
+    invalidateCache' db (CacheItemTraits itemId)
+-- TODO: mapM_ addEdit mbEdit
+    pure traitId
+
+-- | Update the text of a trait (pro/con).
+setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
+setTrait db itemId traitId text = uncache db (CacheItemTraits itemId) $ do
+    (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
+    pure NoContent
+
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
-deleteTrait db itemId traitId = do
+deleteTrait db itemId traitId = uncache db (CacheItemTraits itemId) $ do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
-  -- TODO: mapM_ addEdit mbEdit
+
 
 ----------------------------------------------------------------------------
 -- Search
@@ -136,3 +156,18 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
+
+-- Twins of corresponding functions used in "Guide.Handlers".
+-- TODO: remove them when the old backend is gone.
+
+uncache :: (MonadIO m) => DB -> CacheKey -> m a -> m a
+uncache db key act = do
+  gs <- dbQuery db GetGlobalState
+  x <- act
+  invalidateCache gs key
+  return x
+
+invalidateCache' :: (MonadIO m) => DB -> CacheKey -> m ()
+invalidateCache' db key = do
+  gs <- dbQuery db GetGlobalState
+  invalidateCache gs key

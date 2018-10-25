@@ -7,7 +7,9 @@
 {-# LANGUAGE TypeOperators       #-}
 
 {- |
-The main module.
+Description : The main module that starts the server.
+
+This module provides two functions that are of interest:
 
   * Run 'main' to actually start the server.
   * Run 'mainWith' to run it with a custom config.
@@ -184,7 +186,7 @@ mainWith config = do
     hSetBuffering stdout NoBuffering
     -- Create a checkpoint every six hours. Note: if nothing was changed, the
     -- checkpoint won't be created, which saves us some space.
-    Slave.fork $ forever $ do
+    _ <- Slave.fork $ forever $ do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
@@ -195,7 +197,7 @@ mainWith config = do
     waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
     categoryGauge <- EKG.getGauge "db.categories" ekg
     itemGauge <- EKG.getGauge "db.items" ekg
-    Slave.fork $ forever $ do
+    _ <- Slave.fork $ forever $ do
       globalState <- Acid.query db GetGlobalState
       let allCategories = globalState^.categories
       let allItems = allCategories^..each.items.each
@@ -203,7 +205,7 @@ mainWith config = do
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
     -- Run the API
-    Slave.fork $ runApiServer db
+    _ <- Slave.fork $ runApiServer db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -416,7 +418,7 @@ authRedirect path action = do
 startTemplateWatcher :: IO ()
 startTemplateWatcher = void $
   Slave.fork $ FSNotify.withManager $ \mgr -> do
-    FSNotify.watchTree mgr "templates/" (const True) $ \_ ->
+    _ <- FSNotify.watchTree mgr "templates/" (const True) $ \_ ->
       emptyCache
     forever $ threadDelay 1000000
 

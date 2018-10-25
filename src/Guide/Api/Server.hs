@@ -47,7 +47,9 @@ apiServer db = Site
       :: ItemSite AsServer)
 
   , _traitSite = toServant (TraitSite
-      { _deleteTrait    = deleteTrait db }
+      { _createTrait    = createTrait db
+      , _setTrait       = setTrait db
+      , _deleteTrait    = deleteTrait db }
       :: TraitSite AsServer)
 
   , _searchSite = toServant (SearchSite
@@ -82,9 +84,8 @@ runApiServer db = do
     policy = simpleCorsResourcePolicy
                 -- TODO: Add Guide's frontend address (and maybe others resources)
                 -- to list of `corsOrigins` to allow CORS requests
-                { corsOrigins = Just ([ "http://localhost:3333"
-                                      -- ^ Guide's frontend running on localhost
-                                      , "http://localhost:4400"
-                                      -- ^ The /api endpoint
-                                      ], True)
+                { corsOrigins = Just ([
+                      "http://localhost:3333" -- Guide's frontend running on localhost
+                    , "http://localhost:4400" -- The /api endpoint
+                    ], True)
                 }

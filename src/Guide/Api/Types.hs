@@ -14,11 +14,12 @@ module Guide.Api.Types
   (
   -- * API
     Api
-  , Site(..)
   , CategorySite(..)
   , ItemSite(..)
-  , TraitSite(..)
   , SearchSite(..)
+  , Site(..)
+  , TraitSite(..)
+  , TraitType (..)
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
@@ -36,13 +37,14 @@ module Guide.Api.Types
 
 import Imports
 
+import Data.Tree (Forest, Tree)
 import Lucid (renderText, toHtml)
 import Servant
 import Servant.API.Generic
 
 import Guide.Api.Error
 import Guide.Api.Utils
-import Guide.Markdown (MarkdownBlock, MarkdownInline, MarkdownTree, mdHtml, mdSource)
+import Guide.Markdown
 import Guide.Search
 import Guide.Types.Core as G
 import Guide.Utils (Uid (..), Url)
@@ -132,7 +134,27 @@ data ItemSite route = ItemSite
 
 -- | Working with item traits
 data TraitSite route = TraitSite
-  { _deleteTrait :: route :-
+  { _createTrait :: route :-
+      Summary "Create a new trait in the given item"
+      :> Description "Returns the ID of the created trait."
+      :> ErrorResponse 400 "'text' not provided"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "type" TraitType
+      :> ReqBody '[JSON] Text
+      :> Post '[JSON] (Uid Trait)
+
+  , _setTrait :: route :-
+      Summary "Update a trait in the given item"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "id" (Uid Trait)
+      :> ReqBody '[JSON] Text
+      :> Put '[JSON] NoContent
+
+  , _deleteTrait :: route :-
       Summary "Delete a trait"
       :> "item"
       :> Capture "item" (Uid Item)
@@ -155,6 +177,27 @@ data SearchSite route = SearchSite
   deriving (Generic)
 
 type Api = ToServant Site AsApi
+
+-- | Trait type (Pro/Con) and instances.
+data TraitType = Pro | Con
+    deriving (Show, Generic)
+
+instance ToSchema TraitType where
+    declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+instance ToParamSchema TraitType where
+    toParamSchema _ = mempty
+        & S.type_ .~ SwaggerString
+        & S.format ?~ "Trait type"
+
+instance ToHttpApiData TraitType where
+    toUrlPiece = toText . map toLower . show
+
+instance FromHttpApiData TraitType where
+    parseUrlPiece t = case t of
+        "pro" -> Right Pro
+        "con" -> Right Con
+        _     -> Left "Invalid trait type!"
 
 ----------------------------------------------------------------------------
 -- Client types
@@ -240,17 +283,18 @@ instance ToSchema CItemInfo where
 
 -- | Client type of 'Item'
 data CItemFull = CItemFull
-  { cifUid         :: Uid Item   ? "Item ID"
-  , cifName        :: Text       ? "Item name"
-  , cifCreated     :: UTCTime    ? "When the item was created"
-  , cifGroup       :: Maybe Text ? "Item group"
-  , cifDescription :: CMarkdown  ? "Item summary (Markdown)"
-  , cifPros        :: [CTrait]   ? "Pros (positive traits)"
-  , cifCons        :: [CTrait]   ? "Cons (negative traits)"
-  , cifEcosystem   :: CMarkdown  ? "The ecosystem description (Markdown)"
-  , cifNotes       :: CMarkdown  ? "Notes (Markdown)"
-  , cifLink        :: Maybe Url  ? "Link to the official site, if exists"
-  , cifKind        :: ItemKind   ? "Item kind, e.g. library, ..."
+  { cifUid         :: Uid Item                 ? "Item ID"
+  , cifName        :: Text                     ? "Item name"
+  , cifCreated     :: UTCTime                  ? "When the item was created"
+  , cifGroup       :: Maybe Text               ? "Item group"
+  , cifDescription :: CMarkdown                ? "Item summary (Markdown)"
+  , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
+  , cifCons        :: [CTrait]                 ? "Cons (negative traits)"
+  , cifEcosystem   :: CMarkdown                ? "The ecosystem description (Markdown)"
+  , cifNotes       :: CMarkdown                ? "Notes (Markdown)"
+  , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
+  , cifKind        :: ItemKind                 ? "Item kind, e.g. library, ..."
+  , cifToc         :: Forest CHeading          ? "Table of contents"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -284,7 +328,10 @@ toCItemFull Item{..} = CItemFull
   , cifNotes       = H $ toCMarkdown _itemNotes
   , cifLink        = H $ _itemLink
   , cifKind        = H $ _itemKind
+  , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
+  where
+    treeToCMD = fmap toCHeading
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -307,33 +354,53 @@ toCTrait trait = CTrait
 
 -- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
-  { text :: Text ? "Markdown source"
-  , html :: Text ? "Rendered HTML"
+  { cmdText :: Text ? "Markdown source"
+  , cmdHtml :: Text ? "Rendered HTML"
   } deriving (Show, Generic)
 
-instance A.ToJSON CMarkdown
-instance ToSchema CMarkdown
+instance A.ToJSON CMarkdown where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CMarkdown where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Type class to create 'CMarkdown'
 class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMarkdown MarkdownInline where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText $ md^.mdHtml
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText $ md^.mdHtml
     }
 
 instance ToCMarkdown MarkdownBlock where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText $ md^.mdHtml
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText $ md^.mdHtml
     }
 
 instance ToCMarkdown MarkdownTree where
   toCMarkdown md = CMarkdown
-    { text = H $ md^.mdSource
-    , html = H $ toText . renderText $ toHtml md
+    { cmdText = H $ md^.mdSource
+    , cmdHtml = H $ toText . renderText $ toHtml md
     }
+
+data CHeading = CHeading
+  { chContent :: CMarkdown    ? "Rendered heading"
+  , chSlug    :: Text         ? "In-page anchor for linking"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CHeading where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CHeading where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+toCHeading :: Heading -> CHeading
+toCHeading h = CHeading
+  { chContent = H $ toCMarkdown $ headingMd h
+  , chSlug    = H $ headingSlug h
+  }
 
 ----------------------------------------------------------------------------
 -- Search client types
@@ -400,7 +467,14 @@ toCSearchResult :: SearchResult -> CSearchResult
 toCSearchResult (SRCategory cat) =
   CSRCategoryResult $ CSRCategory
     { csrcInfo        = H $ toCCategoryInfo cat
-    , csrcDescription = H $ toCMarkdown (cat ^. G.notes)
+    , csrcDescription = H $ toCMarkdown $
+        -- Extract the part before the first heading, to avoid showing the
+        -- full description (we assume that the full description is too long
+        -- and that the preface will accurately represent what the category
+        -- is about).
+        --
+        -- TODO: just extract the first paragraph, not the preface.
+        extractPreface $ toMarkdownTree "" $ cat^.G.notes.mdSource
     }
 toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
@@ -409,8 +483,8 @@ toCSearchResult (SRItem cat item) =
     , csriDescription = H $ Just (toCMarkdown (item ^. G.description))
     , csriEcosystem   = H $ Nothing
     }
--- TODO: currently if there are matches in both description and category,
--- we'll show two matches instead of one
+-- TODO: currently if there are matches in both item description and item
+-- ecosystem, we'll show two matches instead of one
 toCSearchResult (SRItemEcosystem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
@@ -459,3 +533,6 @@ instance ToSchema ItemKind where
                   \ {tag: Library, contents: <package name>}\
                   \ * {tag: Tool, contents: <package name>}\
                   \ * {tag: Other}"
+
+instance ToSchema a => ToSchema (Tree a) where
+    declareNamedSchema = genericDeclareNamedSchema schemaOptions
