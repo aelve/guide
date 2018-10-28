@@ -315,6 +315,9 @@ newtype Uid a = Uid {uidToText :: Text}
 instance A.ToJSON (Uid a) where
   toJSON = A.toJSON . uidToText
 
+instance A.FromJSON (Uid a) where
+  parseJSON a = Uid <$> A.parseJSON a
+
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a
 --     • In the instance declaration for ‘SafeCopy (Uid a)’

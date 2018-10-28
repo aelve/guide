@@ -45,6 +45,7 @@ apiServer db = Site
 
   , _itemSite = toServant (ItemSite
       { _createItem     = createItem db
+      , _setItemInfo    = setItemInfo db
       , _deleteItem     = deleteItem db }
       :: ItemSite AsServer)
 

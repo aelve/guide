@@ -131,6 +131,15 @@ instance A.ToJSON ItemKind where
   toJSON Other = A.object [
     "tag"      A..= ("Other" :: Text) ]
 
+instance A.FromJSON ItemKind where
+  parseJSON ik@(A.Object o) = do
+    iki <- A.parseJSON ik
+    case iki of
+        Library _ -> Library <$> o A..: "contents"
+        Tool _ -> Tool <$> o A..: "contents"
+        Other -> pure Other
+  parseJSON _ = mzero
+
 data ItemKind_v2
   = Library_v2 (Maybe Text)
   | Tool_v2 (Maybe Text)

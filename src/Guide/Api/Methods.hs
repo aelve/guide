@@ -74,7 +74,7 @@ setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
-setCategoryInfo db catId CCategoryInfoEdit {..} = uncache db (CacheCategoryInfo catId) $ do
+setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo catId) $ do
     dbQuery db (GetCategoryMaybe catId) >>= \case
         Nothing -> throwError (err404 {errBody = "Category not found"})
         Just _ -> do
@@ -127,6 +127,12 @@ createItem db catId name' = do
                 pure itemId
 
 -- TODO: move an item
+
+-- | Set item`s info
+setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
+setItemInfo db itemId CItemInfo{..} = uncache db (CacheItemInfo itemId) $ do
+    dbQuery db (GetItem itemId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Category not found"})
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent

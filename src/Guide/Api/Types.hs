@@ -145,6 +145,15 @@ data ItemSite route = ItemSite
       :> QueryParam' '[Required, Strict] "name" Text
       :> Post '[JSON] (Uid Item)
 
+  , _setItemInfo :: route :-
+      Summary "Set item's fields"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "info"
+      :> ReqBody '[JSON] CItemInfo
+      :> Put '[JSON] NoContent
+
   , _deleteItem :: route :-
       Summary "Delete an item"
       :> "item"
@@ -322,6 +331,9 @@ data CItemInfo = CItemInfo
 
 instance A.ToJSON CItemInfo where
   toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CItemInfo where
+  parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CItemInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
