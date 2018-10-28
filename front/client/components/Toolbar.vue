@@ -29,7 +29,6 @@ import axios from "axios";
 export default class Toolbar extends Vue {
   async getApi() {
     const { data } = await axios.get('api');
-    console.log(data);
   }
 }
 </script>
