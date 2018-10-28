@@ -1,23 +1,32 @@
 <template>
-  <v-text-field 
-    v-model="searchInput" 
-    class="toollbar-search" 
-    label="Search" 
+  <v-text-field
+    dark
+    solo
+    class="toollbar-search"
+    label="Search"
+    :value="searchInput"
+    @input="setSearchInput"
     @keyup.enter.native="processSearchInput"
-    dark 
-    solo />
+  />
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
+import Vue from 'vue'
+import Component from 'vue-class-component'
 
 @Component
 export default class SearchField extends Vue {
-  searchInput:string = ''
 
   processSearchInput() {
-    window.open(`http://aelve.com:4801/haskell/?q=${this.searchInput}`, '_blank')
+    this.$router.push({ name: 'SearchResults', query: { query: this.searchInput } })
+  }
+
+  get searchInput() {
+    return this.$store.state.wiki.searchInput
+  }
+
+  setSearchInput(value: string) {
+    this.$store.commit('wiki/setSearchInput', value)
   }
 }
 </script>
