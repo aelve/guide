@@ -15,6 +15,14 @@ const actions: ActionTree<CategoryState, any> = {
   async loadCategoryList({ commit }: ActionContext<CategoryState, any>): Promise<any> {
     const data: ICategory[] = await CategoryService.getCategoryList()
     commit('setCategoryList', data)
+  },
+  async createCategory({ dispatch }, { title, group }: ICategory): Promise<ICategory['uid']> {
+    const createdId = await CategoryService.createCategory({
+      title,
+      group
+    })
+    dispatch('loadCategoryList')
+    return createdId
   }
 }
 
