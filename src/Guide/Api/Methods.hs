@@ -131,8 +131,17 @@ createItem db catId name' = do
 -- | Set item`s info
 setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
 setItemInfo db itemId CItemInfo{..} = uncache db (CacheItemInfo itemId) $ do
-    dbQuery db (GetItem itemId) >>= \case
-        Nothing -> throwError (err404 {errBody = "Category not found"})
+    dbQuery db (GetItemMaybe itemId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Item not found"})
+        Just _ -> do
+            -- TODO diff and merge
+            _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
+            _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+            _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+            _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
+            -- _ <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
+
+            pure NoContent
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent

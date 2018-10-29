@@ -34,7 +34,7 @@ module Guide.State
   GetCategories(..),
   GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
-  GetItem(..),
+  GetItem(..), GetItemMaybe (..),
   GetTrait(..),
 
   -- ** add
@@ -56,6 +56,7 @@ module Guide.State
   SetItemLink(..),
   SetItemGroup(..),
   SetItemKind(..),
+--   SetItemHackage(..),
   SetItemDescription(..),
   SetItemNotes(..),
   SetItemEcosystem(..),
@@ -333,6 +334,9 @@ getCategoryByItem uid' = findCategoryByItem uid' <$> ask
 getItem :: Uid Item -> Acid.Query GlobalState Item
 getItem uid' = view (itemById uid')
 
+getItemMaybe :: Uid Item -> Acid.Query GlobalState (Maybe Item)
+getItemMaybe uid' = preview (itemById uid')
+
 -- TODO: this doesn't need the item id, but then we have to be a bit cleverer
 -- and store a (TraitId -> ItemId) map in global state (and update it
 -- accordingly whenever anything happens, so perhaps let's not do it!)
@@ -388,7 +392,8 @@ addItem catId itemId name' created' kind' = do
         _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
                            in  toMarkdownTree pref "",
         _itemLink        = Nothing,
-        _itemKind        = kind' }
+        _itemKind        = kind'}
+        -- _itemHackage     = Nothing }
   categoryById catId . items %= (++ [newItem])
   let edit = Edit'AddItem catId itemId name'
   return (edit, newItem)
@@ -510,6 +515,12 @@ setItemKind itemId kind' = do
   oldKind <- itemById itemId . kind <<.= kind'
   let edit = Edit'SetItemKind itemId oldKind kind'
   (edit,) <$> use (itemById itemId)
+
+-- setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
+-- setItemHackage itemId hackage' = do
+--     oldName <- itemById itemId . hackage <<.= hackage'
+--     let edit = Edit'SetItemHackage itemId oldName hackage'
+--     (edit,) <$> use (itemById itemId)
 
 setItemDescription :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemDescription itemId description' = do
@@ -874,7 +885,7 @@ makeAcidic ''GlobalState [
   'getCategories,
   'getCategory, 'getCategoryMaybe,
   'getCategoryByItem,
-  'getItem,
+  'getItem, 'getItemMaybe,
   'getTrait,
   -- add
   'addCategory,
@@ -884,7 +895,7 @@ makeAcidic ''GlobalState [
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'changeCategoryEnabledSections,
-  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, --'setItemHackage,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete

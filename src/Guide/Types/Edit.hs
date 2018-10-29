@@ -88,6 +88,10 @@ data Edit
       editItemUid     :: Uid Item,
       editItemKind    :: ItemKind,
       editItemNewKind :: ItemKind }
+--   | Edit'SetItemHackage {
+--       editItemUid        :: Uid Item,
+--       editItemHackage    :: Maybe Text,
+--       editItemNewHackage :: Maybe Text }
 
   | Edit'SetItemDescription {
       editItemUid            :: Uid Item,
@@ -227,6 +231,8 @@ isVacuousEdit Edit'SetItemGroup{..} =
   editItemGroup == editItemNewGroup
 isVacuousEdit Edit'SetItemKind{..} =
   editItemKind == editItemNewKind
+-- isVacuousEdit Edit'SetItemHackage{..} =
+--   editItemHackage == editItemNewHackage
 isVacuousEdit Edit'SetItemDescription{..} =
   editItemDescription == editItemNewDescription
 isVacuousEdit Edit'SetItemNotes{..} =

@@ -31,6 +31,7 @@ module Guide.Types.Core
     ecosystem,
     link,
     kind,
+    -- hackage,
   Hue(..),
     hueToDarkColor,
     hueToLightColor,
@@ -189,6 +190,7 @@ data Item = Item {
   _itemNotes       :: MarkdownTree,    -- ^ The notes section
   _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
   _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
+--   _itemHackage     :: Maybe Text       -- ^ Hackage Name
   }
   deriving (Show, Generic, Data)
 

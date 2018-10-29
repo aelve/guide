@@ -327,6 +327,7 @@ data CItemInfo = CItemInfo
   , ciiGroup   :: Maybe Text ? "Item group"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
   , ciiKind    :: ItemKind   ? "Item kind, e.g. library, ..."
+--   , ciiHackage :: Maybe Text ? "Hackage name"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
@@ -369,6 +370,7 @@ toCItemInfo Item{..} = CItemInfo
   , ciiGroup       = H $ _itemGroup_
   , ciiLink        = H $ _itemLink
   , ciiKind        = H $ _itemKind
+--   , ciiHackage     = H $ _itemHackage
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'

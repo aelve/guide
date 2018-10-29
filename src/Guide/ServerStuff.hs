@@ -207,6 +207,11 @@ undoEdit (Edit'SetItemKind itemId old new) = do
   if now /= new
     then return (Left "kind has been changed further")
     else Right () <$ dbUpdate (SetItemKind itemId old)
+-- undoEdit (Edit'SetItemHackage itemId old new) = do
+--   now <- view hackage <$> dbQuery (GetItem itemId)
+--   if now /= new
+--     then return (Left "hackage has been changed further")
+--     else Right () <$ dbUpdate (SetItemHackage itemId old)
 undoEdit (Edit'SetItemDescription itemId old new) = do
   now <- view (description.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
@@ -276,6 +281,8 @@ invalidateCacheForEdit ed = do
         [CacheItemInfo itemId]
     Edit'SetItemKind itemId _ _ ->
         [CacheItemInfo itemId]
+    -- Edit'SetItemHackage itemId _ _ ->
+    --     [CacheItemInfo itemId]
     Edit'SetItemDescription itemId _ _ ->
         [CacheItemDescription itemId]
     Edit'SetItemNotes itemId _ _ ->
