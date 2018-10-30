@@ -19,12 +19,3 @@ export default class ALink extends Vue {
 }
 
 </script>
-
-<style scoped>
-.link {
-  text-decoration-line: none;
-}
-.link:hover {
-  text-decoration-line: underline;
-}
-</style>

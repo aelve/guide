@@ -1,6 +1,9 @@
 .notes-like h1 {
   margin-top: 40px;
-  font-size: 1.2em; }
+  font-size: 1.6em;
+  border-bottom: 1px solid #BBBBBB;
+  padding-bottom: 10px;
+}
 .notes-like h2 {
   margin-top: 20px;
   font-size: 1em; }
@@ -19,7 +22,7 @@ blockquote p {
   margin: 0.5em 0; }
 
 code {
-  background: rgba(10, 10, 10, 0.1);
+  background: rgba(10, 10, 10, 0.04);
   font-size: 95%;
   padding: 2px 4px; }
 
@@ -27,7 +30,7 @@ div.sourceCode {
   overflow-x: unset; }
 
 pre {
-  background: rgba(10, 10, 10, 0.1);
+  background: rgba(10, 10, 10, 0.04);
   line-height: 150%;
   padding: 0.5em 1em;
   overflow-x: auto; }
