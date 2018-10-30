@@ -99,6 +99,7 @@ data CategorySite route = CategorySite
                      \If a category with the same title already exists \
                      \in the group, returns its ID instead."
       :> ErrorResponse 400 "'title' not provided"
+      :> ErrorResponse 400 "'group' not provided"
       :> "category"
       :> QueryParam' '[Required, Strict,
                        Description "Title of the newly created category"]
@@ -299,6 +300,7 @@ toCCategoryFull Category{..} = CCategoryFull
   , ccfStatus      = H $ _categoryStatus
   }
 
+-- | Client type to edit meta category information.
 data CCategoryInfoEdit = CCategoryInfoEdit
     { ccieTitle    :: Text            ? "Category title"
     , ccieGroup    :: Text            ? "Category group ('grandcategory')"
@@ -327,7 +329,6 @@ data CItemInfo = CItemInfo
   , ciiGroup   :: Maybe Text ? "Item group"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
   , ciiKind    :: ItemKind   ? "Item kind, e.g. library, ..."
---   , ciiHackage :: Maybe Text ? "Hackage name"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
@@ -370,7 +371,6 @@ toCItemInfo Item{..} = CItemInfo
   , ciiGroup       = H $ _itemGroup_
   , ciiLink        = H $ _itemLink
   , ciiKind        = H $ _itemKind
---   , ciiHackage     = H $ _itemHackage
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'

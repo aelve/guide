@@ -62,7 +62,7 @@ instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
 instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, ToSchema c) => GToSchema (S1 s (K1 i (Maybe c ? help))) where
   gdeclareNamedSchema opts _ = fmap unnamed . withFieldSchema opts (Proxy2 :: Proxy2 s (K1 i (Maybe c ? help))) False
 
--- | Runner for 'field ? help'
+-- | Unwraper for 'field ? help'
 unH :: forall field help . (field ? help) -> field
 unH (H field) = field
 

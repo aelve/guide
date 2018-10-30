@@ -31,7 +31,6 @@ module Guide.Types.Core
     ecosystem,
     link,
     kind,
-    -- hackage,
   Hue(..),
     hueToDarkColor,
     hueToLightColor,
@@ -133,13 +132,10 @@ instance A.ToJSON ItemKind where
     "tag"      A..= ("Other" :: Text) ]
 
 instance A.FromJSON ItemKind where
-  parseJSON ik@(A.Object o) = do
-    iki <- A.parseJSON ik
-    case iki of
-        Library _ -> Library <$> o A..: "contents"
-        Tool _ -> Tool <$> o A..: "contents"
-        Other -> pure Other
-  parseJSON _ = mzero
+  parseJSON = A.withObject "ItemKind" $ \o
+    -> Library <$> o A..: "contents"
+   <|> Tool <$> o A..: "contents"
+   <|> pure Other
 
 data ItemKind_v2
   = Library_v2 (Maybe Text)
@@ -190,7 +186,6 @@ data Item = Item {
   _itemNotes       :: MarkdownTree,    -- ^ The notes section
   _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
   _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
---   _itemHackage     :: Maybe Text       -- ^ Hackage Name
   }
   deriving (Show, Generic, Data)
 
