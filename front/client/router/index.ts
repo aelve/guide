@@ -4,7 +4,14 @@ function createRouter() {
   return new Router({
     mode: 'history',
     fallback: false,
-    scrollBehavior: () => ({ x: 0, y: 0 }),
+    scrollBehavior: (to) => {
+      // ads an ability for a scroll to anchor
+      if (to.hash) {
+        return { selector: to.hash }
+      } else {
+        return { x:0, y:0 }
+      }
+    },
     routes: [
       {
         path: '/',

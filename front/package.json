@@ -10,7 +10,8 @@
     "server:build": "cross-env NODE_ENV=production webpack --config ./build/webpack.server.conf.js",
     "build-all": "npm run client:build && npm run server:build",
     "start:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
-    "start:prod": "cross-env NODE_ENV=production node server/bin.js"
+    "start:prod": "cross-env NODE_ENV=production node server/bin.js",
+    "test": "testcafe chrome client/page/*.test.js --app \"npm run start:dev\" --app-init-delay 10000 -S -s screenshots"
   },
   "dependencies": {
     "@junyiz/koa-proxy-pass": "^1.2.1",
@@ -60,6 +61,8 @@
     "pug-plain-loader": "^1.0.0",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
+    "testcafe": "^0.22.0",
+    "testcafe-vue-selectors": "^3.0.0",
     "ts-loader": "^4.4.2",
     "typescript": "^2.9.2",
     "url-loader": "^1.0.1",

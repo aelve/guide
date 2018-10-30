@@ -32,6 +32,10 @@ export default class SearchField extends Vue {
 </script>
 
 <style scoped>
+.toollbar-search {
+  margin-right: 15px;
+}
+
 .toollbar-search >>> div {
   margin-bottom: 0 !important;
 }
