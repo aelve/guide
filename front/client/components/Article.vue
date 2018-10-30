@@ -3,15 +3,22 @@
     <div class="article-wrapper">
       <div class="article-top">
         <i class="fas fa-rss"></i>
-        <div class="article-top-data" v-for="(value, key) in getCategory" :key="key">
+        <div 
+          class="article-top-data" 
+          v-for="(value, key) in getCategory" 
+          :key="key">
           <a class="article-top-link" href="https://guide.aelve.com/haskell/lenses-sth6l9jl">{{value.title}}</a>
           <p class="article-top-group">{{value.group}}</p>
         </div>
       </div>
-      <div v-if="categoryDescription !== ''" class="article-description">
+      <div 
+        v-if="categoryDescription !== ''" 
+        class="article-description">
         <div v-html="categoryDescription"></div>
       </div>
-      <div v-for="(value, index) in getCategoryItems" :key="index">
+      <div 
+        v-for="(value, index) in getCategoryItems" 
+        :key="index">
         <article-content 
           :kind = "value.kind.contents" 
           :group="value.group" 
@@ -38,7 +45,6 @@ import ArticleContent from 'client/components/ArticleContent.vue'
   }
 })
 export default class ArticleItem extends Vue {
-  // description: boolean = false
   categoryDescription: string = ''
 
   async asyncData() {

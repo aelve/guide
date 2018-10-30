@@ -41,4 +41,20 @@ code.sourceCode {
   padding: 8px;
   margin: 0 0 15px;
 }
+  /* Transition styles */
+.slidedown-enter-active {
+  /* transition: transform .3s cubic-bezier(0.165, 0.84, 0.44, 1); */
+  /* transition: max-height .3s cubic-bezier(0.165, 0.84, 0.44, 1); */
+}
+
+.slidedown-leave-active {
+  /* transition: transform .3s cubic-bezier(0.895, 0.03, 0.685, 0.22); */
+  /* transition: max-height .3s cubic-bezier(0.895, 0.03, 0.685, 0.22); */
+}
+
+.slidedown-enter, .slidedown-leave-to {
+  /* opacity: 0; */
+  /* transform: scaleY(0) */
+  /* max-height: 0; */
+}
 </style>

@@ -2,7 +2,9 @@
   <div class="article-item">
     <div class="article-header">
       <p class="article-hd-textlg">{{ kind }}</p>
-      <a-link openInNewTab :url="`http://hackage.haskell.org/package/${kind}`" class="article-header-link">
+      <a-link 
+        openInNewTab :url="`http://hackage.haskell.org/package/${kind}`" 
+        class="article-header-link">
         (Hackage)
       </a-link>
       <p class="article-hd-textsm">{{ group }}</p>
@@ -17,12 +19,17 @@
     </div>
     <div class="article-content">
       <p class="article-section-title">Summary</p>
-      <div class="article-description" v-html="itemDescription"></div>
+      <div 
+        class="article-description" 
+        v-html="itemDescription"/>
       <div class="flex-wrapper article-section pros-cons-box">
         <div class="width-50">
           <p class="article-section-title">Pros</p>
-          <ul v-if="pros" v-for="(value, index) in pros" :key="index">
-            <li v-html="value.content.html"></li>
+          <ul 
+            v-if="pros" 
+            v-for="(value, index) in pros" 
+            :key="index">
+            <li v-html="value.content.html"/>
           </ul>
         </div>
         <div class="width-50">
@@ -40,27 +47,35 @@
         <p class="article-section-title">Notes</p>
         <div class="notes-settings">
           <!-- TODO change a to vue markup element -->
-          <button href="" class="notes-settings-btn" @click="expandNotes()">expand notes</button>
-          <button href="" class="notes-settings-btn" @click="collapseNotes()">collapse notes</button>
-          <button href="" class="notes-settings-btn" style="display: none;">edit notes</button>
+          <button class="notes-settings-btn" @click="expandNotes">expand notes</button>
+          <button class="notes-settings-btn" @click="collapseNotes">collapse notes</button>
+          <button class="notes-settings-btn" style="display: none;">edit notes</button>
         </div>
-        <!-- Notes ToC -->
-        <div v-for="(value, index) in tocArray" :key="index">
+        <div 
+          v-for="(value, index) in tocArray" 
+          :key="index">
           <!-- TODO refactor v-for from ul to li -->
-          <ul v-for="(value, index) in value" :key="index">
-            <li class="notes-toc-item" v-if="value.content !== undefined">
-              <a :href="`#${value.slug}`" @click="expandNotes()">
+          <ul 
+            v-for="(value, index) in value" 
+            :key="index">
+            <li 
+              class="notes-toc-item" 
+              v-if="value.content">
+              <a 
+                :href="`#${value.slug}`" 
+                @click="expandNotes">
                 <p>{{value.content.html}}</p>
               </a>
             </li>
           </ul>
         </div>
-        <!-- Notes block - TODO add expand functionality -->
-        <div
-          class="notes-content" 
-          v-bind:class="{ open: isNoteExpanded }" 
-          v-html="notes">
-        </div>
+        <transition name="slidedown">
+          <div
+            class="notes-content"
+            v-show="isNoteExpanded" 
+            v-html="notes">
+          </div>
+        </transition>
       </div>
     </div>
   </div>
@@ -71,8 +86,7 @@
 // import Component from 'vue-class-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
-@Component({ 
-})
+@Component({})
 
 export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
@@ -127,6 +141,10 @@ export default class ArticleContent extends Vue {
 
   .article-section {
     margin: 30px 0;
+  }
+
+  .notes-box {
+    position: relative;
   }
 
   .article-section.pros-cons-box, .article-section.notes-box >>> li {
@@ -253,12 +271,9 @@ export default class ArticleContent extends Vue {
   }
 
   .notes-content {
-    overflow: hidden;
-    height: 0;
-  }
-
-  .notes-content.open {
-    height: 100%;
+    /* position: absolute; */
+    transform-origin: top;
+    /* bottom: 0; */
   }
 
   @media screend and (max-width: 768px) {

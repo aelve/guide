@@ -5,6 +5,7 @@ function createRouter () {
     mode: 'history',
     fallback: false,
     scrollBehavior: (to) => {
+      // ads an ability for a scroll to anchor
       if (to.hash) {
         return { selector: to.hash }
       } else {
