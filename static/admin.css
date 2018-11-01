@@ -26,7 +26,8 @@ input {
   font-size: 100%;
 }
 
-.text-button > a:visited {color: #008ACE;}
+.text-button > a:link {color: #07C;}
+.text-button > a:visited {color: #005999;}
 
 textarea {
   border: 1px solid #ccc;
