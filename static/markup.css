@@ -42,8 +42,8 @@ pre code {
   background: rgba(0, 0, 0, 0);
   padding: 0; }
 
-a:link    {color: #008ACE; text-decoration: none;}
-a:visited {color: #B40EB4; text-decoration: none;}
+a:link    {color: #07C; text-decoration: none;}
+a:visited {color: #005999; text-decoration: none;}
 a:hover   {text-decoration: underline;}
 a:active  {text-decoration: underline;}
 

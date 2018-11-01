@@ -304,8 +304,8 @@ input {
   color: #666;
 }
 
-.text-button > a:visited {color: #008ACE;}
-h1           > a:visited {color: #008ACE;}  /* for header in category pages */
+.text-button > a:visited {color: #07C;}
+h1           > a:visited {color: #07C;}  /* for header in category pages */
 
 a.anchor {
   margin-right: 0.5em;
