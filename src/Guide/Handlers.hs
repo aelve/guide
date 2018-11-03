@@ -23,7 +23,6 @@ import Web.Spock hiding (get, head, renderRoute, text)
 import Web.Spock.Lucid
 
 import Guide.App
-import Guide.Cache
 import Guide.Config
 import Guide.Diff (merge)
 import Guide.Markdown
@@ -104,25 +103,24 @@ setMethods = do
         other      -> error ("unknown category status: " ++ show other)
     -- Modify the category
     -- TODO: actually validate the form and report errors
-    uncache (CacheCategoryInfo catId) $ do
-      unless (T.null title') $ do
-        (edit, _) <- dbUpdate (SetCategoryTitle catId title')
-        addEdit edit
-      unless (T.null group') $ do
-        (edit, _) <- dbUpdate (SetCategoryGroup catId group')
-        addEdit edit
-      do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
-         addEdit edit
-      do oldEnabledSections <- view enabledSections <$> dbQuery (GetCategory catId)
-         let newEnabledSections = S.fromList . concat $
-               [ [ItemProsConsSection  | prosConsEnabled']
-               , [ItemEcosystemSection | ecosystemEnabled']
-               , [ItemNotesSection     | notesEnabled'] ]
-         (edit, _) <- dbUpdate $
-                      ChangeCategoryEnabledSections catId
-                        (newEnabledSections S.\\ oldEnabledSections)
-                        (oldEnabledSections S.\\ newEnabledSections)
-         addEdit edit
+    unless (T.null title') $ do
+      (edit, _) <- dbUpdate (SetCategoryTitle catId title')
+      addEdit edit
+    unless (T.null group') $ do
+      (edit, _) <- dbUpdate (SetCategoryGroup catId group')
+      addEdit edit
+    do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
+       addEdit edit
+    do oldEnabledSections <- view enabledSections <$> dbQuery (GetCategory catId)
+       let newEnabledSections = S.fromList . concat $
+             [ [ItemProsConsSection  | prosConsEnabled']
+             , [ItemEcosystemSection | ecosystemEnabled']
+             , [ItemNotesSection     | notesEnabled'] ]
+       (edit, _) <- dbUpdate $
+                    ChangeCategoryEnabledSections catId
+                      (newEnabledSections S.\\ oldEnabledSections)
+                      (oldEnabledSections S.\\ newEnabledSections)
+       addEdit edit
     -- After all these edits we can render the category header
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderCategoryInfo category
@@ -133,10 +131,8 @@ setMethods = do
     modified <- view (notes.mdSource) <$> dbQuery (GetCategory catId)
     if modified == original
       then do
-        category <- uncache (CacheCategoryNotes catId) $ do
-          (edit, category) <- dbUpdate (SetCategoryNotes catId content')
-          addEdit edit
-          return category
+        (edit, category) <- dbUpdate (SetCategoryNotes catId content')
+        addEdit edit
         lucidIO $ renderCategoryNotes category
       else do
         setStatus HTTP.status409
@@ -167,24 +163,23 @@ setMethods = do
     -- Modify the item
     -- TODO: actually validate the form and report errors
     --       (don't forget to check that custom-group ≠ "")
-    uncache (CacheItemInfo itemId) $ do
-      unless (T.null name') $ do
-        (edit, _) <- dbUpdate (SetItemName itemId name')
-        addEdit edit
-      case (T.null link', sanitiseUrl link') of
-        (True, _) -> do
-            (edit, _) <- dbUpdate (SetItemLink itemId Nothing)
-            addEdit edit
-        (_, Just l) -> do
-            (edit, _) <- dbUpdate (SetItemLink itemId (Just l))
-            addEdit edit
-        _otherwise ->
-            return ()
-      do (edit, _) <- dbUpdate (SetItemKind itemId kind')
-         addEdit edit
-      -- This does all the work of assigning new colors, etc. automatically
-      do (edit, _) <- dbUpdate (SetItemGroup itemId group')
-         addEdit edit
+    unless (T.null name') $ do
+      (edit, _) <- dbUpdate (SetItemName itemId name')
+      addEdit edit
+    case (T.null link', sanitiseUrl link') of
+      (True, _) -> do
+          (edit, _) <- dbUpdate (SetItemLink itemId Nothing)
+          addEdit edit
+      (_, Just l) -> do
+          (edit, _) <- dbUpdate (SetItemLink itemId (Just l))
+          addEdit edit
+      _otherwise ->
+          return ()
+    do (edit, _) <- dbUpdate (SetItemKind itemId kind')
+       addEdit edit
+    -- This does all the work of assigning new colors, etc. automatically
+    do (edit, _) <- dbUpdate (SetItemGroup itemId group')
+       addEdit edit
     -- After all these edits we can render the item
     item <- dbQuery (GetItem itemId)
     category <- dbQuery (GetCategoryByItem itemId)
@@ -196,10 +191,8 @@ setMethods = do
     modified <- view (description.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
-        item <- uncache (CacheItemDescription itemId) $ do
-          (edit, item) <- dbUpdate (SetItemDescription itemId content')
-          addEdit edit
-          return item
+        (edit, item) <- dbUpdate (SetItemDescription itemId content')
+        addEdit edit
         lucidIO $ renderItemDescription item
       else do
         setStatus HTTP.status409
@@ -213,10 +206,8 @@ setMethods = do
     modified <- view (ecosystem.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
-        item <- uncache (CacheItemEcosystem itemId) $ do
-          (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
-          addEdit edit
-          return item
+        (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
+        addEdit edit
         lucidIO $ renderItemEcosystem item
       else do
         setStatus HTTP.status409
@@ -230,10 +221,8 @@ setMethods = do
     modified <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
-        item <- uncache (CacheItemNotes itemId) $ do
-          (edit, item) <- dbUpdate (SetItemNotes itemId content')
-          addEdit edit
-          return item
+        (edit, item) <- dbUpdate (SetItemNotes itemId content')
+        addEdit edit
         category <- dbQuery (GetCategoryByItem itemId)
         lucidIO $ renderItemNotes category item
       else do
@@ -248,10 +237,8 @@ setMethods = do
     modified <- view (content.mdSource) <$> dbQuery (GetTrait itemId traitId)
     if modified == original
       then do
-        trait <- uncache (CacheItemTraits itemId) $ do
-          (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
-          addEdit edit
-          return trait
+        (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
+        addEdit edit
         lucidIO $ renderTrait itemId trait
       else do
         setStatus HTTP.status409
@@ -273,7 +260,6 @@ addMethods = do
         catId <- randomShortUid
         time <- liftIO getCurrentTime
         (edit, newCategory) <- dbUpdate (AddCategory catId title' "Miscellaneous" time)
-        invalidateCache' (CacheCategory catId)
         addEdit edit
         return newCategory
     -- And now send the URL of the new (or old) category
@@ -292,7 +278,6 @@ addMethods = do
         kind' = if looksLikeLibrary then Library (Just name') else Other
     time <- liftIO getCurrentTime
     (edit, newItem) <- dbUpdate (AddItem catId itemId name' time kind')
-    invalidateCache' (CacheItem itemId)
     addEdit edit
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderItem category newItem
@@ -301,7 +286,6 @@ addMethods = do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddPro itemId traitId content')
-    invalidateCache' (CacheItemTraits itemId)
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
   -- Con (argument against an item)
@@ -309,7 +293,6 @@ addMethods = do
     content' <- param' "content"
     traitId <- randomLongUid
     (edit, newTrait) <- dbUpdate (AddCon itemId traitId content')
-    invalidateCache' (CacheItemTraits itemId)
     addEdit edit
     lucidIO $ renderTrait itemId newTrait
 
@@ -319,32 +302,26 @@ otherMethods = do
   -- Move item
   Spock.post (moveRoute <//> itemVar) $ \itemId -> do
     direction :: Text <- param' "direction"
-    uncache (CacheItem itemId) $ do
-      edit <- dbUpdate (MoveItem itemId (direction == "up"))
-      addEdit edit
-  -- Move trait
+    edit <- dbUpdate (MoveItem itemId (direction == "up"))
+    addEdit edit
   Spock.post (moveRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
     direction :: Text <- param' "direction"
-    uncache (CacheItemTraits itemId) $ do
-      edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
-      addEdit edit
+    edit <- dbUpdate (MoveTrait itemId traitId (direction == "up"))
+    addEdit edit
 
   -- # Deleting things
   -- Delete category
-  Spock.post (deleteRoute <//> categoryVar) $ \catId ->
-    uncache (CacheCategory catId) $ do
-      mbEdit <- dbUpdate (DeleteCategory catId)
-      mapM_ addEdit mbEdit
+  Spock.post (deleteRoute <//> categoryVar) $ \catId -> do
+    mbEdit <- dbUpdate (DeleteCategory catId)
+    mapM_ addEdit mbEdit
   -- Delete item
-  Spock.post (deleteRoute <//> itemVar) $ \itemId ->
-    uncache (CacheItem itemId) $ do
-      mbEdit <- dbUpdate (DeleteItem itemId)
-      mapM_ addEdit mbEdit
+  Spock.post (deleteRoute <//> itemVar) $ \itemId -> do
+    mbEdit <- dbUpdate (DeleteItem itemId)
+    mapM_ addEdit mbEdit
   -- Delete trait
-  Spock.post (deleteRoute <//> itemVar <//> traitVar) $ \itemId traitId ->
-    uncache (CacheItemTraits itemId) $ do
-      mbEdit <- dbUpdate (DeleteTrait itemId traitId)
-      mapM_ addEdit mbEdit
+  Spock.post (deleteRoute <//> itemVar <//> traitVar) $ \itemId traitId ->  do
+    mbEdit <- dbUpdate (DeleteTrait itemId traitId)
+    mapM_ addEdit mbEdit
 
   -- # Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
@@ -379,7 +356,7 @@ adminMethods = do
     res <- undoEdit edit
     case res of
       Left err -> Spock.text (toText err)
-      Right () -> do invalidateCacheForEdit edit
+      Right () -> do
                      _ <- dbUpdate (RemovePendingEdit n)
                      Spock.text ""
   -- Accept a range of edits
@@ -393,7 +370,7 @@ adminMethods = do
       res <- undoEdit edit
       case res of
         Left err -> return (Just ((edit, details), Just err))
-        Right () -> do invalidateCacheForEdit edit
+        Right () -> do
                        _ <- dbUpdate (RemovePendingEdit (editId details))
                        return Nothing
     case failed of
