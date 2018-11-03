@@ -94,7 +94,7 @@ setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo c
 deleteCategory :: DB -> Uid Category -> Handler NoContent
 deleteCategory db catId = uncache db (CacheCategory catId) $ do
   dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err400 {errBody = "Category not provided"})
+    Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
       _mbEdit <- dbUpdate db (DeleteCategory catId)
       pure NoContent
