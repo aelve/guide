@@ -321,7 +321,9 @@ instance ToSchema CCategoryInfoEdit where
 instance ToSchema ItemSection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | A lightweight info type about an 'Item'
+-- | A lightweight info type about an 'Item'.
+--
+-- When updating it, don't forget to also update 'setItemInfo'.
 data CItemInfo = CItemInfo
   { ciiUid     :: Uid Item   ? "Item ID"
   , ciiName    :: Text       ? "Item name"
