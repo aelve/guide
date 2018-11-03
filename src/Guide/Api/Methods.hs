@@ -133,7 +133,7 @@ createItem db catId name' = do
 setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
 setItemInfo db itemId CItemInfo{..} = uncache db (CacheItemInfo itemId) $ do
   dbQuery db (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError (err400 {errBody = "Item not found"})
+    Nothing -> throwError (err404 {errBody = "Item not found"})
     Just _ -> do
       -- TODO diff and merge
       _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
