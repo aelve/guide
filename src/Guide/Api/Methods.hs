@@ -66,7 +66,7 @@ createCategory db title' group' = do
 setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
 setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
   dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err400 {errBody = "Category not provided"})
+    Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
       (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
       -- TODO diff and merge
