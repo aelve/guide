@@ -87,6 +87,7 @@ setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo c
       _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
           (newEnabledSections S.\\ oldEnabledSections)
           (oldEnabledSections S.\\ newEnabledSections)
+      -- TODO record edits
       pure NoContent
 
 -- | Delete a category.
