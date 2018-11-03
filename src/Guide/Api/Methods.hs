@@ -46,7 +46,7 @@ getCategory db catId =
 -- category with this title exists already).
 createCategory :: DB -> Text -> Text -> Handler (Uid Category)
 createCategory db title' group' = do
-  when (T.null title') $ do throwError (err400 {errBody = "Title' not provided"})
+  when (T.null title') $ do throwError (err400 {errBody = "Title not provided"})
   when (T.null group') $ do throwError (err400 {errBody = "Group' not provided"})
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery db GetGlobalState
