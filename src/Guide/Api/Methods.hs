@@ -158,7 +158,7 @@ deleteItem db itemId = uncache db (CacheItem itemId) $ do
 -- | Create a trait (pro/con).
 createTrait :: DB -> Uid Item -> TraitType -> Text -> Handler (Uid Trait)
 createTrait db itemId traitType text = do
-  when (T.null text) $ do throwError (err400 {errBody = "Name not provided"})
+  when (T.null text) $ throwError (err400 {errBody = "Trait text not provided"})
   traitId <- randomShortUid
   (_edit, _newTrait) <- case traitType of
     Con -> dbUpdate db (AddCon itemId traitId text)
