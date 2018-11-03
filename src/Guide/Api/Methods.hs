@@ -82,7 +82,7 @@ setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo c
       _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
       _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
       _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
-      oldEnabledSections <- view enabledSections <$> pure category
+      let oldEnabledSections = category ^. enabledSections
       let newEnabledSections = unH ccieSections
       _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
           (newEnabledSections S.\\ oldEnabledSections)
