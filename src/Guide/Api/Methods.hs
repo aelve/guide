@@ -76,7 +76,7 @@ setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
 setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo catId) $ do
   dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err400 {errBody = "Category not provided"})
+    Nothing -> throwError (err404 {errBody = "Category not found"})
     Just category -> do
       -- TODO diff and merge
       _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
