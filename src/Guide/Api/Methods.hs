@@ -111,7 +111,7 @@ deleteCategory db catId = uncache db (CacheCategory catId) $ do
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
 createItem db catId name' = do
   dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err400 {errBody = "Category not found"})
+    Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
       if T.null name' then throwError (err400 {errBody = "Name not provided"})
       else do
