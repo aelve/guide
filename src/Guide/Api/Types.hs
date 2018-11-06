@@ -19,10 +19,10 @@ module Guide.Api.Types
   , SearchSite(..)
   , Site(..)
   , TraitSite(..)
-  , TraitType (..)
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
+  , CCategoryInfoEdit(..)
   , CCategoryFull(..), toCCategoryFull
   , CItemInfo(..), toCItemInfo
   , CItemFull(..), toCItemFull
@@ -31,6 +31,9 @@ module Guide.Api.Types
 
   -- * Search
   , CSearchResult(..), toCSearchResult
+
+  -- * Other types
+  , TraitType (..)
   )
   where
 
@@ -96,6 +99,7 @@ data CategorySite route = CategorySite
                      \If a category with the same title already exists \
                      \in the group, returns its ID instead."
       :> ErrorResponse 400 "'title' not provided"
+      :> ErrorResponse 400 "'group' not provided"
       :> "category"
       :> QueryParam' '[Required, Strict,
                        Description "Title of the newly created category"]
@@ -104,6 +108,24 @@ data CategorySite route = CategorySite
                        Description "Group to put the category into"]
            "group" Text
       :> Post '[JSON] (Uid Category)
+
+  , _setCategoryNotes :: route :-
+      Summary "Edit category's notes"
+      :> ErrorResponse 404 "Category not found"
+      :> "category"
+      :> Capture "id" (Uid Category)
+      :> "notes"
+      :> ReqBody '[JSON] Text
+      :> Put '[JSON] NoContent
+
+  , _setCategoryInfo :: route :-
+      Summary "Set category's fields"
+      :> ErrorResponse 404 "Category not found"
+      :> "category"
+      :> Capture "id" (Uid Category)
+      :> "info"
+      :> ReqBody '[JSON] CCategoryInfoEdit
+      :> Put '[JSON] NoContent
 
   , _deleteCategory :: route :-
       Summary "Delete a category"
@@ -123,6 +145,15 @@ data ItemSite route = ItemSite
       :> Capture "category" (Uid Category)
       :> QueryParam' '[Required, Strict] "name" Text
       :> Post '[JSON] (Uid Item)
+
+  , _setItemInfo :: route :-
+      Summary "Set item's fields"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "info"
+      :> ReqBody '[JSON] CItemInfo
+      :> Put '[JSON] NoContent
 
   , _deleteItem :: route :-
       Summary "Delete an item"
@@ -177,6 +208,10 @@ data SearchSite route = SearchSite
   deriving (Generic)
 
 type Api = ToServant Site AsApi
+
+--------------------------------------------------------------------------
+-- Additional types for routes
+--------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
 data TraitType = Pro | Con
@@ -265,7 +300,30 @@ toCCategoryFull Category{..} = CCategoryFull
   , ccfStatus      = H $ _categoryStatus
   }
 
--- | A lightweight info type about an 'Item'
+-- | Client type to edit meta category information.
+data CCategoryInfoEdit = CCategoryInfoEdit
+    { ccieTitle    :: Text            ? "Category title"
+    , ccieGroup    :: Text            ? "Category group ('grandcategory')"
+    , ccieStatus   :: CategoryStatus  ? "Status (done, in progress, ...)"
+    , ccieSections :: Set ItemSection ? "Enabled item sections"
+    }
+    deriving (Show, Generic)
+
+instance A.ToJSON CCategoryInfoEdit where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CCategoryInfoEdit where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema CCategoryInfoEdit where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+instance ToSchema ItemSection where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | A lightweight info type about an 'Item'.
+--
+-- When updating it, don't forget to also update 'setItemInfo'.
 data CItemInfo = CItemInfo
   { ciiUid     :: Uid Item   ? "Item ID"
   , ciiName    :: Text       ? "Item name"
@@ -277,6 +335,9 @@ data CItemInfo = CItemInfo
 
 instance A.ToJSON CItemInfo where
   toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CItemInfo where
+  parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CItemInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
