@@ -72,7 +72,6 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.Wai.Metrics as EKG
 import qualified SlaveThread as Slave
---import qualified System.FSNotify as FSNotify
 import qualified System.Metrics.Gauge as EKG.Gauge
 import qualified System.Remote.Monitoring as EKG
 import qualified Web.Spock as Spock
@@ -142,7 +141,6 @@ main = do
 -- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
 mainWith config = do
-  -- Emptying the cache is needed because during development (i.e. in REPL)
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
   do args <- getArgs
@@ -224,7 +222,6 @@ mainWith config = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
---    when (_prerender config) $ prerenderPages config db
     say "Spock is running on port 8080"
     runSpockNoBanner 8080 $ spock spockConfig $ guideApp waiMetrics
   forever (threadDelay (1000000 * 60))

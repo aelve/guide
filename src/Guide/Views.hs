@@ -686,15 +686,6 @@ renderSearch mbSearchQuery =
   mustache "search" $ A.object [
     "query" A..= mbSearchQuery ]
 
-
--- temporary function
--- render :: MonadIO m => HtmlT IO () -> HtmlT m ()
--- render gen =  toHtmlRaw =<< liftIO $ renderBST gen
---   --(liftIO $ renderBST gen) >>= toHtmlRaw
---   -- do bs <- liftIO $ renderBST gen
---   --toHtmlRaw bs
-
-
 -- | Render list of categories on the main page (the one with category groups
 -- and categories in it).
 --

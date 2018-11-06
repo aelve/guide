@@ -113,7 +113,6 @@ library
                      , fmt
                      , focus
                      , friendly-time == 0.4.*
-                     , fsnotify
                      , hashable
                      , haskell-src-meta
                      , http-api-data

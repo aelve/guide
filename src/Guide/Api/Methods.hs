@@ -152,6 +152,3 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
-
--- Twins of corresponding functions used in "Guide.Handlers".
--- TODO: remove them when the old backend is gone.
