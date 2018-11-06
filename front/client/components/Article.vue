@@ -10,6 +10,15 @@
           <a class="article-top-link" href="https://guide.aelve.com/haskell/lenses-sth6l9jl">{{value.title}}</a>
           <p class="article-top-group">{{value.group}}</p>
         </div>
+        <v-btn
+          class="ml-2 pl-0"
+          color="grey"
+          flat
+          @click="openAddItemDialog"
+        >
+          <v-icon class="mr-1" left>add</v-icon>
+          Add new item
+        </v-btn>
       </div>
       <div 
         v-if="categoryDescription !== ''" 
@@ -20,7 +29,7 @@
         v-for="(value, index) in getCategoryItems" 
         :key="index">
         <article-content 
-          :kind = "value.kind.contents" 
+          :kind="value.name" 
           :group="value.group" 
           :itemDescription="value.description.html"
           :pros="value.pros"
@@ -28,8 +37,19 @@
           :ecosystem="value.ecosystem.html"
           :tocArray="value.toc"
           :notes="value.notes.html"
+          :itemUid="value.uid"
         />
       </div>
+      <v-btn
+        class="ml-2 pl-0"
+        color="grey"
+        flat
+        @click="openAddItemDialog"
+      >
+        <v-icon class="mr-1" left>add</v-icon>
+        Add new item
+      </v-btn>
+      <add-item-dialog v-model="isDialogOpen"/>
     </div>
   </v-container>
 </template>
@@ -38,14 +58,17 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
+import AddItemDialog from 'client/components/AddItemDialog.vue'
 
 @Component({
   components: {
-    ArticleContent
+    ArticleContent,
+    AddItemDialog
   }
 })
 export default class ArticleItem extends Vue {
   categoryDescription: string = ''
+  isDialogOpen: boolean = false
 
   async asyncData() {
     return this.$store.dispatch('categoryItem/loadCategoryItem').then(() => {
@@ -63,6 +86,10 @@ export default class ArticleItem extends Vue {
 
   created() {
     this.asyncData()
+  }
+
+  openAddItemDialog() {
+    this.isDialogOpen = true
   }
 }
 </script>

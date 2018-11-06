@@ -16,6 +16,21 @@ const actions: ActionTree<CategoryItemState, any> = {
     const data: ICategoryItem[] = await CategoryItemService.getCategoryItem()
     commit('setCategoryItem', data)
   }
+  async createItem({ dispatch }, { category, name }: ICategoryItem['items']) {
+    const createdId = await CategoryItemService.addItem({
+      category,
+      name
+    })
+    dispatch('loadCategoryItem')
+    return createdId
+  }
+  async deleteItem({ dispatch }, { id }: ICategoryItem['items']) {
+    const deletedId = await CategoryItemService.deleteItem({
+      id
+    })
+    dispatch('loadCategoryItem')
+    return deletedId
+  }
 }
 
 const mutations: MutationTree<CategoryItemState> = {
