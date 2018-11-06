@@ -97,6 +97,7 @@ deleteCategory db catId =
       _mbEdit <- dbUpdate db (DeleteCategory catId)
       pure NoContent
       -- TODO mapM_ addEdit mbEdit
+      
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
