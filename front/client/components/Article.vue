@@ -29,11 +29,7 @@
         v-for="(value, index) in getCategoryItems" 
         :key="index">
         <article-content 
-<<<<<<< HEAD
           :kind="value.name" 
-=======
-          :kind = "value.kind.contents" 
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
           :group="value.group" 
           :itemDescription="value.description.html"
           :pros="value.pros"
@@ -41,10 +37,7 @@
           :ecosystem="value.ecosystem.html"
           :tocArray="value.toc"
           :notes="value.notes.html"
-<<<<<<< HEAD
           :itemUid="value.uid"
-=======
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
         />
       </div>
       <v-btn

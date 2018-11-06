@@ -5,7 +5,6 @@ class CategoryItemService {
   async getCategoryItem(): Promise<ICategoryItem[]> {
     const { data } = await axios.get('api/category/sth6l9jl', {})
     return data
-<<<<<<< HEAD
   }
 
   async addItem({ category, name }: ICategoryItem['items']) {
@@ -21,8 +20,6 @@ class CategoryItemService {
   async deleteItem({ id }: ICategoryItem['items']) {
     const { data } = await axios.delete(`api/item/${id}`)
     return data
-=======
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   }
 }
 

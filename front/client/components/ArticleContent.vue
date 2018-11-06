@@ -84,7 +84,6 @@
         </transition>
       </div>
     </div>
-<<<<<<< HEAD
     <confirm-dialog 
       v-model="isConfirmDialogOpen"
       :confirmationText="'delete this item'"
@@ -92,8 +91,6 @@
       :itemId="itemUid"
     />
     <!-- Shit happens because passing function as a prop somehow calls this function -->
-=======
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   </div>
 </template>
 
@@ -101,7 +98,6 @@
 // import Vue from 'vue'
 // import Component from 'vue-class-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
-<<<<<<< HEAD
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 
 @Component({
@@ -109,10 +105,6 @@ import ConfirmDialog from 'client/components/ConfirmDialog.vue'
     ConfirmDialog
   }
 })
-=======
-
-@Component({})
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
 
 export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
