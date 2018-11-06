@@ -15,7 +15,7 @@ const actions: ActionTree<CategoryItemState, any> = {
   async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>): Promise<any> {
     const data: ICategoryItem[] = await CategoryItemService.getCategoryItem()
     commit('setCategoryItem', data)
-  }
+  },
   async createItem({ dispatch }, { category, name }: ICategoryItem['items']) {
     const createdId = await CategoryItemService.addItem({
       category,
@@ -23,7 +23,7 @@ const actions: ActionTree<CategoryItemState, any> = {
     })
     dispatch('loadCategoryItem')
     return createdId
-  }
+  },
   async deleteItem({ dispatch }, { id }: ICategoryItem['items']) {
     const deletedId = await CategoryItemService.deleteItem({
       id
