@@ -13,9 +13,13 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
+<<<<<<< HEAD
           <button @click="openConfirmDialog">
             <i class="fas fa-times"></i>
           </button>
+=======
+          <i class="fas fa-times"></i>
+>>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
         </div>
       </div>
     </div>
@@ -80,6 +84,7 @@
         </transition>
       </div>
     </div>
+<<<<<<< HEAD
     <confirm-dialog 
       v-model="isConfirmDialogOpen"
       :confirmationText="'delete this item'"
@@ -87,6 +92,8 @@
       :itemId="itemUid"
     />
     <!-- Shit happens because passing function as a prop somehow calls this function -->
+=======
+>>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   </div>
 </template>
 
@@ -94,6 +101,7 @@
 // import Vue from 'vue'
 // import Component from 'vue-class-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+<<<<<<< HEAD
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 
 @Component({
@@ -101,6 +109,10 @@ import ConfirmDialog from 'client/components/ConfirmDialog.vue'
     ConfirmDialog
   }
 })
+=======
+
+@Component({})
+>>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
 
 export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
@@ -112,6 +124,7 @@ export default class ArticleContent extends Vue {
   @Prop(Array) tocArray!: [any]
   @Prop(Object) tocItemContent!: object
   @Prop(String) notes!: string
+<<<<<<< HEAD
   @Prop(String) itemUid!: string
 
   isNoteExpanded: boolean = false
@@ -119,11 +132,20 @@ export default class ArticleContent extends Vue {
 
   expandNotes() {  
     this.isNoteExpanded = true
+=======
+
+  isNoteExpanded: boolean = false
+
+  expandNotes() {  
+    this.isNoteExpanded = true
+    // return false
+>>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   }
 
   collapseNotes() {
     this.isNoteExpanded = false
   }
+<<<<<<< HEAD
 
   async deleteArticleContent(itemId: any) {
     const deleteContent = await this.$store.dispatch('categoryItem/deleteItem', {
@@ -134,6 +156,8 @@ export default class ArticleContent extends Vue {
   openConfirmDialog() {
     this.isConfirmDialogOpen = true
   }
+=======
+>>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
 } 
 </script>
 

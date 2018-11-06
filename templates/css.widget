@@ -99,10 +99,12 @@ h1 {
   display: flex;
   flex-flow: row wrap;
   justify-content: space-around;
-  padding: 1.5em 0 0em 0;
+  padding: 0.75em 0 0em 0;
   margin: 0 -1em;
   margin-top: 2em;
-  border-top: 1px solid black;
+  border-top: 1px solid #CCCCCC;
+  color: rgba(10,10,10,0.65);
+  font-size: 95%;
 }
 
 .footer-item {
@@ -250,6 +252,8 @@ body {
 
 .item-body {
   padding-top: 5px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 .item-traits,
@@ -302,8 +306,8 @@ input {
   color: #666;
 }
 
-.text-button > a:visited {color: #008ACE;}
-h1           > a:visited {color: #008ACE;}  /* for header in category pages */
+.text-button > a:visited {color: #07C;}
+h1           > a:visited {color: #07C;}  /* for header in category pages */
 
 a.anchor {
   margin-right: 0.5em;

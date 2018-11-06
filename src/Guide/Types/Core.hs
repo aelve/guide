@@ -1,9 +1,10 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE QuasiQuotes        #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 
 {- |
@@ -131,6 +132,14 @@ instance A.ToJSON ItemKind where
   toJSON Other = A.object [
     "tag"      A..= ("Other" :: Text) ]
 
+instance A.FromJSON ItemKind where
+  parseJSON = A.withObject "ItemKind" $ \o ->
+      o A..: "tag" >>= \case
+        ("Library" :: Text) -> Library <$> o A..: "contents"
+        "Tool"    -> Tool <$> o A..: "contents"
+        "Other"   -> pure Other
+        tag       -> fail ("unknown tag " ++ show tag)
+
 data ItemKind_v2
   = Library_v2 (Maybe Text)
   | Tool_v2 (Maybe Text)
@@ -157,6 +166,9 @@ deriveSafeCopySimple 0 'base ''ItemSection
 
 instance A.ToJSON ItemSection where
   toJSON = A.genericToJSON A.defaultOptions
+
+instance A.FromJSON ItemSection where
+  parseJSON = A.genericParseJSON A.defaultOptions
 
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
@@ -205,6 +217,9 @@ deriveSafeCopySimple 2 'extension ''CategoryStatus
 
 instance A.ToJSON CategoryStatus where
   toJSON = A.genericToJSON A.defaultOptions
+
+instance A.FromJSON CategoryStatus where
+  parseJSON = A.genericParseJSON A.defaultOptions
 
 data CategoryStatus_v1
   = CategoryStub_v1
