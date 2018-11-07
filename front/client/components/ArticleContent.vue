@@ -13,13 +13,9 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
-<<<<<<< HEAD
           <button @click="openConfirmDialog">
             <i class="fas fa-times"></i>
           </button>
-=======
-          <i class="fas fa-times"></i>
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
         </div>
       </div>
     </div>
