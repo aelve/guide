@@ -38,8 +38,11 @@ data Config = Config {
   _adminPassword :: Text,         -- ^ Password for the admin user
   _prerender     :: Bool,         -- ^ Whether to prerender all pages when
                                   --    the app is started
-  _discussLink   :: Maybe Url     -- ^ Link to a place to discuss the site.
+  _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
+  _port          :: Int,          --   Port for CORS policy.
+  _cors          :: Bool,         --   CORS switch on/off
+  _ekg           :: Bool          --   EKG switch on/off
   }
   deriving (Eq, Show)
 
@@ -51,7 +54,11 @@ instance Default Config where
     _googleToken   = "",
     _adminPassword = "",
     _prerender     = False,
-    _discussLink   = Nothing }
+    _discussLink   = Nothing,
+    _port          = 4400,
+    _cors          = False,
+    _ekg           = False
+     }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
@@ -60,6 +67,9 @@ instance FromJSON Config where
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
+    _port          <- o .:? "port         "  .!= _port def
+    _cors          <- o .:? "cors-switcher"  .!= _cors def
+    _ekg           <- o .:? "ekg-switcher"   .!= _ekg def
     return Config{..}
 
 instance ToJSON Config where
@@ -68,7 +78,10 @@ instance ToJSON Config where
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
     "prerender"      .= _prerender,
-    "discuss-link"   .= _discussLink ]
+    "discuss-link"   .= _discussLink,
+    "port"           .= _port,
+    "cors-switcher"  .= _cors,
+    "ekg-switcher"   .= _ekg ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).

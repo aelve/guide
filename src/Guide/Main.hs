@@ -205,7 +205,7 @@ mainWith config = do
       EKG.Gauge.set itemGauge (fromIntegral (length allItems))
       threadDelay (1000000 * 60)
     -- Run the API
-    _ <- Slave.fork $ runApiServer db
+    _ <- Slave.fork $ runApiServer config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -348,7 +348,7 @@ loginAction = do
         LoginUser loginEmail (toByteString loginUserPassword)
       case loginAttempt of
         Right user -> do
-          modifySession (sessionUserID .~ Just (user ^. userID))
+          modifySession (sessionUserID ?~ (user ^. userID))
           Spock.redirect "/"
         -- TODO: *properly* show error message/validation of input
         Left err -> do
@@ -375,7 +375,7 @@ signupAction = do
       success <- dbUpdate $ CreateUser user
       if success
         then do
-          modifySession (sessionUserID .~ Just (user ^. userID))
+          modifySession (sessionUserID ?~ (user ^. userID))
           Spock.redirect ""
         else do
           formHtml <- protectForm registerFormView v

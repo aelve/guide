@@ -28,9 +28,12 @@ import Say (say)
 
 import Guide.Api.Methods
 import Guide.Api.Types
+import Guide.Config (Config (..))
 import Guide.State
 
 import Data.Acid as Acid
+import qualified Data.ByteString.Char8 as BSC
+import qualified Data.Text as T
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site
@@ -76,19 +79,21 @@ fullServer db =
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
-runApiServer :: AcidState GlobalState -> IO ()
-runApiServer db = do
-  say "API is running on port 4400"
-  run 4400 $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
+runApiServer :: Config -> AcidState GlobalState -> IO ()
+runApiServer Config{..} db = do
+  say $ T.concat ["API is running on port", toText $ show _port]
+  run _port $ corsPolicy Config{..} $ serve (Proxy @FullApi) (fullServer db)
   where
-    corsPolicy :: Middleware
-    corsPolicy = cors (const $ Just policy)
-    policy :: CorsResourcePolicy
-    policy = simpleCorsResourcePolicy
-                -- TODO: Add Guide's frontend address (and maybe others resources)
-                -- to list of `corsOrigins` to allow CORS requests
-                { corsOrigins = Just ([
-                      "http://localhost:3333" -- Guide's frontend running on localhost
-                    , "http://localhost:4400" -- The /api endpoint
-                    ], True)
-                }
+    corsPolicy :: Config -> Middleware
+    corsPolicy Config{..} =
+        if _cors then cors (const $ Just (policy _port))
+        else cors (const Nothing)
+    policy :: Int -> CorsResourcePolicy
+    policy port' = simpleCorsResourcePolicy
+        -- TODO: Add Guide's frontend address (and maybe others resources)
+        -- to list of `corsOrigins` to allow CORS requests
+        { corsOrigins = Just ([
+              "http://localhost:3333" -- Guide's frontend running on localhost
+            , BSC.concat ["http://localhost:", toByteString $ show port']  -- The /api endpoint
+            ], True)
+        }
