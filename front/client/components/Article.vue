@@ -58,27 +58,17 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
-<<<<<<< HEAD
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 
 @Component({
   components: {
     ArticleContent,
     AddItemDialog
-=======
-
-@Component({
-  components: {
-    ArticleContent
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   }
 })
 export default class ArticleItem extends Vue {
   categoryDescription: string = ''
-<<<<<<< HEAD
   isDialogOpen: boolean = false
-=======
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
 
   async asyncData() {
     return this.$store.dispatch('categoryItem/loadCategoryItem').then(() => {
@@ -93,7 +83,6 @@ export default class ArticleItem extends Vue {
   get getCategoryItems() {
     return this.$store.state.categoryItem.categoryItemList.items
   }
-<<<<<<< HEAD
 
   created() {
     this.asyncData()
@@ -101,11 +90,6 @@ export default class ArticleItem extends Vue {
 
   openAddItemDialog() {
     this.isDialogOpen = true
-=======
-
-  created() {
-    this.asyncData()
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   }
 }
 </script>
