@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { awaitExpression } from 'babel-types';
 
 class CategoryItemService {
   async getCategoryItem(): Promise<ICategoryItem[]> {
@@ -7,7 +6,7 @@ class CategoryItemService {
     return data
   }
 
-  async addItem({ category, name }: ICategoryItem['items']) {
+  async addItem({ category, name }: ICategoryItem) {
     const { data } = await axios.post('api/item/sth6l9jl', null, {
       params: {
         category,
@@ -17,7 +16,7 @@ class CategoryItemService {
     return data
   }
   
-  async deleteItem({ id }: ICategoryItem['items']) {
+  async deleteItem({ id }: ICategoryItem) {
     const { data } = await axios.delete(`api/item/${id}`)
     return data
   }

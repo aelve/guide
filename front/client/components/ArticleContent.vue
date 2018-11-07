@@ -126,7 +126,7 @@ export default class ArticleContent extends Vue {
   }
 
   async deleteArticleContent(itemId: any) {
-    const deleteContent = await this.$store.dispatch('categoryItem/deleteItem', {
+    await this.$store.dispatch('categoryItem/deleteItem', {
       id: itemId
     })
   }
