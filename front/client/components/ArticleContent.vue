@@ -13,7 +13,9 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
-          <i class="fas fa-times"></i>
+          <button @click="openConfirmDialog">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -78,6 +80,13 @@
         </transition>
       </div>
     </div>
+    <confirm-dialog 
+      v-model="isConfirmDialogOpen"
+      :confirmationText="'delete this item'"
+      :confirmAction="deleteArticleContent"
+      :itemId="itemUid"
+    />
+    <!-- Shit happens because passing function as a prop somehow calls this function -->
   </div>
 </template>
 
@@ -85,8 +94,13 @@
 // import Vue from 'vue'
 // import Component from 'vue-class-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 
-@Component({})
+@Component({
+  components: {
+    ConfirmDialog
+  }
+})
 
 export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
@@ -98,16 +112,27 @@ export default class ArticleContent extends Vue {
   @Prop(Array) tocArray!: [any]
   @Prop(Object) tocItemContent!: object
   @Prop(String) notes!: string
+  @Prop(String) itemUid!: string
 
   isNoteExpanded: boolean = false
+  isConfirmDialogOpen: boolean = false
 
   expandNotes() {  
     this.isNoteExpanded = true
-    // return false
   }
 
   collapseNotes() {
     this.isNoteExpanded = false
+  }
+
+  async deleteArticleContent(itemId: any) {
+    await this.$store.dispatch('categoryItem/deleteItem', {
+      id: itemId
+    })
+  }
+
+  openConfirmDialog() {
+    this.isConfirmDialogOpen = true
   }
 } 
 </script>
