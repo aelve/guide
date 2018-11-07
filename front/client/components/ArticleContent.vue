@@ -13,13 +13,9 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
-<<<<<<< HEAD
           <button @click="openConfirmDialog">
             <i class="fas fa-times"></i>
           </button>
-=======
-          <i class="fas fa-times"></i>
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
         </div>
       </div>
     </div>
@@ -116,7 +112,6 @@ export default class ArticleContent extends Vue {
   @Prop(Array) tocArray!: [any]
   @Prop(Object) tocItemContent!: object
   @Prop(String) notes!: string
-<<<<<<< HEAD
   @Prop(String) itemUid!: string
 
   isNoteExpanded: boolean = false
@@ -124,20 +119,11 @@ export default class ArticleContent extends Vue {
 
   expandNotes() {  
     this.isNoteExpanded = true
-=======
-
-  isNoteExpanded: boolean = false
-
-  expandNotes() {  
-    this.isNoteExpanded = true
-    // return false
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
   }
 
   collapseNotes() {
     this.isNoteExpanded = false
   }
-<<<<<<< HEAD
 
   async deleteArticleContent(itemId: any) {
     const deleteContent = await this.$store.dispatch('categoryItem/deleteItem', {
@@ -148,8 +134,6 @@ export default class ArticleContent extends Vue {
   openConfirmDialog() {
     this.isConfirmDialogOpen = true
   }
-=======
->>>>>>> e76bfbd1ab06f5833c7d7480b1ed6c8d6f06a022
 } 
 </script>
 
