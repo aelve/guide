@@ -81,19 +81,19 @@ fullServer db =
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
-  say $ T.concat ["API is running on port", toText $ show _port]
-  run _port $ corsPolicy Config{..} $ serve (Proxy @FullApi) (fullServer db)
+  say $ T.concat ["API is running on port ", toText $ show _portApi]
+  run _portApi $ corsPolicy Config{..} $ serve (Proxy @FullApi) (fullServer db)
   where
     corsPolicy :: Config -> Middleware
     corsPolicy Config{..} =
-        if _cors then cors (const $ Just (policy _port))
+        if _cors then cors (const $ Just (policy _portApi))
         else cors (const Nothing)
     policy :: Int -> CorsResourcePolicy
-    policy port' = simpleCorsResourcePolicy
+    policy portApi = simpleCorsResourcePolicy
         -- TODO: Add Guide's frontend address (and maybe others resources)
         -- to list of `corsOrigins` to allow CORS requests
         { corsOrigins = Just ([
               "http://localhost:3333" -- Guide's frontend running on localhost
-            , BSC.concat ["http://localhost:", toByteString $ show port']  -- The /api endpoint
+            , BSC.concat ["http://localhost:", toByteString $ show portApi]  -- The /api endpoint
             ], True)
         }

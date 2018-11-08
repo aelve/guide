@@ -40,7 +40,9 @@ data Config = Config {
                                   --    the app is started
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
-  _port          :: Int,          --   Port for CORS policy.
+  _portMain      :: Int,          --   CORS policy: port for main site.
+  _portApi       :: Int,          --   CORS policy: port for API.
+  _portEkg       :: Int,          --   CORS policy: port for EKG.
   _cors          :: Bool,         --   CORS switch on/off
   _ekg           :: Bool          --   EKG switch on/off
   }
@@ -55,7 +57,9 @@ instance Default Config where
     _adminPassword = "",
     _prerender     = False,
     _discussLink   = Nothing,
-    _port          = 4400,
+    _portMain      = 8080,
+    _portApi       = 4400,
+    _portEkg       = 5050,
     _cors          = False,
     _ekg           = False
      }
@@ -67,7 +71,9 @@ instance FromJSON Config where
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
-    _port          <- o .:? "port         "  .!= _port def
+    _portMain      <- o .:? "portMain"       .!= _portMain def
+    _portApi       <- o .:? "portApi"        .!= _portApi def
+    _portEkg       <- o .:? "portEkg"        .!= _portEkg def
     _cors          <- o .:? "cors-switcher"  .!= _cors def
     _ekg           <- o .:? "ekg-switcher"   .!= _ekg def
     return Config{..}
@@ -79,7 +85,9 @@ instance ToJSON Config where
     "admin-password" .= _adminPassword,
     "prerender"      .= _prerender,
     "discuss-link"   .= _discussLink,
-    "port"           .= _port,
+    "portMain"       .= _portMain,
+    "portApi"        .= _portApi,
+    "portEkg"        .= _portEkg,
     "cors-switcher"  .= _cors,
     "ekg-switcher"   .= _ekg ]
 
