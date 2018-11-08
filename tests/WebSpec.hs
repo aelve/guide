@@ -617,7 +617,9 @@ run ts = do
           _adminPassword = "123",
           _prerender     = False,
           _discussLink   = Just "http://discuss.link",
-          _port          = 4400,
+          _portMain      = 8080,
+          _portApi       = 4400,
+          _portEkg       = 5050,
           _cors          = False,
           _ekg           = False }
         -- Using a delay so that “Spock is running on port 8080” would be
