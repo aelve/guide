@@ -81,7 +81,7 @@ fullServer db =
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
-  say $ T.concat ["API is running on port ", toText $ show _portApi]
+  say $ format "API is running on port {}" _portApi
   run _portApi $ corsPolicy Config{..} $ serve (Proxy @FullApi) (fullServer db)
   where
     corsPolicy :: Config -> Middleware
