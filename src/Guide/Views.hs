@@ -693,36 +693,35 @@ renderSearch mbSearchQuery =
 -- lists of items in categories, or their counts, or something), you might
 -- have to start invalidating 'CacheCategoryList' in more things in
 -- 'Cache.invalidateCache'.
-renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
-renderCategoryList allCats = toHtmlRaw =<< (liftIO $ renderBST gen)
+renderCategoryList :: forall m. MonadIO m => [Category] -> HtmlT m ()
+renderCategoryList allCats =
+  div_ [id_ "categories"] $
+    for_ (groupWith (view group_) allCats) $ \catsInGroup ->
+      div_ [class_ "category-group"] $ do
+        -- Grandcategory name
+        h2_ $ toHtml (catsInGroup^?!_head.group_)
+        -- Finished categories
+        do let cats = filter ((== CategoryFinished) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-finished"] $ do
+               mapM_ mkCategoryLink cats
+        -- In-progress categories, separated with commas
+        do let cats = filter ((== CategoryWIP) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-wip"] $ do
+               h3_ "In progress"
+               p_ $ sequence_ $ intersperse ", " $
+                 map mkCategoryLink cats
+        -- Stub categories, separated with commas
+        do let cats = filter ((== CategoryStub) . view status) catsInGroup
+           unless (null cats) $
+             div_ [class_ "categories-stub"] $ do
+               h3_ "To be written"
+               p_ $ sequence_ $ intersperse ", " $
+                 map mkCategoryLink cats
   where
-    gen = div_ [id_ "categories"] $
-      for_ (groupWith (view group_) allCats) $ \catsInGroup ->
-        div_ [class_ "category-group"] $ do
-          -- Grandcategory name
-          h2_ $ toHtml (catsInGroup^?!_head.group_)
-          -- Finished categories
-          do let cats = filter ((== CategoryFinished) . view status) catsInGroup
-             unless (null cats) $
-               div_ [class_ "categories-finished"] $ do
-                 mapM_ mkCategoryLink cats
-          -- In-progress categories, separated with commas
-          do let cats = filter ((== CategoryWIP) . view status) catsInGroup
-             unless (null cats) $
-               div_ [class_ "categories-wip"] $ do
-                 h3_ "In progress"
-                 p_ $ sequence_ $ intersperse ", " $
-                   map mkCategoryLink cats
-          -- Stub categories, separated with commas
-          do let cats = filter ((== CategoryStub) . view status) catsInGroup
-             unless (null cats) $
-               div_ [class_ "categories-stub"] $ do
-                 h3_ "To be written"
-                 p_ $ sequence_ $ intersperse ", " $
-                   map mkCategoryLink cats
-
     -- TODO: this link shouldn't be absolute [absolute-links]
-    mkCategoryLink :: Category -> HtmlT IO ()
+    mkCategoryLink :: Category -> HtmlT m ()
     mkCategoryLink category =
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)
