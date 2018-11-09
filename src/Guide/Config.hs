@@ -42,7 +42,7 @@ data Config = Config {
                                   --    Will be placed in the header
   _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          -- ^ Port for the API.
-  _portEkg       :: Int,          --   CORS policy: port for EKG.
+  _portEkg       :: Int,          -- ^ Port for EKG stats.
   _cors          :: Bool,         --   CORS switch on/off
   _ekg           :: Bool          --   EKG switch on/off
   }
