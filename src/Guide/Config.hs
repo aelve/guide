@@ -41,7 +41,7 @@ data Config = Config {
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
   _portMain      :: Int,          -- ^ Port for the main site.
-  _portApi       :: Int,          --   CORS policy: port for API.
+  _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          --   CORS policy: port for EKG.
   _cors          :: Bool,         --   CORS switch on/off
   _ekg           :: Bool          --   EKG switch on/off
