@@ -246,7 +246,7 @@ guideApp waiMetrics = do
                      -- initHook”? (I don't actually know what “prehook
                      -- initHook” does, feel free to edit.)
     prehook initHook $ do
-      maybe (pure ()) (middleware . EKG.metrics) waiMetrics
+      mapM_ (middleware . EKG.metrics) waiMetrics
       middleware (staticPolicy (addBase "static"))
       -- Javascript
       Spock.get "/js.js" $ do
