@@ -94,6 +94,6 @@ runApiServer Config{..} db = do
         -- to list of `corsOrigins` to allow CORS requests
         { corsOrigins = Just ([
               "http://localhost:3333" -- Guide's frontend running on localhost
-            , BSC.concat ["http://localhost:", toByteString $ show portApi]  -- The /api endpoint
+            , format "http://localhost:{}" portApi  -- The /api endpoint
             ], True)
         }
