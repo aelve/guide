@@ -300,7 +300,7 @@ instance CanSelect ComplexSelector where
       ContainsText t -> anyM (andNotDead .
                               fmap (t `T.isInfixOf`) . getText) es
       Displayed -> anyM (andNotDead . isDisplayed) es
-      _ -> defAnyElem s es  
+      _ -> defAnyElem s es
 
 {-
 class ToSelector a where
@@ -401,7 +401,7 @@ checkPresentSome x = void (selectSome x)
 checkNotPresent :: CanSelect a => a -> WD ()
 checkNotPresent x = waitUntil wait_delay $ do
   es <- selectAll x
-  when (not (null es)) $ unexpected $
+  unless (null es) $ unexpected $
     printf "expected %s not to be present on the page" (show x)
 
 expectationFailure :: MonadIO m => String -> m a

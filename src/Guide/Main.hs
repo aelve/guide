@@ -142,7 +142,7 @@ main = do
 
 -- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
-mainWith config = do
+mainWith config@Config{..} = do
   -- Emptying the cache is needed because during development (i.e. in REPL)
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
@@ -176,10 +176,11 @@ mainWith config = do
   ekgId <- newIORef Nothing
   workFinished <- newEmptyMVar
   let finishWork = do
-        -- Killing EKG has to be done last, because of
-        -- <https://github.com/tibbe/ekg/issues/62>
-        say "Killing EKG"
-        mapM_ killThread =<< readIORef ekgId
+        when _ekg $ do
+          -- Killing EKG has to be done last, because of
+          -- <https://github.com/tibbe/ekg/issues/62>
+          say "Killing EKG"
+          mapM_ killThread =<< readIORef ekgId
         putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
   workThread <- Slave.fork $ withDB finishWork $ \db -> do
@@ -190,22 +191,26 @@ mainWith config = do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
-    ekg <- do
-      say "EKG is running on port 5050"
-      EKG.forkServer "localhost" 5050
-    writeIORef ekgId (Just (EKG.serverThreadId ekg))
-    waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
-    categoryGauge <- EKG.getGauge "db.categories" ekg
-    itemGauge <- EKG.getGauge "db.items" ekg
-    _ <- Slave.fork $ forever $ do
-      globalState <- Acid.query db GetGlobalState
-      let allCategories = globalState^.categories
-      let allItems = allCategories^..each.items.each
-      EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
-      EKG.Gauge.set itemGauge (fromIntegral (length allItems))
-      threadDelay (1000000 * 60)
+    mWaiMetrics <- if _ekg
+        then do
+          ekg <- do
+            say $ format "EKG is running on port " _portEkg
+            EKG.forkServer "localhost" _portEkg
+          writeIORef ekgId (Just (EKG.serverThreadId ekg))
+          waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
+          categoryGauge <- EKG.getGauge "db.categories" ekg
+          itemGauge <- EKG.getGauge "db.items" ekg
+          _ <- Slave.fork $ forever $ do
+            globalState <- Acid.query db GetGlobalState
+            let allCategories = globalState^.categories
+            let allItems = allCategories^..each.items.each
+            EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
+            EKG.Gauge.set itemGauge (fromIntegral (length allItems))
+            threadDelay (1000000 * 60)
+          pure (Just waiMetrics)
+        else pure Nothing
     -- Run the API
-    _ <- Slave.fork $ runApiServer db
+    _ <- Slave.fork $ runApiServer config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -227,20 +232,20 @@ mainWith config = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
-    when (_prerender config) $ prerenderPages config db
-    say "Spock is running on port 8080"
-    runSpockNoBanner 8080 $ spock spockConfig $ guideApp waiMetrics
+    when _prerender $ prerenderPages config db
+    say $ format "Spock is running on port {}" _portMain
+    runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
     `finally` (killThread workThread >> takeMVar workFinished)
 
 -- TODO: Fix indentation after rebasing.
-guideApp :: EKG.WaiMetrics -> GuideApp ()
+guideApp :: Maybe EKG.WaiMetrics -> GuideApp ()
 guideApp waiMetrics = do
     createAdminUser  -- TODO: perhaps it needs to be inside of “prehook
                      -- initHook”? (I don't actually know what “prehook
                      -- initHook” does, feel free to edit.)
     prehook initHook $ do
-      middleware (EKG.metrics waiMetrics)
+      mapM_ (middleware . EKG.metrics) waiMetrics
       middleware (staticPolicy (addBase "static"))
       -- Javascript
       Spock.get "/js.js" $ do
@@ -348,7 +353,7 @@ loginAction = do
         LoginUser loginEmail (toByteString loginUserPassword)
       case loginAttempt of
         Right user -> do
-          modifySession (sessionUserID .~ Just (user ^. userID))
+          modifySession (sessionUserID ?~ (user ^. userID))
           Spock.redirect "/"
         -- TODO: *properly* show error message/validation of input
         Left err -> do
@@ -375,7 +380,7 @@ signupAction = do
       success <- dbUpdate $ CreateUser user
       if success
         then do
-          modifySession (sessionUserID .~ Just (user ^. userID))
+          modifySession (sessionUserID ?~ (user ^. userID))
           Spock.redirect ""
         else do
           formHtml <- protectForm registerFormView v

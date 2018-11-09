@@ -11,7 +11,11 @@
           <p class="article-top-group">{{value.group}}</p>
         </div>
         <v-btn
+<<<<<<< HEAD
           class="ml-2 pl-0 add-item-btn"
+=======
+          class="ml-2 pl-0"
+>>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
           color="grey"
           flat
           @click="openAddItemDialog"

@@ -353,7 +353,7 @@ otherMethods = do
   -- Feed for items in a category
   Spock.get (feedRoute <//> categoryVar) $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    let sortedItems = reverse $ sortBy cmp (category^.items)
+    let sortedItems = sortBy (flip cmp) (category^.items)
           where cmp = comparing (^.created) <> comparing (^.uid)
     let route = "feed" <//> categoryVar
     let feedUrl = baseUrl // Spock.renderRoute route (category^.uid)

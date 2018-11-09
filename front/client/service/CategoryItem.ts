@@ -7,7 +7,11 @@ class CategoryItemService {
     return data
   }
 
+<<<<<<< HEAD
   async addItem({ category, name }: ICategoryItem['items']) {
+=======
+  async addItem({ category, name }: ICategoryItem) {
+>>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
     const { data } = await axios.post('api/item/sth6l9jl', null, {
       params: {
         category,
@@ -17,7 +21,11 @@ class CategoryItemService {
     return data
   }
   
+<<<<<<< HEAD
   async deleteItem({ id }: ICategoryItem['items']) {
+=======
+  async deleteItem({ id }: ICategoryItem) {
+>>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
     const { data } = await axios.delete(`api/item/${id}`)
     return data
   }
