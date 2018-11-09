@@ -40,7 +40,7 @@ data Config = Config {
                                   --    the app is started
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
-  _portMain      :: Int,          --   CORS policy: port for main site.
+  _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          --   CORS policy: port for API.
   _portEkg       :: Int,          --   CORS policy: port for EKG.
   _cors          :: Bool,         --   CORS switch on/off
