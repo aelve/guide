@@ -74,7 +74,7 @@ instance FromJSON Config where
     _portMain      <- o .:? "portMain"       .!= _portMain def
     _portApi       <- o .:? "portApi"        .!= _portApi def
     _portEkg       <- o .:? "portEkg"        .!= _portEkg def
-    _cors          <- o .:? "cors-switcher"  .!= _cors def
+    _cors          <- o .:? "cors"           .!= _cors def
     _ekg           <- o .:? "ekg-switcher"   .!= _ekg def
     return Config{..}
 
