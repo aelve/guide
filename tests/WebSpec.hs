@@ -334,7 +334,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
         setItemGroup "one" itemC
         do [aCol, bCol, cCol] <- getColors
            aCol `shouldNotBe` cCol; bCol `shouldBe` cCol
-        
+
     -- TODO: kind
     -- TODO: site
 
@@ -616,7 +616,12 @@ run ts = do
           _googleToken   = "some-google-token",
           _adminPassword = "123",
           _prerender     = False,
-          _discussLink   = Just "http://discuss.link" }
+          _discussLink   = Just "http://discuss.link",
+          _portMain      = 8080,
+          _portApi       = 4400,
+          _portEkg       = 5050,
+          _cors          = False,
+          _ekg           = False }
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
         threadDelay 100000
