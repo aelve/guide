@@ -9,10 +9,6 @@
     <v-card>
       <v-card-text>
         <v-form
-<<<<<<< HEAD
-          rel="form"
-=======
->>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
           lazy-validation
           v-model="isValid"
           @keydown.native.enter="submit"
@@ -76,11 +72,7 @@ export default class AddItemDialog extends Vue {
   }
 
   async submit() {
-<<<<<<< HEAD
-    const createdItem = await this.$store.dispatch('categoryItem/createItem', {
-=======
     await this.$store.dispatch('categoryItem/createItem', {
->>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
       category: 'sth6l9jl',
       name: this.itemName
     })

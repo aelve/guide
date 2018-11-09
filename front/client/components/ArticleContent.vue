@@ -13,14 +13,7 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
-<<<<<<< HEAD
-          <button
-            class="item-del-btn" 
-            @click="openConfirmDialog"
-          >
-=======
           <button @click="openConfirmDialog">
->>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -133,11 +126,7 @@ export default class ArticleContent extends Vue {
   }
 
   async deleteArticleContent(itemId: any) {
-<<<<<<< HEAD
-    const deleteContent = await this.$store.dispatch('categoryItem/deleteItem', {
-=======
     await this.$store.dispatch('categoryItem/deleteItem', {
->>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
       id: itemId
     })
   }

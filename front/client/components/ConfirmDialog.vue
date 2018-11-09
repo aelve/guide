@@ -14,12 +14,7 @@
       <v-divider />
       <v-card-actions>
         <v-spacer />
-<<<<<<< HEAD
-        <v-btn
-          class="conf-btn" 
-=======
         <v-btn 
->>>>>>> 2b47740b86f9098a71f633c54b844288c98479fb
           flat
           color="primary"
           @click.native="confirmAction(itemId); close"
