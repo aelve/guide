@@ -43,8 +43,8 @@ data Config = Config {
   _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          -- ^ Port for EKG stats.
-  _cors          :: Bool,         --   CORS switch on/off
-  _ekg           :: Bool          --   EKG switch on/off
+  _cors          :: Bool,         -- ^ CORS switch on/off
+  _ekg           :: Bool          -- ^ EKG switch on/off
   }
   deriving (Eq, Show)
 
@@ -88,8 +88,8 @@ instance ToJSON Config where
     "port-main"      .= _portMain,
     "port-api"       .= _portApi,
     "port-ekg"       .= _portEkg,
-    "cors-switcher"  .= _cors,
-    "ekg-switcher"   .= _ekg ]
+    "cors"           .= _cors,
+    "ekg"            .= _ekg ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).
