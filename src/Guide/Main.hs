@@ -191,10 +191,10 @@ mainWith config@Config{..} = do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
-    let mWaiMetrics = if _ekg
+    mWaiMetrics <- if _ekg
         then do
           ekg <- do
-            say $ T.concat ["EKG is running on port ", toText $ show _portEkg]
+            say $ format "EKG is running on port " _portEkg
             EKG.forkServer "localhost" _portEkg
           writeIORef ekgId (Just (EKG.serverThreadId ekg))
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
@@ -233,9 +233,8 @@ mainWith config@Config{..} = do
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
     when _prerender $ prerenderPages config db
-    say $ T.concat ["Spock is running on port ", toText $ show _portMain]
-    waiMetrics <- mWaiMetrics
-    runSpockNoBanner _portMain $ spock spockConfig $ guideApp waiMetrics
+    say $ format "Spock is running on port {}" _portMain
+    runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
     `finally` (killThread workThread >> takeMVar workFinished)
 

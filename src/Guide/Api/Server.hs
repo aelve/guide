@@ -12,7 +12,7 @@ module Guide.Api.Server
 
 import Imports
 
-import Data.Swagger.Lens
+import Data.Swagger.Lens hiding (format)
 import Network.Wai (Middleware)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
@@ -33,7 +33,6 @@ import Guide.State
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
-import qualified Data.Text as T
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site
@@ -82,10 +81,10 @@ fullServer db =
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
   say $ format "API is running on port {}" _portApi
-  run _portApi $ corsPolicy Config{..} $ serve (Proxy @FullApi) (fullServer db)
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
   where
-    corsPolicy :: Config -> Middleware
-    corsPolicy Config{..} =
+    corsPolicy :: Middleware
+    corsPolicy =
         if _cors then cors (const $ Just (policy _portApi))
         else cors (const Nothing)
     policy :: Int -> CorsResourcePolicy
@@ -94,6 +93,6 @@ runApiServer Config{..} db = do
         -- to list of `corsOrigins` to allow CORS requests
         { corsOrigins = Just ([
               "http://localhost:3333" -- Guide's frontend running on localhost
-            , format "http://localhost:{}" portApi  -- The /api endpoint
+            , BSC.pack $ format "http://localhost:{}" portApi  -- The /api endpoint
             ], True)
         }

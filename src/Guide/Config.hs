@@ -71,11 +71,11 @@ instance FromJSON Config where
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
-    _portMain      <- o .:? "portMain"       .!= _portMain def
-    _portApi       <- o .:? "portApi"        .!= _portApi def
-    _portEkg       <- o .:? "portEkg"        .!= _portEkg def
+    _portMain      <- o .:? "port-main"      .!= _portMain def
+    _portApi       <- o .:? "port-api"       .!= _portApi def
+    _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
     _cors          <- o .:? "cors"           .!= _cors def
-    _ekg           <- o .:? "ekg-switcher"   .!= _ekg def
+    _ekg           <- o .:? "ekg"            .!= _ekg def
     return Config{..}
 
 instance ToJSON Config where
@@ -85,9 +85,9 @@ instance ToJSON Config where
     "admin-password" .= _adminPassword,
     "prerender"      .= _prerender,
     "discuss-link"   .= _discussLink,
-    "portMain"       .= _portMain,
-    "portApi"        .= _portApi,
-    "portEkg"        .= _portEkg,
+    "port-main"      .= _portMain,
+    "port-api"       .= _portApi,
+    "port-ekg"       .= _portEkg,
     "cors-switcher"  .= _cors,
     "ekg-switcher"   .= _ekg ]
 
