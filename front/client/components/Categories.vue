@@ -84,7 +84,7 @@
             class="ml-2 pl-0"
             color="grey"
             flat
-            @click.native="openAddCategoryDialog(groupName)"
+            @click="openAddCategoryDialog(groupName)"
           >
             <v-icon class="mr-1" left>add</v-icon>
             Add new category

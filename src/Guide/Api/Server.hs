@@ -12,7 +12,7 @@ module Guide.Api.Server
 
 import Imports
 
-import Data.Swagger.Lens
+import Data.Swagger.Lens hiding (format)
 import Network.Wai (Middleware)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
@@ -28,9 +28,11 @@ import Say (say)
 
 import Guide.Api.Methods
 import Guide.Api.Types
+import Guide.Config (Config (..))
 import Guide.State
 
 import Data.Acid as Acid
+import qualified Data.ByteString.Char8 as BSC
 
 apiServer :: DB -> Site AsServer
 apiServer db = Site
@@ -76,19 +78,21 @@ fullServer db =
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
-runApiServer :: AcidState GlobalState -> IO ()
-runApiServer db = do
-  say "API is running on port 4400"
-  run 4400 $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
+runApiServer :: Config -> AcidState GlobalState -> IO ()
+runApiServer Config{..} db = do
+  say $ format "API is running on port {}" _portApi
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
   where
     corsPolicy :: Middleware
-    corsPolicy = cors (const $ Just policy)
-    policy :: CorsResourcePolicy
-    policy = simpleCorsResourcePolicy
-                -- TODO: Add Guide's frontend address (and maybe others resources)
-                -- to list of `corsOrigins` to allow CORS requests
-                { corsOrigins = Just ([
-                      "http://localhost:3333" -- Guide's frontend running on localhost
-                    , "http://localhost:4400" -- The /api endpoint
-                    ], True)
-                }
+    corsPolicy =
+        if _cors then cors (const $ Just (policy _portApi))
+        else cors (const Nothing)
+    policy :: Int -> CorsResourcePolicy
+    policy portApi = simpleCorsResourcePolicy
+        -- TODO: Add Guide's frontend address (and maybe others resources)
+        -- to list of `corsOrigins` to allow CORS requests
+        { corsOrigins = Just ([
+              "http://localhost:3333" -- Guide's frontend running on localhost
+            , BSC.pack $ format "http://localhost:{}" portApi  -- The /api endpoint
+            ], True)
+        }

@@ -38,8 +38,13 @@ data Config = Config {
   _adminPassword :: Text,         -- ^ Password for the admin user
   _prerender     :: Bool,         -- ^ Whether to prerender all pages when
                                   --    the app is started
-  _discussLink   :: Maybe Url     -- ^ Link to a place to discuss the site.
+  _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
+  _portMain      :: Int,          -- ^ Port for the main site.
+  _portApi       :: Int,          -- ^ Port for the API.
+  _portEkg       :: Int,          -- ^ Port for EKG stats.
+  _cors          :: Bool,         -- ^ CORS switch on/off
+  _ekg           :: Bool          -- ^ EKG switch on/off
   }
   deriving (Eq, Show)
 
@@ -51,7 +56,13 @@ instance Default Config where
     _googleToken   = "",
     _adminPassword = "",
     _prerender     = False,
-    _discussLink   = Nothing }
+    _discussLink   = Nothing,
+    _portMain      = 8080,
+    _portApi       = 4400,
+    _portEkg       = 5050,
+    _cors          = False,
+    _ekg           = False
+     }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
@@ -60,6 +71,11 @@ instance FromJSON Config where
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
+    _portMain      <- o .:? "port-main"      .!= _portMain def
+    _portApi       <- o .:? "port-api"       .!= _portApi def
+    _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
+    _cors          <- o .:? "cors"           .!= _cors def
+    _ekg           <- o .:? "ekg"            .!= _ekg def
     return Config{..}
 
 instance ToJSON Config where
@@ -68,7 +84,12 @@ instance ToJSON Config where
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
     "prerender"      .= _prerender,
-    "discuss-link"   .= _discussLink ]
+    "discuss-link"   .= _discussLink,
+    "port-main"      .= _portMain,
+    "port-api"       .= _portApi,
+    "port-ekg"       .= _portEkg,
+    "cors"           .= _cors,
+    "ekg"            .= _ekg ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).

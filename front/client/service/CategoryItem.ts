@@ -5,6 +5,21 @@ class CategoryItemService {
     const { data } = await axios.get('api/category/sth6l9jl', {})
     return data
   }
+
+  async addItem({ category, name }: ICategoryItem) {
+    const { data } = await axios.post('api/item/sth6l9jl', null, {
+      params: {
+        category,
+        name
+      }
+    })
+    return data
+  }
+  
+  async deleteItem({ id }: ICategoryItem) {
+    const { data } = await axios.delete(`api/item/${id}`)
+    return data
+  }
 }
 
 export interface ICategoryItem {
