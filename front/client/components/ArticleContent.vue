@@ -13,7 +13,10 @@
         <i class="fas fa-arrow-down"></i>
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
-          <button @click="openConfirmDialog">
+          <button
+            class="item-del-btn" 
+            @click="openConfirmDialog"
+          >
             <i class="fas fa-times"></i>
           </button>
         </div>
