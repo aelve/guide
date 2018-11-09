@@ -13,8 +13,6 @@ The `config.json` file contains the config (it will be created at the 1st start)
 
   * `base-url` is the URL of the server (which should contain `http://` or `https://`). It's used for feed generation.
 
-  * `prerender` enables prerendering pages when the server starts. By default it's disabled (because it's annoying during development).
-
   * `discuss-url` adds a “discuss this site” link under the header. You can leave it as `null`.
 
 # How to install locally

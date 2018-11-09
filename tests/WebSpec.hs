@@ -615,7 +615,6 @@ run ts = do
           _baseUrl       = "/",
           _googleToken   = "some-google-token",
           _adminPassword = "123",
-          _prerender     = False,
           _discussLink   = Just "http://discuss.link",
           _portMain      = 8080,
           _portApi       = 4400,

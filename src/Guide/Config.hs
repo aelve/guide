@@ -36,8 +36,6 @@ data Config = Config {
   _googleToken   :: Text,         -- ^ Google site verification token. Will
                                   --    be inserted into all pages
   _adminPassword :: Text,         -- ^ Password for the admin user
-  _prerender     :: Bool,         -- ^ Whether to prerender all pages when
-                                  --    the app is started
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
   _portMain      :: Int,          -- ^ Port for the main site.
@@ -49,13 +47,12 @@ data Config = Config {
   deriving (Eq, Show)
 
 -- | Default instance: no base URL, no Google token, empty password, no
--- prerendering, no discussion link.
+-- discussion link.
 instance Default Config where
   def = Config {
     _baseUrl       = "/",
     _googleToken   = "",
     _adminPassword = "",
-    _prerender     = False,
     _discussLink   = Nothing,
     _portMain      = 8080,
     _portApi       = 4400,
@@ -69,7 +66,6 @@ instance FromJSON Config where
     _baseUrl       <- o .:? "base-url"       .!= _baseUrl def
     _googleToken   <- o .:? "google-token"   .!= _googleToken def
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
-    _prerender     <- o .:? "prerender"      .!= _prerender def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
     _portMain      <- o .:? "port-main"      .!= _portMain def
     _portApi       <- o .:? "port-api"       .!= _portApi def
@@ -83,7 +79,6 @@ instance ToJSON Config where
     "base-url"       .= _baseUrl,
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
-    "prerender"      .= _prerender,
     "discuss-link"   .= _discussLink,
     "port-main"      .= _portMain,
     "port-api"       .= _portApi,
