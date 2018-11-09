@@ -25,7 +25,6 @@ import Imports
 -- HTML
 import Lucid hiding (for_)
 
-import Guide.Cache
 import Guide.Markdown
 import Guide.Types.Core
 import Guide.Utils
@@ -42,8 +41,7 @@ import qualified Guide.JS as JS
 
 -- | Render the whole category.
 renderCategory :: MonadIO m => Category -> HtmlT m ()
-renderCategory category = cached (CacheCategory (category^.uid)) $ do
-  div_ [class_ "category", id_ (categoryNodeId category)] $ do
+renderCategory category = div_ [class_ "category", id_ (categoryNodeId category)] $ do
     renderCategoryInfo category
     renderCategoryNotes category
     itemsNode <- div_ [class_ "items"] $ do
@@ -63,11 +61,10 @@ renderCategory category = cached (CacheCategory (category^.uid)) $ do
 -- | Render info about the category (the header with category name + the edit
 -- form + possibly status banner).
 renderCategoryInfo :: MonadIO m => Category -> HtmlT m ()
-renderCategoryInfo category = cached (CacheCategoryInfo (category^.uid)) $ do
+renderCategoryInfo category =
   let thisId = "category-info-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "category-info"] $ do
-
+  in div_ [id_ thisId, class_ "category-info"] $ do
     section "normal" [shown, noScriptShown] $ do
       h2_ $ do
         -- TODO: this link shouldn't be absolute [absolute-links]
@@ -157,11 +154,10 @@ renderCategoryStatus category = do
 
 -- | Render category notes (or “description”).
 renderCategoryNotes :: MonadIO m => Category -> HtmlT m ()
-renderCategoryNotes category = cached (CacheCategoryNotes (category^.uid)) $ do
+renderCategoryNotes category =
   let thisId = "category-notes-" <> uidToText (category^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "category-notes"] $ do
-
+  in div_ [id_ thisId, class_ "category-notes"] $ do
     section "normal" [shown, noScriptShown] $ do
       div_ [class_ "notes-like"] $ do
         if markdownNull (category^.notes)

@@ -52,7 +52,6 @@ import Data.Time.Format.Human
 import Data.Generics.Uniplate.Data (universeBi)
 
 import Guide.Archival
-import Guide.Cache
 import Guide.Config
 import Guide.Diff hiding (DiffChunk)
 import Guide.JS (JS (..))
@@ -694,8 +693,8 @@ renderSearch mbSearchQuery =
 -- lists of items in categories, or their counts, or something), you might
 -- have to start invalidating 'CacheCategoryList' in more things in
 -- 'Cache.invalidateCache'.
-renderCategoryList :: MonadIO m => [Category] -> HtmlT m ()
-renderCategoryList allCats = cached CacheCategoryList $ do
+renderCategoryList :: forall m. MonadIO m => [Category] -> HtmlT m ()
+renderCategoryList allCats =
   div_ [id_ "categories"] $
     for_ (groupWith (view group_) allCats) $ \catsInGroup ->
       div_ [class_ "category-group"] $ do
@@ -722,7 +721,7 @@ renderCategoryList allCats = cached CacheCategoryList $ do
                  map mkCategoryLink cats
   where
     -- TODO: this link shouldn't be absolute [absolute-links]
-    mkCategoryLink :: Category -> HtmlT IO ()
+    mkCategoryLink :: Category -> HtmlT m ()
     mkCategoryLink category =
       a_ [class_ "category-link", href_ (categoryLink category)] $
         toHtml (category^.title)

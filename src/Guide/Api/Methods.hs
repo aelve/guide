@@ -14,7 +14,6 @@ import Servant
 
 import Guide.Api.Types
 import Guide.Api.Utils
-import Guide.Cache
 import Guide.State
 import Guide.Types
 import Guide.Utils
@@ -58,13 +57,12 @@ createCategory db title' group' = do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
       (_edit, _newCategory) <- dbUpdate db (AddCategory catId title' group' time)
-      invalidateCache' db (CacheCategory catId)
       -- TODO addEdit edit
       return catId
 
 -- | Edit categoty's note.
 setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
-setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
+setCategoryNotes db catId note =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
@@ -74,7 +72,7 @@ setCategoryNotes db catId note = uncache db (CacheCategoryNotes catId) $ do
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
-setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo catId) $ do
+setCategoryInfo db catId CCategoryInfoEdit{..} =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just category -> do
@@ -92,14 +90,14 @@ setCategoryInfo db catId CCategoryInfoEdit{..} = uncache db (CacheCategoryInfo c
 
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent
-deleteCategory db catId = uncache db (CacheCategory catId) $ do
+deleteCategory db catId =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
       _mbEdit <- dbUpdate db (DeleteCategory catId)
       pure NoContent
       -- TODO mapM_ addEdit mbEdit
-
+      
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
@@ -109,7 +107,7 @@ deleteCategory db catId = uncache db (CacheCategory catId) $ do
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
 -- with duplicated names.
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
-createItem db catId name' = do
+createItem db catId name' =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just _ -> do
@@ -123,7 +121,6 @@ createItem db catId name' = do
             kind' = if looksLikeLibrary then Library (Just name') else Other
         time <- liftIO getCurrentTime
         (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-        invalidateCache' db (CacheItem itemId)
         -- TODO: addEdit edit
         pure itemId
 
@@ -131,7 +128,7 @@ createItem db catId name' = do
 
 -- | Set item's info
 setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
-setItemInfo db itemId CItemInfo{..} = uncache db (CacheItemInfo itemId) $ do
+setItemInfo db itemId CItemInfo{..} =
   dbQuery db (GetItemMaybe itemId) >>= \case
     Nothing -> throwError (err404 {errBody = "Item not found"})
     Just _ -> do
@@ -144,7 +141,7 @@ setItemInfo db itemId CItemInfo{..} = uncache db (CacheItemInfo itemId) $ do
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent
-deleteItem db itemId = uncache db (CacheItem itemId) $ do
+deleteItem db itemId = do
   _mbEdit <- dbUpdate db (DeleteItem itemId)
   pure NoContent
   -- TODO: mapM_ addEdit mbEdit
@@ -163,20 +160,19 @@ createTrait db itemId traitType text = do
   (_edit, _newTrait) <- case traitType of
     Con -> dbUpdate db (AddCon itemId traitId text)
     Pro -> dbUpdate db (AddPro itemId traitId text)
-  invalidateCache' db (CacheItemTraits itemId)
   -- TODO: mapM_ addEdit mbEdit
   pure traitId
 
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
-setTrait db itemId traitId text = uncache db (CacheItemTraits itemId) $ do
+setTrait db itemId traitId text = do
   (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
   -- TODO diff and merge
   pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
-deleteTrait db itemId traitId = uncache db (CacheItemTraits itemId) $ do
+deleteTrait db itemId traitId = do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
 
@@ -209,18 +205,3 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
-
--- Twins of corresponding functions used in "Guide.Handlers".
--- TODO: remove them when the old backend is gone.
-
-uncache :: (MonadIO m) => DB -> CacheKey -> m a -> m a
-uncache db key act = do
-  gs <- dbQuery db GetGlobalState
-  x <- act
-  invalidateCache gs key
-  return x
-
-invalidateCache' :: (MonadIO m) => DB -> CacheKey -> m ()
-invalidateCache' db key = do
-  gs <- dbQuery db GetGlobalState
-  invalidateCache gs key

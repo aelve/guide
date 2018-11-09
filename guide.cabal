@@ -81,7 +81,6 @@ library
       Guide.Views.Category
       Guide.Views.Utils
         Guide.Views.Utils.Input
-    Guide.Cache
     Guide.Routes
   other-modules:
     Imports
@@ -114,7 +113,6 @@ library
                      , fmt
                      , focus
                      , friendly-time == 0.4.*
-                     , fsnotify
                      , hashable
                      , haskell-src-meta
                      , http-api-data

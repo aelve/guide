@@ -55,7 +55,6 @@ import Data.HVect hiding (length)
 
 import Guide.Api (runApiServer)
 import Guide.App
-import Guide.Cache
 import Guide.Config
 import Guide.Handlers
 import Guide.JS (JS (..), allJSFunctions)
@@ -73,7 +72,6 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.Wai.Metrics as EKG
 import qualified SlaveThread as Slave
-import qualified System.FSNotify as FSNotify
 import qualified System.Metrics.Gauge as EKG.Gauge
 import qualified System.Remote.Monitoring as EKG
 import qualified Web.Spock as Spock
@@ -143,11 +141,8 @@ main = do
 -- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
 mainWith config@Config{..} = do
-  -- Emptying the cache is needed because during development (i.e. in REPL)
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
-  emptyCache
-  startTemplateWatcher
   do args <- getArgs
      let option = headDef "" args
      when (option == "--dry-run") $ do
@@ -232,7 +227,6 @@ mainWith config@Config{..} = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
-    when _prerender $ prerenderPages config db
     say $ format "Spock is running on port {}" _portMain
     runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
@@ -415,34 +409,6 @@ authRedirect path action = do
     Nothing -> action
 
 -- TODO: a function to find all links to Hackage that have version in them
-
--- | During development you need to see the changes whenever you change
--- anything. This function starts a thread that watches for changes in
--- templates and clears the cache whenever a change occurs, so that you
--- wouldn't see cached pages.
-startTemplateWatcher :: IO ()
-startTemplateWatcher = void $
-  Slave.fork $ FSNotify.withManager $ \mgr -> do
-    _ <- FSNotify.watchTree mgr "templates/" (const True) $ \_ ->
-      emptyCache
-    forever $ threadDelay 1000000
-
--- | Render all pages and put them into the cache, so that (unlucky) users
--- wouldn't see delays after a restart of the site.
---
--- Well, actually instead unlucky users would see an error after a restart of
--- the site until prerendering completes, which is probably worse.
---
--- TODO: make prerendering asynchronous.
-prerenderPages :: Config -> DB -> IO ()
-prerenderPages config db = do
-  putStr "Prerendering pages to be cached... "
-  globalState <- Acid.query db GetGlobalState
-  for_ (globalState^.categories) $ \cat -> do
-    putStr "|"
-    evaluate . force =<<
-      renderBST (hoist (flip runReaderT config) (renderCategoryPage cat))
-  putStrLn " done"
 
 data Quit = CtrlC | ServiceStop
   deriving (Eq, Ord, Show)
