@@ -34,34 +34,7 @@ $ java -jar /usr/share/selenium-server/selenium-server-standalone.jar
 $ stack test
 ```
 
-## Overview of the code
-
-### Folder structure
-
-  * `lib` – actual code (as a library)
-  * `src` – just a dumb `Main.hs` file to compile an executable
-  * `tests` – tests
-  * `static` – icons, CSS, Markdown pages, HTML pages, and some JS libraries
-  * `templates` – HTML templates for pages and elements of pages
-  * `scripts` – some scripts used by automatic testing
-  * `favicon` – code used to generate a favicon
-  * `guidejs` – client side JavaScript
-  * `front` – the new frontend, written in Vue.js
-
-### Frontend
-
-To lint Vue.js components, you need to do:
-
-```bash
-npm install --global eslint eslint-plugin-vue@next
-cd static/components
-eslint .
-```
-
-Maybe there's a better way than `npm install --global`, I don't know. I'm
-not a Node.js guy.
-
-### Notes
+## Notes
 
 When you see something like
 

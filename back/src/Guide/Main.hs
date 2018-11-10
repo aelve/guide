@@ -240,7 +240,7 @@ guideApp waiMetrics = do
                      -- initHook” does, feel free to edit.)
     prehook initHook $ do
       mapM_ (middleware . EKG.metrics) waiMetrics
-      middleware (staticPolicy (addBase "static"))
+      middleware (staticPolicy (addBase "back/static"))
       -- Javascript
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
@@ -261,7 +261,7 @@ guideApp waiMetrics = do
       Spock.get "/admin.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
-        admincss <- liftIO $ T.readFile "static/admin.css"
+        admincss <- liftIO $ T.readFile "back/static/admin.css"
         Spock.bytes $ toByteString (css <> admincss)
 
       -- Main page

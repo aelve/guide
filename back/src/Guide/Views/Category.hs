@@ -172,7 +172,7 @@ renderCategoryNotes category =
     section "editing" [] $ do
       contents <- if markdownNull (category^.notes)
         then liftIO $ toMarkdownBlock <$>
-               T.readFile "static/category-notes-template.md"
+               T.readFile "back/static/category-notes-template.md"
         else return (category^.notes)
       markdownEditor
         10 -- rows

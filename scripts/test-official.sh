@@ -17,7 +17,7 @@ ls
 cd ..
 
 stack build $@
-stack exec guide -- --dry-run
+stack exec -- guide --dry-run
 
 rm -rf state
 

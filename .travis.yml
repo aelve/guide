@@ -19,11 +19,12 @@ cache:
   directories:
     - $HOME/.stack
     - .stack-work
+    - back/.stack-work
   timeout: 1000
 
 jobs:
   include:
-    - stage: "Build dependencies"
+    - stage: "Build backend dependencies"
       before_script:
         - mkdir -p ~/.local/bin
         - export PATH=$HOME/.local/bin:$PATH
@@ -33,7 +34,7 @@ jobs:
       script:
         - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
 
-    - stage: "Build and test the project"
+    - stage: "Build and test the backend"
       before_script:
         # Install Stack
         - mkdir -p ~/.local/bin
@@ -59,7 +60,7 @@ jobs:
         - stack --no-terminal test
         - scripts/test-official.sh
 
-    - stage: "Install and test vue frontend"
+    - stage: "Build and test the frontend"
       before_script:
         # Install dependencies
         - cd front

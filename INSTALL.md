@@ -2,10 +2,9 @@
 
 The `state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
 
-    $ git clone https://github.com/aelve/guide-database
-    $ mv guide-database state
+    $ scripts/official.sh
 
-The `config.json` file contains the config (it will be created at the 1st start). There are 5 settings so far:
+The `config.json` file contains the config (it will be created at the first start):
 
   * `admin-password` is the password for the admin panel (at `/admin`). Leave it empty if you don't want any password.
 

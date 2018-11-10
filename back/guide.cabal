@@ -1,20 +1,18 @@
 name:                guide
-version:             0.1.0.0
-synopsis:            A site for comparing Haskell libraries
+version:             1.0
+synopsis:            An advanced wiki engine
 description:
-  A site for comparing Haskell libraries
+  An advanced wiki engine powering <guide.aelve.com>.
 homepage:            http://github.com/aelve/guide
 bug-reports:         http://github.com/aelve/guide/issues
 license:             BSD3
 license-file:        LICENSE
-author:              Artyom
+author:              Aelve
 maintainer:          yom@artyom.me
 -- copyright:
 category:            Web
 tested-with:         GHC == 8.4
-build-type:          Custom
 extra-source-files:
-  CHANGELOG.md
 -- Whatever, this won't ever be installed from a .tar package anyway so I
 -- won't bother updating this section every time I add a new directory.
 --
@@ -27,11 +25,17 @@ extra-source-files:
 --   static/*.ico
 --   templates/*.widget
 --   templates/utils/*.widget
-cabal-version:       >=1.10
+cabal-version:       >=1.24
+build-type:          Custom
 
 source-repository head
   type:                git
   location:            git://github.com/aelve/guide.git
+
+custom-setup
+  setup-depends:       base
+                     , process
+                     , Cabal
 
 executable guide
   main-is:             Main.hs

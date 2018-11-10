@@ -607,7 +607,7 @@ renderStaticMd
   :: (MonadIO m, MonadReader Config m)
   => Text -> String -> HtmlT m ()
 renderStaticMd t fn = wrapPage t $
-  toHtml . toMarkdownBlock =<< liftIO (T.readFile ("static/" ++ fn))
+  toHtml . toMarkdownBlock =<< liftIO (T.readFile ("back/static/" ++ fn))
 
 -- | Include all the necessary things into a page – header, footer, etc.
 wrapPage

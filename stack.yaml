@@ -1,7 +1,7 @@
 resolver: lts-12.4
 
 packages:
-- location: .
+- back/
 
 nix:
   shell-file: shell.nix
