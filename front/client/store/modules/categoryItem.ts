@@ -12,8 +12,8 @@ const state: CategoryItemState = {
 const getters: GetterTree<CategoryItemState, any> = {}
 
 const actions: ActionTree<CategoryItemState, any> = {
-  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>): Promise<any> {
-    const data: ICategoryItem[] = await CategoryItemService.getCategoryItem()
+  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>, category): Promise<any> {
+    const data: ICategoryItem[] = await CategoryItemService.getCategoryItem(category)
     commit('setCategoryItem', data)
   },
   async createItem({ dispatch }, { category, name }: ICategoryItem): Promise<any> {

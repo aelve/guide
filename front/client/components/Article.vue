@@ -7,6 +7,7 @@
           class="article-top-data" 
           v-for="(value, key) in getCategory" 
           :key="key">
+          <!-- TODO глянуть почему здесь линк не динамический -->
           <a class="article-top-link" href="https://guide.aelve.com/haskell/lenses-sth6l9jl">{{value.title}}</a>
           <p class="article-top-group">{{value.group}}</p>
         </div>
@@ -59,6 +60,8 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
+import { Prop } from 'vue-property-decorator';
+import category from 'client/store/modules/category';
 
 @Component({
   components: {
@@ -67,11 +70,13 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
   }
 })
 export default class ArticleItem extends Vue {
+  @Prop(String) category!: string
+
   categoryDescription: string = ''
   isDialogOpen: boolean = false
 
   async asyncData() {
-    return this.$store.dispatch('categoryItem/loadCategoryItem').then(() => {
+    return this.$store.dispatch('categoryItem/loadCategoryItem', category).then(() => {
       this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
     })
   }

@@ -1,9 +1,9 @@
 <template>
   <v-container grid-list-md>
     <!-- TODO remove when links refactored -->
-    <router-link to="/haskell">
+    <!-- <router-link to="/haskell/${getCategoryUrl(category)}">
       <button class="test-btn">Test Article</button>
-    </router-link>
+    </router-link> -->
     
     <v-layout
       row
@@ -26,7 +26,7 @@
             {{ groupName }}
           </h4>
           <!-- TODO remove duplicates of same a-links -->
-          <a-link
+          <!-- <a-link
             class="category-title"
             openInNewTab
             v-for="category in groupCategories[CategoryStatus.finished]"
@@ -38,7 +38,20 @@
             >
               {{ category.title }}
             </h6>
-          </a-link>
+          </a-link> -->
+
+          <router-link 
+            class="category-title"
+            v-for="category in groupCategories[CategoryStatus.finished]"
+            :key="category.uid"
+            :to="`/haskell/${getCategoryUrl(category)}`"
+          >
+            <h6
+              class="ml-2 subheading font-weight-bold"
+            >
+              {{ category.title }}
+            </h6>
+          </router-link>
 
           <h6
             class="ml-2 mb-1 body-2 font-weight-bold"

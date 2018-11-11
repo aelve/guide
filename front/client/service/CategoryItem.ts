@@ -1,13 +1,13 @@
 import axios from 'axios'
 
 class CategoryItemService {
-  async getCategoryItem(): Promise<ICategoryItem[]> {
-    const { data } = await axios.get('api/category/sth6l9jl', {})
+  async getCategoryItem(categoryURL): Promise<ICategoryItem[]> {
+    const { data } = await axios.get(`api/category/${categoryURL}`, {})
     return data
   }
 
-  async addItem({ category, name }: ICategoryItem) {
-    const { data } = await axios.post('api/item/sth6l9jl', null, {
+  async addItem(categoryURL, { category, name }: ICategoryItem) {
+    const { data } = await axios.post(`api/item/${categoryURL}`, null, {
       params: {
         category,
         name
