@@ -55,7 +55,7 @@
         @click="openAddItemDialog"
       >
         <v-icon class="mr-1" left>add</v-icon>
-        TATUKA
+        Add new item
       </v-btn>
       <add-item-dialog v-model="isDialogOpen"/>
     </div>
