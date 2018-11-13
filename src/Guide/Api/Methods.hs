@@ -14,9 +14,11 @@ import Servant
 
 import Guide.Api.Types
 import Guide.Api.Utils
+import Guide.Diff (merge)
 import Guide.State
 import Guide.Types
 import Guide.Utils
+import Guide.Markdown (MarkdownBlock(..))
 
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -65,10 +67,17 @@ setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
 setCategoryNotes db catId note =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
+    Just original -> do
+      let fromMarkDown = markdownBlockMdSource . _categoryNotes
+      modified <- dbQuery db (GetCategory catId)
+      if fromMarkDown original /= fromMarkDown modified then do
+        let merged = merge (fromMarkDown original) note (fromMarkDown modified)
+        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId merged)
+        pure NoContent
+      else do
+        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
       -- TODO diff and merge
-      pure NoContent
+        pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
@@ -97,7 +106,7 @@ deleteCategory db catId =
       _mbEdit <- dbUpdate db (DeleteCategory catId)
       pure NoContent
       -- TODO mapM_ addEdit mbEdit
-      
+
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
