@@ -70,13 +70,14 @@ import category from 'client/store/modules/category';
   }
 })
 export default class ArticleItem extends Vue {
-  @Prop(String) category!: string
-
   categoryDescription: string = ''
   isDialogOpen: boolean = false
 
   async asyncData() {
-    return this.$store.dispatch('categoryItem/loadCategoryItem', category).then(() => {
+    let rowUrl = this.$route.params.category
+    let categoryUrl = rowUrl.split("-").pop().split("#").shift()
+
+    return this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl).then(() => {
       this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
     })
   }
