@@ -189,7 +189,7 @@ mainWith config@Config{..} = do
     mWaiMetrics <- if _ekg
         then do
           ekg <- do
-            say $ format "EKG is running on port " _portEkg
+            say $ format "EKG is running on port {}" _portEkg
             EKG.forkServer "localhost" _portEkg
           writeIORef ekgId (Just (EKG.serverThreadId ekg))
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)

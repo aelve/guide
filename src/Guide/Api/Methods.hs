@@ -18,7 +18,7 @@ import Guide.Diff (merge)
 import Guide.State
 import Guide.Types
 import Guide.Utils
-import Guide.Markdown (MarkdownBlock(..))
+import Guide.Markdown (MarkdownBlock(..), MarkdownInline(..))
 
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -76,7 +76,6 @@ setCategoryNotes db catId note =
         pure NoContent
       else do
         (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
-      -- TODO diff and merge
         pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
@@ -175,9 +174,21 @@ createTrait db itemId traitType text = do
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
 setTrait db itemId traitId text = do
-  (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
-  -- TODO diff and merge
-  pure NoContent
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing -> throwError (err404 {errBody = "Item not found"})
+    Just _ -> do
+      dbQuery db (GetTraitMaybe itemId traitId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Trait not found"})
+        Just original -> do
+          let fromMarkDown = markdownInlineMdSource . _traitContent
+          modified <- dbQuery db (GetTrait itemId traitId)
+          if fromMarkDown original /= fromMarkDown modified then do
+            let merged = merge (fromMarkDown original) text (fromMarkDown modified)
+            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId merged)
+            pure NoContent
+          else do
+            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId text)
+            pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent

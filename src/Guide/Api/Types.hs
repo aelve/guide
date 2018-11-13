@@ -178,6 +178,8 @@ data TraitSite route = TraitSite
 
   , _setTrait :: route :-
       Summary "Update a trait in the given item"
+      :> ErrorResponse 404 "Item not found"
+      :> ErrorResponse 404 "Trait not found"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
