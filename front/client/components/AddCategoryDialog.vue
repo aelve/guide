@@ -22,7 +22,7 @@
             class="mb-2"
             label="Category name"
             autofocus
-            :rules="  categoryValidationRules"
+            :rules="categoryValidationRules"
             v-model="categoryName"
             ref="categoryNameInput"
           />
@@ -72,7 +72,7 @@ export default class AddCategoryDialog extends Vue {
   isValid: boolean = false
 
   @Watch('value')
-  onOpen(newVal: string) {
+  onOpen(newVal: boolean) {
     this.categoryName = ''
     this.groupNameInternal = this.groupName
   }

@@ -12,26 +12,28 @@
           <p class="article-top-group">{{value.group}}</p>
         </div>
         <v-btn
+          flat
           class="ml-2 pl-0"
           color="grey"
-          flat
           @click="openAddItemDialog"
         >
           <v-icon class="mr-1" left>add</v-icon>
           Add new item
         </v-btn>
       </div>
-      <div 
-        v-if="categoryDescription !== ''" 
-        class="article-description">
-        <div v-html="categoryDescription"></div>
+      <div
+        v-if="categoryDescription"
+        class="article-description"
+      >
+        <div v-html="categoryDescription" />
       </div>
-      <div 
-        v-for="(value, index) in getCategoryItems" 
-        :key="index">
-        <article-content 
-          :kind="value.name" 
-          :group="value.group" 
+      <div
+        v-for="(value, index) in getCategoryItems"
+        :key="index"
+      > 
+        <article-content
+          :kind="value.name"
+          :group="value.group"
           :itemDescription="value.description.html"
           :pros="value.pros"
           :cons="value.cons"
@@ -42,9 +44,9 @@
         />
       </div>
       <v-btn
+        flat
         class="ml-2 pl-0"
         color="grey"
-        flat
         @click="openAddItemDialog"
       >
         <v-icon class="mr-1" left>add</v-icon>
@@ -56,6 +58,7 @@
 </template>
 
 <script lang="ts">
+import _get from 'lodash/get'
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
@@ -70,7 +73,6 @@ import category from 'client/store/modules/category';
   }
 })
 export default class ArticleItem extends Vue {
-  categoryDescription: string = ''
   isDialogOpen: boolean = false
 
   async asyncData() {
@@ -82,16 +84,12 @@ export default class ArticleItem extends Vue {
     })
   }
 
-  get getCategory () {
+  get getCategory() {
     return this.$store.state.categoryItem
   }
 
   get getCategoryItems() {
     return this.$store.state.categoryItem.categoryItemList.items
-  }
-
-  created() {
-    this.asyncData()
   }
 
   openAddItemDialog() {
@@ -101,70 +99,69 @@ export default class ArticleItem extends Vue {
 </script>
 
 <style scoped>
-  .article-top {
-    display: flex;
-    align-items: center;
-    margin: 0 0 45px;
-  }
+.article-top {
+  display: flex;
+  align-items: center;
+  margin: 0 0 45px;
+}
 
-  .article-top-data {
-    display: flex;
-    align-items: center;
-    flex: 1;
-  }
+.article-top-data {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
 
-  .article-top >>> i {
-    margin-right: 15px;
-    font-size: 18px;
-    color: #979797;
-    cursor: pointer;
-    transition: all ease-in-out .25s;
-  }
+.article-top >>> i {
+  margin-right: 15px;
+  font-size: 18px;
+  color: #979797;
+  cursor: pointer;
+  transition: all ease-in-out 0.25s;
+}
 
-  .article-top >>> i:hover {
-    color: #000;
-  }
+.article-top >>> i:hover {
+  color: #000;
+}
 
-  .article-top-link {
-    font-size: 24px;
-    font-weight: 600;
-    text-decoration: none;
-    color: #979797;
-    cursor: pointer;
-    transition: all ease-in-out .25s;
-    margin-right: 30px;
-  }
+.article-top-link {
+  font-size: 24px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #979797;
+  cursor: pointer;
+  transition: all ease-in-out 0.25s;
+  margin-right: 30px;
+}
 
-  .article-top-group {
-    font-size: 24px;
-  }
+.article-top-group {
+  font-size: 24px;
+}
 
-  .article-top-link:hover {
-    color: #000;
-    color: #979797;
-  }
+.article-top-link:hover {
+  color: #000;
+  color: #979797;
+}
 
-  .article-wrapper {
-    width: 800px;
-    margin: 0 auto;
-  }
+.article-wrapper {
+  width: 800px;
+  margin: 0 auto;
+}
 
-  .article-description {
-    margin: 0 0 60px;
-  }
+.article-description {
+  margin: 0 0 60px;
+}
 
-  .article-description >>> p {
-    font-size: 16px;
-  }
+.article-description >>> p {
+  font-size: 16px;
+}
 
-  .article-description >>> h1 {
-    margin: 20px 0 5px;
-  }
+.article-description >>> h1 {
+  margin: 20px 0 5px;
+}
 
-  @media screend and (max-width: 768px) {
-    .article-item {
-      margin: 0 0 30px;
-    }
+@media screend and (max-width: 768px) {
+  .article-item {
+    margin: 0 0 30px;
   }
-
+}
 </style>
