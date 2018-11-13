@@ -11,12 +11,15 @@
         <v-form
           lazy-validation
           v-model="isValid"
-          @keydown.native.enter="submit"
+          @keydown.native.prevent.enter="submit"
         >
-          <v-text-field 
+          <!-- v-if="value" - cause without it autofocus triggers on first modal open
+          https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
+          <v-text-field
+            v-if="value"
+            autofocus
             class="mb-2"
             label="Item name"
-            autofocus
             :rules="itemValidationRules"
             v-model="itemName"
           />
