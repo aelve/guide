@@ -56,7 +56,6 @@ jobs:
         - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
         - sleep 15
       script:
-        - scripts/buildjs.sh
         - stack --no-terminal test
         - scripts/test-official.sh
 
