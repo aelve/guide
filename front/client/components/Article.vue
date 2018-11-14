@@ -2,14 +2,19 @@
   <v-container>
     <div class="article-wrapper">
       <div class="article-top">
-        <i class="fas fa-rss"></i>
-        <div 
-          class="article-top-data" 
-          v-for="(value, key) in getCategory" 
-          :key="key">
-          <!-- TODO глянуть почему здесь линк не динамический -->
-          <a class="article-top-link" href="https://guide.aelve.com/haskell/lenses-sth6l9jl">{{value.title}}</a>
-          <p class="article-top-group">{{value.group}}</p>
+        <i class="fas fa-rss"/>
+        <div
+          class="article-top-data"
+          v-for="(value, key) in getCategory"
+          :key="key"
+        >
+          <router-link
+            class="article-top-link"
+            :to="`${takePathname()}`"
+          >
+            {{value.title}}
+          </router-link>
+          <p class="article-top-group"> {{value.group}} </p>
         </div>
         <v-btn
           flat
@@ -67,6 +72,7 @@ import { Prop } from 'vue-property-decorator';
 import category from 'client/store/modules/category';
 
 @Component({
+  name: 'article-component',
   components: {
     ArticleContent,
     AddItemDialog
@@ -79,9 +85,11 @@ export default class ArticleItem extends Vue {
     let rowUrl = this.$route.params.category
     let categoryUrl = rowUrl.split("-").pop().split("#").shift()
 
-    return this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl).then(() => {
-      this.categoryDescription = this.$store.state.categoryItem.categoryItemList.description.html
-    })
+    await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
+  }
+
+  get categoryDescription() {
+    return _get(this, '$store.state.categoryItem.categoryItemList.description.html')
   }
 
   get getCategory() {
@@ -94,6 +102,10 @@ export default class ArticleItem extends Vue {
 
   openAddItemDialog() {
     this.isDialogOpen = true
+  }
+
+  takePathname() {
+    return window.location.pathname;
   }
 }
 </script>

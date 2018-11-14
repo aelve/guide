@@ -8,10 +8,12 @@ import ArticleItem from 'client/components/Article.vue'
 import Component from 'vue-class-component'
 
 @Component({
+  name: 'article-page',
   components: {
     ArticleItem
   }
 })
 
-export default class ArticlePage extends Vue {}
+export default class ArticlePage extends Vue {
+}
 </script>
