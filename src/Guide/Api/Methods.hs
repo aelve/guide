@@ -69,18 +69,20 @@ setCategoryNotes db catId CTextEdit{..} =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just Category{..} -> do
-      let modified = markdownBlockMdSource _categoryNotes
-      if cteOriginal /= modified then do
-        let merged = merge cteOriginal cteContent modified
+      let serverModified = markdownBlockMdSource _categoryNotes
+      let original = unH cteOriginal
+      let modified = unH cteModified
+      if original /= serverModified then do
+        let merged = merge original modified serverModified
         let conflict = CMergeConflict
                 { cmcOriginal = cteOriginal
-                , cmcContent = cteContent
-                , cmcModified = modified
-                , cmcMerged = merged
+                , cmcModified = cteModified
+                , cmcServerModified = H serverModified
+                , cmcMerged = H merged
                 }
         throwError (err409 {errBody = encode conflict})
       else do
-        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId cteContent)
+        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId modified)
         pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
@@ -185,18 +187,20 @@ setTrait db itemId traitId CTextEdit{..} = do
       dbQuery db (GetTraitMaybe itemId traitId) >>= \case
         Nothing -> throwError (err404 {errBody = "Trait not found"})
         Just Trait{..} -> do
-          let modified = markdownInlineMdSource _traitContent
-          if cteOriginal /= modified then do
-            let merged = merge cteOriginal cteContent modified
+          let serverModified = markdownInlineMdSource _traitContent
+          let original = unH cteOriginal
+          let modified = unH cteModified
+          if original /= serverModified then do
+            let merged = merge original modified serverModified
             let conflict = CMergeConflict
                     { cmcOriginal = cteOriginal
-                    , cmcContent = cteContent
-                    , cmcModified = modified
-                    , cmcMerged = merged
+                    , cmcModified = cteModified
+                    , cmcServerModified = H serverModified
+                    , cmcMerged = H merged
                     }
             throwError (err409 {errBody = encode conflict})
           else do
-            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId cteContent)
+            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
             pure NoContent
 
 -- | Delete a trait (pro/con).

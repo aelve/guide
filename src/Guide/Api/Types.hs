@@ -35,7 +35,7 @@ module Guide.Api.Types
   -- * Other types
   , TraitType (..)
   , CTextEdit (..)
-  , CMergeConflict (..), CConflict (..)
+  , CMergeConflict (..)
   )
   where
 
@@ -469,21 +469,11 @@ toCHeading h = CHeading
   , chSlug    = H $ headingSlug h
   }
 
--- | Wraper on maybe merge conflict
-data CConflict = CConflict (Maybe CMergeConflict)
-    deriving (Eq, Show, Generic)
-
-instance A.ToJSON CConflict where
-  toJSON = A.genericToJSON jsonOptions
-
-instance ToSchema CConflict where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
-
 -- | Frontend sends this type to edit notes or descriptions.
 data CTextEdit = CTextEdit
-  { cteOriginal :: Text -- ^ State of base before editing
-  , cteContent  :: Text -- ^ Edited text
-  } deriving (Eq, Show, Generic)
+  { cteOriginal :: Text ? "State of base before editing"
+  , cteModified :: Text ? "Modified text"
+  } deriving (Show, Generic)
 
 instance A.ToJSON CTextEdit where
   toJSON = A.genericToJSON jsonOptions
@@ -496,10 +486,10 @@ instance ToSchema CTextEdit where
 
 -- | Backend returns this type if there is conflict between state of base before and after editing.
 data CMergeConflict = CMergeConflict
-  { cmcOriginal :: Text -- ^ State of base before editing
-  , cmcContent  :: Text -- ^ Edited text
-  , cmcModified :: Text -- ^ State of base after editing. (Base changed from another source)
-  , cmcMerged   :: Text -- ^ Merged text
+  { cmcOriginal       :: Text ? "State of base before editing"
+  , cmcModified       :: Text ? "Modified text"
+  , cmcServerModified :: Text ? "State of base after editing. (Base changed from another source)"
+  , cmcMerged         :: Text ? "Merged text"
   } deriving (Eq, Show, Generic)
 
 instance A.ToJSON CMergeConflict where
