@@ -44,7 +44,7 @@ schemaOptions = fromAesonOptions jsonOptions
 
 -- | A way to provide descriptions for record fields.
 newtype (?) (field :: *) (help :: Symbol) = H field
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance ToJSON field => ToJSON (field ? help) where
   toJSON (H a) = toJSON a

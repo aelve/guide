@@ -34,6 +34,8 @@ module Guide.Api.Types
 
   -- * Other types
   , TraitType (..)
+  , CTextEdit (..)
+  , CMergeConflict (..)
   )
   where
 
@@ -115,7 +117,8 @@ data CategorySite route = CategorySite
       :> "category"
       :> Capture "id" (Uid Category)
       :> "notes"
-      :> ReqBody '[JSON] Text
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
       :> Put '[JSON] NoContent
 
   , _setCategoryInfo :: route :-
@@ -178,11 +181,14 @@ data TraitSite route = TraitSite
 
   , _setTrait :: route :-
       Summary "Update a trait in the given item"
+      :> ErrorResponse 404 "Item not found"
+      :> ErrorResponse 404 "Trait not found"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
       :> Capture "id" (Uid Trait)
-      :> ReqBody '[JSON] Text
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
       :> Put '[JSON] NoContent
 
   , _deleteTrait :: route :-
@@ -462,6 +468,35 @@ toCHeading h = CHeading
   { chContent = H $ toCMarkdown $ headingMd h
   , chSlug    = H $ headingSlug h
   }
+
+-- | Frontend sends this type to edit notes or descriptions.
+data CTextEdit = CTextEdit
+  { cteOriginal :: Text ? "State of base before editing"
+  , cteModified :: Text ? "Modified text"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CTextEdit where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CTextEdit where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema CTextEdit where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Backend returns this type if there is conflict between state of base before and after editing.
+data CMergeConflict = CMergeConflict
+  { cmcOriginal       :: Text ? "State of base before editing"
+  , cmcModified       :: Text ? "Modified text"
+  , cmcServerModified :: Text ? "State of base after editing. (Base changed from another source)"
+  , cmcMerged         :: Text ? "Merged text"
+  } deriving (Eq, Show, Generic)
+
+instance A.ToJSON CMergeConflict where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CMergeConflict where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 ----------------------------------------------------------------------------
 -- Search client types

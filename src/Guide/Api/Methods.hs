@@ -9,11 +9,14 @@ module Guide.Api.Methods where
 import Imports
 
 import Data.Acid as Acid
+import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
 
 import Guide.Api.Types
 import Guide.Api.Utils
+import Guide.Diff (merge)
+import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..))
 import Guide.State
 import Guide.Types
 import Guide.Utils
@@ -61,14 +64,26 @@ createCategory db title' group' = do
       return catId
 
 -- | Edit categoty's note.
-setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
-setCategoryNotes db catId note =
+setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
+setCategoryNotes db catId CTextEdit{..} =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
-      -- TODO diff and merge
-      pure NoContent
+    Just Category{..} -> do
+      let serverModified = markdownBlockMdSource _categoryNotes
+      let original = unH cteOriginal
+      let modified = unH cteModified
+      if original /= serverModified then do
+        let merged = merge original modified serverModified
+        let conflict = CMergeConflict
+                { cmcOriginal = cteOriginal
+                , cmcModified = cteModified
+                , cmcServerModified = H serverModified
+                , cmcMerged = H merged
+                }
+        throwError (err409 {errBody = encode conflict})
+      else do
+        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId modified)
+        pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
@@ -97,7 +112,7 @@ deleteCategory db catId =
       _mbEdit <- dbUpdate db (DeleteCategory catId)
       pure NoContent
       -- TODO mapM_ addEdit mbEdit
-      
+
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
@@ -164,11 +179,29 @@ createTrait db itemId traitType text = do
   pure traitId
 
 -- | Update the text of a trait (pro/con).
-setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
-setTrait db itemId traitId text = do
-  (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
-  -- TODO diff and merge
-  pure NoContent
+setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
+setTrait db itemId traitId CTextEdit{..} = do
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing -> throwError (err404 {errBody = "Item not found"})
+    Just _ -> do
+      dbQuery db (GetTraitMaybe itemId traitId) >>= \case
+        Nothing -> throwError (err404 {errBody = "Trait not found"})
+        Just Trait{..} -> do
+          let serverModified = markdownInlineMdSource _traitContent
+          let original = unH cteOriginal
+          let modified = unH cteModified
+          if original /= serverModified then do
+            let merged = merge original modified serverModified
+            let conflict = CMergeConflict
+                    { cmcOriginal = cteOriginal
+                    , cmcModified = cteModified
+                    , cmcServerModified = H serverModified
+                    , cmcMerged = H merged
+                    }
+            throwError (err409 {errBody = encode conflict})
+          else do
+            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
+            pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
