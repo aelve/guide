@@ -34,6 +34,8 @@ module Guide.Api.Types
 
   -- * Other types
   , TraitType (..)
+  , CTextEdit (..)
+  , CMergeConflict (..), СConflict (..)
   )
   where
 
@@ -115,8 +117,9 @@ data CategorySite route = CategorySite
       :> "category"
       :> Capture "id" (Uid Category)
       :> "notes"
-      :> ReqBody '[JSON] Text
-      :> Put '[JSON] NoContent
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
+      :> Put '[JSON] СConflict
 
   , _setCategoryInfo :: route :-
       Summary "Set category's fields"
@@ -184,8 +187,9 @@ data TraitSite route = TraitSite
       :> Capture "item" (Uid Item)
       :> "trait"
       :> Capture "id" (Uid Trait)
-      :> ReqBody '[JSON] Text
-      :> Put '[JSON] NoContent
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
+      :> Put '[JSON] СConflict
 
   , _deleteTrait :: route :-
       Summary "Delete a trait"
@@ -464,6 +468,44 @@ toCHeading h = CHeading
   { chContent = H $ toCMarkdown $ headingMd h
   , chSlug    = H $ headingSlug h
   }
+
+-- | Wraper on maybe merge conflict
+data СConflict = СConflict (Maybe CMergeConflict)
+    deriving (Eq, Show, Generic)
+
+instance A.ToJSON СConflict where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema СConflict where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Front sends this type to edit notes or descriptions.
+data CTextEdit = CTextEdit
+  { cteOriginal :: Text
+  , cteContent  :: Text
+  } deriving (Eq, Show, Generic)
+
+instance A.ToJSON CTextEdit where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CTextEdit where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema CTextEdit where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Back returns this type if there is 409 conflict.
+data CMergeConflict = CMergeConflict
+  { cmcOriginal :: Text
+  , cmcContent  :: Text
+  , cmcModified :: Text
+  } deriving (Eq, Show, Generic)
+
+instance A.ToJSON CMergeConflict where
+  toJSON = A.genericToJSON jsonOptions
+
+instance ToSchema CMergeConflict where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 ----------------------------------------------------------------------------
 -- Search client types
