@@ -9,16 +9,17 @@ module Guide.Api.Methods where
 import Imports
 
 import Data.Acid as Acid
+import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
-import Data.Aeson (encode)
 
 import Guide.Api.Types
 import Guide.Api.Utils
+import Guide.Diff (merge)
+import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..))
 import Guide.State
 import Guide.Types
 import Guide.Utils
-import Guide.Markdown (MarkdownBlock(..), MarkdownInline(..))
 
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -63,18 +64,24 @@ createCategory db title' group' = do
       return catId
 
 -- | Edit categoty's note.
-setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler СConflict
+setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
 setCategoryNotes db catId CTextEdit{..} =
   dbQuery db (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError (err404 {errBody = "Category not found"})
     Just Category{..} -> do
       let modified = markdownBlockMdSource _categoryNotes
       if cteOriginal /= modified then do
-        let conflict = CMergeConflict cteOriginal cteContent modified
+        let merged = merge cteOriginal cteContent modified
+        let conflict = CMergeConflict
+                { cmcOriginal = cteOriginal
+                , cmcContent = cteContent
+                , cmcModified = modified
+                , cmcMerged = merged
+                }
         throwError (err409 {errBody = encode conflict})
       else do
         (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId cteContent)
-        pure $ СConflict Nothing
+        pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
@@ -170,7 +177,7 @@ createTrait db itemId traitType text = do
   pure traitId
 
 -- | Update the text of a trait (pro/con).
-setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler СConflict
+setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
 setTrait db itemId traitId CTextEdit{..} = do
   dbQuery db (GetItemMaybe itemId) >>= \case
     Nothing -> throwError (err404 {errBody = "Item not found"})
@@ -180,11 +187,17 @@ setTrait db itemId traitId CTextEdit{..} = do
         Just Trait{..} -> do
           let modified = markdownInlineMdSource _traitContent
           if cteOriginal /= modified then do
-            let conflict = CMergeConflict cteOriginal cteContent modified
+            let merged = merge cteOriginal cteContent modified
+            let conflict = CMergeConflict
+                    { cmcOriginal = cteOriginal
+                    , cmcContent = cteContent
+                    , cmcModified = modified
+                    , cmcMerged = merged
+                    }
             throwError (err409 {errBody = encode conflict})
           else do
             (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId cteContent)
-            pure $ СConflict Nothing
+            pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent

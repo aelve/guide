@@ -35,7 +35,7 @@ module Guide.Api.Types
   -- * Other types
   , TraitType (..)
   , CTextEdit (..)
-  , CMergeConflict (..), СConflict (..)
+  , CMergeConflict (..), CConflict (..)
   )
   where
 
@@ -119,7 +119,7 @@ data CategorySite route = CategorySite
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occured"
-      :> Put '[JSON] СConflict
+      :> Put '[JSON] NoContent
 
   , _setCategoryInfo :: route :-
       Summary "Set category's fields"
@@ -189,7 +189,7 @@ data TraitSite route = TraitSite
       :> Capture "id" (Uid Trait)
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occured"
-      :> Put '[JSON] СConflict
+      :> Put '[JSON] NoContent
 
   , _deleteTrait :: route :-
       Summary "Delete a trait"
@@ -470,19 +470,19 @@ toCHeading h = CHeading
   }
 
 -- | Wraper on maybe merge conflict
-data СConflict = СConflict (Maybe CMergeConflict)
+data CConflict = CConflict (Maybe CMergeConflict)
     deriving (Eq, Show, Generic)
 
-instance A.ToJSON СConflict where
+instance A.ToJSON CConflict where
   toJSON = A.genericToJSON jsonOptions
 
-instance ToSchema СConflict where
+instance ToSchema CConflict where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Front sends this type to edit notes or descriptions.
+-- | Frontend sends this type to edit notes or descriptions.
 data CTextEdit = CTextEdit
-  { cteOriginal :: Text
-  , cteContent  :: Text
+  { cteOriginal :: Text -- ^ State of base before editing
+  , cteContent  :: Text -- ^ Edited text
   } deriving (Eq, Show, Generic)
 
 instance A.ToJSON CTextEdit where
@@ -494,11 +494,12 @@ instance A.FromJSON CTextEdit where
 instance ToSchema CTextEdit where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Back returns this type if there is 409 conflict.
+-- | Backend returns this type if there is conflict between state of base before and after editing.
 data CMergeConflict = CMergeConflict
-  { cmcOriginal :: Text
-  , cmcContent  :: Text
-  , cmcModified :: Text
+  { cmcOriginal :: Text -- ^ State of base before editing
+  , cmcContent  :: Text -- ^ Edited text
+  , cmcModified :: Text -- ^ State of base after editing. (Base changed from another source)
+  , cmcMerged   :: Text -- ^ Merged text
   } deriving (Eq, Show, Generic)
 
 instance A.ToJSON CMergeConflict where
