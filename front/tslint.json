@@ -19,7 +19,7 @@
     "object-literal-sort-keys": false,
     "only-arrow-functions": false,
     "quotemark": [true, "single"],
-    "semicolon": [true, "never"],
+    "semicolon": [false, "never"],
     "space-before-function-paren": true,
     "whitespace": [true, "check-module"],
     "trailing-comma": false,
