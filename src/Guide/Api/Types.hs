@@ -150,12 +150,42 @@ data ItemSite route = ItemSite
       :> Post '[JSON] (Uid Item)
 
   , _setItemInfo :: route :-
-      Summary "Set item's fields"
+      Summary "Set item's info"
       :> ErrorResponse 404 "Item not found"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "info"
       :> ReqBody '[JSON] CItemInfo
+      :> Put '[JSON] NoContent
+
+  , _setItemSummary :: route :-
+      Summary "Set item`s summary"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "summary"
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
+      :> Put '[JSON] NoContent
+
+  , _setItemEcosystem :: route :-
+      Summary "Set item`s summary"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "ecosystem"
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
+      :> Put '[JSON] NoContent
+
+  , _setItemNotes :: route :-
+      Summary "Set item`s summary"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "notes"
+      :> ReqBody '[JSON] CTextEdit
+      :> ErrorResponse 409 "Merge conflict occured"
       :> Put '[JSON] NoContent
 
   , _deleteItem :: route :-

@@ -16,7 +16,7 @@ import Servant
 import Guide.Api.Types
 import Guide.Api.Utils
 import Guide.Diff (merge)
-import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..))
+import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..), MarkdownTree (..))
 import Guide.State
 import Guide.Types
 import Guide.Utils
@@ -153,6 +153,72 @@ setItemInfo db itemId CItemInfo{..} =
       _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
       _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
       pure NoContent
+
+-- | Set item`s summary.
+setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
+setItemSummary db itemId CTextEdit{..} =
+    dbQuery db (GetItemMaybe itemId) >>= \case
+      Nothing -> throwError (err404 {errBody = "Item not found"})
+      Just Item{..} -> do
+        let serverModified = markdownBlockMdSource _itemDescription
+        let original = unH cteOriginal
+        let modified = unH cteModified
+        if original /= serverModified then do
+          let merged = merge original modified serverModified
+          let conflict = CMergeConflict
+                  { cmcOriginal = cteOriginal
+                  , cmcModified = cteModified
+                  , cmcServerModified = H serverModified
+                  , cmcMerged = H merged
+                  }
+          throwError (err409 {errBody = encode conflict})
+        else do
+          (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId modified)
+          pure NoContent
+
+-- | Set item`s ecosystem.
+setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
+setItemEcosystem db itemId CTextEdit{..} =
+    dbQuery db (GetItemMaybe itemId) >>= \case
+      Nothing -> throwError (err404 {errBody = "Item not found"})
+      Just Item{..} -> do
+        let serverModified = markdownBlockMdSource _itemEcosystem
+        let original = unH cteOriginal
+        let modified = unH cteModified
+        if original /= serverModified then do
+          let merged = merge original modified serverModified
+          let conflict = CMergeConflict
+                  { cmcOriginal = cteOriginal
+                  , cmcModified = cteModified
+                  , cmcServerModified = H serverModified
+                  , cmcMerged = H merged
+                  }
+          throwError (err409 {errBody = encode conflict})
+        else do
+          (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId modified)
+          pure NoContent
+
+-- | Set item`s notes.
+setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
+setItemNotes db itemId CTextEdit{..} =
+    dbQuery db (GetItemMaybe itemId) >>= \case
+      Nothing -> throwError (err404 {errBody = "Item not found"})
+      Just Item{..} -> do
+        let serverModified = markdownTreeMdSource _itemNotes
+        let original = unH cteOriginal
+        let modified = unH cteModified
+        if original /= serverModified then do
+          let merged = merge original modified serverModified
+          let conflict = CMergeConflict
+                  { cmcOriginal = cteOriginal
+                  , cmcModified = cteModified
+                  , cmcServerModified = H serverModified
+                  , cmcMerged = H merged
+                  }
+          throwError (err409 {errBody = encode conflict})
+        else do
+          (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId modified)
+          pure NoContent
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent

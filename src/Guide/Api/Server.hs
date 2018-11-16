@@ -46,9 +46,12 @@ apiServer db = Site
       :: CategorySite AsServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem     = createItem db
-      , _setItemInfo    = setItemInfo db
-      , _deleteItem     = deleteItem db }
+      { _createItem       = createItem db
+      , _setItemInfo      = setItemInfo db
+      , _setItemSummary   = setItemSummary db
+      , _setItemEcosystem = setItemEcosystem db
+      , _setItemNotes     = setItemNotes db
+      , _deleteItem       = deleteItem db }
       :: ItemSite AsServer)
 
   , _traitSite = toServant (TraitSite
