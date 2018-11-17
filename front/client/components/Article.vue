@@ -10,7 +10,7 @@
         >
           <router-link
             class="article-top-link"
-            :to="`${takePathname()}`"
+            :to="`${pathname()}`"
           >
             {{value.title}}
           </router-link>
@@ -82,8 +82,8 @@ export default class ArticleItem extends Vue {
   isDialogOpen: boolean = false
 
   async asyncData() {
-    let rowUrl = this.$route.params.category
-    let categoryUrl = rowUrl.split("-").pop().split("#").shift()
+    const rawUrl = this.$props.category
+    const categoryUrl = rawUrl.split("-").pop().split("#").shift()
 
     await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
   }
@@ -104,8 +104,8 @@ export default class ArticleItem extends Vue {
     this.isDialogOpen = true
   }
 
-  takePathname() {
-    return window.location.pathname;
+  pathname() {
+    return this.$route.params.category
   }
 }
 </script>
