@@ -140,7 +140,7 @@ setItemSummary db itemId CTextEdit{..} = do
 setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemEcosystem db itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail db itemId
-  checkConflict CTextEdit {..} serverModified
+  checkConflict CTextEdit{..} serverModified
   (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId $ unH cteModified)
   pure NoContent
 
