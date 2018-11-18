@@ -64,20 +64,9 @@ createCategory db title' group' = do
 setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
 setCategoryNotes db catId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail db catId
-  let original = unH cteOriginal
-  let modified = unH cteModified
-  if original /= serverModified then do
-    let merged = merge original modified serverModified
-    let conflict = CMergeConflict
-          { cmcOriginal = cteOriginal
-          , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
-          }
-    throwError $ err409 {errBody = encode conflict}
-  else do
-    (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId modified)
-    pure NoContent
+  checkConflict CTextEdit{..} serverModified
+  _ <- dbUpdate db (SetCategoryNotes catId $ unH cteModified)
+  pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
@@ -114,18 +103,17 @@ deleteCategory db catId = do
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
 createItem db catId name' = do
   _ <- getCategoryOrFail db catId
-  if T.null name' then throwError (err400 {errBody = "Name not provided"})
-  else do
-    itemId <- randomShortUid
-    -- If the item name looks like a Hackage library, assume it's a Hackage
-    -- library.
-    let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-        looksLikeLibrary = T.all isAllowedChar name'
-        kind' = if looksLikeLibrary then Library (Just name') else Other
-    time <- liftIO getCurrentTime
-    (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-    -- TODO: addEdit edit
-    pure itemId
+  when (T.null name') $ do throwError (err400 {errBody = "Name not provided"})
+  itemId <- randomShortUid
+  -- If the item name looks like a Hackage library, assume it's a Hackage
+  -- library.
+  let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
+      looksLikeLibrary = T.all isAllowedChar name'
+      kind' = if looksLikeLibrary then Library (Just name') else Other
+  time <- liftIO getCurrentTime
+  (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
+  -- TODO: addEdit edit
+  pure itemId
 
 -- TODO: move an item
 
@@ -144,58 +132,25 @@ setItemInfo db itemId CItemInfo{..} = do
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemSummary db itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
-  let original = unH cteOriginal
-  let modified = unH cteModified
-  if original /= serverModified then do
-    let merged = merge original modified serverModified
-    let conflict = CMergeConflict
-          { cmcOriginal = cteOriginal
-          , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
-          }
-    throwError (err409 {errBody = encode conflict})
-  else do
-    (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId modified)
-    pure NoContent
+  checkConflict CTextEdit {..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  pure NoContent
 
 -- | Set item's ecosystem.
 setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemEcosystem db itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail db itemId
-  let original = unH cteOriginal
-  let modified = unH cteModified
-  if original /= serverModified then do
-    let merged = merge original modified serverModified
-    let conflict = CMergeConflict
-          { cmcOriginal = cteOriginal
-          , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
-          }
-    throwError $ err409 {errBody = encode conflict}
-  else do
-    (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId modified)
-    pure NoContent
+  checkConflict CTextEdit {..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId $ unH cteModified)
+  pure NoContent
 
 -- | Set item's notes.
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemNotes db itemId CTextEdit{..} = do
   serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail db itemId
-  let original = unH cteOriginal
-  let modified = unH cteModified
-  if original /= serverModified then do
-    let merged = merge original modified serverModified
-    let conflict = CMergeConflict
-          { cmcOriginal = cteOriginal
-          , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
-          }
-    throwError $ err409 {errBody = encode conflict}
-  else do
-    (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId modified)
-    pure NoContent
+  checkConflict CTextEdit {..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId $ unH cteModified)
+  pure NoContent
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent
@@ -225,20 +180,9 @@ createTrait db itemId traitType text = do
 setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
 setTrait db itemId traitId CTextEdit{..} = do
   serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail db itemId traitId
-  let original = unH cteOriginal
-  let modified = unH cteModified
-  if original /= serverModified then do
-    let merged = merge original modified serverModified
-    let conflict = CMergeConflict
-          { cmcOriginal = cteOriginal
-          , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
-          }
-    throwError (err409 {errBody = encode conflict})
-  else do
-    (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
-    pure NoContent
+  checkConflict CTextEdit {..} serverModified
+  (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId $ unH cteModified)
+  pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
@@ -300,3 +244,17 @@ getTraitOrFail db itemId traitId = do
       dbQuery db (GetTraitMaybe itemId traitId) >>= \case
         Nothing -> throwError $ err404 {errBody = "Trait not found"}
         Just trait -> pure trait
+
+checkConflict :: CTextEdit -> Text -> Handler ()
+checkConflict CTextEdit {..} serverModified = do
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  when (original /= serverModified) $ do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError $ err409 {errBody = encode conflict}
