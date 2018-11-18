@@ -180,7 +180,7 @@ createTrait db itemId traitType text = do
 setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
 setTrait db itemId traitId CTextEdit{..} = do
   serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail db itemId traitId
-  checkConflict CTextEdit {..} serverModified
+  checkConflict CTextEdit{..} serverModified
   (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId $ unH cteModified)
   pure NoContent
 
