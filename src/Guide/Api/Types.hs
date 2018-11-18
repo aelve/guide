@@ -165,7 +165,7 @@ data ItemSite route = ItemSite
       :> Capture "item" (Uid Item)
       :> "summary"
       :> ReqBody '[JSON] CTextEdit
-      :> ErrorResponse 409 "Merge conflict occured"
+      :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
 
   , _setItemEcosystem :: route :-
