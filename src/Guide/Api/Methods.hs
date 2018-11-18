@@ -132,7 +132,7 @@ setItemInfo db itemId CItemInfo{..} = do
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemSummary db itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
-  checkConflict CTextEdit {..} serverModified
+  checkConflict CTextEdit{..} serverModified
   (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
   pure NoContent
 
@@ -148,7 +148,7 @@ setItemEcosystem db itemId CTextEdit{..} = do
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemNotes db itemId CTextEdit{..} = do
   serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail db itemId
-  checkConflict CTextEdit {..} serverModified
+  checkConflict CTextEdit{..} serverModified
   (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId $ unH cteModified)
   pure NoContent
 
@@ -245,8 +245,9 @@ getTraitOrFail db itemId traitId = do
         Nothing -> throwError $ err404 {errBody = "Trait not found"}
         Just trait -> pure trait
 
+-- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Handler ()
-checkConflict CTextEdit {..} serverModified = do
+checkConflict CTextEdit{..} serverModified = do
   let original = unH cteOriginal
   let modified = unH cteModified
   when (original /= serverModified) $ do
