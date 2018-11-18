@@ -198,7 +198,7 @@ setItemEcosystem db itemId CTextEdit{..} =
           (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId modified)
           pure NoContent
 
--- | Set item`s notes.
+-- | Set item's notes.
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemNotes db itemId CTextEdit{..} =
     dbQuery db (GetItemMaybe itemId) >>= \case
