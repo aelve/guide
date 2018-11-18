@@ -179,7 +179,7 @@ data ItemSite route = ItemSite
       :> Put '[JSON] NoContent
 
   , _setItemNotes :: route :-
-      Summary "Set item`s summary"
+      Summary "Set item's notes"
       :> ErrorResponse 404 "Item not found"
       :> "item"
       :> Capture "item" (Uid Item)
