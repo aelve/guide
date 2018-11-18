@@ -290,7 +290,8 @@ getItemOrFail db itemId = do
     Nothing  -> throwError $ err404 {errBody = "Item not found"}
     Just item -> pure item
 
--- | Helper. Get Trait from database and throw error when Nothing.
+-- | Helper. Get a trait from database and throw error 404 when
+-- either the item or the trait doesn't exist.
 getTraitOrFail :: DB -> Uid Item -> Uid Trait -> Handler Trait
 getTraitOrFail db itemId traitId = do
   dbQuery db (GetItemMaybe itemId) >>= \case
