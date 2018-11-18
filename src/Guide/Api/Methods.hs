@@ -65,53 +65,44 @@ createCategory db title' group' = do
 
 -- | Edit categoty's note.
 setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
-setCategoryNotes db catId CTextEdit{..} =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just Category{..} -> do
-      let serverModified = markdownBlockMdSource _categoryNotes
-      let original = unH cteOriginal
-      let modified = unH cteModified
-      if original /= serverModified then do
-        let merged = merge original modified serverModified
-        let conflict = CMergeConflict
-                { cmcOriginal = cteOriginal
-                , cmcModified = cteModified
-                , cmcServerModified = H serverModified
-                , cmcMerged = H merged
-                }
-        throwError (err409 {errBody = encode conflict})
-      else do
-        (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId modified)
-        pure NoContent
+setCategoryNotes db catId CTextEdit{..} = categoryHelper db catId $ \Category {..} -> do
+  let serverModified = markdownBlockMdSource _categoryNotes
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  if original /= serverModified then do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError $ err409 {errBody = encode conflict}
+  else do
+    (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId modified)
+    pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
-setCategoryInfo db catId CCategoryInfoEdit{..} =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just category -> do
-      -- TODO diff and merge
-      _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
-      _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
-      _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
-      let oldEnabledSections = category ^. enabledSections
-      let newEnabledSections = unH ccieSections
-      _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
-          (newEnabledSections S.\\ oldEnabledSections)
-          (oldEnabledSections S.\\ newEnabledSections)
-      -- TODO record edits
-      pure NoContent
+setCategoryInfo db catId CCategoryInfoEdit{..} = categoryHelper db catId $ \category -> do
+  -- TODO diff and merge
+  _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
+  _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
+  _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+  let oldEnabledSections = category ^. enabledSections
+  let newEnabledSections = unH ccieSections
+  _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
+      (newEnabledSections S.\\ oldEnabledSections)
+      (oldEnabledSections S.\\ newEnabledSections)
+  -- TODO record edits
+  pure NoContent
 
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent
-deleteCategory db catId =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      _mbEdit <- dbUpdate db (DeleteCategory catId)
-      pure NoContent
-      -- TODO mapM_ addEdit mbEdit
+deleteCategory db catId = categoryHelper db catId $ \_ -> do
+  _mbEdit <- dbUpdate db (DeleteCategory catId)
+  pure NoContent
+  -- TODO mapM_ addEdit mbEdit
 
 ----------------------------------------------------------------------------
 -- Items
@@ -124,7 +115,7 @@ deleteCategory db catId =
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
 createItem db catId name' =
   dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
+    Nothing -> throwError $ err404 {errBody = "Category not found"}
     Just _ -> do
       if T.null name' then throwError (err400 {errBody = "Name not provided"})
       else do
@@ -143,82 +134,70 @@ createItem db catId name' =
 
 -- | Set item's info
 setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
-setItemInfo db itemId CItemInfo{..} =
-  dbQuery db (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Item not found"})
-    Just _ -> do
-      -- TODO diff and merge
-      _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
-      _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
-      _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-      _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
-      pure NoContent
+setItemInfo db itemId CItemInfo{..} = itemHelper db itemId $ \_ -> do
+  -- TODO diff and merge
+  _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
+  _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+  _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+  _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
+  pure NoContent
 
 -- | Set item's summary.
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
-setItemSummary db itemId CTextEdit{..} =
-    dbQuery db (GetItemMaybe itemId) >>= \case
-      Nothing -> throwError (err404 {errBody = "Item not found"})
-      Just Item{..} -> do
-        let serverModified = markdownBlockMdSource _itemDescription
-        let original = unH cteOriginal
-        let modified = unH cteModified
-        if original /= serverModified then do
-          let merged = merge original modified serverModified
-          let conflict = CMergeConflict
-                  { cmcOriginal = cteOriginal
-                  , cmcModified = cteModified
-                  , cmcServerModified = H serverModified
-                  , cmcMerged = H merged
-                  }
-          throwError (err409 {errBody = encode conflict})
-        else do
-          (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId modified)
-          pure NoContent
+setItemSummary db itemId CTextEdit{..} = itemHelper db itemId $ \Item {..} -> do
+  let serverModified = markdownBlockMdSource _itemDescription
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  if original /= serverModified then do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError (err409 {errBody = encode conflict})
+  else do
+    (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId modified)
+    pure NoContent
 
 -- | Set item's ecosystem.
 setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
-setItemEcosystem db itemId CTextEdit{..} =
-    dbQuery db (GetItemMaybe itemId) >>= \case
-      Nothing -> throwError (err404 {errBody = "Item not found"})
-      Just Item{..} -> do
-        let serverModified = markdownBlockMdSource _itemEcosystem
-        let original = unH cteOriginal
-        let modified = unH cteModified
-        if original /= serverModified then do
-          let merged = merge original modified serverModified
-          let conflict = CMergeConflict
-                  { cmcOriginal = cteOriginal
-                  , cmcModified = cteModified
-                  , cmcServerModified = H serverModified
-                  , cmcMerged = H merged
-                  }
-          throwError (err409 {errBody = encode conflict})
-        else do
-          (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId modified)
-          pure NoContent
+setItemEcosystem db itemId CTextEdit{..} = itemHelper db itemId $ \Item {..} -> do
+  let serverModified = markdownBlockMdSource _itemEcosystem
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  if original /= serverModified then do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError $ err409 {errBody = encode conflict}
+  else do
+    (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId modified)
+    pure NoContent
 
 -- | Set item's notes.
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
-setItemNotes db itemId CTextEdit{..} =
-    dbQuery db (GetItemMaybe itemId) >>= \case
-      Nothing -> throwError (err404 {errBody = "Item not found"})
-      Just Item{..} -> do
-        let serverModified = markdownTreeMdSource _itemNotes
-        let original = unH cteOriginal
-        let modified = unH cteModified
-        if original /= serverModified then do
-          let merged = merge original modified serverModified
-          let conflict = CMergeConflict
-                  { cmcOriginal = cteOriginal
-                  , cmcModified = cteModified
-                  , cmcServerModified = H serverModified
-                  , cmcMerged = H merged
-                  }
-          throwError (err409 {errBody = encode conflict})
-        else do
-          (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId modified)
-          pure NoContent
+setItemNotes db itemId CTextEdit{..} = itemHelper db itemId $ \Item {..} -> do
+  let serverModified = markdownTreeMdSource _itemNotes
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  if original /= serverModified then do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError $ err409 {errBody = encode conflict}
+  else do
+    (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId modified)
+    pure NoContent
 
 -- | Delete an item.
 deleteItem :: DB -> Uid Item -> Handler NoContent
@@ -246,28 +225,25 @@ createTrait db itemId traitType text = do
 
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
-setTrait db itemId traitId CTextEdit{..} = do
-  dbQuery db (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Item not found"})
-    Just _ -> do
-      dbQuery db (GetTraitMaybe itemId traitId) >>= \case
-        Nothing -> throwError (err404 {errBody = "Trait not found"})
-        Just Trait{..} -> do
-          let serverModified = markdownInlineMdSource _traitContent
-          let original = unH cteOriginal
-          let modified = unH cteModified
-          if original /= serverModified then do
-            let merged = merge original modified serverModified
-            let conflict = CMergeConflict
-                    { cmcOriginal = cteOriginal
-                    , cmcModified = cteModified
-                    , cmcServerModified = H serverModified
-                    , cmcMerged = H merged
-                    }
-            throwError (err409 {errBody = encode conflict})
-          else do
-            (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
-            pure NoContent
+setTrait db itemId traitId CTextEdit{..} = itemHelper db itemId $ \_ -> do
+  dbQuery db (GetTraitMaybe itemId traitId) >>= \case
+    Nothing -> throwError $ err404 {errBody = "Trait not found"}
+    Just Trait{..} -> do
+      let serverModified = markdownInlineMdSource _traitContent
+      let original = unH cteOriginal
+      let modified = unH cteModified
+      if original /= serverModified then do
+        let merged = merge original modified serverModified
+        let conflict = CMergeConflict
+              { cmcOriginal = cteOriginal
+              , cmcModified = cteModified
+              , cmcServerModified = H serverModified
+              , cmcMerged = H merged
+              }
+        throwError (err409 {errBody = encode conflict})
+      else do
+        (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
+        pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
@@ -304,3 +280,19 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
+
+-- | Helper. Get Category from database and throw error when Nothing.
+categoryHelper :: DB -> Uid Category -> (Category -> Handler NoContent) -> Handler NoContent
+categoryHelper db catId handler = do
+    mItem <- dbQuery db (GetCategoryMaybe catId)
+    case mItem of
+        Nothing -> throwError $ err404 {errBody = "Category not found"}
+        Just category -> handler category
+
+-- | Helper. Get Item from database and throw error when Nothing.
+itemHelper :: DB -> Uid Item -> (Item -> Handler NoContent) -> Handler NoContent
+itemHelper db itemId handler = do
+  mItem <- dbQuery db (GetItemMaybe itemId)
+  case mItem of
+    Nothing -> throwError $ err404 {errBody = "Item not found"}
+    Just item -> handler item
