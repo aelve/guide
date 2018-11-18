@@ -14,7 +14,7 @@
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
           <button @click="openConfirmDialog">
-            <i class="fas fa-times"></i>
+            <i class="fas fa-times item-del-btn"></i>
           </button>
         </div>
       </div>

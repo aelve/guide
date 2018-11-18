@@ -32,7 +32,7 @@ test('Delete Item from category', async deleteItem => {
     return last
   })
 
-  const delSubmitBtn = Selector('.conf-btn')
+  const delSubmitBtn = Selector('.confirm-btn')
   
   await deleteItem
     .click(delItemBtn)
