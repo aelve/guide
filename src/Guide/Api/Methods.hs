@@ -276,7 +276,7 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
 dbQuery db x = liftIO $
   Acid.query db x
 
--- | Helper. Get Category from database and throw error when Nothing.
+-- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: DB -> Uid Category -> Handler Category
 getCategoryOrFail db catId = do
   dbQuery db (GetCategoryMaybe catId) >>= \case
