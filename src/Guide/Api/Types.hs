@@ -118,7 +118,7 @@ data CategorySite route = CategorySite
       :> Capture "id" (Uid Category)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
-      :> ErrorResponse 409 "Merge conflict occured"
+      :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
 
   , _setCategoryInfo :: route :-
@@ -175,7 +175,7 @@ data ItemSite route = ItemSite
       :> Capture "item" (Uid Item)
       :> "ecosystem"
       :> ReqBody '[JSON] CTextEdit
-      :> ErrorResponse 409 "Merge conflict occured"
+      :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
 
   , _setItemNotes :: route :-
@@ -185,7 +185,7 @@ data ItemSite route = ItemSite
       :> Capture "item" (Uid Item)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
-      :> ErrorResponse 409 "Merge conflict occured"
+      :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
 
   , _deleteItem :: route :-
@@ -218,7 +218,7 @@ data TraitSite route = TraitSite
       :> "trait"
       :> Capture "id" (Uid Trait)
       :> ReqBody '[JSON] CTextEdit
-      :> ErrorResponse 409 "Merge conflict occured"
+      :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
 
   , _deleteTrait :: route :-

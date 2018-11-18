@@ -63,8 +63,7 @@ createCategory db title' group' = do
 -- | Edit categoty's note.
 setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
 setCategoryNotes db catId CTextEdit{..} = do
-  Category{..} <- getCategoryOrFail db catId
-  let serverModified = markdownBlockMdSource _categoryNotes
+  serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail db catId
   let original = unH cteOriginal
   let modified = unH cteModified
   if original /= serverModified then do
@@ -113,22 +112,20 @@ deleteCategory db catId = do
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
 -- with duplicated names.
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
-createItem db catId name' =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError $ err404 {errBody = "Category not found"}
-    Just _ -> do
-      if T.null name' then throwError (err400 {errBody = "Name not provided"})
-      else do
-        itemId <- randomShortUid
-        -- If the item name looks like a Hackage library, assume it's a Hackage
-        -- library.
-        let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-            looksLikeLibrary = T.all isAllowedChar name'
-            kind' = if looksLikeLibrary then Library (Just name') else Other
-        time <- liftIO getCurrentTime
-        (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-        -- TODO: addEdit edit
-        pure itemId
+createItem db catId name' = do
+  _ <- getCategoryOrFail db catId
+  if T.null name' then throwError (err400 {errBody = "Name not provided"})
+  else do
+    itemId <- randomShortUid
+    -- If the item name looks like a Hackage library, assume it's a Hackage
+    -- library.
+    let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
+        looksLikeLibrary = T.all isAllowedChar name'
+        kind' = if looksLikeLibrary then Library (Just name') else Other
+    time <- liftIO getCurrentTime
+    (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
+    -- TODO: addEdit edit
+    pure itemId
 
 -- TODO: move an item
 
@@ -146,8 +143,7 @@ setItemInfo db itemId CItemInfo{..} = do
 -- | Set item's summary.
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemSummary db itemId CTextEdit{..} = do
-  Item{..} <- getItemOrFail db itemId
-  let serverModified = markdownBlockMdSource _itemDescription
+  serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
   let original = unH cteOriginal
   let modified = unH cteModified
   if original /= serverModified then do
@@ -166,8 +162,7 @@ setItemSummary db itemId CTextEdit{..} = do
 -- | Set item's ecosystem.
 setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemEcosystem db itemId CTextEdit{..} = do
-  Item{..} <- getItemOrFail db itemId
-  let serverModified = markdownBlockMdSource _itemEcosystem
+  serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail db itemId
   let original = unH cteOriginal
   let modified = unH cteModified
   if original /= serverModified then do
@@ -186,8 +181,7 @@ setItemEcosystem db itemId CTextEdit{..} = do
 -- | Set item's notes.
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemNotes db itemId CTextEdit{..} = do
-  Item{..} <- getItemOrFail db itemId
-  let serverModified = markdownTreeMdSource _itemNotes
+  serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail db itemId
   let original = unH cteOriginal
   let modified = unH cteModified
   if original /= serverModified then do
@@ -230,25 +224,21 @@ createTrait db itemId traitType text = do
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
 setTrait db itemId traitId CTextEdit{..} = do
-  _ <- getItemOrFail db itemId
-  dbQuery db (GetTraitMaybe itemId traitId) >>= \case
-    Nothing -> throwError $ err404 {errBody = "Trait not found"}
-    Just Trait{..} -> do
-      let serverModified = markdownInlineMdSource _traitContent
-      let original = unH cteOriginal
-      let modified = unH cteModified
-      if original /= serverModified then do
-        let merged = merge original modified serverModified
-        let conflict = CMergeConflict
-              { cmcOriginal = cteOriginal
-              , cmcModified = cteModified
-              , cmcServerModified = H serverModified
-              , cmcMerged = H merged
-              }
-        throwError (err409 {errBody = encode conflict})
-      else do
-        (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
-        pure NoContent
+  serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail db itemId traitId
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  if original /= serverModified then do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError (err409 {errBody = encode conflict})
+  else do
+    (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId modified)
+    pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
@@ -299,3 +289,13 @@ getItemOrFail db itemId = do
   dbQuery db (GetItemMaybe itemId) >>= \case
     Nothing  -> throwError $ err404 {errBody = "Item not found"}
     Just item -> pure item
+
+-- | Helper. Get Trait from database and throw error when Nothing.
+getTraitOrFail :: DB -> Uid Item -> Uid Trait -> Handler Trait
+getTraitOrFail db itemId traitId = do
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Item not found"}
+    Just _ -> do
+      dbQuery db (GetTraitMaybe itemId traitId) >>= \case
+        Nothing -> throwError $ err404 {errBody = "Trait not found"}
+        Just trait -> pure trait
