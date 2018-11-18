@@ -154,7 +154,7 @@ setItemInfo db itemId CItemInfo{..} =
       _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
       pure NoContent
 
--- | Set item`s summary.
+-- | Set item's summary.
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemSummary db itemId CTextEdit{..} =
     dbQuery db (GetItemMaybe itemId) >>= \case
