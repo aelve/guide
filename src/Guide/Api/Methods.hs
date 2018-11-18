@@ -37,10 +37,7 @@ getCategories db = do
 
 -- | Get a single category and all of its items.
 getCategory :: DB -> Uid Category -> Handler CCategoryFull
-getCategory db catId =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing  -> throwError err404
-    Just cat -> pure (toCCategoryFull cat)
+getCategory db catId = toCCategoryFull <$> getCategoryOrFail db catId
 
 -- | Create a new category, given the title and the grandparent (aka group).
 --
@@ -66,7 +63,7 @@ createCategory db title' group' = do
 -- | Edit categoty's note.
 setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Handler NoContent
 setCategoryNotes db catId CTextEdit{..} = do
-  Just Category{..} <- catIdErrorHandler db catId
+  Category{..} <- getCategoryOrFail db catId
   let serverModified = markdownBlockMdSource _categoryNotes
   let original = unH cteOriginal
   let modified = unH cteModified
@@ -86,7 +83,7 @@ setCategoryNotes db catId CTextEdit{..} = do
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
 setCategoryInfo db catId CCategoryInfoEdit{..} = do
-  Just category <- catIdErrorHandler db catId
+  category <- getCategoryOrFail db catId
   -- TODO diff and merge
   _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
   _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
@@ -102,7 +99,7 @@ setCategoryInfo db catId CCategoryInfoEdit{..} = do
 -- | Delete a category.
 deleteCategory :: DB -> Uid Category -> Handler NoContent
 deleteCategory db catId = do
-  Just _ <- catIdErrorHandler db catId
+  _ <- getCategoryOrFail db catId
   _mbEdit <- dbUpdate db (DeleteCategory catId)
   pure NoContent
   -- TODO mapM_ addEdit mbEdit
@@ -138,7 +135,7 @@ createItem db catId name' =
 -- | Set item's info
 setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
 setItemInfo db itemId CItemInfo{..} = do
-  Just _ <- itemIdErrorHandler db itemId
+  _ <- getItemOrFail db itemId
   -- TODO diff and merge
   _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
   _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
@@ -149,7 +146,7 @@ setItemInfo db itemId CItemInfo{..} = do
 -- | Set item's summary.
 setItemSummary :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemSummary db itemId CTextEdit{..} = do
-  Just Item{..} <- itemIdErrorHandler db itemId
+  Item{..} <- getItemOrFail db itemId
   let serverModified = markdownBlockMdSource _itemDescription
   let original = unH cteOriginal
   let modified = unH cteModified
@@ -169,7 +166,7 @@ setItemSummary db itemId CTextEdit{..} = do
 -- | Set item's ecosystem.
 setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemEcosystem db itemId CTextEdit{..} = do
-  Just Item{..} <- itemIdErrorHandler db itemId
+  Item{..} <- getItemOrFail db itemId
   let serverModified = markdownBlockMdSource _itemEcosystem
   let original = unH cteOriginal
   let modified = unH cteModified
@@ -189,7 +186,7 @@ setItemEcosystem db itemId CTextEdit{..} = do
 -- | Set item's notes.
 setItemNotes :: DB -> Uid Item -> CTextEdit -> Handler NoContent
 setItemNotes db itemId CTextEdit{..} = do
-  Just Item{..} <- itemIdErrorHandler db itemId
+  Item{..} <- getItemOrFail db itemId
   let serverModified = markdownTreeMdSource _itemNotes
   let original = unH cteOriginal
   let modified = unH cteModified
@@ -233,7 +230,7 @@ createTrait db itemId traitType text = do
 -- | Update the text of a trait (pro/con).
 setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Handler NoContent
 setTrait db itemId traitId CTextEdit{..} = do
-  Just _ <- itemIdErrorHandler db itemId
+  _ <- getItemOrFail db itemId
   dbQuery db (GetTraitMaybe itemId traitId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Trait not found"}
     Just Trait{..} -> do
@@ -290,16 +287,15 @@ dbQuery db x = liftIO $
   Acid.query db x
 
 -- | Helper. Get Category from database and throw error when Nothing.
-catIdErrorHandler :: DB -> Uid Category -> Handler (Maybe Category)
-catIdErrorHandler db catId = do
-  mCategory <- dbQuery db (GetCategoryMaybe catId)
-  when (isNothing mCategory) $ do throwError $ err404 {errBody = "Category not found"}
-  pure mCategory
-    -- Just category -> handler category
+getCategoryOrFail :: DB -> Uid Category -> Handler Category
+getCategoryOrFail db catId = do
+  dbQuery db (GetCategoryMaybe catId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Category not found"}
+    Just cat -> pure cat
 
 -- | Helper. Get Item from database and throw error when Nothing.
-itemIdErrorHandler :: DB -> Uid Item -> Handler (Maybe Item)
-itemIdErrorHandler db itemId = do
-  mItem <- dbQuery db (GetItemMaybe itemId)
-  when (isNothing mItem) $ do throwError $ err404 {errBody = "Item not found"}
-  pure mItem
+getItemOrFail :: DB -> Uid Item -> Handler Item
+getItemOrFail db itemId = do
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Item not found"}
+    Just item -> pure item
