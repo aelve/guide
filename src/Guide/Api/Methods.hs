@@ -103,7 +103,7 @@ deleteCategory db catId = do
 createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
 createItem db catId name' = do
   _ <- getCategoryOrFail db catId
-  when (T.null name') $ do throwError (err400 {errBody = "Name not provided"})
+  when (T.null name') $ throwError (err400 {errBody = "Name not provided"})
   itemId <- randomShortUid
   -- If the item name looks like a Hackage library, assume it's a Hackage
   -- library.
