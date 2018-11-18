@@ -169,7 +169,7 @@ data ItemSite route = ItemSite
       :> Put '[JSON] NoContent
 
   , _setItemEcosystem :: route :-
-      Summary "Set item`s summary"
+      Summary "Set item's ecosystem"
       :> ErrorResponse 404 "Item not found"
       :> "item"
       :> Capture "item" (Uid Item)
