@@ -283,7 +283,7 @@ getCategoryOrFail db catId = do
     Nothing  -> throwError $ err404 {errBody = "Category not found"}
     Just cat -> pure cat
 
--- | Helper. Get Item from database and throw error when Nothing.
+-- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
 getItemOrFail :: DB -> Uid Item -> Handler Item
 getItemOrFail db itemId = do
   dbQuery db (GetItemMaybe itemId) >>= \case
