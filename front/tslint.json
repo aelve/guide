@@ -19,6 +19,7 @@
     "object-literal-sort-keys": false,
     "only-arrow-functions": false,
     "quotemark": [true, "single"],
+    "no-unused-variable": true,
     "semicolon": [false, "never"],
     "space-before-function-paren": true,
     "whitespace": [true, "check-module"],
