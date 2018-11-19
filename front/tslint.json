@@ -21,6 +21,7 @@
     "quotemark": [true, "single"],
     "no-unused-variable": true,
     "semicolon": [false, "never"],
+    "no-trailing-whitespace": true,
     "space-before-function-paren": true,
     "whitespace": [true, "check-module"],
     "trailing-comma": false,
