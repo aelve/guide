@@ -2,6 +2,7 @@ const webpack = require('webpack')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
+const TSLintPlugin = require('tslint-webpack-plugin')
 
 const { clientPort, ssrPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
@@ -85,14 +86,21 @@ module.exports = {
   plugins: [
     new webpack.ContextReplacementPlugin(
       /moment[\/\\]locale$/,
-      /zh-cn/
+      /ru-RU/
     ),
     new webpack.DefinePlugin({
       BASE_URL: JSON.stringify(`http://localhost:${ssrPort}`)
     }),
-
     new FriendlyErrorsPlugin(),
+    new VueLoaderPlugin(),
 
-    new VueLoaderPlugin()
+    new TSLintPlugin({
+      files: [
+        './client/**/*.ts',
+        './server/**/*.ts',
+        './client/**/*.tsx',
+        './server/**/*.tsx'
+      ]
+    })
   ]
 }

@@ -34,7 +34,6 @@ import Data.Tree
 -- HTML
 import Lucid hiding (for_)
 
-import Guide.Cache
 import Guide.JS (JS (..))
 import Guide.Markdown
 import Guide.Types.Core
@@ -56,7 +55,7 @@ import qualified Guide.JS as JS
 -- TODO: perhaps use jQuery Touch Punch or something to allow dragging items
 -- instead of using arrows? Touch Punch works on mobile, too
 renderItem :: MonadIO m => Category -> Item -> HtmlT m ()
-renderItem category item = cached (CacheItem (item^.uid)) $ do
+renderItem category item =
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ (itemNodeId item), class_ "item"] $ do
     renderItemInfo category item
@@ -112,13 +111,13 @@ renderItemTitle item =
 --
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
-renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
+renderItemInfo cat item =
   let itemkindname :: Text
       itemkindname = case item^.kind of
         Library{} -> "library"
         Tool{}    -> "tool"
         Other{}   -> "other"
-  mustache "item-info" $ A.object [
+  in mustache "item-info" $ A.object [
     "category" A..= cat,
     "item" A..= item,
     "link_to_item" A..= itemLink cat item,
@@ -140,16 +139,15 @@ renderItemInfo cat item = cached (CacheItemInfo (item^.uid)) $ do
 
 -- | Render item description.
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
-renderItemDescription item = cached (CacheItemDescription (item^.uid)) $
-  mustache "item-description" $ A.object [
-    "item" A..= item ]
+renderItemDescription item = mustache "item-description" $
+                                A.object ["item" A..= item ]
 
 -- | Render the “ecosystem” section.
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
-renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
+renderItemEcosystem item =
   let thisId = "item-ecosystem-" <> uidToText (item^.uid)
       this   = JS.selectId thisId
-  div_ [id_ thisId, class_ "item-ecosystem"] $ do
+  in div_ [id_ thisId, class_ "item-ecosystem"] $ do
 
     section "normal" [shown, noScriptShown] $ do
       strong_ "Ecosystem"
@@ -180,8 +178,7 @@ renderItemEcosystem item = cached (CacheItemEcosystem (item^.uid)) $ do
 
 -- | Render the “traits” section.
 renderItemTraits :: MonadIO m => Item -> HtmlT m ()
-renderItemTraits item = cached (CacheItemTraits (item^.uid)) $ do
-  div_ [class_ "item-traits"] $ do
+renderItemTraits item = div_ [class_ "item-traits"] $ do
     div_ [class_ "traits-groups-container"] $ do
       div_ [class_ "traits-group"] $ do
         strong_ "Pros"
@@ -251,7 +248,7 @@ renderTrait itemUid trait =
 
 -- | Render the “notes” section.
 renderItemNotes :: MonadIO m => Category -> Item -> HtmlT m ()
-renderItemNotes category item = cached (CacheItemNotes (item^.uid)) $ do
+renderItemNotes category item = do
   -- Don't change this ID, it's used in e.g. 'JS.expandHash'
   let thisId = "item-notes-" <> uidToText (item^.uid)
       this   = JS.selectId thisId

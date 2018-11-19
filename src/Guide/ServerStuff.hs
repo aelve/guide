@@ -16,14 +16,9 @@ module Guide.ServerStuff
   dbUpdate,
   dbQuery,
 
-  -- * Cache
-  uncache,
-  invalidateCache',
-
   -- * Edits
   addEdit,
   undoEdit,
-  invalidateCacheForEdit,
 
   -- * Handler helpers
   itemVar,
@@ -41,7 +36,6 @@ import Web.Spock hiding (get, head, text)
 -- acid-state
 import Data.Acid as Acid
 
-import Guide.Cache
 import Guide.Config
 import Guide.Markdown
 import Guide.State
@@ -86,42 +80,6 @@ dbQuery :: (MonadIO m, HasSpock m, SpockState m ~ ServerState,
 dbQuery x = do
   db <- _db <$> Spock.getState
   liftIO $ Acid.query db x
-
-----------------------------------------------------------------------------
--- Cache
-----------------------------------------------------------------------------
-
--- | Do a database-modifying action and invalidate the cache /afterwards/.
---
--- To invalidate the cache properly, we use global state – for instance, if
--- item X belongs to category Y, and the item is deleted, we have to
--- invalidate the cache for the category (and for that we need to look at the
--- global state and find out which category has item X). However, we have to
--- use the state from /before/ the item is deleted – otherwise we'll think
--- that no category had the item.
---
--- Note: if you delete or modify something, wrap it into 'uncache'. However,
--- if you /add/ something, use 'invalidateCache'':
---
--- >>> addItem
--- >>> invalidateCache' (CacheItem ...)
-uncache
-  :: (MonadIO m, HasSpock (ActionCtxT ctx m),
-      SpockState (ActionCtxT ctx m) ~ ServerState)
-  => CacheKey -> ActionCtxT ctx m a -> ActionCtxT ctx m a
-uncache key act = do
-  gs <- dbQuery GetGlobalState
-  x <- act
-  invalidateCache gs key
-  return x
-
-invalidateCache'
-  :: (MonadIO m, HasSpock (ActionCtxT ctx m),
-      SpockState (ActionCtxT ctx m) ~ ServerState)
-  => CacheKey -> ActionCtxT ctx m ()
-invalidateCache' key = do
-  gs <- dbQuery GetGlobalState
-  invalidateCache gs key
 
 ----------------------------------------------------------------------------
 -- Edits
@@ -237,63 +195,6 @@ undoEdit (Edit'MoveItem itemId direction) = do
   Right () <$ dbUpdate (MoveItem itemId (not direction))
 undoEdit (Edit'MoveTrait itemId traitId direction) = do
   Right () <$ dbUpdate (MoveTrait itemId traitId (not direction))
-
--- | Given an edit, invalidate cache items that should be invalidated when
--- that edit is undone.
-invalidateCacheForEdit
-  :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
-  => Edit -> m ()
-invalidateCacheForEdit ed = do
-  gs <- dbQuery GetGlobalState
-  mapM_ (invalidateCache gs) $ case ed of
-    Edit'AddCategory catId _ _ ->
-        [CacheCategory catId]
-    -- Normally invalidateCache should invalidate item's category
-    -- automatically, but in this case it's *maybe* possible that the item
-    -- has already been moved somewhere else and so we invalidate both just
-    -- in case.
-    Edit'AddItem catId itemId _ ->
-        [CacheCategory catId, CacheItem itemId]
-    Edit'AddPro itemId _ _ ->
-        [CacheItemTraits itemId]
-    Edit'AddCon itemId _ _ ->
-        [CacheItemTraits itemId]
-    Edit'SetCategoryTitle catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'SetCategoryGroup catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'SetCategoryStatus catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'ChangeCategoryEnabledSections catId _ _ ->
-        [CacheCategoryInfo catId]
-    Edit'SetCategoryNotes catId _ _ ->
-        [CacheCategoryNotes catId]
-    Edit'SetItemName itemId _ _ ->
-        [CacheItemInfo itemId]
-    Edit'SetItemLink itemId _ _ ->
-        [CacheItemInfo itemId]
-    Edit'SetItemGroup itemId _ _ ->
-        [CacheItemInfo itemId]
-    Edit'SetItemKind itemId _ _ ->
-        [CacheItemInfo itemId]
-    Edit'SetItemDescription itemId _ _ ->
-        [CacheItemDescription itemId]
-    Edit'SetItemNotes itemId _ _ ->
-        [CacheItemNotes itemId]
-    Edit'SetItemEcosystem itemId _ _ ->
-        [CacheItemEcosystem itemId]
-    Edit'SetTraitContent itemId _ _ _ ->
-        [CacheItemTraits itemId]
-    Edit'DeleteCategory catId _ ->
-        [CacheCategory catId]
-    Edit'DeleteItem itemId _ ->
-        [CacheItem itemId]
-    Edit'DeleteTrait itemId _ _ ->
-        [CacheItemTraits itemId]
-    Edit'MoveItem itemId _ ->
-        [CacheItem itemId]
-    Edit'MoveTrait itemId _ _ ->
-        [CacheItemTraits itemId]
 
 ----------------------------------------------------------------------------
 -- Handler helpers
