@@ -78,23 +78,23 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
 export default class ArticleItem extends Vue {
   isDialogOpen: boolean = false
 
-  async asyncData() {
+  async asyncData () {
     await this.$store.dispatch('categoryItem/loadCategoryItem')
   }
 
-  get categoryDescription() {
+  get categoryDescription () {
     return _get(this, '$store.state.categoryItem.categoryItemList.description.html')
   }
 
-  get getCategory() {
+  get getCategory () {
     return this.$store.state.categoryItem
   }
 
-  get getCategoryItems() {
+  get getCategoryItems () {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
-  openAddItemDialog() {
+  openAddItemDialog () {
     this.isDialogOpen = true
   }
 }
