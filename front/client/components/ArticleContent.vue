@@ -95,6 +95,7 @@
 // import Component from 'vue-class-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
+import { ICategoryItem } from 'client/service/CategoryItem.ts'
 
 @Component({
   components: {
@@ -125,16 +126,14 @@ export default class ArticleContent extends Vue {
     this.isNoteExpanded = false
   }
 
-  async deleteArticleContent (itemId: any) {
-    await this.$store.dispatch('categoryItem/deleteItem', {
-      id: itemId
-    })
+  async deleteArticleContent (itemId: ICategoryItem['uid']): Promise<void> {
+    await this.$store.dispatch('categoryItem/deleteItemById', itemId)
   }
 
   openConfirmDialog () {
     this.isConfirmDialogOpen = true
   }
-} 
+}
 </script>
 
 <style scoped>
