@@ -41,7 +41,7 @@ test('Add category', async t => {
 
     const newCategoryName = 'mytest-' + new Date().toISOString()
     await t.click(addButton)
-    await t.expect(Selector('.aria-label="Group"').innerText).eql(categoryGroupName)
+    await t.expect(Selector('input[aria-label="Group"]').innerText).eql(categoryGroupName)
     await t
       .typeText('input[aria-label="Category name"]', newCategoryName)
       .click('.add-category-submit-btn')

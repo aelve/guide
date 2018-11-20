@@ -1,24 +1,28 @@
 import { Selector } from 'testcafe'
-import VueSelector from 'testcafe-vue-selectors'
 
-fixture `ItemAddDelete`
-  .page `http://localhost:5000/haskell`;
+fixture`ItemAddDelete`
+  .page`http://localhost:5000/haskell`
 
-test('Add New Item to category', async addItem => {
+const newItemName = 'mytest-' + new Date().toISOString()
+
+test('Add New Item to category', async t => {
   const addItemBtn = Selector('.add-item-btn')
   const addItemInput = Selector('input[aria-label="Item name"]')
-  const itemSubmitBtn = Selector('.add-cat-submit')
-  
-  await addItem
+
+  await t
     .click(addItemBtn)
-    .typeText(addItemInput, 'testcafe-item')
+    .typeText(addItemInput, newItemName)
     .pressKey('enter')
-  for (let i = 0; Selector('.article-hd-textlg').length; i++) {
-    await addItem.expect(Selector('.article-hd-textlg').nth(i).innerText).contains('testcafe-item')
+
+  const articleHeadings = Selector('.article-hd-textlg')
+  const articleHeadingsCount = await articleHeadings.count
+
+  for (let i = 0; i < articleHeadingsCount; i++) {
+    await t.expect(Selector('.article-hd-textlg').nth(i).innerText).contains(newItemName)
   }
 })
 
-test('Delete Item from category', async deleteItem => {
+test('Delete Item from category', async t => {
   const delItemBtn = Selector(() => {
     const buttons = document.querySelectorAll('.item-del-btn')
     let last = buttons[buttons.length - 1]
@@ -26,11 +30,14 @@ test('Delete Item from category', async deleteItem => {
   })
 
   const delSubmitBtn = Selector('.confirm-btn')
-  
-  await deleteItem
+  await t
     .click(delItemBtn)
     .click(delSubmitBtn)
-  for (let i = 0; Selector('.article-hd-textlg').length; i++) {
-    await deleteItem.expect(Selector('.article-hd-textlg').nth(i).innerText).notContains('testcafe-item')
-  }  
+
+  const articleHeadings = Selector('.article-hd-textlg')
+  const articleHeadingsCount = await articleHeadings.count
+
+  for (let i = 0; i < articleHeadingsCount; i++) {
+    await t.expect(articleHeadings.nth(i).innerText).notContains(newItemName)
+  }
 })
