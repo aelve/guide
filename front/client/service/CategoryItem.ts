@@ -1,13 +1,9 @@
 import axios from 'axios'
-import { awaitExpression } from 'babel-types';
+import { ICategoryFull } from './Category'
 
 class CategoryItemService {
-  async getCategoryItem(): Promise<ICategoryItem[]> {
-    const { data } = await axios.get('api/category/sth6l9jl', {})
-    return data
-  }
 
-  async addItem({ category, name }: ICategoryItem) {
+  async addItem ({ category, name }: ICreateCategoryItem) {
     const { data } = await axios.post('api/item/sth6l9jl', null, {
       params: {
         category,
@@ -16,20 +12,34 @@ class CategoryItemService {
     })
     return data
   }
-  
-  async deleteItem({ id }: ICategoryItem) {
-    const { data } = await axios.delete(`api/item/${id}`)
-    return data
+  async deleteItemById (id: ICategoryItem['uid']): Promise<void> {
+    await axios.delete(`api/item/${id}`)
   }
 }
 
+export interface ICreateCategoryItem {
+  category: ICategoryFull['title'],
+  name: ICategoryItem['name']
+}
+
 export interface ICategoryItem {
-  status?: string,
-  group?: string,
-  uid?: string,
-  items?: any[],
-  title?: string,
-  description?: object
+  uid: string
+  name: string
+  created: string
+  group?: string
+  description: object
+  pros: ITrait[]
+  cons: ITrait[]
+  ecosystem: object
+  notes: object
+  link?: string
+  kind: object
+
+}
+
+export interface ITrait {
+  uid: string
+  content: object
 }
 
 const catItemServiceInstance = new CategoryItemService()

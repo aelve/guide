@@ -1,22 +1,25 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
-import { ICategory, CategoryService } from 'client/service/Category'
+import { ICategoryInfo, CategoryService } from 'client/service/Category'
 
-interface CategoryState {
-  categoryList: ICategory[]
+interface ICategoryState {
+  categoryList: ICategoryInfo[]
 }
 
-const state: CategoryState = {
+const state: ICategoryState = {
   categoryList: []
 }
 
-const getters: GetterTree<CategoryState, any> = {}
+const getters: GetterTree<ICategoryState, any> = {}
 
-const actions: ActionTree<CategoryState, any> = {
-  async loadCategoryList({ commit }: ActionContext<CategoryState, any>): Promise<any> {
-    const data: ICategory[] = await CategoryService.getCategoryList()
+const actions: ActionTree<ICategoryState, any> = {
+  async loadCategoryList ({ commit }: ActionContext<ICategoryState, any>): Promise<any> {
+    const data: ICategoryInfo[] = await CategoryService.getCategoryList()
     commit('setCategoryList', data)
   },
-  async createCategory({ dispatch }, { title, group }: ICategory): Promise<ICategory['uid']> {
+  async createCategory (
+    { dispatch }: ActionContext<ICategoryState, any>,
+    { title, group }: { title: ICategoryInfo['title'], group: ICategoryInfo['group'] }
+  ): Promise<ICategoryInfo['uid']> {
     const createdId = await CategoryService.createCategory({
       title,
       group
@@ -26,13 +29,13 @@ const actions: ActionTree<CategoryState, any> = {
   }
 }
 
-const mutations: MutationTree<CategoryState> = {
-  setCategoryList: (state: CategoryState, payload: ICategory[]) => {
+const mutations: MutationTree<ICategoryState> = {
+  setCategoryList: (state: ICategoryState, payload: ICategoryInfo[]) => {
     state.categoryList = payload
   }
 }
 
-const category: Module<CategoryState, any> = {
+const category: Module<ICategoryState, any> = {
   namespaced: true,
   state,
   getters,

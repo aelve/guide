@@ -1,22 +1,26 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
-import { ICategoryItem, CategoryItemService } from 'client/service/CategoryItem'
+import { ICategoryItem, CategoryItemService, ICreateCategoryItem } from 'client/service/CategoryItem'
+import { CategoryService, ICategoryFull } from 'client/service/Category'
 
-interface CategoryItemState {
+interface ICategoryItemState {
   categoryItemList: ICategoryItem[]
 }
 
-const state: CategoryItemState = {
+const state: ICategoryItemState = {
   categoryItemList: []
 }
 
-const getters: GetterTree<CategoryItemState, any> = {}
+const getters: GetterTree<ICategoryItemState, any> = {}
 
-const actions: ActionTree<CategoryItemState, any> = {
-  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>): Promise<any> {
-    const data: ICategoryItem[] = await CategoryItemService.getCategoryItem()
+const actions: ActionTree<ICategoryItemState, any> = {
+  async loadCategoryItem ({ commit }: ActionContext<ICategoryItemState, any>): Promise<void> {
+    const data: ICategoryFull[] = await CategoryService.getCategoryById()
     commit('setCategoryItem', data)
   },
-  async createItem({ dispatch }, { category, name }: ICategoryItem): Promise<any> {
+  async createItem (
+    { dispatch }: ActionContext<ICategoryItemState, any>,
+    { category, name }: ICreateCategoryItem
+  ): Promise<ICategoryItem['uid']> {
     const createdId = await CategoryItemService.addItem({
       category,
       name
@@ -24,22 +28,20 @@ const actions: ActionTree<CategoryItemState, any> = {
     dispatch('loadCategoryItem')
     return createdId
   },
-  async deleteItem({ dispatch }, { id }: ICategoryItem) {
-    const deletedId = await CategoryItemService.deleteItem({
-      id
-    })
+  async deleteItemById ({ dispatch }: ActionContext<ICategoryItemState, any>, id: ICategoryItem['uid']) {
+    const deletedId = await CategoryItemService.deleteItemById(id)
     dispatch('loadCategoryItem')
     return deletedId
   }
 }
 
-const mutations: MutationTree<CategoryItemState> = {
-  setCategoryItem: (state: CategoryItemState, payload: ICategoryItem[]) => {
+const mutations: MutationTree<ICategoryItemState> = {
+  setCategoryItem: (state: ICategoryItemState, payload: ICategoryItem[]) => {
     state.categoryItemList = payload
   }
 }
 
-const categoryItem: Module<CategoryItemState, any> = {
+const categoryItem: Module<ICategoryItemState, any> = {
   namespaced: true,
   state,
   getters,
