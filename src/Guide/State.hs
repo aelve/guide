@@ -35,7 +35,7 @@ module Guide.State
   GetCategory(..), GetCategoryMaybe(..),
   GetCategoryByItem(..),
   GetItem(..), GetItemMaybe (..),
-  GetTrait(..),
+  GetTrait(..), GetTraitMaybe (..),
 
   -- ** add
   AddCategory(..),
@@ -342,6 +342,9 @@ getItemMaybe uid' = preview (itemById uid')
 -- accordingly whenever anything happens, so perhaps let's not do it!)
 getTrait :: Uid Item -> Uid Trait -> Acid.Query GlobalState Trait
 getTrait itemId traitId = view (itemById itemId . traitById traitId)
+
+getTraitMaybe :: Uid Item -> Uid Trait -> Acid.Query GlobalState (Maybe Trait)
+getTraitMaybe itemId traitId = preview (itemById itemId . traitById traitId)
 
 -- add
 
@@ -886,7 +889,7 @@ makeAcidic ''GlobalState [
   'getCategory, 'getCategoryMaybe,
   'getCategoryByItem,
   'getItem, 'getItemMaybe,
-  'getTrait,
+  'getTrait, 'getTraitMaybe,
   -- add
   'addCategory,
   'addItem,

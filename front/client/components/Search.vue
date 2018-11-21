@@ -17,15 +17,15 @@ import Component from 'vue-class-component'
 @Component
 export default class SearchField extends Vue {
 
-  processSearchInput() {
+  processSearchInput () {
     this.$router.push({ name: 'SearchResults', query: { query: this.searchInput } })
   }
 
-  get searchInput() {
+  get searchInput () {
     return this.$store.state.wiki.searchInput
   }
 
-  setSearchInput(value: string) {
+  setSearchInput (value: string) {
     this.$store.commit('wiki/setSearchInput', value)
   }
 }

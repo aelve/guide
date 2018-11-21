@@ -17,8 +17,8 @@
           <p class="article-top-group"> {{value.group}} </p>
         </div>
         <v-btn
+          class="ml-2 pl-0 add-item-btn"
           flat
-          class="ml-2 pl-0"
           color="grey"
           @click="openAddItemDialog"
         >
@@ -82,25 +82,25 @@ export default class ArticleItem extends Vue {
   isDialogOpen: boolean = false
 
   async asyncData() {
-    const rawUrl = this.$props.category
+    const rawUrl = this.$route.params.category
     const categoryUrl = rawUrl.split("-").pop().split("#").shift()
 
     await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
   }
 
-  get categoryDescription() {
+  get categoryDescription () {
     return _get(this, '$store.state.categoryItem.categoryItemList.description.html')
   }
 
-  get getCategory() {
+  get getCategory () {
     return this.$store.state.categoryItem
   }
 
-  get getCategoryItems() {
+  get getCategoryItems () {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
-  openAddItemDialog() {
+  openAddItemDialog () {
     this.isDialogOpen = true
   }
 

@@ -37,7 +37,7 @@
         <v-btn
           flat
           color="primary"
-          class="add-cat-submit"
+          class="add-category-submit-btn"
           :disabled="!isValid"
           @click.native="submit"
         >
@@ -72,16 +72,16 @@ export default class AddCategoryDialog extends Vue {
   isValid: boolean = false
 
   @Watch('value')
-  onOpen(newVal: boolean) {
+  onOpen (newVal: boolean) {
     this.categoryName = ''
     this.groupNameInternal = this.groupName
   }
 
-  close() {
+  close () {
     this.$emit('input', false)
   }
 
-  async submit() {
+  async submit () {
     if (!this.$refs.form.validate()) {
       return
     }

@@ -14,7 +14,7 @@
         <div class="header-func-icons">
           <i class="fas fa-cogs"></i>
           <button @click="openConfirmDialog">
-            <i class="fas fa-times"></i>
+            <i class="fas fa-times item-del-btn"></i>
           </button>
         </div>
       </div>
@@ -106,8 +106,8 @@ export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
   @Prop(String) group!: string
   @Prop(String) itemDescription!: string
-  @Prop(Array)  pros!: [any]
-  @Prop(Array)  cons!: [any]
+  @Prop(Array) pros!: [any]
+  @Prop(Array) cons!: [any]
   @Prop(String) ecosystem!: string
   @Prop(Array) tocArray!: [any]
   @Prop(Object) tocItemContent!: object
@@ -117,206 +117,208 @@ export default class ArticleContent extends Vue {
   isNoteExpanded: boolean = false
   isConfirmDialogOpen: boolean = false
 
-  expandNotes() {  
+  expandNotes () {
     this.isNoteExpanded = true
   }
 
-  collapseNotes() {
+  collapseNotes () {
     this.isNoteExpanded = false
   }
 
-  async deleteArticleContent(itemId: any) {
+  async deleteArticleContent (itemId: any) {
     await this.$store.dispatch('categoryItem/deleteItem', {
       id: itemId
     })
   }
 
-  openConfirmDialog() {
+  openConfirmDialog () {
     this.isConfirmDialogOpen = true
   }
 } 
 </script>
 
 <style scoped>
-  .article-content >>> p {
-    font-size: 16px;
-    margin: 0 0 10px;
-  }
+.article-content >>> p {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
 
-  .article-content >>> li {
-    font-size: 16px;
-  }
+.article-content >>> li {
+  font-size: 16px;
+}
 
-  .article-description {
-    margin: 10px 0 60px;
-  }
+.article-description {
+  margin: 10px 0 60px;
+}
 
-  .article-description >>> p {
-    margin: 0;
-  }
+.article-description >>> p {
+  margin: 0;
+}
 
-  .article-description >>> p {
-    margin: 0 0 15px;
-    font-size: 16px;
-  }
+.article-description >>> p {
+  margin: 0 0 15px;
+  font-size: 16px;
+}
 
-  .article-description >>> h1 {
-    margin: 25px 0 5px;
-  }
+.article-description >>> h1 {
+  margin: 25px 0 5px;
+}
 
-  .article-section {
-    margin: 30px 0;
-  }
+.article-section {
+  margin: 30px 0;
+}
 
-  .notes-box {
-    position: relative;
-  }
+.notes-box {
+  position: relative;
+}
 
-  .article-section.pros-cons-box, .article-section.notes-box >>> li {
-    margin: 0 0 5px;
-  }
+.article-section.pros-cons-box,
+.article-section.notes-box >>> li {
+  margin: 0 0 5px;
+}
 
-  .article-section.notes-box >>> h1 {
-    margin: 20px 0;
-  }
+.article-section.notes-box >>> h1 {
+  margin: 20px 0;
+}
 
+.article-item {
+  background: #e5e5e5;
+  padding: 15px 20px 25px;
+  margin: 0 0 80px;
+}
+
+.article-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  margin: -15px -20px 15px;
+  background: #c8c8c8;
+}
+
+.flex-wrapper {
+  display: flex;
+}
+
+.width-50 {
+  width: 50%;
+  padding-right: 20px;
+}
+
+.width-50:nth-last-child(1) {
+  padding-right: 0;
+  padding-left: 20px;
+}
+
+.article-section-title {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 22px !important;
+  font-weight: 600;
+}
+
+.article-hd-textlg {
+  font-size: 22px;
+}
+
+.article-hd-textsm {
+  font-size: 18px;
+}
+
+.article-header-link {
+  font-size: 22px;
+  padding: 0 32px 0 8px;
+}
+
+.article-header-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.article-header-icons >>> i {
+  margin-right: 5px;
+  font-size: 18px;
+  color: #979797;
+  cursor: pointer;
+  transition: all ease-in-out 0.25s;
+}
+
+.article-header-icons >>> i:nth-last-child(1) {
+  margin: 0;
+}
+
+.article-header-icons >>> i:hover {
+  color: #000;
+}
+
+.header-func-icons {
+  padding-left: 20px;
+}
+
+.notes-toc-item >>> p {
+  margin: 0;
+}
+
+.notes-toc-item >>> a {
+  text-decoration: none;
+  transition: all ease-in-out 0.25s;
+}
+
+.notes-toc-item >>> a:hover {
+  color: #7eb2e5;
+}
+
+.notes-settings {
+  display: flex;
+  width: 100%;
+  padding: 0 0 12px;
+}
+
+.notes-settings-btn {
+  margin-left: 20px;
+  padding: 3px 8px 2px;
+  background: #212121;
+  border-radius: 4px;
+  color: #fff;
+  transition: all ease-in-out 0.25s;
+}
+
+.notes-settings-btn:hover {
+  background: #424242;
+}
+
+.notes-settings-btn:focus,
+.notes-settings-btn:active {
+  outline: none;
+}
+
+.notes-settings-btn:nth-child(1) {
+  margin-left: 0;
+}
+
+.notes-content {
+  /* position: absolute; */
+  transform-origin: top;
+  /* bottom: 0; */
+}
+
+@media screend and (max-width: 768px) {
+  .article-content {
+    width: 100%;
+  }
   .article-item {
-    background: #E5E5E5;
-    padding: 15px 20px 25px;
-    margin: 0 0 80px;
+    margin: 0 0 30px;
   }
-
-  .article-header {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    margin: -15px -20px 15px;
-    background: #C8C8C8;
-  }
-
-  .flex-wrapper {
-    display: flex;
-  }
-
-  .width-50 {
-    width: 50%;
-    padding-right: 20px;
-  }
-
-  .width-50:nth-last-child(1) {
-    padding-right: 0;
-    padding-left: 20px;
-  }
-
-  .article-section-title {
-    display: block;
-    margin: 0 0 8px;
-    font-size: 22px!important;
-    font-weight: 600;
-  }
-
   .article-hd-textlg {
-    font-size: 22px;
+    font-size: 20px;
   }
-
   .article-hd-textsm {
-    font-size: 18px;
+    font-size: 16px;
   }
-
   .article-header-link {
-    font-size: 22px;
+    font-size: 20px;
     padding: 0 32px 0 8px;
   }
-
-  .article-header-icons {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex: 1;
-  }
-
-  .article-header-icons >>> i {
-    margin-right: 5px;
-    font-size: 18px;
-    color: #979797;
-    cursor: pointer;
-    transition: all ease-in-out .25s;
-  }
-
-  .article-header-icons >>> i:nth-last-child(1) {
-    margin: 0;
-  }
-
-  .article-header-icons >>> i:hover {
-    color: #000;
-  }
-
-  .header-func-icons {
-    padding-left: 20px;
-  }
-
-  .notes-toc-item >>> p {
-    margin: 0;
-  }
-
-  .notes-toc-item >>> a {
-    text-decoration: none;
-    transition: all ease-in-out .25s;
-  }
-
-  .notes-toc-item >>> a:hover {
-    color: #7eb2e5; 
-  } 
-
-  .notes-settings {
-    display: flex;
-    width: 100%;
-    padding: 0 0 12px;
-  }
-
-  .notes-settings-btn {
-    margin-left: 20px;
-    padding: 3px 8px 2px;
-    background: #212121;
-    border-radius: 4px;
-    color: #fff;
-    transition: all ease-in-out .25s;
-  }
-
-  .notes-settings-btn:hover {
-    background: #424242;
-  }
-
-  .notes-settings-btn:focus, .notes-settings-btn:active {
-    outline: none;
-  }
-
-  .notes-settings-btn:nth-child(1) {
-    margin-left: 0;
-  }
-
-  .notes-content {
-    /* position: absolute; */
-    transform-origin: top;
-    /* bottom: 0; */
-  }
-
-  @media screend and (max-width: 768px) {
-    .article-content {
-      width: 100%;
-    }
-    .article-item {
-      margin: 0 0 30px;
-    }
-    .article-hd-textlg {
-      font-size: 20px;
-    }
-    .article-hd-textsm {
-      font-size: 16px;
-    }
-    .article-header-link {
-      font-size: 20px;
-      padding: 0 32px 0 8px;
-    }
-  }
+}
 </style>

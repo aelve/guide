@@ -17,7 +17,7 @@
         :key="index"
       > 
         <div class="category-group">
-          <h4 class="mb-2 display-1 font-weight-black">
+          <h4 class="mb-2 display-1 font-weight-black category-group-name">
             {{ groupName }}
           </h4>
 
@@ -73,7 +73,7 @@
           </router-link>
 
           <v-btn
-            class="ml-2 pl-0"
+            class="ml-2 pl-0 add-category-btn"
             color="grey"
             flat
             @click="openAddCategoryDialog(groupName)"
