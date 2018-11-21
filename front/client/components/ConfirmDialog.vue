@@ -17,6 +17,7 @@
         <v-btn 
           flat
           color="primary"
+          class="confirm-btn"
           @click.native="confirmAction(itemId); close"
         >
           Continue
