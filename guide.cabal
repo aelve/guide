@@ -51,6 +51,7 @@ library
       Guide.Api.Types
       Guide.Api.Error
       Guide.Api.Utils
+      Guide.Api.Guider
     Guide.Main
     Guide.ServerStuff
     Guide.Session
@@ -182,6 +183,10 @@ library
                      , DeriveGeneric
                      , TypeApplications
                      , NoImplicitPrelude
+                     , GeneralizedNewtypeDeriving
+                     , ConstraintKinds
+                     , InstanceSigs
+                     , DerivingStrategies
 
 test-suite tests
   main-is:             Main.hs

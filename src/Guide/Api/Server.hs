@@ -30,6 +30,7 @@ import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Config (Config (..))
 import Guide.State
+import Guide.Api.Guider (guiderToHandler)
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
@@ -37,31 +38,31 @@ import qualified Data.ByteString.Char8 as BSC
 apiServer :: DB -> Site AsServer
 apiServer db = Site
   { _categorySite = toServant (CategorySite
-      { _getCategories    = getCategories db
-      , _getCategory      = getCategory db
-      , _createCategory   = createCategory db
-      , _setCategoryNotes = setCategoryNotes db
-      , _setCategoryInfo  = setCategoryInfo db
-      , _deleteCategory   = deleteCategory db }
+      { _getCategories    = guiderToHandler $ getCategories db
+      , _getCategory      = guiderToHandler . getCategory db
+      , _createCategory   = (guiderToHandler .) . createCategory db
+      , _setCategoryNotes = (guiderToHandler .) . setCategoryNotes db
+      , _setCategoryInfo  = (guiderToHandler .) . setCategoryInfo db
+      , _deleteCategory   = guiderToHandler . deleteCategory db }
       :: CategorySite AsServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = createItem db
-      , _setItemInfo      = setItemInfo db
-      , _setItemSummary   = setItemSummary db
-      , _setItemEcosystem = setItemEcosystem db
-      , _setItemNotes     = setItemNotes db
-      , _deleteItem       = deleteItem db }
+      { _createItem       = (guiderToHandler .) . createItem db
+      , _setItemInfo      = (guiderToHandler .) . setItemInfo db
+      , _setItemSummary   = (guiderToHandler .) . setItemSummary db
+      , _setItemEcosystem = (guiderToHandler .) . setItemEcosystem db
+      , _setItemNotes     = (guiderToHandler .) . setItemNotes db
+      , _deleteItem       = guiderToHandler . deleteItem db }
       :: ItemSite AsServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait    = createTrait db
-      , _setTrait       = setTrait db
-      , _deleteTrait    = deleteTrait db }
+      { _createTrait    = ((guiderToHandler .) .) . createTrait db
+      , _setTrait       = ((guiderToHandler .) .) . setTrait db
+      , _deleteTrait    = (guiderToHandler .) . deleteTrait db }
       :: TraitSite AsServer)
 
   , _searchSite = toServant (SearchSite
-      { _search         = search db }
+      { _search         = guiderToHandler . search db }
       :: SearchSite AsServer)
   }
 
