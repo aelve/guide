@@ -183,7 +183,6 @@ library
                      , DeriveGeneric
                      , TypeApplications
                      , NoImplicitPrelude
-                     , GeneralizedNewtypeDeriving
                      , ConstraintKinds
                      , InstanceSigs
                      , DerivingStrategies

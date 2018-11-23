@@ -19,51 +19,50 @@ import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
 import Servant.API.Generic
-import Servant.Server.Generic
 import Servant.Swagger
 import Servant.Swagger.UI
 
 -- putStrLn that works well with concurrency
 import Say (say)
 
+import Guide.Api.Guider (GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Config (Config (..))
 import Guide.State
-import Guide.Api.Guider (guiderToHandler)
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
 
-apiServer :: DB -> Site AsServer
-apiServer db = Site
+guiderServer :: DB -> Site GuiderServer
+guiderServer db = Site
   { _categorySite = toServant (CategorySite
-      { _getCategories    = guiderToHandler $ getCategories db
-      , _getCategory      = guiderToHandler . getCategory db
-      , _createCategory   = (guiderToHandler .) . createCategory db
-      , _setCategoryNotes = (guiderToHandler .) . setCategoryNotes db
-      , _setCategoryInfo  = (guiderToHandler .) . setCategoryInfo db
-      , _deleteCategory   = guiderToHandler . deleteCategory db }
-      :: CategorySite AsServer)
+      { _getCategories    = getCategories db
+      , _getCategory      = getCategory db
+      , _createCategory   = createCategory db
+      , _setCategoryNotes = setCategoryNotes db
+      , _setCategoryInfo  = setCategoryInfo db
+      , _deleteCategory   = deleteCategory db }
+      :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = (guiderToHandler .) . createItem db
-      , _setItemInfo      = (guiderToHandler .) . setItemInfo db
-      , _setItemSummary   = (guiderToHandler .) . setItemSummary db
-      , _setItemEcosystem = (guiderToHandler .) . setItemEcosystem db
-      , _setItemNotes     = (guiderToHandler .) . setItemNotes db
-      , _deleteItem       = guiderToHandler . deleteItem db }
-      :: ItemSite AsServer)
+      { _createItem       = createItem db
+      , _setItemInfo      = setItemInfo db
+      , _setItemSummary   = setItemSummary db
+      , _setItemEcosystem = setItemEcosystem db
+      , _setItemNotes     = setItemNotes db
+      , _deleteItem       = deleteItem db }
+      :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait    = ((guiderToHandler .) .) . createTrait db
-      , _setTrait       = ((guiderToHandler .) .) . setTrait db
-      , _deleteTrait    = (guiderToHandler .) . deleteTrait db }
-      :: TraitSite AsServer)
+      { _createTrait    = createTrait db
+      , _setTrait       = setTrait db
+      , _deleteTrait    = deleteTrait db }
+      :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite
-      { _search         = guiderToHandler . search db }
-      :: SearchSite AsServer)
+      { _search         = search db }
+      :: SearchSite GuiderServer)
   }
 
 type FullApi =
@@ -72,12 +71,19 @@ type FullApi =
 
 fullServer :: DB -> Server FullApi
 fullServer db =
-  toServant (apiServer db) :<|>
+  api db :<|>
   swaggerSchemaUIServer doc
   where
     doc = toSwagger (Proxy @Api)
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
+
+-- | Convertor from api with Guider to api with Handler via hoistServer.
+api :: DB -> Server Api
+api db = hoistServer proxy guiderToHandler (toServant (guiderServer db))
+
+proxy :: Proxy Api
+proxy = Proxy
 
 -- | Serve the API on port 4400.
 --
