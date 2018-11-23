@@ -84,8 +84,7 @@ export default class ArticleItem extends Vue {
   isDialogOpen: boolean = false
 
   async asyncData() {
-    const rawUrl = this.$route.params.category
-    const categoryUrl = rawUrl.split("-").pop().split("#").shift()
+    const categoryUrl = this.category.split('-').pop()!.split('#').shift()
 
     await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
   }
