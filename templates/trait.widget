@@ -10,6 +10,8 @@ Required context:
   * trait.uid
     trait.content.html
     trait.content.text
+    trait.explanation?.html
+    trait.explanation?.text
 
 
 HTML
@@ -19,6 +21,7 @@ HTML
 
   <div class="section normal editable shown noscript-shown">
     {{{trait.content.html}}}
+    {{{trait.explanation}}}
   </div>
 
   <div class="section editable">

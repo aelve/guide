@@ -21,6 +21,7 @@ overloaded and can be used with many types.
 module Guide.Types.Core
 (
   Trait(..),
+    explanation,
   ItemKind(..),
     hackageName,
   ItemSection(..),
@@ -90,14 +91,20 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 
 -- | A trait (pro or con). Traits are stored in items.
 data Trait = Trait {
-  _traitUid     :: Uid Trait,
-  _traitContent :: MarkdownInline }
+  _traitUid         :: Uid Trait,
+  _traitContent     :: MarkdownInline,
+  _traitExplanation :: Maybe MarkdownBlock }
   deriving (Show, Generic, Data)
 
-deriveSafeCopySorted 4 'extension ''Trait
 makeFields ''Trait
 
-changelog ''Trait (Current 4, Past 3) []
+deriveSafeCopySorted 5 'extension ''Trait
+changelog ''Trait (Current 5, Past 4) [
+  Added "_traitExplanation" [t|Nothing|] ]
+
+deriveSafeCopySorted 4 'extension ''Trait_v4
+changelog ''Trait (Past 4, Past 3) []
+
 deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance A.ToJSON Trait where
