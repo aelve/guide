@@ -46,8 +46,8 @@ getCategory db catId = toCCategoryFull <$> getCategoryOrFail db catId
 -- category with this title exists already).
 createCategory :: DB -> Text -> Text -> Guider (Uid Category)
 createCategory db title' group' = do
-  when (T.null title') $ do throwError (err400 {errBody = "Title not provided"})
-  when (T.null group') $ do throwError (err400 {errBody = "Group' not provided"})
+  when (T.null title') $ throwError err400 {errBody = "Title not provided"}
+  when (T.null group') $ throwError err400 {errBody = "Group' not provided"}
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery db GetGlobalState
   let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
@@ -169,7 +169,7 @@ deleteItem db itemId = do
 -- | Create a trait (pro/con).
 createTrait :: DB -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
 createTrait db itemId traitType text = do
-  when (T.null text) $ throwError (err400 {errBody = "Trait text not provided"})
+  when (T.null text) $ throwError err400 {errBody = "Trait text not provided"}
   traitId <- randomShortUid
   (_edit, _newTrait) <- case traitType of
     Con -> dbUpdate db (AddCon itemId traitId text)
