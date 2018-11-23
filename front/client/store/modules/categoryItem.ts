@@ -12,9 +12,10 @@ const state: ICategoryItemState = {
 
 const getters: GetterTree<ICategoryItemState, any> = {}
 
-const actions: ActionTree<ICategoryItemState, any> = {
-  async loadCategoryItem ({ commit }: ActionContext<ICategoryItemState, any>): Promise<void> {
-    const data: ICategoryFull[] = await CategoryService.getCategoryById()
+const actions: ActionTree<CategoryItemState, any> = {
+  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>, category): Promise<void> {
+    // something is going on with category
+    const data: ICategoryFull[] = await CategoryService.getCategoryById(category)
     commit('setCategoryItem', data)
   },
   async createItem (

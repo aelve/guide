@@ -3,7 +3,9 @@
     <toolbar></toolbar>
     <v-content>
       <v-container fluid>
-        <router-view></router-view>
+        <keep-alive exclude="article-page">
+          <router-view></router-view>
+        </keep-alive>
       </v-container>
     </v-content>
     <a-footer />

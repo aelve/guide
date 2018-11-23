@@ -8,12 +8,12 @@
           v-for="(value, key) in getCategory"
           :key="key"
         >
-          <a
+          <router-link
             class="article-top-link"
-            href="https://guide.aelve.com/haskell/lenses-sth6l9jl"
+            :to="`${category}`"
           >
             {{value.title}}
-          </a>
+          </router-link>
           <p class="article-top-group"> {{value.group}} </p>
         </div>
         <v-btn
@@ -68,18 +68,26 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import ArticleContent from 'client/components/ArticleContent.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
+import { Prop } from 'vue-property-decorator';
+import category from 'client/store/modules/category';
 
 @Component({
+  name: 'article-component',
   components: {
     ArticleContent,
     AddItemDialog
   }
 })
 export default class ArticleItem extends Vue {
+  @Prop(String) category!: string
+
   isDialogOpen: boolean = false
 
-  async asyncData () {
-    await this.$store.dispatch('categoryItem/loadCategoryItem')
+  async asyncData() {
+    const rawUrl = this.$route.params.category
+    const categoryUrl = rawUrl.split("-").pop().split("#").shift()
+
+    await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
   }
 
   get categoryDescription () {
@@ -92,6 +100,10 @@ export default class ArticleItem extends Vue {
 
   get getCategoryItems () {
     return this.$store.state.categoryItem.categoryItemList.items
+  }
+
+  get categoryUrl () {
+    return this.$route.params.category
   }
 
   openAddItemDialog () {

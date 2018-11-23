@@ -1,6 +1,6 @@
 import Router from 'vue-router'
 
-function createRouter() {
+function createRouter () {
   return new Router({
     mode: 'history',
     fallback: false,
@@ -18,7 +18,11 @@ function createRouter() {
         name: 'Index',
         component: () => import('../page/Index.vue')
       },
-      { path: '/haskell', component: () => import('../page/ArticlePage.vue') },
+      { path: '/haskell/:category',
+        name: 'Category',
+        component: () => import('../page/ArticlePage.vue'),
+        props: true
+      },
       {
         path: '/haskell/search/results/',
         name: 'SearchResults',

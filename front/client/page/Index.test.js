@@ -10,8 +10,8 @@ fixture`Index`
 
 test('Navigate to category page', async t => {
   await t
-    .click('.test-btn')
-    .expect(getLocation()).contains(`${baseUrl}/haskell`)
+    .click('.category-title')
+    .expect(getLocation()).contains(`${baseUrl}/haskell/data-structures-fum5aqch`)
 })
 
 test('Test search input', async inputSearch => {
