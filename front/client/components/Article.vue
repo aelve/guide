@@ -10,7 +10,7 @@
         >
           <router-link
             class="article-top-link"
-            :to="`${pathname()}`"
+            :to="`${categoryUrl}`"
           >
             {{value.title}}
           </router-link>
@@ -100,12 +100,12 @@ export default class ArticleItem extends Vue {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
-  openAddItemDialog () {
-    this.isDialogOpen = true
+  get categoryUrl () {
+    return this.$route.params.category
   }
 
-  pathname() {
-    return this.$route.params.category
+  openAddItemDialog () {
+    this.isDialogOpen = true
   }
 }
 </script>
