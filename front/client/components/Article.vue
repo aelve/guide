@@ -10,7 +10,7 @@
         >
           <router-link
             class="article-top-link"
-            :to="`${categoryUrl}`"
+            :to="`${category}`"
           >
             {{value.title}}
           </router-link>
@@ -79,6 +79,8 @@ import category from 'client/store/modules/category';
   }
 })
 export default class ArticleItem extends Vue {
+  @Prop(String) category!: string
+
   isDialogOpen: boolean = false
 
   async asyncData() {
