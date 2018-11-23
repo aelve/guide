@@ -26,11 +26,76 @@
           Add new item
         </v-btn>
       </div>
+      <!-- When no category description show stub -->
+      <div 
+        v-if="categoryDescription == ''"
+        class="article-description"
+      >
+        <p v-if="!editDescriptionShown">This category has no description yet, you can contribute to the category by adding description</p>
+        <v-textarea
+          v-if="editDescriptionShown"
+          solo
+          name="input-7-4"
+          label="Solo textarea"
+          value="Write new description here"
+        />
+        <v-btn
+          v-if="!editDescriptionShown"
+          class="pl-0 edit-descr-btn"
+          depressed
+          small
+          light
+          color="lightgrey"
+          @click="toggleEditDescription"
+        >
+          <v-icon class="mr-1" left>add</v-icon>
+          add description
+        </v-btn>
+        <v-layout
+          v-if="editDescriptionShown" 
+          align-center 
+          justify-start 
+          row
+        >
+          <v-btn
+            class="ml-0"
+            depressed
+            small
+            light
+            color="lightgrey"
+            @click="toggleEditDescription"
+          >
+            Save
+          </v-btn>
+          <v-btn
+            class="ml-2"
+            depressed
+            small
+            light
+            color="lightgrey"
+            @click="toggleEditDescription"
+          >
+            Cancel
+          </v-btn>
+        </v-layout>
+      </div>
+
       <div
         v-if="categoryDescription"
         class="article-description"
       >
         <div v-html="categoryDescription" />
+        <v-btn
+          class="pl-0 edit-descr-btn"
+          depressed
+          small
+          light
+          color="lightgrey"
+          @click="toggleEditDescription"
+        >
+          <v-icon class="mr-1" left>edit</v-icon>
+          Edit description
+        </v-btn>
       </div>
       <div
         v-for="(value, index) in getCategoryItems"
@@ -80,10 +145,12 @@ import category from 'client/store/modules/category';
 })
 export default class ArticleItem extends Vue {
   isDialogOpen: boolean = false
+  editDescriptionShown: boolean = false
+  catUid: string = ''
 
   async asyncData() {
     const rawUrl = this.$route.params.category
-    const categoryUrl = rawUrl.split("-").pop().split("#").shift()
+    const categoryUrl = rawUrl.split("-").pop()!.split("#").shift()
 
     await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
   }
@@ -100,8 +167,21 @@ export default class ArticleItem extends Vue {
     return this.$store.state.categoryItem.categoryItemList.items
   }
 
+  get categoryUid () {
+    return this.catUid = this.$store.state.categoryItem.uid
+  }
+
   openAddItemDialog () {
     this.isDialogOpen = true
+  }
+
+  toggleEditDescription() {
+    if (this.editDescriptionShown === false) {
+      this.editDescriptionShown = true
+      return
+    }
+
+    this.editDescriptionShown = false
   }
 
   pathname() {
@@ -169,6 +249,10 @@ export default class ArticleItem extends Vue {
 
 .article-description >>> h1 {
   margin: 20px 0 5px;
+}
+
+.edit-descr-btn {
+  margin: 25px 0 0;
 }
 
 @media screend and (max-width: 768px) {
