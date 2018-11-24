@@ -1,7 +1,6 @@
-{- | Guider monad with Config to replace servant`s Handler. -}
-
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+{- | 'Guider' monad with 'Config' to replace servant's 'Handler'. -}
 module Guide.Api.Guider
        ( Guider (..)
        , GuiderServer
@@ -10,14 +9,13 @@ module Guide.Api.Guider
 
 import Imports
 
-import Servant (Handler (..))
+import Servant (Handler (..), ServantErr)
 import Servant.Server.Generic
-import Servant.Server.Internal.ServantErr (ServantErr)
 
 import Guide.Config (Config (..), def)
 
 
--- | Guider type contains Config inside and replaces servant`s Handler type.
+-- | Custom 'Guider' type holds the 'Config' always on hand.
 newtype Guider a = Guider
   { runGuider :: ReaderT Config IO a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Config)
@@ -28,12 +26,11 @@ instance MonadError ServantErr Guider where
 
   catchError :: Guider a -> (ServantErr -> Guider a) -> Guider a
   catchError (Guider m) f =
-    (Guider $ ReaderT $ \r -> (runReaderT m r)) `catchError`
-      (\e -> Guider $ ReaderT $ \r -> (runReaderT (runGuider (f e)) r))
+    liftIO $ (runReaderT m def) `catch` (\e -> runReaderT (runGuider (f e)) def)
 
--- | Convertor from Guider to Handler
+-- | The custom type won't be accepted by servant server without this conventor using at 'hoistServer'.
 guiderToHandler :: Guider a -> Handler a
-guiderToHandler (Guider m) = Handler $ ExceptT $ Right <$> runReaderT m def
+guiderToHandler (Guider m) = liftIO (runReaderT m def)
 
--- | Server type for Guider
+-- | 'GuiderServer' used to create 'Guider' api.
 type GuiderServer = AsServerT Guider

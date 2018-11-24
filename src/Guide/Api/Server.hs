@@ -78,12 +78,9 @@ fullServer db =
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
 
--- | Convertor from api with Guider to api with Handler via hoistServer.
+-- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
 api :: DB -> Server Api
-api db = hoistServer proxy guiderToHandler (toServant (guiderServer db))
-
-proxy :: Proxy Api
-proxy = Proxy
+api db = hoistServer (Proxy @Api) guiderToHandler (toServant (guiderServer db))
 
 -- | Serve the API on port 4400.
 --
