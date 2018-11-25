@@ -9,7 +9,7 @@ function createRouter () {
       if (to.hash) {
         return { selector: to.hash }
       } else {
-        return { x:0, y:0 }
+        return { x: 0, y: 0 }
       }
     },
     routes: [
@@ -18,10 +18,11 @@ function createRouter () {
         name: 'Index',
         component: () => import('../page/Index.vue')
       },
-      { path: '/haskell/:category',
+      {
+        path: '/haskell/:category',
         name: 'Category',
         component: () => import('../page/ArticlePage.vue'),
-        props: true
+        props: (route) => ({ categoryId: route.params.category.split('#').shift().split('-').pop() })
       },
       {
         path: '/haskell/search/results/',

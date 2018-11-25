@@ -1,17 +1,34 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
-import { ICategoryInfo, CategoryService } from 'client/service/Category'
+import { ICategoryInfo, ICategoryFull, CategoryService } from 'client/service/Category'
 
 interface ICategoryState {
-  categoryList: ICategoryInfo[]
+  categoryList: ICategoryInfo[],
+  category: ICategoryFull
 }
 
 const state: ICategoryState = {
-  categoryList: []
+  categoryList: [],
+  category: null
 }
 
 const getters: GetterTree<ICategoryState, any> = {}
 
 const actions: ActionTree<ICategoryState, any> = {
+  async reloadCategory ({ dispatch, state }: ActionContext<ICategoryState, any>) {
+    const category = state.category
+    if (!category) {
+      return
+    }
+    dispatch('loadCategory', category.uid)
+  },
+  async loadCategory (
+    { commit }: ActionContext<ICategoryState, any>,
+    categoryId: ICategoryInfo['uid']
+  ): Promise<any> {
+    const data: ICategoryFull = await CategoryService.getCategoryById(categoryId)
+    // TODO create set function for all the store
+    commit('setCategory', data)
+  },
   async loadCategoryList ({ commit }: ActionContext<ICategoryState, any>): Promise<any> {
     const data: ICategoryInfo[] = await CategoryService.getCategoryList()
     commit('setCategoryList', data)
@@ -32,6 +49,9 @@ const actions: ActionTree<ICategoryState, any> = {
 const mutations: MutationTree<ICategoryState> = {
   setCategoryList: (state: ICategoryState, payload: ICategoryInfo[]) => {
     state.categoryList = payload
+  },
+  setCategory: (state: ICategoryState, payload: ICategoryFull) => {
+    state.category = payload
   }
 }
 
@@ -41,6 +61,6 @@ const category: Module<ICategoryState, any> = {
   getters,
   actions,
   mutations
-};
+}
 
 export default category

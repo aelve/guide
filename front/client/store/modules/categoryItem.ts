@@ -12,27 +12,21 @@ const state: ICategoryItemState = {
 
 const getters: GetterTree<ICategoryItemState, any> = {}
 
-const actions: ActionTree<CategoryItemState, any> = {
-  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>, category): Promise<void> {
-    // something is going on with category
-    const data: ICategoryFull[] = await CategoryService.getCategoryById(category)
-    commit('setCategoryItem', data)
-  },
+const actions: ActionTree<ICategoryItemState, any> = {
   async createItem (
     { dispatch }: ActionContext<ICategoryItemState, any>,
     { category, name }: ICreateCategoryItem
   ): Promise<ICategoryItem['uid']> {
-    const createdId = await CategoryItemService.addItem({
+    const createdId = await CategoryItemService.createItem({
       category,
       name
     })
-    dispatch('loadCategoryItem')
+    dispatch('category/reloadCategory', null, { root: true })
     return createdId
   },
   async deleteItemById ({ dispatch }: ActionContext<ICategoryItemState, any>, id: ICategoryItem['uid']) {
-    const deletedId = await CategoryItemService.deleteItemById(id)
-    dispatch('loadCategoryItem')
-    return deletedId
+    await CategoryItemService.deleteItemById(id)
+    dispatch('category/reloadCategory', null, { root: true })
   }
 }
 

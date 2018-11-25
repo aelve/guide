@@ -2,10 +2,9 @@ import axios from 'axios'
 import { ICategoryFull } from './Category'
 
 class CategoryItemService {
-  async addItem(categoryURL, { category, name }: ICreateCategoryItem) {
-    const { data } = await axios.post(`api/item/${categoryURL()}`, null, {
+  async createItem ({ category, name }: ICreateCategoryItem) {
+    const { data } = await axios.post(`api/item/${category}`, null, {
       params: {
-        category,
         name
       }
     })

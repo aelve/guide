@@ -49,13 +49,12 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Component from 'vue-class-component';
-import { Prop, Watch } from 'vue-property-decorator';
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 
 @Component
 export default class AddItemDialog extends Vue {
   @Prop(Boolean) value!: boolean
+  @Prop(String) categoryId!: string
 
   itemName: string = ''
 
@@ -64,19 +63,19 @@ export default class AddItemDialog extends Vue {
   ]
 
   isValid: boolean = false
-  
-  @Watch('value')
-  onOpen(newVal: boolean) {
-    this.itemName = ''
-  } 
 
-  close() {
+  @Watch('value')
+  onOpen (newVal: boolean) {
+    this.itemName = ''
+  }
+
+  close () {
     this.$emit('input', false)
   }
 
-  async submit() {
+  async submit () {
     await this.$store.dispatch('categoryItem/createItem', {
-      category: 'sth6l9jl',
+      category: this.categoryId,
       name: this.itemName
     })
 

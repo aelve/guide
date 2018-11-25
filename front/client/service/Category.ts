@@ -2,8 +2,8 @@ import axios from 'axios'
 import { ICategoryItem } from './CategoryItem'
 
 class CategoryService {
-  async getCategoryById (): Promise<ICategoryFull[]> {
-    const { data } = await axios.get('api/category/sth6l9jl', {})
+  async getCategoryById (id: ICategoryInfo['uid']): Promise<ICategoryFull> {
+    const { data } = await axios.get(`api/category/${id}`, {})
     return data
   }
 
@@ -12,7 +12,9 @@ class CategoryService {
     return data
   }
 
-  async createCategory ({ title, group }: { title: ICategoryInfo['title'], group: ICategoryInfo['group'] }): Promise<ICategoryInfo['uid']> {
+  async createCategory (
+    { title, group }: { title: ICategoryInfo['title'], group: ICategoryInfo['group'] }
+  ): Promise<ICategoryInfo['uid']> {
     const { data } = await axios.post('api/category', null, {
       params: {
         title,

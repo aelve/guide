@@ -1,6 +1,6 @@
 <template>
   <article-item 
-    :category="category"
+    :categoryId="categoryId"
   />
 </template>
 
@@ -18,6 +18,6 @@ import { Prop } from 'vue-property-decorator';
 })
 
 export default class ArticlePage extends Vue {
-  @Prop(String) category!: string
+  @Prop(String) categoryId!: string
 }
 </script>

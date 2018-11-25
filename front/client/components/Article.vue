@@ -4,17 +4,16 @@
       <div class="article-top">
         <i class="fas fa-rss"/>
         <div
+          v-if="category"
           class="article-top-data"
-          v-for="(value, key) in getCategory"
-          :key="key"
         >
           <router-link
             class="article-top-link"
-            :to="`${category}`"
+            :to="categoryUrl"
           >
-            {{value.title}}
+            {{category.title}}
           </router-link>
-          <p class="article-top-group"> {{value.group}} </p>
+          <p class="article-top-group"> {{category.group}} </p>
         </div>
         <v-btn
           class="ml-2 pl-0 add-item-btn"
@@ -32,22 +31,24 @@
       >
         <div v-html="categoryDescription" />
       </div>
-      <div
-        v-for="(value, index) in getCategoryItems"
-        :key="index"
-      > 
-        <article-content
-          :kind="value.name"
-          :group="value.group"
-          :itemDescription="value.description.html"
-          :pros="value.pros"
-          :cons="value.cons"
-          :ecosystem="value.ecosystem.html"
-          :tocArray="value.toc"
-          :notes="value.notes.html"
-          :itemUid="value.uid"
-        />
-      </div>
+      <template v-if="category">
+        <div
+          v-for="(value, index) in category.items"
+          :key="index"
+        > 
+          <article-content
+            :kind="value.name"
+            :group="value.group"
+            :itemDescription="value.description.html"
+            :pros="value.pros"
+            :cons="value.cons"
+            :ecosystem="value.ecosystem.html"
+            :tocArray="value.toc"
+            :notes="value.notes.html"
+            :itemUid="value.uid"
+          />
+        </div>
+      </template>
       <v-btn
         flat
         class="ml-2 pl-0"
@@ -57,19 +58,21 @@
         <v-icon class="mr-1" left>add</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog v-model="isDialogOpen"/>
+      <add-item-dialog 
+        v-model="isDialogOpen"
+        :categoryId="categoryId"
+      />
     </div>
   </v-container>
 </template>
 
 <script lang="ts">
+import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
-import Vue from 'vue'
-import Component from 'vue-class-component'
+import { Vue, Component, Prop } from 'vue-property-decorator'
 import ArticleContent from 'client/components/ArticleContent.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
-import { Prop } from 'vue-property-decorator';
-import category from 'client/store/modules/category';
+import category from 'client/store/modules/category'
 
 @Component({
   name: 'article-component',
@@ -79,30 +82,27 @@ import category from 'client/store/modules/category';
   }
 })
 export default class ArticleItem extends Vue {
-  @Prop(String) category!: string
+  @Prop(String) categoryId!: string
 
   isDialogOpen: boolean = false
 
-  async asyncData() {
-    const categoryUrl = this.category.split('-').pop()!.split('#').shift()
-
-    await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
+  async asyncData () {
+    if (!this.categoryId) {
+      return
+    }
+    await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
   get categoryDescription () {
-    return _get(this, '$store.state.categoryItem.categoryItemList.description.html')
+    return _get(this, '$store.state.category.category.description.html')
   }
 
-  get getCategory () {
-    return this.$store.state.categoryItem
-  }
-
-  get getCategoryItems () {
-    return this.$store.state.categoryItem.categoryItemList.items
+  get category () {
+    return this.$store.state.category.category
   }
 
   get categoryUrl () {
-    return this.$route.params.category
+    return this.category && `${_toKebabCase(this.category.title)}-${this.category.uid}`
   }
 
   openAddItemDialog () {
