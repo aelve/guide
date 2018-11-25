@@ -10,6 +10,7 @@ module Guide.Config
   readConfig,
   writeConfig,
   modifyConfig,
+  def,
 )
 where
 
