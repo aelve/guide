@@ -25,10 +25,10 @@ instance MonadError ServantErr Guider where
   throwError = liftIO . throwIO
 
   catchError :: Guider a -> (ServantErr -> Guider a) -> Guider a
-  catchError (Guider m) f =
-    liftIO $ (runReaderT m def) `catch` (\e -> runReaderT (runGuider (f e)) def)
+  catchError (Guider m) f = Guider $ ReaderT $ \config ->
+    runReaderT m config `catch` (\err -> runReaderT (runGuider (f err)) config)
 
--- | The custom type won't be accepted by servant server without this conventor using at 'hoistServer'.
+-- | The custom type won't be accepted by servant server without this conventor used with 'hoistServer'.
 guiderToHandler :: Guider a -> Handler a
 guiderToHandler (Guider m) = liftIO (runReaderT m def)
 
