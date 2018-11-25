@@ -88,8 +88,7 @@ api db config = hoistServer (Proxy @Api) (guiderToHandler config) (toServant $ g
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
   say $ format "API is running on port {}" _portApi
-  config <- readConfig
-  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db config)
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =
