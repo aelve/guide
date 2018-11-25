@@ -12,7 +12,7 @@ import Imports
 import Servant (Handler (..), ServantErr)
 import Servant.Server.Generic
 
-import Guide.Config (Config (..), def)
+import Guide.Config (Config)
 
 
 -- | Custom 'Guider' type holds the 'Config' always on hand.
@@ -29,8 +29,8 @@ instance MonadError ServantErr Guider where
     runReaderT m config `catch` (\err -> runReaderT (runGuider (f err)) config)
 
 -- | The custom type won't be accepted by servant server without this conventor used with 'hoistServer'.
-guiderToHandler :: Guider a -> Handler a
-guiderToHandler (Guider m) = liftIO (runReaderT m def)
+guiderToHandler :: Config -> Guider a -> Handler a
+guiderToHandler config (Guider m) = Handler $ ExceptT $ try $ runReaderT m config
 
 -- | 'GuiderServer' used to create 'Guider' api.
 type GuiderServer = AsServerT Guider

@@ -28,7 +28,7 @@ import Say (say)
 import Guide.Api.Guider (GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Config (Config (..))
+import Guide.Config (Config(..), readConfig)
 import Guide.State
 
 import Data.Acid as Acid
@@ -69,9 +69,9 @@ type FullApi =
   Api :<|>
   SwaggerSchemaUI "api" "swagger.json"
 
-fullServer :: DB -> Server FullApi
-fullServer db =
-  api db :<|>
+fullServer :: DB -> Config -> Server FullApi
+fullServer db config =
+  api db config :<|>
   swaggerSchemaUIServer doc
   where
     doc = toSwagger (Proxy @Api)
@@ -79,8 +79,8 @@ fullServer db =
             & info.version .~ "alpha"
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
-api :: DB -> Server Api
-api db = hoistServer (Proxy @Api) guiderToHandler (toServant (guiderServer db))
+api :: DB -> Config -> Server Api
+api db config = hoistServer (Proxy @Api) (guiderToHandler config) (toServant $ guiderServer db)
 
 -- | Serve the API on port 4400.
 --
@@ -88,7 +88,8 @@ api db = hoistServer (Proxy @Api) guiderToHandler (toServant (guiderServer db))
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
   say $ format "API is running on port {}" _portApi
-  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
+  config <- readConfig
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db config)
   where
     corsPolicy :: Middleware
     corsPolicy =
