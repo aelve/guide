@@ -14,7 +14,6 @@ extra-deps:
 - Spock-lucid-0.4.0.1
 - reroute-0.5.0.0
 - cmark-0.5.6
-- cmark-highlight-0.2.0.0
 - fmt-0.6
 - cmark-sections-0.3.0.1
 - acid-state-0.14.3
@@ -23,6 +22,13 @@ extra-deps:
 - servant-swagger-ui-core-0.3.1
 - swagger2-2.3
 - lzma-clib-5.2.2
+
+# We pin the precise versions of 'highlighting-kate' and 'cmark-highlight'
+# because the frontend has copied a stylesheet from 'highlighting-kate'. If
+# the version changes, we also have to update the stylesheet on the
+# frontend. (See App.vue, or just grep for things like "span.st".)
+- highlighting-kate-0.6.3
+- cmark-highlight-0.2.0.0
 
 - git: https://github.com/aelve/stache-plus
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
