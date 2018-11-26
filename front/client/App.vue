@@ -67,6 +67,9 @@ table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
 table.sourceCode { width: 100%; line-height: 100%; }
 td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
 td.sourceCode { padding-left: 5px; }
+
+/* https://github.com/jgm/highlighting-kate/blob/master/css/hk-pyg.css */
+
 code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
 code > span.dt { color: #902000; } /* DataType */
 code > span.dv { color: #40a070; } /* DecVal */
