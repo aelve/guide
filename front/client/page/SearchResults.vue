@@ -1,6 +1,7 @@
 <template>
   <v-container class="search-result-container">
     <v-card
+      v-if="results && results.length"
       v-for="(result, index) in results"
       :key="index"
       class="search-result-card"
@@ -54,6 +55,13 @@
         v-html="result.contents.ecosystem.html"
       />
     </v-card>
+
+    <div
+      v-if="!results || !results.length"
+      class="text-md-center display-1"
+    >
+      Nothing found
+    </div>
   </v-container>
 </template>
 
@@ -69,15 +77,15 @@ import ALink from 'client/components/ALink.vue'
 export default class SearchResults extends Vue {
   @Prop(String) query!: string
 
-  mounted() {
+  mounted () {
     this.$store.commit('wiki/setSearchInput', this.query)
   }
 
-  async asyncData() {
+  async asyncData () {
     await this.$store.dispatch('wiki/search', this.query)
   }
 
-  get results() {
+  get results () {
     return this.$store.state.wiki.searchResults
   }
 
