@@ -33,9 +33,9 @@ module Guide.Api.Types
   , CSearchResult(..), toCSearchResult
 
   -- * Other types
-  , TraitType (..)
-  , CTextEdit (..)
-  , CMergeConflict (..)
+  , TraitType(..)
+  , CTextEdit(..)
+  , CMergeConflict(..)
   )
   where
 
@@ -44,6 +44,7 @@ import Imports
 
 import Data.Tree (Forest, Tree)
 import Lucid (renderText, toHtml)
+
 import Servant
 import Servant.API.Generic
 

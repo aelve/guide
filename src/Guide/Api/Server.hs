@@ -28,7 +28,7 @@ import Say (say)
 import Guide.Api.Guider (GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Config (Config(..), readConfig)
+import Guide.Config (Config(..))
 import Guide.State
 
 import Data.Acid as Acid
@@ -55,13 +55,13 @@ guiderServer db = Site
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait    = createTrait db
-      , _setTrait       = setTrait db
-      , _deleteTrait    = deleteTrait db }
+      { _createTrait = createTrait db
+      , _setTrait    = setTrait db
+      , _deleteTrait = deleteTrait db }
       :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite
-      { _search         = search db }
+      { _search = search db }
       :: SearchSite GuiderServer)
   }
 

@@ -157,8 +157,8 @@ setItemNotes db itemId CTextEdit{..} = do
 deleteItem :: DB -> Uid Item -> Guider NoContent
 deleteItem db itemId = do
   _mbEdit <- dbUpdate db (DeleteItem itemId)
+--   mapM_ addEdit _mbEdit
   pure NoContent
-  -- TODO: mapM_ addEdit mbEdit
 
 ----------------------------------------------------------------------------
 -- Traits
@@ -190,7 +190,6 @@ deleteTrait :: DB -> Uid Item -> Uid Trait -> Guider NoContent
 deleteTrait db itemId traitId = do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
-
 
 ----------------------------------------------------------------------------
 -- Search
