@@ -27,7 +27,7 @@ extra-deps:
 # because the frontend has copied a stylesheet from 'highlighting-kate'. If
 # the version changes, we also have to update the stylesheet on the
 # frontend. (See App.vue, or just grep for things like "span.st".)
-- highlighting-kate-0.6.3
+- highlighting-kate-0.6.4
 - cmark-highlight-0.2.0.0
 
 - git: https://github.com/aelve/stache-plus
