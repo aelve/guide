@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Guide.Api.Utils
@@ -29,8 +30,13 @@ import Servant
 import Servant.Swagger
 import Network.HTTP.Types.Header (hReferer,hUserAgent)
 import Servant.API.Modifiers (unfoldRequestArgument)
-import Network.Wai (Request, requestHeaders)
+import Network.Wai (Request, requestHeaders, remoteHost)
 import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck, delayedFailFatal)
+import Data.IP
+
+import Guide.Utils (sockAddrToIP)
+
+import qualified Network.HTTP.Types.Header as NHTH
 
 
 -- | Nice JSON options.
@@ -95,42 +101,43 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
             Nothing
      in toSwagger (Proxy @api) & applyTags [tag]
 
-
 -- | Servant request details, can be captured by adding `RequestDetails :>` to an API branch.
 data RequestDetails = RequestDetails
-  { rdIp      :: Text
-  , rdReferer :: Text
-  , rdUA      :: Text
+  { rdIp        :: Maybe IP    -- request ip address
+  , rdReferer   :: Maybe Text  -- request referrer
+  , rdUserAgent :: Maybe Text  -- request User-Agent
   } deriving (Show, Generic)
 
-instance (HasServer api context)
-  => HasServer (Maybe RequestDetails :> api) context where
+instance (HasServer api context, FromHttpApiData IP)
+  => HasServer (RequestDetails :> api) context where
 
-  type ServerT (Maybe RequestDetails :> api) m = Maybe RequestDetails -> ServerT api m
+  type ServerT (RequestDetails :> api) m = RequestDetails -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver = route (Proxy :: Proxy api) context $
-      subserver `addHeaderCheck` withRequest headerCheck
+      subserver `addHeaderCheck` withRequest getRequestDetails
     where
-      headerCheck :: Request -> DelayedIO (Maybe RequestDetails)
-      headerCheck req = unfoldRequestArgument (Proxy :: Proxy '[Optional, Strict]) errReq errSt meRequestDatails
+      getRequestDetails :: Request -> DelayedIO RequestDetails
+      getRequestDetails req = pure $ RequestDetails ip referer useragent
         where
-          meRequestDatails :: Maybe (Either Text RequestDetails)
-          meRequestDatails = getCompose $ liftA2 RequestDetails (Compose ip) (Compose referer) <*> Compose ua
+          ip :: FromHttpApiData IP => Maybe IP
+          ip = maybe (sockAddrToIP $ remoteHost req) Just $
+            (dropEitherIP "Forwarded-For") <|> (dropEitherIP "X-Forwarded-For")
+          referer :: FromHttpApiData a => Maybe a
+          referer = dropEither hReferer
+          useragent :: FromHttpApiData a => Maybe a
+          useragent = dropEither hUserAgent
 
-          ip :: FromHttpApiData a => Maybe (Either Text a)
-          ip = fmap parseHeader $ lookup "X-Forwarded-For" (requestHeaders req)
-          referer :: FromHttpApiData a => Maybe (Either Text a)
-          referer = fmap parseHeader $ lookup hReferer (requestHeaders req)
-          ua :: FromHttpApiData a => Maybe (Either Text a)
-          ua = fmap parseHeader $ lookup hUserAgent (requestHeaders req)
-
-          errReq = delayedFailFatal err400
-            { errBody = "One of Headers: " <> "Referer, X-Forwarded-For or User-Agent" <> " is required" }
-          errSt e = delayedFailFatal err400
-            { errBody = "Error parsing one of headers "
-           <> "Referer, X-Forwarded-For or User-Agent"
-           <> " failed: "
-           <> toLByteString e
-            }
+          dropEither :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
+          dropEither headerName = do
+            eUA <- fmap parseHeader $ lookup headerName (requestHeaders req)
+            case eUA of
+              Left _ -> Nothing
+              Right u -> Just u
+          dropEitherIP :: FromHttpApiData IP => NHTH.HeaderName -> Maybe IP
+          dropEitherIP headerName = do
+            eUA <- fmap parseHeader $ lookup headerName (requestHeaders req)
+            case eUA of
+              Left _ -> Nothing
+              Right u -> Just u
