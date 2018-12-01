@@ -32,10 +32,10 @@ TAGS
 tags
 
 # backend database
-/state/
+/back/state/
 
 # backend config
-/config.json
+/back/config.json
 
 # backend JavaScript artifacts
 /back/guidejs/node_modules/

@@ -291,7 +291,7 @@ renderItemNotes category item = do
     section "expanded" [noScriptShown] $ do
       textareaUid <- randomLongUid
       contents <- if markdownNull (item^.notes)
-        then liftIO $ T.readFile "back/static/item-notes-template.md"
+        then liftIO $ T.readFile "static/item-notes-template.md"
         else return (item^.notes.mdSource)
       let buttons = do
             textButton "collapse notes" $

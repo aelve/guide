@@ -359,7 +359,7 @@ readWidget fp = liftIO $ do
 readWidgets :: MonadIO m => m [(SectionType, Text)]
 readWidgets = liftIO $ do
   let isWidget = F.extension F.==? ".widget"
-  files' <- F.find F.always isWidget "back/templates/"
+  files' <- F.find F.always isWidget "templates/"
   concat <$> mapM readWidget files'
 
 getJS :: MonadIO m => m Text
