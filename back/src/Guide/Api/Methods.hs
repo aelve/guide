@@ -9,14 +9,18 @@ module Guide.Api.Methods where
 import Imports
 
 import Data.Acid as Acid
+import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
 
 import Guide.Api.Types
 import Guide.Api.Utils
+import Guide.Diff (merge)
+import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..), MarkdownTree (..))
 import Guide.State
 import Guide.Types
 import Guide.Utils
+import Guide.Api.Guider (Guider)
 
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -27,26 +31,23 @@ import qualified Guide.Search as Search
 ----------------------------------------------------------------------------
 
 -- | Get a list of available categories.
-getCategories :: DB -> Handler [CCategoryInfo]
+getCategories :: DB -> Guider [CCategoryInfo]
 getCategories db = do
   dbQuery db GetCategories <&> \xs ->
     map toCCategoryInfo xs
 
 -- | Get a single category and all of its items.
-getCategory :: DB -> Uid Category -> Handler CCategoryFull
-getCategory db catId =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing  -> throwError err404
-    Just cat -> pure (toCCategoryFull cat)
+getCategory :: DB -> Uid Category -> Guider CCategoryFull
+getCategory db catId = toCCategoryFull <$> getCategoryOrFail db catId
 
 -- | Create a new category, given the title and the grandparent (aka group).
 --
 -- Returns the ID of the created category (or of the existing one if the
 -- category with this title exists already).
-createCategory :: DB -> Text -> Text -> Handler (Uid Category)
+createCategory :: DB -> Text -> Text -> Guider (Uid Category)
 createCategory db title' group' = do
-  when (T.null title') $ do throwError (err400 {errBody = "Title not provided"})
-  when (T.null group') $ do throwError (err400 {errBody = "Group' not provided"})
+  when (T.null title') $ throwError err400{errBody = "Title not provided"}
+  when (T.null group') $ throwError err400{errBody = "Group' not provided"}
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery db GetGlobalState
   let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
@@ -61,43 +62,37 @@ createCategory db title' group' = do
       return catId
 
 -- | Edit categoty's note.
-setCategoryNotes :: DB -> Uid Category -> Text -> Handler NoContent
-setCategoryNotes db catId note =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      (_edit, _newCategory) <- dbUpdate db (SetCategoryNotes catId note)
-      -- TODO diff and merge
-      pure NoContent
+setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Guider NoContent
+setCategoryNotes db catId CTextEdit{..} = do
+  serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail db catId
+  checkConflict CTextEdit{..} serverModified
+  _ <- dbUpdate db (SetCategoryNotes catId $ unH cteModified)
+  pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
-setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Handler NoContent
-setCategoryInfo db catId CCategoryInfoEdit{..} =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just category -> do
-      -- TODO diff and merge
-      _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
-      _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
-      _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
-      let oldEnabledSections = category ^. enabledSections
-      let newEnabledSections = unH ccieSections
-      _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
-          (newEnabledSections S.\\ oldEnabledSections)
-          (oldEnabledSections S.\\ newEnabledSections)
-      -- TODO record edits
-      pure NoContent
+setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Guider NoContent
+setCategoryInfo db catId CCategoryInfoEdit{..} = do
+  category <- getCategoryOrFail db catId
+  -- TODO diff and merge
+  _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
+  _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
+  _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+  let oldEnabledSections = category ^. enabledSections
+  let newEnabledSections = unH ccieSections
+  _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
+      (newEnabledSections S.\\ oldEnabledSections)
+      (oldEnabledSections S.\\ newEnabledSections)
+  -- TODO record edits
+  pure NoContent
 
 -- | Delete a category.
-deleteCategory :: DB -> Uid Category -> Handler NoContent
-deleteCategory db catId =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      _mbEdit <- dbUpdate db (DeleteCategory catId)
-      pure NoContent
-      -- TODO mapM_ addEdit mbEdit
-      
+deleteCategory :: DB -> Uid Category -> Guider NoContent
+deleteCategory db catId = do
+  _ <- getCategoryOrFail db catId
+  _mbEdit <- dbUpdate db (DeleteCategory catId)
+  pure NoContent
+  -- TODO mapM_ addEdit mbEdit
+
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
@@ -106,41 +101,60 @@ deleteCategory db catId =
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
 -- with duplicated names.
-createItem :: DB -> Uid Category -> Text -> Handler (Uid Item)
-createItem db catId name' =
-  dbQuery db (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Category not found"})
-    Just _ -> do
-      if T.null name' then throwError (err400 {errBody = "Name not provided"})
-      else do
-        itemId <- randomShortUid
-        -- If the item name looks like a Hackage library, assume it's a Hackage
-        -- library.
-        let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-            looksLikeLibrary = T.all isAllowedChar name'
-            kind' = if looksLikeLibrary then Library (Just name') else Other
-        time <- liftIO getCurrentTime
-        (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-        -- TODO: addEdit edit
-        pure itemId
+createItem :: DB -> Uid Category -> Text -> Guider (Uid Item)
+createItem db catId name' = do
+  _ <- getCategoryOrFail db catId
+  when (T.null name') $ throwError err400{errBody = "Name not provided"}
+  itemId <- randomShortUid
+  -- If the item name looks like a Hackage library, assume it's a Hackage
+  -- library.
+  let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
+      looksLikeLibrary = T.all isAllowedChar name'
+      kind' = if looksLikeLibrary then Library (Just name') else Other
+  time <- liftIO getCurrentTime
+  (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
+  -- TODO: addEdit edit
+  pure itemId
 
 -- TODO: move an item
 
 -- | Set item's info
-setItemInfo :: DB -> Uid Item -> CItemInfo -> Handler NoContent
-setItemInfo db itemId CItemInfo{..} =
-  dbQuery db (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError (err404 {errBody = "Item not found"})
-    Just _ -> do
-      -- TODO diff and merge
-      _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
-      _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
-      _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-      _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
-      pure NoContent
+setItemInfo :: DB -> Uid Item -> CItemInfo -> Guider NoContent
+setItemInfo db itemId CItemInfo{..} = do
+  _ <- getItemOrFail db itemId
+  -- TODO diff and merge
+  _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
+  _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+  _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+  _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
+  pure NoContent
+
+-- | Set item's summary.
+setItemSummary :: DB -> Uid Item -> CTextEdit -> Guider NoContent
+setItemSummary db itemId CTextEdit{..} = do
+  serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
+  checkConflict CTextEdit{..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  pure NoContent
+
+-- | Set item's ecosystem.
+setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Guider NoContent
+setItemEcosystem db itemId CTextEdit{..} = do
+  serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail db itemId
+  checkConflict CTextEdit{..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId $ unH cteModified)
+  pure NoContent
+
+-- | Set item's notes.
+setItemNotes :: DB -> Uid Item -> CTextEdit -> Guider NoContent
+setItemNotes db itemId CTextEdit{..} = do
+  serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail db itemId
+  checkConflict CTextEdit{..} serverModified
+  (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId $ unH cteModified)
+  pure NoContent
 
 -- | Delete an item.
-deleteItem :: DB -> Uid Item -> Handler NoContent
+deleteItem :: DB -> Uid Item -> Guider NoContent
 deleteItem db itemId = do
   _mbEdit <- dbUpdate db (DeleteItem itemId)
   pure NoContent
@@ -153,9 +167,9 @@ deleteItem db itemId = do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
-createTrait :: DB -> Uid Item -> TraitType -> Text -> Handler (Uid Trait)
+createTrait :: DB -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
 createTrait db itemId traitType text = do
-  when (T.null text) $ throwError (err400 {errBody = "Trait text not provided"})
+  when (T.null text) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
   (_edit, _newTrait) <- case traitType of
     Con -> dbUpdate db (AddCon itemId traitId text)
@@ -164,14 +178,15 @@ createTrait db itemId traitType text = do
   pure traitId
 
 -- | Update the text of a trait (pro/con).
-setTrait :: DB -> Uid Item -> Uid Trait -> Text -> Handler NoContent
-setTrait db itemId traitId text = do
-  (_edit, _newTrait) <- dbUpdate db (SetTraitContent itemId traitId text)
-  -- TODO diff and merge
+setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
+setTrait db itemId traitId CTextEdit{..} = do
+  serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail db itemId traitId
+  checkConflict CTextEdit{..} serverModified
+  (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId $ unH cteModified)
   pure NoContent
 
 -- | Delete a trait (pro/con).
-deleteTrait :: DB -> Uid Item -> Uid Trait -> Handler NoContent
+deleteTrait :: DB -> Uid Item -> Uid Trait -> Guider NoContent
 deleteTrait db itemId traitId = do
   _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
   pure NoContent
@@ -184,7 +199,7 @@ deleteTrait db itemId traitId = do
 -- | Site-wide search.
 --
 -- Returns at most 100 results.
-search :: DB -> Text -> Handler [CSearchResult]
+search :: DB -> Text -> Guider [CSearchResult]
 search db searchQuery = do
   gs <- dbQuery db GetGlobalState
   pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
@@ -205,3 +220,43 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
+
+-- | Helper. Get a category from database and throw error 404 when it doesn't exist.
+getCategoryOrFail :: DB -> Uid Category -> Guider Category
+getCategoryOrFail db catId = do
+  dbQuery db (GetCategoryMaybe catId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Category not found"}
+    Just cat -> pure cat
+
+-- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
+getItemOrFail :: DB -> Uid Item -> Guider Item
+getItemOrFail db itemId = do
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Item not found"}
+    Just item -> pure item
+
+-- | Helper. Get a trait from database and throw error 404 when
+-- either the item or the trait doesn't exist.
+getTraitOrFail :: DB -> Uid Item -> Uid Trait -> Guider Trait
+getTraitOrFail db itemId traitId = do
+  dbQuery db (GetItemMaybe itemId) >>= \case
+    Nothing  -> throwError $ err404 {errBody = "Item not found"}
+    Just _ -> do
+      dbQuery db (GetTraitMaybe itemId traitId) >>= \case
+        Nothing -> throwError $ err404 {errBody = "Trait not found"}
+        Just trait -> pure trait
+
+-- | Checker. When states of database before and after editing is different, fail with a conflict data.
+checkConflict :: CTextEdit -> Text -> Guider ()
+checkConflict CTextEdit{..} serverModified = do
+  let original = unH cteOriginal
+  let modified = unH cteModified
+  when (original /= serverModified) $ do
+    let merged = merge original modified serverModified
+    let conflict = CMergeConflict
+          { cmcOriginal = cteOriginal
+          , cmcModified = cteModified
+          , cmcServerModified = H serverModified
+          , cmcMerged = H merged
+          }
+    throwError $ err409 {errBody = encode conflict}

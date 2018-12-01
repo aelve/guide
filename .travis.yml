@@ -14,6 +14,9 @@ addons:
     # Testcafe
     - google-chrome-stable fluxbox
   chrome: stable
+before_install:
+  - # start your web application and listen on `localhost`
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=5000 http://localhost &
 
 cache:
   directories:
@@ -50,8 +53,8 @@ jobs:
         - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
         - sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
         # Run selenium-server
-        - sh -e /etc/init.d/xvfb start
         - export DISPLAY=:99.0
+        - sh -e /etc/init.d/xvfb start
         - travis_retry wget http://selenium-release.storage.googleapis.com/3.6/selenium-server-standalone-3.6.0.jar
         - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
         - sleep 15

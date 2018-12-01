@@ -1,58 +1,53 @@
-import { Selector } from 'testcafe';
-import VueSelector from 'testcafe-vue-selectors';
+import { Selector, ClientFunction } from 'testcafe'
+import VueSelector from 'testcafe-vue-selectors'
 
-fixture `Index`
-  .page `http://localhost:5000`;
+const baseUrl = `http://localhost:5000`
+const getLocation = ClientFunction(() => document.location.href)
+// !!! Testcafe-vue-selectors currently dont support vue cumponents loaded by vue-loader
 
-test('Navigate to category page', async navigateCategory => {
-  await navigateCategory
-    .click('.test-btn')
-    .navigateTo('http://localhost:5000/haskell')
-});
+fixture`Index`
+  .page(baseUrl)
+
+test('Navigate to category page', async t => {
+  await t
+    .click('.category-title')
+    .expect(getLocation()).contains(`${baseUrl}/haskell/data-structures-fum5aqch`)
+})
 
 test('Test search input', async inputSearch => {
-  // !!! Testcafe-vue-selectors currently dont support vue cumponents loaded by vue-loader
-  // const searchInput = VueSelector('v-text-field');
-  // await inputSearch
-  //   .typeText(searchInput, 'Haskell')
-  // .pressKey('enter')
-  //   .expect(searchInput.value).eql('Haskell')
 
-  const searchInput = Selector('input[aria-label="Search"]');
+  const searchInput = Selector('input[aria-label="Search"]')
 
   await inputSearch
     .typeText(searchInput, 'Haskell')
     .expect(searchInput.value).eql('Haskell')
     .pressKey('enter')
-    .navigateTo('http://aelve.com:4801/haskell/?q=Haskell')
+    .expect(getLocation()).eql(`${baseUrl}/haskell/search/results?query=Haskell`)
 })
 
-// test('Open add category popup', async t => {
-//   const addCategoryBtn = VueSelector('add-category-dialog v-btn');
-//   const addCategoryDialog = VueSelector('add-category-dialog');
-//   const addCatDialogVue = addCategoryDialog.getVue();
+test('Add category', async t => {
+  const categoryGroups = Selector('.category-group')
+  const groupsCount = await categoryGroups.count
 
-//   await t.click(addCategoryBtn).expect(addCatDialogVue.state.isDialogOpen).eql(true);
-// });
+  if (!categoryGroups || !groupsCount) {
+    return
+  }
 
-test('Add category', async addCategory => {
-  // const catBtn = VueSelector('b');
-  // const rootVue = VueSelector();
-  // console.log(catBtn);
-  // const catInput = Selector('input[aria-label="Category name"]');
-  let num = Math.floor(Math.random() * 10000);
-  let catName = 'mytest-' + num;
-  
-  await addCategory
-    // .click(catBtn)
-    // button[*data-v-4e53f99f]
-    .click('.category-group button')
-    .typeText('input[aria-label="Category name"]', 'mytest-' + catName)
-    // .click('.add-cat-submit')
-    // .expect(Selector('.category group > a > .body-1').innerText).contains(catName)
-    // 'h6[data-v-4e53f99f]'
-  await addCategory
-    .click('.add-cat-submit')
-    .expect(Selector('.group').innerText).contains('Basics');
-  //   .expect(Selector('.category group > a > .body-1').innerText).contains(catName);
+  for (let i = 0; i < groupsCount; i++) {
+    const currentGroup = categoryGroups.nth(i)
+    const categoryGroupName = currentGroup.child('.category-group-name').innerText
+
+    const addButton = currentGroup.child('.add-category-btn')
+
+    const newCategoryName = 'mytest-' + new Date().toISOString()
+    await t.click(addButton)
+    await t.expect(Selector('input[aria-label="Group"]').innerText).eql(categoryGroupName)
+    await t
+      .typeText('input[aria-label="Category name"]', newCategoryName)
+      .click('.add-category-submit-btn')
+    // Cause after adding category it opens in new tab we need to navigate back, because TestCafe doest support opening new tabs
+    // https://github.com/DevExpress/testcafe/issues/2293
+    await t.navigateTo(`${baseUrl}`)
+    await t.expect(currentGroup.find(node => node.innerText === newCategoryName).exists)
+  }
 })

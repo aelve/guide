@@ -3,7 +3,7 @@
   <v-dialog
     :value="value"
     @input="close"
-    max-width="500px"  
+    max-width="500px"
   >
     <slot slot="activator" />
 
@@ -17,16 +17,17 @@
         <v-btn 
           flat
           color="primary"
-          @click.native="confirmAction(itemId); close"
+          class="confirm-btn"
+          @click.native="confirm"
         >
-          Continue
+          {{ confirmBtnText }}
         </v-btn>
         <v-btn
           flat
           color="primary"
-          @click.native="close"
+          @click.native="cancel"
         >
-          Cancel
+          {{ cancelBtnText }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -34,20 +35,25 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Component from 'vue-class-component';
-import { Prop } from 'vue-property-decorator';
+import { Vue, Component, Prop } from 'vue-property-decorator'
 
 @Component
 export default class ConfirmDialog extends Vue {
   @Prop(String) confirmationText!: string
-  @Prop(Function) confirmAction!: Function
   @Prop(Boolean) value!: boolean
-  @Prop(String) itemId!: string
+  @Prop({ default: 'Continue' }) confirmBtnText!: string
+  @Prop({ default: 'Cancel' }) cancelBtnText!: string
 
-  close() {
+  close () {
     this.$emit('input', false)
   }
+  confirm () {
+    this.$emit('confirmed')
+    this.close()
+  }
+  cancel () {
+    this.$emit('canceled')
+    this.close()
+  }
 }
-
 </script>

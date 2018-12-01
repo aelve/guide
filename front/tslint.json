@@ -14,16 +14,20 @@
     "no-string-literal": false,
     "no-shadowed-variable": false,
     "no-angle-bracket-type-assertion": false,
+    "max-line-length": false,
     "no-unused-expression": [true, "allow-fast-null-checks"],
     "no-var-requires": false,
     "object-literal-sort-keys": false,
     "only-arrow-functions": false,
     "quotemark": [true, "single"],
+    "no-unused-variable": true,
     "semicolon": [true, "never"],
+    "no-trailing-whitespace": true,
     "space-before-function-paren": true,
     "whitespace": [true, "check-module"],
     "trailing-comma": false,
-    "variable-name": false
+    "variable-name": false,
+    "ordered-imports" : false
   },
   "rulesDirectory": []
 }

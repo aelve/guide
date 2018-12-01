@@ -11,12 +11,15 @@
         <v-form
           lazy-validation
           v-model="isValid"
-          @keydown.native.enter="submit"
+          @keydown.native.prevent.enter="submit"
         >
-          <v-text-field 
+          <!-- v-if="value" - cause without it autofocus triggers on first modal open
+          https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
+          <v-text-field
+            v-if="value"
+            autofocus
             class="mb-2"
             label="Item name"
-            autofocus
             :rules="itemValidationRules"
             v-model="itemName"
           />
@@ -46,13 +49,12 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Component from 'vue-class-component';
-import { Prop, Watch } from 'vue-property-decorator';
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 
 @Component
 export default class AddItemDialog extends Vue {
   @Prop(Boolean) value!: boolean
+  @Prop(String) categoryId!: string
 
   itemName: string = ''
 
@@ -61,19 +63,19 @@ export default class AddItemDialog extends Vue {
   ]
 
   isValid: boolean = false
-  
+
   @Watch('value')
-  onOpen(newVal: string) {
+  onOpen (newVal: boolean) {
     this.itemName = ''
   }
 
-  close() {
+  close () {
     this.$emit('input', false)
   }
 
-  async submit() {
+  async submit () {
     await this.$store.dispatch('categoryItem/createItem', {
-      category: 'sth6l9jl',
+      category: this.categoryId,
       name: this.itemName
     })
 
