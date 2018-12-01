@@ -57,7 +57,7 @@ jobs:
         - sleep 15
       script:
         - stack --no-terminal test
-        - scripts/test-official.sh
+        - make back/test-db
 
     - stage: "Build and test the frontend"
       before_script:
