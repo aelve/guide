@@ -29,10 +29,8 @@ import Data.Swagger.Internal.Schema
 import Servant
 import Servant.Swagger
 import Network.HTTP.Types.Header (hReferer,hUserAgent)
-import Servant.API.Modifiers (unfoldRequestArgument)
 import Network.Wai (Request, requestHeaders, remoteHost)
-import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck, delayedFailFatal)
-import Data.IP
+import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck)
 
 import Guide.Utils (sockAddrToIP)
 
@@ -103,12 +101,12 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
 
 -- | Servant request details, can be captured by adding `RequestDetails :>` to an API branch.
 data RequestDetails = RequestDetails
-  { rdIp        :: Maybe IP    -- request ip address
+  { rdIp        :: Maybe Text  -- request ip address
   , rdReferer   :: Maybe Text  -- request referrer
   , rdUserAgent :: Maybe Text  -- request User-Agent
   } deriving (Show, Generic)
 
-instance (HasServer api context, FromHttpApiData IP)
+instance (HasServer api context)
   => HasServer (RequestDetails :> api) context where
 
   type ServerT (RequestDetails :> api) m = RequestDetails -> ServerT api m
@@ -121,12 +119,11 @@ instance (HasServer api context, FromHttpApiData IP)
       getRequestDetails :: Request -> DelayedIO RequestDetails
       getRequestDetails req = pure $ RequestDetails ip referer useragent
         where
-          ip :: FromHttpApiData IP => Maybe IP
-          ip = maybe (sockAddrToIP $ remoteHost req) Just $
-            (dropEitherIP "Forwarded-For") <|> (dropEitherIP "X-Forwarded-For")
-          referer :: FromHttpApiData a => Maybe a
+          ip :: FromHttpApiData Text => Maybe Text
+          ip = maybe ipFromHost Just $ (dropEither "Forwarded-For") <|> (dropEither "X-Forwarded-For")
+          referer :: FromHttpApiData Text => Maybe Text
           referer = dropEither hReferer
-          useragent :: FromHttpApiData a => Maybe a
+          useragent :: FromHttpApiData Text => Maybe Text
           useragent = dropEither hUserAgent
 
           dropEither :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
@@ -135,9 +132,5 @@ instance (HasServer api context, FromHttpApiData IP)
             case eUA of
               Left _ -> Nothing
               Right u -> Just u
-          dropEitherIP :: FromHttpApiData IP => NHTH.HeaderName -> Maybe IP
-          dropEitherIP headerName = do
-            eUA <- fmap parseHeader $ lookup headerName (requestHeaders req)
-            case eUA of
-              Left _ -> Nothing
-              Right u -> Just u
+          ipFromHost :: Maybe Text
+          ipFromHost = fmap (toText . show) $ sockAddrToIP $ remoteHost req
