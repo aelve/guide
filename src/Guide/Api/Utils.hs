@@ -96,7 +96,7 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
      in toSwagger (Proxy @api) & applyTags [tag]
 
 
--- | Type to log user's edition with header details
+-- | Servant request details, can be captured by adding `RequestDetails :>` to an API branch.
 data RequestDetails = RequestDetails
   { rdIp      :: Text
   , rdReferer :: Text
