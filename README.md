@@ -31,7 +31,7 @@ $ java -jar /usr/share/selenium-server/selenium-server-standalone.jar
 ```
 
 ```
-$ stack test
+$ make back/test
 ```
 
 ## Notes
