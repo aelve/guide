@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
@@ -28,36 +29,37 @@ import Say (say)
 import Guide.Api.Guider (GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Config (Config(..))
+import Guide.Api.Utils (RequestDetails (..))
+import Guide.Config (Config (..))
 import Guide.State
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
 
-guiderServer :: DB -> Site GuiderServer
-guiderServer db = Site
+guiderServer :: DB -> RequestDetails -> Site GuiderServer
+guiderServer db requestDetails = Site
   { _categorySite = toServant (CategorySite
       { _getCategories    = getCategories db
       , _getCategory      = getCategory db
-      , _createCategory   = createCategory db
-      , _setCategoryNotes = setCategoryNotes db
-      , _setCategoryInfo  = setCategoryInfo db
-      , _deleteCategory   = deleteCategory db }
+      , _createCategory   = createCategory db requestDetails
+      , _setCategoryNotes = setCategoryNotes db requestDetails
+      , _setCategoryInfo  = setCategoryInfo db requestDetails
+      , _deleteCategory   = deleteCategory db requestDetails }
       :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = createItem db
-      , _setItemInfo      = setItemInfo db
-      , _setItemSummary   = setItemSummary db
-      , _setItemEcosystem = setItemEcosystem db
-      , _setItemNotes     = setItemNotes db
-      , _deleteItem       = deleteItem db }
+      { _createItem       = createItem db requestDetails
+      , _setItemInfo      = setItemInfo db requestDetails
+      , _setItemSummary   = setItemSummary db requestDetails
+      , _setItemEcosystem = setItemEcosystem db requestDetails
+      , _setItemNotes     = setItemNotes db requestDetails
+      , _deleteItem       = deleteItem db requestDetails }
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait = createTrait db
-      , _setTrait    = setTrait db
-      , _deleteTrait = deleteTrait db }
+      { _createTrait = createTrait db requestDetails
+      , _setTrait    = setTrait db requestDetails
+      , _deleteTrait = deleteTrait db requestDetails }
       :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite
@@ -80,7 +82,8 @@ fullServer db config =
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
 api :: DB -> Config -> Server Api
-api db config = hoistServer (Proxy @Api) (guiderToHandler config) (\_ -> toServant $ guiderServer db)
+api db config = hoistServer (Proxy @Api) (guiderToHandler config)
+  (\requestDetails -> toServant $ guiderServer db requestDetails)
 
 -- | Serve the API on port 4400.
 --
