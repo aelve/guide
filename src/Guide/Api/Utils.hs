@@ -7,6 +7,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 
 module Guide.Api.Utils
@@ -105,6 +107,9 @@ data RequestDetails = RequestDetails
   , rdReferer   :: Maybe Text  -- request referrer
   , rdUserAgent :: Maybe Text  -- request User-Agent
   } deriving (Show, Generic)
+
+instance (HasSwagger api) => HasSwagger (RequestDetails :> api) where
+  toSwagger _ = toSwagger (Proxy :: Proxy api)
 
 instance (HasServer api context)
   => HasServer (RequestDetails :> api) context where

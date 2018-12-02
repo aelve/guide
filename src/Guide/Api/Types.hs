@@ -244,7 +244,7 @@ data SearchSite route = SearchSite
   }
   deriving (Generic)
 
-type Api = ToServant Site AsApi
+type Api = RequestDetails :> ToServant Site AsApi
 
 --------------------------------------------------------------------------
 -- Additional types for routes

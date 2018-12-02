@@ -80,7 +80,7 @@ fullServer db config =
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
 api :: DB -> Config -> Server Api
-api db config = hoistServer (Proxy @Api) (guiderToHandler config) (toServant $ guiderServer db)
+api db config = hoistServer (Proxy @Api) (guiderToHandler config) (\_ -> toServant $ guiderServer db)
 
 -- | Serve the API on port 4400.
 --
