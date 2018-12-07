@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
@@ -23,6 +25,7 @@ module Guide.Api.Utils
 import Imports
 
 import GHC.TypeLits
+import Data.IP (IP)
 import GHC.Generics
 import Data.Aeson
 import Data.Swagger hiding (fieldLabelModifier)
@@ -102,10 +105,15 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
 
 -- | Servant request details, can be captured by adding `RequestDetails :>` to an API branch.
 data RequestDetails = RequestDetails
-  { rdIp        :: Maybe Text  -- request ip address
+  { rdIp        :: Maybe IP  -- request ip address
   , rdReferer   :: Maybe Text  -- request referrer
   , rdUserAgent :: Maybe Text  -- request User-Agent
   } deriving (Show, Generic)
+
+instance FromHttpApiData IP where
+  parseUrlPiece text
+    | Just ip <- readMaybe $ toString text = Right ip
+    | otherwise = Left "Not a parseable IP address"
 
 instance (HasSwagger api) => HasSwagger (RequestDetails :> api) where
   toSwagger _ = toSwagger (Proxy :: Proxy api)
@@ -123,11 +131,11 @@ instance (HasServer api context)
       getRequestDetails :: Request -> DelayedIO RequestDetails
       getRequestDetails req = pure $ RequestDetails ip referer useragent
         where
-          ip :: FromHttpApiData Text => Maybe Text
+          ip :: Maybe IP
           ip = maybe ipFromHost Just $ (dropEither "Forwarded-For") <|> (dropEither "X-Forwarded-For")
-          referer :: FromHttpApiData Text => Maybe Text
+          referer :: Maybe Text
           referer = dropEither hReferer
-          useragent :: FromHttpApiData Text => Maybe Text
+          useragent :: Maybe Text
           useragent = dropEither hUserAgent
 
           dropEither :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
@@ -136,5 +144,5 @@ instance (HasServer api context)
             case eUA of
               Left _ -> Nothing
               Right u -> Just u
-          ipFromHost :: Maybe Text
-          ipFromHost = fmap (toText . show) $ sockAddrToIP $ remoteHost req
+          ipFromHost :: Maybe IP
+          ipFromHost = sockAddrToIP $ remoteHost req
