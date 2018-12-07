@@ -4,17 +4,16 @@
       <div class="article-top">
         <i class="fas fa-rss"/>
         <div
+          v-if="category"
           class="article-top-data"
-          v-for="(value, key) in getCategory"
-          :key="key"
         >
           <router-link
             class="article-top-link"
-            :to="`${pathname()}`"
+            :to="categoryUrl"
           >
-            {{value.title}}
+            {{category.title}}
           </router-link>
-          <p class="article-top-group"> {{value.group}} </p>
+          <p class="article-top-group"> {{category.group}} </p>
         </div>
         <v-btn
           class="ml-2 pl-0 add-item-btn"
@@ -37,7 +36,8 @@
           solo
           name="input-7-4"
           label="Solo textarea"
-          value="Write new description here"
+          placeholder="Write new description here"
+          v-model="modifiedDescription"
         />
         <v-btn
           v-if="!editDescriptionShown"
@@ -50,6 +50,60 @@
         >
           <v-icon class="mr-1" left>add</v-icon>
           add description
+        </v-btn>
+        <v-layout
+          v-if="editDescriptionShown" 
+          align-center 
+          justify-start 
+          row
+        >
+          <v-btn
+            class="ml-0"
+            depressed
+            small
+            light
+            color="lightgrey"
+            @click="toggleEditDescription(); addEmptyArticleDescription();"
+          >
+            Save
+          </v-btn>
+          <v-btn
+            class="ml-2"
+            depressed
+            small
+            light
+            color="lightgrey"
+            @click="toggleEditDescription"
+          >
+            Cancel
+          </v-btn>
+        </v-layout>
+      </div>
+      <!-- END When no category description show stub -->
+      <div
+        v-if="categoryDescription"
+        class="article-description"
+      >
+        <div v-if="!editDescriptionShown" v-html="categoryDescription" />
+        <v-textarea
+          v-if="editDescriptionShown"
+          solo
+          name="input-7-4"
+          label="Solo textarea"
+          :value="categoryDscMarkdown"
+          auto-grow
+        />
+        <v-btn
+          v-if="!editDescriptionShown"
+          class="pl-0 edit-descr-btn"
+          depressed
+          small
+          light
+          color="lightgrey"
+          @click="toggleEditDescription"
+        >
+          <v-icon class="mr-1" left>edit</v-icon>
+          Edit description
         </v-btn>
         <v-layout
           v-if="editDescriptionShown" 
@@ -79,40 +133,24 @@
           </v-btn>
         </v-layout>
       </div>
-
-      <div
-        v-if="categoryDescription"
-        class="article-description"
-      >
-        <div v-html="categoryDescription" />
-        <v-btn
-          class="pl-0 edit-descr-btn"
-          depressed
-          small
-          light
-          color="lightgrey"
-          @click="toggleEditDescription"
-        >
-          <v-icon class="mr-1" left>edit</v-icon>
-          Edit description
-        </v-btn>
-      </div>
-      <div
-        v-for="(value, index) in getCategoryItems"
-        :key="index"
-      > 
-        <article-content
-          :kind="value.name"
-          :group="value.group"
-          :itemDescription="value.description.html"
-          :pros="value.pros"
-          :cons="value.cons"
-          :ecosystem="value.ecosystem.html"
-          :tocArray="value.toc"
-          :notes="value.notes.html"
-          :itemUid="value.uid"
-        />
-      </div>
+      <template v-if="category">
+        <div
+          v-for="(value, index) in category.items"
+          :key="index"
+        > 
+          <article-content
+            :kind="value.name"
+            :group="value.group"
+            :itemDescription="value.description.html"
+            :pros="value.pros"
+            :cons="value.cons"
+            :ecosystem="value.ecosystem.html"
+            :tocArray="value.toc"
+            :notes="value.notes.html"
+            :itemUid="value.uid"
+          />
+        </div>
+      </template>
       <v-btn
         flat
         class="ml-2 pl-0"
@@ -122,19 +160,21 @@
         <v-icon class="mr-1" left>add</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog v-model="isDialogOpen"/>
+      <add-item-dialog 
+        v-model="isDialogOpen"
+        :categoryId="categoryId"
+      />
     </div>
   </v-container>
 </template>
 
 <script lang="ts">
+import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
-import Vue from 'vue'
-import Component from 'vue-class-component'
+import { Vue, Component, Prop } from 'vue-property-decorator'
 import ArticleContent from 'client/components/ArticleContent.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
-import { Prop } from 'vue-property-decorator';
-import category from 'client/store/modules/category';
+import category from 'client/store/modules/category'
 
 @Component({
   name: 'article-component',
@@ -144,31 +184,56 @@ import category from 'client/store/modules/category';
   }
 })
 export default class ArticleItem extends Vue {
+  @Prop(String) categoryId!: string
+  @Prop(String) categoryDsc!: string
+
   isDialogOpen: boolean = false
   editDescriptionShown: boolean = false
   catUid: string = ''
+  emptyDescription: string = ''
+  // emptyDescriptionData: object = {
+  //   original: '',
+  //   modified: this.emptyDescription
+  // }
+  // hasDescription: string = this.categoryDscMarkdown
+  // hasDescritpionData: object = {
+  //   original: this.categoryDscMarkdown,
+  //   modified: this.hasDescription
+  // }
+  originalDescription: string = this.categoryDscMarkdown
+  modifiedDescription: string = ''
 
-  async asyncData() {
-    const rawUrl = this.$route.params.category
-    const categoryUrl = rawUrl.split("-").pop()!.split("#").shift()
+  // clean dumb old data
+  beforeCreate () {
+    // this.$store.replaceState({})
+  }
 
-    await this.$store.dispatch('categoryItem/loadCategoryItem', categoryUrl)
+  async asyncData () {
+    if (!this.categoryId) {
+      return
+    }
+    await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
   get categoryDescription () {
-    return _get(this, '$store.state.categoryItem.categoryItemList.description.html')
+    return _get(this, '$store.state.category.category.description.html')
   }
 
-  get getCategory () {
-    return this.$store.state.categoryItem
+  get categoryDscMarkdown () {
+    return _get(this, '$store.state.category.category.description.text')
+    // return this.$store.state.category.category.description.text
   }
 
-  get getCategoryItems () {
-    return this.$store.state.categoryItem.categoryItemList.items
+  get category () {
+    return this.$store.state.category.category
+  }
+
+  get categoryUrl () {
+    return this.category && `${_toKebabCase(this.category.title)}-${this.category.uid}`
   }
 
   get categoryUid () {
-    return this.catUid = this.$store.state.categoryItem.uid
+    return this.$store.state.category.category.uid
   }
 
   openAddItemDialog () {
@@ -184,9 +249,15 @@ export default class ArticleItem extends Vue {
     this.editDescriptionShown = false
   }
 
-  pathname() {
-    return this.$route.params.category
+  async addEmptyArticleDescription() {
+    await this.$store.dispatch('categoryItem/addCategoryDescription', {
+      uid: this.categoryUid,
+      'original': this.originalDescription,
+      'modified': this.modifiedDescription
+    })
   }
+
+  // Different method if Category Description exists
 }
 </script>
 

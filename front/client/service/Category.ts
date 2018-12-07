@@ -1,12 +1,20 @@
-import axios from "axios";
+import axios from 'axios'
+import { ICategoryItem } from './CategoryItem'
 
 class CategoryService {
-  async  getCategoryList(): Promise<ICategory[]> {
-    const { data } = await axios.get("api/categories", {})
+  async getCategoryById (id: ICategoryInfo['uid']): Promise<ICategoryFull> {
+    const { data } = await axios.get(`api/category/${id}`, {})
     return data
   }
 
-  async  createCategory({ title, group }: ICategory): Promise<ICategory['uid']> {
+  async getCategoryList (): Promise<ICategoryInfo[]> {
+    const { data } = await axios.get('api/categories', {})
+    return data
+  }
+
+  async createCategory (
+    { title, group }: { title: ICategoryInfo['title'], group: ICategoryInfo['group'] }
+  ): Promise<ICategoryInfo['uid']> {
     const { data } = await axios.post('api/category', null, {
       params: {
         title,
@@ -21,19 +29,25 @@ export enum CategoryStatus {
   finished = 'CategoryFinished',
   inProgress = 'CategoryWIP',
   toBeWritten = 'CategoryStub'
-
-}
-export interface ICategory {
-  created?: string
-  group?: string
-  status?: CategoryStatus
-  title?: string
-  uid?: string,
-  items?: any[]
 }
 
+export interface ICategoryInfo {
+  uid: string
+  title: string
+  created: string
+  group: string
+  status: CategoryStatus
+}
+
+export interface ICategoryFull {
+  uid: string
+  title: string
+  group: string
+  status: CategoryStatus
+  description: object
+  items: ICategoryItem[]
+}
 
 const categoryServiceInstance = new CategoryService()
-
 
 export { categoryServiceInstance as CategoryService }

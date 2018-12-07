@@ -80,28 +80,24 @@
         </transition>
       </div>
     </div>
-    <confirm-dialog 
-      v-model="isConfirmDialogOpen"
-      :confirmationText="'delete this item'"
-      :confirmAction="deleteArticleContent"
-      :itemId="itemUid"
+    <confirm-dialog
+      confirmationText="delete this item"
+      v-model="isDeleteItemDialogOpen"
+      @confirmed="deleteItem"
     />
-    <!-- Shit happens because passing function as a prop somehow calls this function -->
   </div>
 </template>
 
 <script lang="ts">
-// import Vue from 'vue'
-// import Component from 'vue-class-component'
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import { Vue, Component, Prop } from 'vue-property-decorator'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
+import { ICategoryItem } from 'client/service/CategoryItem.ts'
 
 @Component({
   components: {
     ConfirmDialog
   }
 })
-
 export default class ArticleContent extends Vue {
   @Prop(String) kind!: string
   @Prop(String) group!: string
@@ -115,7 +111,7 @@ export default class ArticleContent extends Vue {
   @Prop(String) itemUid!: string
 
   isNoteExpanded: boolean = false
-  isConfirmDialogOpen: boolean = false
+  isDeleteItemDialogOpen: boolean = false
 
   expandNotes () {
     this.isNoteExpanded = true
@@ -125,16 +121,14 @@ export default class ArticleContent extends Vue {
     this.isNoteExpanded = false
   }
 
-  async deleteArticleContent (itemId: any) {
-    await this.$store.dispatch('categoryItem/deleteItem', {
-      id: itemId
-    })
+  async deleteItem (): Promise<void> {
+    await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
   }
 
   openConfirmDialog () {
-    this.isConfirmDialogOpen = true
+    this.isDeleteItemDialogOpen = true
   }
-} 
+}
 </script>
 
 <style scoped>

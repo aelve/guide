@@ -19,23 +19,23 @@ import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
 import Servant.API.Generic
-import Servant.Server.Generic
 import Servant.Swagger
 import Servant.Swagger.UI
 
 -- putStrLn that works well with concurrency
 import Say (say)
 
+import Guide.Api.Guider (GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Config (Config (..))
+import Guide.Config (Config(..), readConfig)
 import Guide.State
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
 
-apiServer :: DB -> Site AsServer
-apiServer db = Site
+guiderServer :: DB -> Site GuiderServer
+guiderServer db = Site
   { _categorySite = toServant (CategorySite
       { _getCategories    = getCategories db
       , _getCategory      = getCategory db
@@ -43,7 +43,7 @@ apiServer db = Site
       , _setCategoryNotes = setCategoryNotes db
       , _setCategoryInfo  = setCategoryInfo db
       , _deleteCategory   = deleteCategory db }
-      :: CategorySite AsServer)
+      :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
       { _createItem       = createItem db
@@ -52,31 +52,35 @@ apiServer db = Site
       , _setItemEcosystem = setItemEcosystem db
       , _setItemNotes     = setItemNotes db
       , _deleteItem       = deleteItem db }
-      :: ItemSite AsServer)
+      :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
       { _createTrait    = createTrait db
       , _setTrait       = setTrait db
       , _deleteTrait    = deleteTrait db }
-      :: TraitSite AsServer)
+      :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite
       { _search         = search db }
-      :: SearchSite AsServer)
+      :: SearchSite GuiderServer)
   }
 
 type FullApi =
   Api :<|>
   SwaggerSchemaUI "api" "swagger.json"
 
-fullServer :: DB -> Server FullApi
-fullServer db =
-  toServant (apiServer db) :<|>
+fullServer :: DB -> Config -> Server FullApi
+fullServer db config =
+  api db config :<|>
   swaggerSchemaUIServer doc
   where
     doc = toSwagger (Proxy @Api)
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
+
+-- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
+api :: DB -> Config -> Server Api
+api db config = hoistServer (Proxy @Api) (guiderToHandler config) (toServant $ guiderServer db)
 
 -- | Serve the API on port 4400.
 --
@@ -84,7 +88,7 @@ fullServer db =
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
   say $ format "API is running on port {}" _portApi
-  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db)
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =

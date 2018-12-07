@@ -1,35 +1,59 @@
 import axios from 'axios'
-import { awaitExpression } from 'babel-types';
+import { ICategoryFull } from './Category'
 
 class CategoryItemService {
-  async getCategoryItem(categoryURL: string): Promise<ICategoryItem[]> {
-    const { data } = await axios.get(`api/category/${categoryURL}`, {})
-    return data
-  }
-
-  async addItem(categoryURL, { category, name }: ICategoryItem) {
-    const { data } = await axios.post(`api/item/${categoryURL()}`, null, {
+  async createItem ({ category, name }: ICreateCategoryItem) {
+    const { data } = await axios.post(`api/item/${category}`, null, {
       params: {
-        category,
         name
       }
     })
     return data
   }
-  
-  async deleteItem({ id }: ICategoryItem) {
-    const { data } = await axios.delete(`api/item/${id}`)
-    return data
+  async deleteItemById (id: ICategoryItem['uid']): Promise<void> {
+    await axios.delete(`api/item/${id}`)
+  }
+
+  // add here category description add/edit
+  async addCategoryDescription ({ uid, original, modified }: {uid: string, original: string, modified: string}): Promise<any> {
+    try {
+      const { data } = await axios.put(`api/category/${uid}/notes`, {
+          original,
+          modified
+      })
+      return data
+    } catch(err) {
+      if (err.response.status === '409') {
+        console.log(409 + ' blyat')
+      }
+      throw err
+    }
   }
 }
 
+export interface ICreateCategoryItem {
+  category: ICategoryFull['title'],
+  name: ICategoryItem['name']
+}
+
 export interface ICategoryItem {
-  status?: string,
-  group?: string,
-  uid?: string,
-  items?: any[],
-  title?: string,
-  description?: object
+  uid: string
+  name: string
+  created: string
+  group?: string
+  description: object
+  pros: ITrait[]
+  cons: ITrait[]
+  ecosystem: object
+  notes: object
+  link?: string
+  kind: object
+
+}
+
+export interface ITrait {
+  uid: string
+  content: object
 }
 
 const catItemServiceInstance = new CategoryItemService()

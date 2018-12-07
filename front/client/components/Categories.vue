@@ -98,7 +98,7 @@ import _sortBy from 'lodash/sortBy'
 import _fromPairs from 'lodash/fromPairs'
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { ICategory, CategoryStatus } from 'client/service/Category'
+import { ICategoryInfo, CategoryStatus } from 'client/service/Category'
 import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 
 @Component({
@@ -111,17 +111,16 @@ export default class Categories extends Vue {
   addCategoryGroupName: string = ''
   isAddGroupDialogOpen: boolean = false
 
-  async asyncData() {
+  async asyncData () {
     return this.$store.dispatch('category/loadCategoryList')
   }
-  // TODO create state getter and replace to it
-  get categories() {
+  get categories () {
     return this.$store.state.category.categoryList
   }
-  get groups() {
-    const groupedByGroupName: object = _groupBy(this.categories, 'group')
+  get groups () {
+    const groupedByGroupName = _groupBy(this.categories, 'group')
     const groupedEntries = Object.entries(groupedByGroupName)
-    const groupedAlsoByStatus = groupedEntries.map(([key, value]: [string, ICategory[]]) => {
+    const groupedAlsoByStatus = groupedEntries.map(([key, value]: [string, ICategoryInfo[]]) => {
       const grouppedCategoriesByStatus = _groupBy(value, 'status')
       return [key, grouppedCategoriesByStatus]
     })
@@ -130,11 +129,11 @@ export default class Categories extends Vue {
     const sortedAlphabetically = _sortBy(groupedAlsoByStatus, entriesKeyIndex)
     return _fromPairs(sortedAlphabetically)
   }
-  openAddCategoryDialog(groupName: string) {
+  openAddCategoryDialog (groupName: string) {
     this.addCategoryGroupName = groupName
     this.isAddGroupDialogOpen = true
   }
-  getCategoryUrl(category: ICategory): string {
+  getCategoryUrl (category: ICategoryInfo): string {
     return `${_toKebabCase(category.title)}-${category.uid}`
   }
 }

@@ -18,6 +18,7 @@
     "declaration": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+    "strictNullChecks": false,
     "lib": [
       "dom",
       "es2017"

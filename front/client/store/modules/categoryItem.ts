@@ -1,46 +1,54 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
-import { ICategoryItem, CategoryItemService } from 'client/service/CategoryItem'
+import { ICategoryItem, CategoryItemService, ICreateCategoryItem } from 'client/service/CategoryItem'
+import { CategoryService, ICategoryFull } from 'client/service/Category'
 
-interface CategoryItemState {
+interface ICategoryItemState {
   categoryItemList: ICategoryItem[]
 }
 
-const state: CategoryItemState = {
+const state: ICategoryItemState = {
   categoryItemList: []
 }
 
-const getters: GetterTree<CategoryItemState, any> = {}
+const getters: GetterTree<ICategoryItemState, any> = {}
 
-const actions: ActionTree<CategoryItemState, any> = {
-  async loadCategoryItem({ commit }: ActionContext<CategoryItemState, any>, category): Promise<any> {
-    // something is going on with category
-    const data: ICategoryItem[] = await CategoryItemService.getCategoryItem(category)
-    commit('setCategoryItem', data)
-  },
-  async createItem({ dispatch }, { category, name }: ICategoryItem): Promise<any> {
-    const createdId = await CategoryItemService.addItem({
+const actions: ActionTree<ICategoryItemState, any> = {
+  async createItem (
+    { dispatch }: ActionContext<ICategoryItemState, any>,
+    { category, name }: ICreateCategoryItem
+  ): Promise<ICategoryItem['uid']> {
+    const createdId = await CategoryItemService.createItem({
       category,
       name
     })
-    dispatch('loadCategoryItem')
+    dispatch('category/reloadCategory', null, { root: true })
     return createdId
   },
-  async deleteItem({ dispatch }, { id }: ICategoryItem) {
-    const deletedId = await CategoryItemService.deleteItem({
-      id
+  async deleteItemById ({ dispatch }: ActionContext<ICategoryItemState, any>, id: ICategoryItem['uid']) {
+    await CategoryItemService.deleteItemById(id)
+    dispatch('category/reloadCategory', null, { root: true })
+  },
+  async addCategoryDescription (
+    { dispatch }: ActionContext<ICategoryItemState, any>,
+    { uid, original, modified }: {uid: string, original: string, modified: string}
+  ) {
+    const createdDescription = await CategoryItemService.addCategoryDescription({
+      uid,
+      original,
+      modified
     })
-    dispatch('loadCategoryItem')
-    return deletedId
+    dispatch('category/reloadCategory', null, { root: true })
+    return createdDescription
   }
 }
 
-const mutations: MutationTree<CategoryItemState> = {
-  setCategoryItem: (state: CategoryItemState, payload: ICategoryItem[]) => {
+const mutations: MutationTree<ICategoryItemState> = {
+  setCategoryItem: (state: ICategoryItemState, payload: ICategoryItem[]) => {
     state.categoryItemList = payload
   }
 }
 
-const categoryItem: Module<CategoryItemState, any> = {
+const categoryItem: Module<ICategoryItemState, any> = {
   namespaced: true,
   state,
   getters,
