@@ -240,7 +240,7 @@ export default class ArticleItem extends Vue {
     this.isDialogOpen = true
   }
 
-  toggleEditDescription() {
+  toggleEditDescription () {
     if (this.editDescriptionShown === false) {
       this.editDescriptionShown = true
       return
@@ -249,11 +249,11 @@ export default class ArticleItem extends Vue {
     this.editDescriptionShown = false
   }
 
-  async addEmptyArticleDescription() {
+  async addEmptyArticleDescription () {
     await this.$store.dispatch('categoryItem/addCategoryDescription', {
       uid: this.categoryUid,
-      'original': this.originalDescription,
-      'modified': this.modifiedDescription
+      original: this.originalDescription,
+      modified: this.modifiedDescription
     })
   }
 
