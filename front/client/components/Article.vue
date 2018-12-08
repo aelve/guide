@@ -213,6 +213,7 @@ export default class ArticleItem extends Vue {
       return
     }
     await this.$store.dispatch('category/loadCategory', this.categoryId)
+    this.originalDescription = this.categoryDscMarkdown
   }
 
   get categoryDescription () {
