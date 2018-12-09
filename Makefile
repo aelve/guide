@@ -1,6 +1,6 @@
 # Build the project
-.PHONY: back/build
-back/build:
+.PHONY: back
+back:
 	stack build --fast
 
 # Run tests
@@ -17,7 +17,7 @@ back/db:
 
 # Test that the official database can be loaded
 .PHONY: back/test-db
-back/test-db: back/build
+back/test-db: back
 	if [ -d back/state ]; then mv back/state back/state-old; fi
 	git clone --depth 1 https://github.com/aelve/guide-database.git
 	mv guide-database back/state

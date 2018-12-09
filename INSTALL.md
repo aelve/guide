@@ -18,7 +18,7 @@ The `back/config.json` file contains the config (it will be created at the first
 
 First install NPM (important!). Then do:
 
-    $ make back/build
+    $ make back
     $ make back/run
 
 And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:8080/admin>.
@@ -37,7 +37,7 @@ Clone and build `guide`:
 
     $ git clone https://github.com/aelve/guide
     $ cd guide
-    $ make back/build
+    $ make back
     $ stack install --fast
 
 Make a new subdomain in Apache. For me, it means writing this to `/etc/apache2/sites-available/guide.conf`:
