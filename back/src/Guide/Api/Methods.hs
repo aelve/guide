@@ -1,7 +1,8 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE NamedFieldPuns      #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Guide.Api.Methods where
 
@@ -13,14 +14,15 @@ import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
 
+import Guide.Api.Guider (Guider)
 import Guide.Api.Types
 import Guide.Api.Utils
+import Guide.Config (Config (..))
 import Guide.Diff (merge)
 import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..), MarkdownTree (..))
 import Guide.State
 import Guide.Types
 import Guide.Utils
-import Guide.Api.Guider (Guider)
 
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -44,8 +46,8 @@ getCategory db catId = toCCategoryFull <$> getCategoryOrFail db catId
 --
 -- Returns the ID of the created category (or of the existing one if the
 -- category with this title exists already).
-createCategory :: DB -> Text -> Text -> Guider (Uid Category)
-createCategory db title' group' = do
+createCategory :: DB -> RequestDetails -> Text -> Text -> Guider (Uid Category)
+createCategory db requestDetails title' group' = do
   when (T.null title') $ throwError err400{errBody = "Title not provided"}
   when (T.null group') $ throwError err400{errBody = "Group' not provided"}
   -- If the category exists already, don't create it
@@ -57,41 +59,42 @@ createCategory db title' group' = do
     Nothing -> do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
-      (_edit, _newCategory) <- dbUpdate db (AddCategory catId title' group' time)
-      -- TODO addEdit edit
+      (edit, _) <- dbUpdate db (AddCategory catId title' group' time)
+      addEdit db requestDetails edit
       return catId
 
 -- | Edit categoty's note.
-setCategoryNotes :: DB -> Uid Category -> CTextEdit -> Guider NoContent
-setCategoryNotes db catId CTextEdit{..} = do
+setCategoryNotes :: DB -> RequestDetails -> Uid Category -> CTextEdit -> Guider NoContent
+setCategoryNotes db requestDetails catId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail db catId
   checkConflict CTextEdit{..} serverModified
-  _ <- dbUpdate db (SetCategoryNotes catId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetCategoryNotes catId $ unH cteModified)
+  addEdit db requestDetails edit
   pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
-setCategoryInfo :: DB -> Uid Category -> CCategoryInfoEdit -> Guider NoContent
-setCategoryInfo db catId CCategoryInfoEdit{..} = do
+setCategoryInfo :: DB -> RequestDetails -> Uid Category -> CCategoryInfoEdit -> Guider NoContent
+setCategoryInfo db requestDetails catId CCategoryInfoEdit{..} = do
   category <- getCategoryOrFail db catId
   -- TODO diff and merge
-  _ <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
-  _ <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
-  _ <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+  (editTitle, _) <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
+  (editGroup, _) <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
+  (editStatus, _) <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
   let oldEnabledSections = category ^. enabledSections
   let newEnabledSections = unH ccieSections
-  _ <- dbUpdate db $ ChangeCategoryEnabledSections catId
+  (editSection, _) <- dbUpdate db $ ChangeCategoryEnabledSections catId
       (newEnabledSections S.\\ oldEnabledSections)
       (oldEnabledSections S.\\ newEnabledSections)
-  -- TODO record edits
+  mapM_ (addEdit db requestDetails) [editTitle, editGroup, editStatus, editSection]
   pure NoContent
 
 -- | Delete a category.
-deleteCategory :: DB -> Uid Category -> Guider NoContent
-deleteCategory db catId = do
+deleteCategory :: DB -> RequestDetails -> Uid Category -> Guider NoContent
+deleteCategory db requestDetails catId = do
   _ <- getCategoryOrFail db catId
-  _mbEdit <- dbUpdate db (DeleteCategory catId)
+  dbUpdate db (DeleteCategory catId) >>= (mapM_ $ \edit -> do
+    addEdit db requestDetails edit)
   pure NoContent
-  -- TODO mapM_ addEdit mbEdit
 
 ----------------------------------------------------------------------------
 -- Items
@@ -101,8 +104,8 @@ deleteCategory db catId = do
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
 -- with duplicated names.
-createItem :: DB -> Uid Category -> Text -> Guider (Uid Item)
-createItem db catId name' = do
+createItem :: DB -> RequestDetails -> Uid Category -> Text -> Guider (Uid Item)
+createItem db requestDetails catId name' = do
   _ <- getCategoryOrFail db catId
   when (T.null name') $ throwError err400{errBody = "Name not provided"}
   itemId <- randomShortUid
@@ -112,53 +115,58 @@ createItem db catId name' = do
       looksLikeLibrary = T.all isAllowedChar name'
       kind' = if looksLikeLibrary then Library (Just name') else Other
   time <- liftIO getCurrentTime
-  (_edit, _newItem) <- dbUpdate db (AddItem catId itemId name' time kind')
-  -- TODO: addEdit edit
+  (edit, _) <- dbUpdate db (AddItem catId itemId name' time kind')
+  addEdit db requestDetails edit
   pure itemId
 
 -- TODO: move an item
 
 -- | Set item's info
-setItemInfo :: DB -> Uid Item -> CItemInfo -> Guider NoContent
-setItemInfo db itemId CItemInfo{..} = do
+setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfo -> Guider NoContent
+setItemInfo db requestDetails itemId CItemInfo{..} = do
   _ <- getItemOrFail db itemId
   -- TODO diff and merge
-  _ <- dbUpdate db $ SetItemName itemId $ unH ciiName
-  _ <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
-  _ <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-  _ <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
+  (editName, _) <- dbUpdate db $ SetItemName itemId $ unH ciiName
+  (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+  (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+  (editKind, _) <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
+  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editKind]
   pure NoContent
 
 -- | Set item's summary.
-setItemSummary :: DB -> Uid Item -> CTextEdit -> Guider NoContent
-setItemSummary db itemId CTextEdit{..} = do
+setItemSummary :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
+setItemSummary db requestDetails itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (_edit, _newItem) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  addEdit db requestDetails edit
   pure NoContent
 
 -- | Set item's ecosystem.
-setItemEcosystem :: DB -> Uid Item -> CTextEdit -> Guider NoContent
-setItemEcosystem db itemId CTextEdit{..} = do
+setItemEcosystem :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
+setItemEcosystem db requestDetails itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (_edit, _newItem) <- dbUpdate db (SetItemEcosystem itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemEcosystem itemId $ unH cteModified)
+  addEdit db requestDetails edit
   pure NoContent
 
 -- | Set item's notes.
-setItemNotes :: DB -> Uid Item -> CTextEdit -> Guider NoContent
-setItemNotes db itemId CTextEdit{..} = do
+setItemNotes :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
+setItemNotes db requestDetails itemId CTextEdit{..} = do
   serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (_edit, _newItem) <- dbUpdate db (SetItemNotes itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemNotes itemId $ unH cteModified)
+  addEdit db requestDetails edit
   pure NoContent
 
 -- | Delete an item.
-deleteItem :: DB -> Uid Item -> Guider NoContent
-deleteItem db itemId = do
-  _mbEdit <- dbUpdate db (DeleteItem itemId)
+deleteItem :: DB -> RequestDetails -> Uid Item -> Guider NoContent
+deleteItem db requestDetails itemId = do
+  _ <- getItemOrFail db itemId
+  dbUpdate db (DeleteItem itemId) >>= (mapM_ $ \edit -> do
+    addEdit db requestDetails edit)
   pure NoContent
-  -- TODO: mapM_ addEdit mbEdit
 
 ----------------------------------------------------------------------------
 -- Traits
@@ -167,30 +175,32 @@ deleteItem db itemId = do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
-createTrait :: DB -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
-createTrait db itemId traitType text = do
+createTrait :: DB -> RequestDetails -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
+createTrait db requestDetails itemId traitType text = do
   when (T.null text) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
-  (_edit, _newTrait) <- case traitType of
+  (edit, _) <- case traitType of
     Con -> dbUpdate db (AddCon itemId traitId text)
     Pro -> dbUpdate db (AddPro itemId traitId text)
-  -- TODO: mapM_ addEdit mbEdit
+  addEdit db requestDetails edit
   pure traitId
 
 -- | Update the text of a trait (pro/con).
-setTrait :: DB -> Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
-setTrait db itemId traitId CTextEdit{..} = do
+setTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
+setTrait db requestDetails itemId traitId CTextEdit{..} = do
   serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail db itemId traitId
   checkConflict CTextEdit{..} serverModified
-  (_edit, _newCategory) <- dbUpdate db (SetTraitContent itemId traitId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetTraitContent itemId traitId $ unH cteModified)
+  addEdit db requestDetails edit
   pure NoContent
 
 -- | Delete a trait (pro/con).
-deleteTrait :: DB -> Uid Item -> Uid Trait -> Guider NoContent
-deleteTrait db itemId traitId = do
-  _mbEdit <- dbUpdate db (DeleteTrait itemId traitId)
+deleteTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> Guider NoContent
+deleteTrait db requestDetails itemId traitId = do
+  _ <- getTraitOrFail db itemId traitId
+  dbUpdate db (DeleteTrait itemId traitId) >>= (mapM_ $ \edit -> do
+    addEdit db requestDetails edit)
   pure NoContent
-
 
 ----------------------------------------------------------------------------
 -- Search
@@ -220,6 +230,14 @@ dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
         => DB -> event -> m (EventResult event)
 dbQuery db x = liftIO $
   Acid.query db x
+
+-- Call this whenever any user-made change is applied to the database.
+addEdit :: DB -> RequestDetails -> Edit -> Guider ()
+addEdit db RequestDetails{..} edit = unless (isVacuousEdit edit) $ do
+    time <- liftIO getCurrentTime
+    Config{..} <- ask
+    dbUpdate db $ RegisterEdit edit rdIp time
+    dbUpdate db $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: DB -> Uid Category -> Guider Category

@@ -33,9 +33,9 @@ module Guide.Api.Types
   , CSearchResult(..), toCSearchResult
 
   -- * Other types
-  , TraitType (..)
-  , CTextEdit (..)
-  , CMergeConflict (..)
+  , TraitType(..)
+  , CTextEdit(..)
+  , CMergeConflict(..)
   )
   where
 
@@ -44,6 +44,7 @@ import Imports
 
 import Data.Tree (Forest, Tree)
 import Lucid (renderText, toHtml)
+
 import Servant
 import Servant.API.Generic
 
@@ -132,6 +133,7 @@ data CategorySite route = CategorySite
 
   , _deleteCategory :: route :-
       Summary "Delete a category"
+      :> ErrorResponse 404 "Category not found"
       :> "category"
       :> Capture "id" (Uid Category)
       :> Delete '[JSON] NoContent
@@ -190,6 +192,7 @@ data ItemSite route = ItemSite
 
   , _deleteItem :: route :-
       Summary "Delete an item"
+      :> ErrorResponse 404 "Item not found"
       :> "item"
       :> Capture "id" (Uid Item)
       :> Delete '[JSON] NoContent
@@ -223,6 +226,8 @@ data TraitSite route = TraitSite
 
   , _deleteTrait :: route :-
       Summary "Delete a trait"
+      :> ErrorResponse 404 "Item not found"
+      :> ErrorResponse 404 "Trait not found"
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
@@ -243,7 +248,7 @@ data SearchSite route = SearchSite
   }
   deriving (Generic)
 
-type Api = ToServant Site AsApi
+type Api = RequestDetails :> ToServant Site AsApi
 
 --------------------------------------------------------------------------
 -- Additional types for routes
