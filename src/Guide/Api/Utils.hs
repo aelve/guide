@@ -147,9 +147,7 @@ instance (HasServer api context)
           getIp :: Maybe ByteString -> Maybe IP
           getIp mBody = case mBody of
             Nothing -> sockAddrToIP $ remoteHost req
-            Just ff -> case readMaybe (toString ip) of
-              Nothing -> Nothing
-              Just i  -> pure i
+            Just ff -> readMaybe (toString ip)
               where
                 addr = T.strip . snd . T.breakOnEnd "," $ toText ff
                 ip -- [IPv6]:port
