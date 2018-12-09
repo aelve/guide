@@ -133,7 +133,7 @@ setItemInfo db requestDetails itemId CItemInfo{..} = do
   mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editKind]
   pure NoContent
 
--- | Set item's summary.SetItemKind itemId $ unH ciiKind
+-- | Set item's summary.
 setItemSummary :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary db requestDetails itemId CTextEdit{..} = do
   serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
@@ -163,6 +163,7 @@ setItemNotes db requestDetails itemId CTextEdit{..} = do
 -- | Delete an item.
 deleteItem :: DB -> RequestDetails -> Uid Item -> Guider NoContent
 deleteItem db requestDetails itemId = do
+  _ <- getItemOrFail db itemId
   dbUpdate db (DeleteItem itemId) >>= (mapM_ $ \edit -> do
     addEdit db requestDetails edit)
   pure NoContent
@@ -196,6 +197,7 @@ setTrait db requestDetails itemId traitId CTextEdit{..} = do
 -- | Delete a trait (pro/con).
 deleteTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> Guider NoContent
 deleteTrait db requestDetails itemId traitId = do
+  _ <- getTraitOrFail db itemId traitId
   dbUpdate db (DeleteTrait itemId traitId) >>= (mapM_ $ \edit -> do
     addEdit db requestDetails edit)
   pure NoContent

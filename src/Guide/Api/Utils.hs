@@ -39,6 +39,7 @@ import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck)
 import Guide.Utils (sockAddrToIP)
 
 import qualified Network.HTTP.Types.Header as NHTH
+import qualified Data.Text as T
 
 
 -- | Nice JSON options.
@@ -103,17 +104,15 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
             Nothing
      in toSwagger (Proxy @api) & applyTags [tag]
 
--- | Servant request details, can be captured by adding `RequestDetails :>` to an API branch.
+-- | Servant request details, can be captured by adding @RequestDetails :>@ to an API branch.
 data RequestDetails = RequestDetails
-  { rdIp        :: Maybe IP  -- request ip address
-  , rdReferer   :: Maybe Text  -- request referrer
-  , rdUserAgent :: Maybe Text  -- request User-Agent
+  { rdIp        :: Maybe IP    -- ^ request ip address
+  , rdReferer   :: Maybe Text  -- ^ request referrer
+  , rdUserAgent :: Maybe Text  -- ^ request User-Agent
   } deriving (Show, Generic)
 
 instance FromHttpApiData IP where
-  parseUrlPiece text
-    | Just ip <- readMaybe $ toString text = Right ip
-    | otherwise = Left "Not a parseable IP address"
+  parseUrlPiece text = either (Left . toText) Right $ readEither $ toString text
 
 instance (HasSwagger api) => HasSwagger (RequestDetails :> api) where
   toSwagger _ = toSwagger (Proxy :: Proxy api)
@@ -129,20 +128,36 @@ instance (HasServer api context)
       subserver `addHeaderCheck` withRequest getRequestDetails
     where
       getRequestDetails :: Request -> DelayedIO RequestDetails
-      getRequestDetails req = pure $ RequestDetails ip referer useragent
+      getRequestDetails req = pure $ RequestDetails mIp mReferer mUseragent
         where
-          ip :: Maybe IP
-          ip = maybe ipFromHost Just $ (dropEither "Forwarded-For") <|> (dropEither "X-Forwarded-For")
-          referer :: Maybe Text
-          referer = dropEither hReferer
-          useragent :: Maybe Text
-          useragent = dropEither hUserAgent
+          mIp :: Maybe IP
+          mIp =  getIp $ lookupName "Forwarded-For" <|> lookupName "X-Forwarded-For"
+          mReferer :: Maybe Text
+          mReferer = getHeader hReferer
+          mUseragent :: Maybe Text
+          mUseragent = getHeader hUserAgent
 
-          dropEither :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
-          dropEither headerName = do
-            eUA <- fmap parseHeader $ lookup headerName (requestHeaders req)
-            case eUA of
-              Left _ -> Nothing
-              Right u -> Just u
-          ipFromHost :: Maybe IP
-          ipFromHost = sockAddrToIP $ remoteHost req
+          lookupName :: NHTH.HeaderName -> Maybe ByteString
+          lookupName headerName = lookup headerName (requestHeaders req)
+
+          getHeader :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
+          getHeader headerName = join $
+            (either (\_ -> Nothing) Just) . parseHeader <$> lookupName headerName
+
+          getIp :: Maybe ByteString -> Maybe IP
+          getIp mBody = case mBody of
+            Nothing -> sockAddrToIP $ remoteHost req
+            Just ff -> case readMaybe (toString ip) of
+              Nothing -> error $ "couldn't read Forwarded-For address: " ++
+                show ip ++ " (full header: " ++ show ff ++ ")"
+              Just i  -> pure i
+              where
+                addr = T.strip . snd . T.breakOnEnd "," $ toText ff
+                ip -- [IPv6]:port
+                  | T.take 1 addr == "[" =
+                    T.drop 1 (T.takeWhile (/= ']') addr)
+                   -- IPv4 or IPv4:port
+                  | T.any (== '.') addr =
+                    T.takeWhile (/= ':') addr
+                   -- IPv6 without port
+                  | otherwise = addr
