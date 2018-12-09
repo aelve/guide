@@ -59,6 +59,7 @@ jobs:
         - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
         - sleep 15
       script:
+        - stack --no-terminal build
         - stack --no-terminal test
         - make back/test-db
 
