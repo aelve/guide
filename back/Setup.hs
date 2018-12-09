@@ -14,7 +14,7 @@ buildJS hooks = do
   let originalPostBuild = postBuild hooks
   return $ hooks {
     postBuild = \args flags pkgDesc localBuildInfo  -> do
-      let npmbuild = proc "sh" ["./scripts/buildjs.sh"]
+      let npmbuild = proc "sh" ["./buildjs.sh"]
       (_, _, _, buildHandle) <- createProcess npmbuild
       waitForProcess buildHandle
       originalPostBuild args flags pkgDesc localBuildInfo

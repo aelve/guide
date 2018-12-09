@@ -22,11 +22,12 @@ cache:
   directories:
     - $HOME/.stack
     - .stack-work
+    - back/.stack-work
   timeout: 1000
 
 jobs:
   include:
-    - stage: "Build dependencies"
+    - stage: "Build backend dependencies"
       before_script:
         - mkdir -p ~/.local/bin
         - export PATH=$HOME/.local/bin:$PATH
@@ -36,7 +37,7 @@ jobs:
       script:
         - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
 
-    - stage: "Build and test the project"
+    - stage: "Build and test the backend"
       before_script:
         # Install Stack
         - mkdir -p ~/.local/bin
@@ -58,11 +59,11 @@ jobs:
         - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
         - sleep 15
       script:
-        - scripts/buildjs.sh
+        - stack --no-terminal build
         - stack --no-terminal test
-        - scripts/test-official.sh
+        - make back/test-db
 
-    - stage: "Install and test vue frontend"
+    - stage: "Build and test the frontend"
       before_script:
         # Install dependencies
         - cd front
