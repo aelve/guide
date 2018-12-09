@@ -148,8 +148,7 @@ instance (HasServer api context)
           getIp mBody = case mBody of
             Nothing -> sockAddrToIP $ remoteHost req
             Just ff -> case readMaybe (toString ip) of
-              Nothing -> error $ "couldn't read Forwarded-For address: " ++
-                show ip ++ " (full header: " ++ show ff ++ ")"
+              Nothing -> Nothing
               Just i  -> pure i
               where
                 addr = T.strip . snd . T.breakOnEnd "," $ toText ff
