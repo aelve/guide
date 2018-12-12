@@ -465,10 +465,10 @@ renderEdit globalState edit = do
       "changed group of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldGroup))
       " to "   >> code_ (toHtml (show newGroup))
-    Edit'SetItemKind itemId oldKind newKind -> p_ $ do
-      "changed kind of item " >> printItem itemId
-      " from " >> code_ (toHtml (show oldKind))
-      " to "   >> code_ (toHtml (show newKind))
+    Edit'SetItemHackage itemId oldHackage newHackage -> p_ $ do
+      "changed hackage link of item " >> printItem itemId
+      " from " >> code_ (toHtml (show oldHackage))
+      " to "   >> code_ (toHtml (show newHackage))
     Edit'SetItemDescription itemId oldDescr newDescr -> do
       p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId

@@ -84,10 +84,10 @@ data Edit
       editItemUid      :: Uid Item,
       editItemGroup    :: Maybe Text,
       editItemNewGroup :: Maybe Text }
-  | Edit'SetItemKind {
-      editItemUid     :: Uid Item,
-      editItemKind    :: ItemKind,
-      editItemNewKind :: ItemKind }
+  | Edit'SetItemHackage {
+      editItemUid        :: Uid Item,
+      editItemHackage    :: Maybe Text,
+      editItemNewHackage :: Maybe Text }
 
   | Edit'SetItemDescription {
       editItemUid            :: Uid Item,
@@ -132,9 +132,9 @@ data Edit
 
   deriving (Eq, Show)
 
-deriveSafeCopySimple 8 'extension ''Edit
+deriveSafeCopySimple 9 'extension ''Edit
 
-genVer ''Edit 7 [
+genVer ''Edit 8 [
   -- Add
   Custom "Edit'AddCategory" [
       ("editCategoryUid"  , [t|Uid Category|]),
@@ -152,7 +152,7 @@ genVer ''Edit 7 [
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
   Copy 'Edit'SetItemGroup,
-  Copy 'Edit'SetItemKind,
+  Copy 'Edit'SetItemHackage,
   Copy 'Edit'SetItemDescription,
   Copy 'Edit'SetItemNotes,
   Copy 'Edit'SetItemEcosystem,
@@ -166,15 +166,15 @@ genVer ''Edit 7 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 7 'base ''Edit_v7
+deriveSafeCopySimple 8 'base ''Edit_v8
 
 instance Migrate Edit where
-  type MigrateFrom Edit = Edit_v7
-  migrate = $(migrateVer ''Edit 7 [
+  type MigrateFrom Edit = Edit_v8
+  migrate = $(migrateVer ''Edit 8 [
     CustomM "Edit'AddCategory" [|\x ->
         Edit'AddCategory
-          { editCategoryUid = editCategoryUid_v7 x
-          , editCategoryTitle = editCategoryTitle_v7 x
+          { editCategoryUid = editCategoryUid_v8 x
+          , editCategoryTitle = editCategoryTitle_v8 x
           , editCategoryGroup = toText "Miscellaneous"
           } |],
     CopyM 'Edit'AddItem,
@@ -190,7 +190,7 @@ instance Migrate Edit where
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
     CopyM 'Edit'SetItemGroup,
-    CopyM 'Edit'SetItemKind,
+    CopyM 'Edit'SetItemHackage,
     CopyM 'Edit'SetItemDescription,
     CopyM 'Edit'SetItemNotes,
     CopyM 'Edit'SetItemEcosystem,
@@ -225,8 +225,8 @@ isVacuousEdit Edit'SetItemLink{..} =
   editItemLink == editItemNewLink
 isVacuousEdit Edit'SetItemGroup{..} =
   editItemGroup == editItemNewGroup
-isVacuousEdit Edit'SetItemKind{..} =
-  editItemKind == editItemNewKind
+isVacuousEdit Edit'SetItemHackage{..} =
+  editItemHackage == editItemNewHackage
 isVacuousEdit Edit'SetItemDescription{..} =
   editItemDescription == editItemNewDescription
 isVacuousEdit Edit'SetItemNotes{..} =

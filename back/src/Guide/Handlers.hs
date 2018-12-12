@@ -145,14 +145,7 @@ setMethods = do
     -- code and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
-    kind' <- do
-      kindName :: Text <- param' "kind"
-      hackageName' <- (\x -> if T.null x then Nothing else Just x) <$>
-                      param' "hackage-name"
-      return $ case kindName of
-        "library" -> Library hackageName'
-        "tool"    -> Tool hackageName'
-        _         -> Other
+    hackage' <- param' "hackage"
     group' <- do
       groupField <- param' "group"
       customGroupField <- param' "custom-group"
@@ -175,7 +168,7 @@ setMethods = do
           addEdit edit
       _otherwise ->
           return ()
-    do (edit, _) <- dbUpdate (SetItemKind itemId kind')
+    do (edit, _) <- dbUpdate (SetItemHackage itemId hackage')
        addEdit edit
     -- This does all the work of assigning new colors, etc. automatically
     do (edit, _) <- dbUpdate (SetItemGroup itemId group')
@@ -273,11 +266,8 @@ addMethods = do
     itemId <- randomShortUid
     -- If the item name looks like a Hackage library, assume it's a Hackage
     -- library.
-    let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-        looksLikeLibrary = T.all isAllowedChar name'
-        kind' = if looksLikeLibrary then Library (Just name') else Other
     time <- liftIO getCurrentTime
-    (edit, newItem) <- dbUpdate (AddItem catId itemId name' time kind')
+    (edit, newItem) <- dbUpdate (AddItem catId itemId name' time)
     addEdit edit
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderItem category newItem
