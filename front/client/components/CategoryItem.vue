@@ -132,11 +132,7 @@ export default class CategoryItem extends Vue {
   margin: 10px 0 60px;
 }
 
-.category-item-description >>> p {
-  margin: 0;
-}
-
-.category-item-description >>> p {
+.category-item-description p {
   margin: 0 0 15px;
   font-size: 16px;
 }
