@@ -1,8 +1,8 @@
 <template>
   <a
     class="link"
-    :target="openInNewTab ? '_blank': ''" 
-    :rel="openInNewTab ? 'noopener noreferrer': ''" 
+    :target="openInNewTab ? '_blank': ''"
+    :rel="openInNewTab ? 'noopener noreferrer': ''"
     :href="url"
   >
     <slot />
@@ -17,5 +17,4 @@ export default class ALink extends Vue {
   @Prop(Boolean) openInNewTab!: boolean
   @Prop(String) url!: string
 }
-
 </script>

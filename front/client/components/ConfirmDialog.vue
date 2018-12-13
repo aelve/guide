@@ -14,7 +14,7 @@
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn 
+        <v-btn
           flat
           color="primary"
           class="confirm-btn"

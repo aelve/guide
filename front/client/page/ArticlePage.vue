@@ -1,5 +1,5 @@
 <template>
-  <article-item 
+  <article-item
     :categoryId="categoryId"
   />
 </template>
