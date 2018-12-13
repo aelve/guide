@@ -1,5 +1,5 @@
 <template>
-  <div class="article-item">
+  <div class="category-item">
 
     <category-item-toolbar
       :itemUid="itemUid"
@@ -10,14 +10,14 @@
     />
 
     <div class="category-item-body">
-      <p class="article-section-title">Summary</p>
+      <p class="category-item-section-title">Summary</p>
       <div
-        class="article-description"
+        class="category-item-description"
         v-html="itemDescription"
       />
-      <div class="flex-wrapper article-section pros-cons-box">
+      <div class="flex-wrapper category-item-section pros-cons-box">
         <div class="width-50">
-          <p class="article-section-title">Pros</p>
+          <p class="category-item-section-title">Pros</p>
           <ul
             v-if="pros"
             v-for="(value, index) in pros"
@@ -27,18 +27,18 @@
           </ul>
         </div>
         <div class="width-50">
-          <p class="article-section-title">Cons</p>
+          <p class="category-item-section-title">Cons</p>
           <ul v-if="cons" v-for="(value, index) in cons" :key="index">
             <li v-html="value.content.html"></li>
           </ul>
         </div>
       </div>
-      <div class="article-section">
-        <p class="article-section-title">Ecosystem</p>
+      <div class="category-item-section">
+        <p class="category-item-section-title">Ecosystem</p>
         <div v-html="ecosystem"></div>
       </div>
-      <div class="article-section notes-box">
-        <p class="article-section-title">Notes</p>
+      <div class="category-item-section notes-box">
+        <p class="category-item-section-title">Notes</p>
         <div class="notes-settings">
           <!-- TODO change a to vue markup element -->
           <button class="notes-settings-btn" @click="expandNotes">expand notes</button>
@@ -128,24 +128,24 @@ export default class CategoryItem extends Vue {
   font-size: 16px;
 }
 
-.article-description {
+.category-item-description {
   margin: 10px 0 60px;
 }
 
-.article-description >>> p {
+.category-item-description >>> p {
   margin: 0;
 }
 
-.article-description >>> p {
+.category-item-description >>> p {
   margin: 0 0 15px;
   font-size: 16px;
 }
 
-.article-description >>> h1 {
+.category-item-description >>> h1 {
   margin: 25px 0 5px;
 }
 
-.article-section {
+.category-item-section {
   margin: 30px 0;
 }
 
@@ -153,16 +153,16 @@ export default class CategoryItem extends Vue {
   position: relative;
 }
 
-.article-section.pros-cons-box,
-.article-section.notes-box >>> li {
+.category-item-section.pros-cons-box,
+.category-item-section.notes-box >>> li {
   margin: 0 0 5px;
 }
 
-.article-section.notes-box >>> h1 {
+.category-item-section.notes-box >>> h1 {
   margin: 20px 0;
 }
 
-.article-item {
+.category-item {
   background: #e5e5e5;
   margin: 0 0 80px;
 }
@@ -181,7 +181,7 @@ export default class CategoryItem extends Vue {
   padding-left: 20px;
 }
 
-.article-section-title {
+.category-item-section-title {
   display: block;
   margin: 0 0 8px;
   font-size: 22px !important;
@@ -239,7 +239,7 @@ export default class CategoryItem extends Vue {
   .category-item-body {
     width: 100%;
   }
-  .article-item {
+  .category-item {
     margin: 0 0 30px;
   }
 }
