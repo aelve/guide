@@ -41,7 +41,7 @@
               :url="`http://aelve.com:4801/haskell/${result.contents.category.uid}#item-${result.contents.info.uid}`"
             >
             <!-- Do not format next line to separate lines cause it adds extra space after </a-link>. -->
-            {{ result.contents.info.name }}</a-link>'s ecosystem 
+            {{ result.contents.info.name }}</a-link>'s ecosystem
           </span>
         </span>
       </v-card-title>

@@ -5,7 +5,7 @@
     max-width="500px"
   >
     <slot slot="activator" />
-    
+   
     <v-card>
       <v-card-text>
         <v-form
@@ -78,7 +78,6 @@ export default class AddItemDialog extends Vue {
       category: this.categoryId,
       name: this.itemName
     })
-
     this.close()
   }
 }

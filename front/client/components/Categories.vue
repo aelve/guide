@@ -15,13 +15,13 @@
         xl1
         v-for="(groupCategories, groupName, index) in groups"
         :key="index"
-      > 
+      >
         <div class="category-group">
           <h4 class="mb-2 display-1 font-weight-black category-group-name">
             {{ groupName }}
           </h4>
 
-          <router-link 
+          <router-link
             class="category-title"
             v-for="category in groupCategories[CategoryStatus.finished]"
             :key="category.uid"
