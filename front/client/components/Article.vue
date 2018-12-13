@@ -32,22 +32,21 @@
         <div v-html="categoryDescription" />
       </div>
       <template v-if="category">
-        <div
-          v-for="(value, index) in category.items"
-          :key="index"
-        > 
-          <article-content
-            :kind="value.name"
-            :group="value.group"
-            :itemDescription="value.description.html"
-            :pros="value.pros"
-            :cons="value.cons"
-            :ecosystem="value.ecosystem.html"
-            :tocArray="value.toc"
-            :notes="value.notes.html"
-            :itemUid="value.uid"
-          />
-        </div>
+        <category-item
+          v-for="value in category.items"
+          :key="value.uid"
+          :itemUid="value.uid"
+          :link="value.link"
+          :name="value.name"
+          :group="value.group"
+          :itemDescription="value.description.html"
+          :pros="value.pros"
+          :cons="value.cons"
+          :ecosystem="value.ecosystem.html"
+          :tocArray="value.toc"
+          :notes="value.notes.html"
+          :kind="value.kind"
+        />
       </template>
       <v-btn
         flat
@@ -58,7 +57,7 @@
         <v-icon class="mr-1" left>add</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog 
+      <add-item-dialog
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
@@ -70,14 +69,14 @@
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import ArticleContent from 'client/components/ArticleContent.vue'
+import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import category from 'client/store/modules/category'
 
 @Component({
   name: 'article-component',
   components: {
-    ArticleContent,
+    CategoryItem,
     AddItemDialog
   }
 })
