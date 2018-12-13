@@ -24,7 +24,6 @@ import Toolbar from './components/Toolbar.vue'
   }
 })
 export default class RootComponent extends Vue {}
-
 </script>
 
 <style>
