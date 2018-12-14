@@ -35,7 +35,7 @@
       </div>
       <div class="category-item-section">
         <p class="category-item-section-title">Ecosystem</p>
-        <div v-html="ecosystem"></div>
+        <div v-html="ecosystem" />
       </div>
       <div class="category-item-section notes-box">
         <p class="category-item-section-title">Notes</p>
@@ -60,7 +60,7 @@
                 :href="`#${value.slug}`"
                 @click="expandNotes"
               >
-                <p>{{value.content.html}}</p>
+                <p>{{value.constent.html}}</p>
               </a>
             </li>
           </ul>
@@ -73,6 +73,7 @@
             v-html="notes"
           />
         </transition>
+        <!-- <markdown-editor /> -->
       </div>
     </div>
   </div>
@@ -80,12 +81,14 @@
 
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
+// import MarkdownEditor from 'vue-simplemde/src/markdown-editor.vue'
+import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 
 @Component({
   components: {
-    CategoryItemToolbar
+    CategoryItemToolbar/* ,
+    MarkdownEditor */
   }
 })
 export default class CategoryItem extends Vue {
