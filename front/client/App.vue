@@ -2,9 +2,7 @@
   <v-app>
     <toolbar></toolbar>
     <v-content>
-      <v-container fluid>
-        <router-view></router-view>
-      </v-container>
+      <router-view></router-view>
     </v-content>
     <a-footer />
   </v-app>
