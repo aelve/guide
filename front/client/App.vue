@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <toolbar></toolbar>
+    <toolbar />
     <v-content>
       <router-view></router-view>
     </v-content>
@@ -55,6 +55,9 @@ a {
 }
 a:hover {
   text-decoration-line: underline;
+}
+.text-transform-none {
+  text-transform: none !important;
 }
 div.sourceCode {
   overflow-x: auto;
