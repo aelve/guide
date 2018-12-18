@@ -91,6 +91,7 @@
           name="input-7-4"
           label="Solo textarea"
           :value="categoryDscMarkdown"
+          v-model="modifiedDescription"
           auto-grow
         />
         <v-btn
@@ -117,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription"
+            @click="toggleEditDescription(); addEmptyArticleDescription();"
           >
             Save
           </v-btn>
@@ -164,6 +165,12 @@
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
+      <conflict-dialog
+        v-model="isDescriptionConflict"
+        :serverModified="serverModified"
+        :modified="modified"
+        :merged="merged"
+      />
     </div>
   </v-container>
 </template>
@@ -174,13 +181,15 @@ import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import ArticleContent from 'client/components/ArticleContent.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
+import ConflictDialog from 'client/components/ConflictDialog.vue'
 import category from 'client/store/modules/category'
 
 @Component({
   name: 'article-component',
   components: {
     ArticleContent,
-    AddItemDialog
+    AddItemDialog,
+    ConflictDialog
   }
 })
 export default class ArticleItem extends Vue {
@@ -191,6 +200,10 @@ export default class ArticleItem extends Vue {
   editDescriptionShown: boolean = false
   catUid: string = ''
   emptyDescription: string = ''
+  isDescriptionConflict: boolean = false
+  serverModified: string = ''
+  modified: string = ''
+  merged: string = ''
   // emptyDescriptionData: object = {
   //   original: '',
   //   modified: this.emptyDescription
@@ -251,11 +264,27 @@ export default class ArticleItem extends Vue {
   }
 
   async addEmptyArticleDescription () {
-    await this.$store.dispatch('categoryItem/addCategoryDescription', {
-      uid: this.categoryUid,
-      original: this.originalDescription,
-      modified: this.modifiedDescription
-    })
+    try {
+      await this.$store.dispatch('categoryItem/addCategoryDescription', {
+        uid: this.categoryUid,
+        original: this.originalDescription,
+        modified: this.modifiedDescription
+      })
+    } catch (err) {
+      if (err.response.status === 409) {
+        console.table(err)
+        this.serverModified = err.response.data.server_modified
+        this.modified = err.response.data.modified
+        this.merged = err.response.data.merged
+        this.isDescriptionConflict = true
+      }
+      // throw err
+    }
+  }
+
+  saveDescription () {
+    this.toggleEditDescription()
+    this.addEmptyArticleDescription()
   }
 
   // Different method if Category Description exists

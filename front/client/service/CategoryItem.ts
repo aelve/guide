@@ -16,18 +16,23 @@ class CategoryItemService {
 
   // add here category description add/edit
   async addCategoryDescription ({ uid, original, modified }: {uid: string, original: string, modified: string}): Promise<any> {
-    try {
-      const { data } = await axios.put(`api/category/${uid}/notes`, {
-          original,
-          modified
-      })
-      return data
-    } catch(err) {
-      if (err.response.status === '409') {
-        console.log(409 + ' blyat')
-      }
-      throw err
-    }
+    // try {
+    //   const { data } = await axios.put(`api/category/${uid}/notes`, {
+    //       original,
+    //       modified
+    //   })
+    //   return data
+    // } catch(err) {
+    //   if (err.response.status === '409') {
+    //     console.log(409 + ' blyat')
+    //   }
+    //   throw err
+    // }
+    const { data } = await axios.put(`api/category/${uid}/notes`, {
+      original,
+      modified
+    })
+    return data
   }
 }
 
