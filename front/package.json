@@ -17,6 +17,7 @@
     "@junyiz/koa-proxy-pass": "^1.2.1",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
+    "easymde": "^2.4.2",
     "koa": "^2.5.0",
     "koa-bodyparser": "^4.2.0",
     "koa-proxies": "^0.7.0",
