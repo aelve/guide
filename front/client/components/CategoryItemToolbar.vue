@@ -1,14 +1,15 @@
 <template>
-  <v-expansion-panel class="category-item-toolbar-wrapper">
+  <v-expansion-panel class="category-item-toolbar">
     <v-expansion-panel-content
       hide-actions
       lazy
       :value="isEditItemInfoMenuOpen"
     >
       <v-toolbar
+        flat
         slot="header"
         color="#d6d6d6"
-        class="category-item-toolbar"
+        class="elevation-2"
         @click.stop=""
       >
         <v-toolbar-title class="headline">
@@ -22,7 +23,7 @@
           <span v-else> {{ itemName }} </span>
         </v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-toolbar-items class="category-item-toolbar-btns-wrapper">
+        <v-toolbar-items class="category-item-toolbar-btns">
           <v-btn
             flat
             icon
@@ -174,21 +175,19 @@ export default class CategoryItemToolbar extends Vue {
 .category-item-toolbar >>> .v-toolbar__title {
   overflow: visible;
 }
-.category-item-toolbar-wrapper {
+.category-item-toolbar {
   display: flex;
   box-shadow: none;
-  /* background: #c8c8c8; */
 }
-.category-item-toolbar-wrapper >>> .v-expansion-panel__header {
+.category-item-toolbar >>> .v-expansion-panel__header {
   padding: 0;
   align-items: center;
   cursor: unset;
-  /* background: #d6d6d6; */
 }
-.category-item-toolbar-wrapper >>> .v-expansion-panel__body {
+.category-item-toolbar >>> .v-expansion-panel__body {
   background: #d6d6d6;
 }
-.category-item-toolbar-btns-wrapper > * {
+.category-item-toolbar-btns > * {
   margin: 0 2px;
   color: #979797;
 }
