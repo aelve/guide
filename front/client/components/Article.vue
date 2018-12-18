@@ -278,7 +278,7 @@ export default class ArticleItem extends Vue {
         this.merged = err.response.data.merged
         this.isDescriptionConflict = true
       }
-      // throw err
+      throw err
     }
   }
 
