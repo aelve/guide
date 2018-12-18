@@ -21,7 +21,6 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js',
       client: path.resolve(__dirname, '../client/')
     }
   },
