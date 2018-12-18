@@ -163,7 +163,7 @@ export default class CategoryItem extends Vue {
 
 .category-item {
   background: #e5e5e5;
-  margin: 0 0 80px;
+  margin: 0 0 40px;
 }
 
 .flex-wrapper {
