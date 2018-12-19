@@ -290,16 +290,61 @@ export default class ArticleItem extends Vue {
     this.addEmptyArticleDescription()
   }
 
-  saveOriginal () {
-
+  async saveOriginal () {
+    try {
+      await this.$store.dispatch('categoryItem/addCategoryDescription', {
+        uid: this.categoryUid,
+        original: this.serverModified,
+        modified: this.serverModified
+      })
+    } catch (err) {
+      if (err.response.status === 409) {
+        console.table(err)
+        this.serverModified = err.response.data.server_modified
+        this.modified = err.response.data.modified
+        this.merged = err.response.data.merged
+        this.isDescriptionConflict = true
+      }
+      throw err
+    }
   }
 
-  saveModified () {
-
+  async saveModified () {
+    try {
+      await this.$store.dispatch('categoryItem/addCategoryDescription', {
+        uid: this.categoryUid,
+        original: this.modified,
+        modified: this.modified
+      })
+    } catch (err) {
+      if (err.response.status === 409) {
+        console.table(err)
+        this.serverModified = err.response.data.server_modified
+        this.modified = err.response.data.modified
+        this.merged = err.response.data.merged
+        this.isDescriptionConflict = true
+      }
+      throw err
+    }
   }
 
-  saveMerged() {
-
+  async saveMerged() {
+    try {
+      await this.$store.dispatch('categoryItem/addCategoryDescription', {
+        uid: this.categoryUid,
+        original: this.merged,
+        modified: this.merged
+      })
+    } catch (err) {
+      if (err.response.status === 409) {
+        console.table(err)
+        this.serverModified = err.response.data.server_modified
+        this.modified = err.response.data.modified
+        this.merged = err.response.data.merged
+        this.isDescriptionConflict = true
+      }
+      throw err
+    }
   }
 
   // Different method if Category Description exists
