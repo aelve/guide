@@ -170,6 +170,9 @@
         :serverModified="serverModified"
         :modified="modified"
         :merged="merged"
+        @saveOriginal="saveOriginal"
+        @saveModified="saveModified"
+        @saveMerged="saveMerged"
       />
     </div>
   </v-container>
@@ -285,6 +288,18 @@ export default class ArticleItem extends Vue {
   saveDescription () {
     this.toggleEditDescription()
     this.addEmptyArticleDescription()
+  }
+
+  saveOriginal () {
+
+  }
+
+  saveModified () {
+
+  }
+
+  saveMerged() {
+
   }
 
   // Different method if Category Description exists

@@ -18,6 +18,7 @@
         <v-btn 
           depressed 
           small
+          @click="this.$emit('saveOriginal')"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -33,6 +34,7 @@
         <v-btn 
           depressed 
           small
+          @click="this.$emit('saveModified')"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -47,6 +49,7 @@
         <v-btn 
           depressed 
           small
+          @click="this.$emit('saveMerged')"
         >
           Submit the merged version
         </v-btn>
