@@ -17,6 +17,16 @@ class CategoryItemService {
   async  updateItemInfo (id: ICategoryItem['uid'], body: ICategoryItemInfo): Promise<void> {
     await axios.put(`api/item/${id}/info`, body)
   }
+  async  updateItemDescription (
+    id: ICategoryItem['uid'],
+    original: ICategoryItem['description'],
+    modified: ICategoryItem['description']
+  ): Promise<void> {
+    await axios.put(`api/item/${id}/summary`, {
+      original,
+      modified
+    })
+  }
 }
 
 export interface ICreateCategoryItem {

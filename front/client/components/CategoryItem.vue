@@ -10,26 +10,49 @@
     />
 
     <div class="category-item-body">
-      <p class="category-item-section-title">Summary</p>
+      <p class="category-item-section-title">
+        Summary
+        <v-btn
+         small
+         icon
+         class="ma-0"
+         @click="toggleDescriptionEdit"
+        >
+          <v-icon
+            small
+            color="#979797"
+          >
+            fas fa-pencil-alt
+          </v-icon>
+        </v-btn>
+      </p>
       <div
-        class="category-item-description"
-        v-html="itemDescription"
+        class="mb-2 category-item-description"
+        v-html="itemDescriptionHtml"
+        v-if="!isDescriptionEdit"
+      />
+      <markdown-editor
+        class="mb-2"
+        :value="itemDescriptionText"
+        @cancel="toggleDescriptionEdit"
+        @save="saveDescriptionEdit"
+        v-else
       />
       <div class="flex-wrapper category-item-section pros-cons-box">
         <div class="width-50">
           <p class="category-item-section-title">Pros</p>
           <ul
             v-if="pros"
-            v-for="(value, index) in pros"
+            v-for="(pro, index) in pros"
             :key="index"
           >
-            <li v-html="value.content.html"/>
+            <li v-html="pro.content.html"/>
           </ul>
         </div>
         <div class="width-50">
           <p class="category-item-section-title">Cons</p>
-          <ul v-if="cons" v-for="(value, index) in cons" :key="index">
-            <li v-html="value.content.html"></li>
+          <ul v-if="cons" v-for="(con, index) in cons" :key="index">
+            <li v-html="con.content.html"></li>
           </ul>
         </div>
       </div>
@@ -73,7 +96,6 @@
             v-html="notes"
           />
         </transition>
-        <!-- <markdown-editor /> -->
       </div>
     </div>
   </div>
@@ -82,19 +104,21 @@
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
-// import MarkdownEditor from 'vue-simplemde/src/markdown-editor.vue'
+import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 
 @Component({
   components: {
-    CategoryItemToolbar/* ,
-    MarkdownEditor */
+    CategoryItemToolbar,
+    MarkdownEditor
   }
 })
 export default class CategoryItem extends Vue {
+  // TODO get rid of so many props and pass the item fully
   @Prop(String) name!: string
   @Prop(String) group!: string
-  @Prop(String) itemDescription!: string
+  @Prop(String) itemDescriptionHtml!: string
+  @Prop(String) itemDescriptionText!: string
   @Prop(Array) pros!: [any]
   @Prop(Array) cons!: [any]
   @Prop(String) ecosystem!: string
@@ -106,13 +130,28 @@ export default class CategoryItem extends Vue {
   @Prop(Object) kind!: object
 
   isNoteExpanded: boolean = false
+  isDescriptionEdit: boolean = false
 
-  expandNotes () {
+  expandNotes (): void {
     this.isNoteExpanded = true
   }
 
-  collapseNotes () {
+  collapseNotes (): void {
     this.isNoteExpanded = false
+  }
+
+  toggleDescriptionEdit (): void {
+    this.isDescriptionEdit = !this.isDescriptionEdit
+  }
+
+  async saveDescriptionEdit (newDescription: string): Promise<void> {
+    this.toggleDescriptionEdit()
+    await this.$store.dispatch('categoryItem/updateItemDescription', {
+      id: this.itemUid,
+      original: this.itemDescriptionText,
+      modified: newDescription
+    })
+    await this.$store.dispatch('category/reloadCategory')
   }
 }
 </script>
@@ -129,10 +168,6 @@ export default class CategoryItem extends Vue {
 
 .category-item-body >>> li {
   font-size: 16px;
-}
-
-.category-item-description {
-  margin: 10px 0 60px;
 }
 
 .category-item-description p {

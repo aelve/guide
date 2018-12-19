@@ -36,6 +36,12 @@ const actions: ActionTree<ICategoryItemState, any> = {
     { id, body }: { id: ICategoryItem['uid'], body: ICategoryItemInfo }
   ): Promise<void> {
     await CategoryItemService.updateItemInfo(id, body)
+  },
+  async updateItemDescription (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['description'], modified: ICategoryItem['description'] }
+  ): Promise<void> {
+    await CategoryItemService.updateItemDescription(id, original, modified)
   }
 }
 
