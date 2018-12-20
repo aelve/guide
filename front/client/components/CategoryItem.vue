@@ -98,7 +98,7 @@ import { ICategoryItem } from 'client/service/CategoryItem.ts'
     ConfirmDialog
   }
 })
-export default class ArticleContent extends Vue {
+export default class CategoryItem extends Vue {
   @Prop(String) kind!: string
   @Prop(String) group!: string
   @Prop(String) itemDescription!: string

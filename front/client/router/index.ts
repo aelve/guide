@@ -21,7 +21,7 @@ function createRouter () {
       {
         path: '/haskell/:category',
         name: 'Category',
-        component: () => import('../page/ArticlePage.vue'),
+        component: () => import('../page/CategoryPage.vue'),
         props: (route) => ({ categoryId: route.params.category.split('#').shift().split('-').pop() })
       },
       {

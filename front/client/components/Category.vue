@@ -139,7 +139,7 @@
           v-for="(value, index) in category.items"
           :key="index"
         > 
-          <article-content
+          <category-item
             :kind="value.name"
             :group="value.group"
             :itemDescription="value.description.html"
@@ -182,7 +182,7 @@
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import ArticleContent from 'client/components/ArticleContent.vue'
+import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import ConflictDialog from 'client/components/ConflictDialog.vue'
 import category from 'client/store/modules/category'
@@ -190,12 +190,12 @@ import category from 'client/store/modules/category'
 @Component({
   name: 'article-component',
   components: {
-    ArticleContent,
+    CategoryItem,
     AddItemDialog,
     ConflictDialog
   }
 })
-export default class ArticleItem extends Vue {
+export default class Category extends Vue {
   @Prop(String) categoryId!: string
   @Prop(String) categoryDsc!: string
 

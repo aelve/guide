@@ -1,19 +1,18 @@
 <template>
-  <article-item 
+  <category 
     :categoryId="categoryId"
   />
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import ArticleItem from 'client/components/Article.vue'
+import Category from 'client/components/Category.vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator';
 
 @Component({
-  name: 'article-page',
   components: {
-    ArticleItem
+    Category
   }
 })
 
