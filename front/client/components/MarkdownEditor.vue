@@ -3,15 +3,18 @@
      cause easyMDE adds new html elements next to textarea -->
 <div
   class="elevation-2"
+  style="button { color: green; }"
   @keydown.ctrl.enter="save"
+  v-show="editor && isReady"
 >
   <textarea ref="editor" />
+
   <v-toolbar
     flat
     height="30"
     color="#e5e5e5"
     class="pa-2 markdown-editor-bottom-toolbar"
-    v-if="editor"
+    v-show="editor"
   >
     <v-toolbar-items>
       <v-btn
@@ -44,6 +47,14 @@ export default class MarkdownEditor extends Vue {
     type: String,
     default: ''
   }) value: string
+  @Prop({
+    type: Number,
+    default: 300
+  }) height: number
+  @Prop(Boolean) toolbar: boolean
+
+  editor: object = null
+  isReady: boolean = false
 
   @Watch('value')
   onValueChange (newVal: string): void {
@@ -53,9 +64,13 @@ export default class MarkdownEditor extends Vue {
     this.editor.value(newVal)
   }
 
-  editor: object = null
+  async beforeMount () {
+    await this.createEditorInstance()
+    this.setInputAreaHeight()
+    this.isReady = true
+  }
 
-  async mounted () {
+  async createEditorInstance () {
     const EasyMDE = (await import('easymde')).default
     this.editor = new EasyMDE({
       element: this.$refs.editor,
@@ -63,41 +78,48 @@ export default class MarkdownEditor extends Vue {
       initialValue: this.value,
       spellChecker: false,
       status: false,
-      toolbar: [
-        'bold',
-        'italic',
-        'strikethrough',
-        'code',
-        'quote',
-        'heading',
-        'heading-smaller',
-        'heading-bigger',
-        '|',
-        'unordered-list',
-        'ordered-list',
-        '|',
-        'link',
-        'image',
-        'horizontal-rule',
-        '|',
-        'clean-block',
-        '|',
-        'preview',
-        'side-by-side',
-        'fullscreen',
-        {
-          name: 'guide',
-          action () {
-            window.open('https://commonmark.org/help/', '_blank')
-          },
-          className: 'fa fa-question-circle',
-          title: 'Markdown Guide',
-        },
-      ]
+      toolbar: !this.toolbar
+        ? false
+        : [
+          'bold',
+          'italic',
+          'strikethrough',
+          'code',
+          'quote',
+          'heading',
+          'heading-smaller',
+          'heading-bigger',
+          '|',
+          'unordered-list',
+          'ordered-list',
+          '|',
+          'link',
+          'image',
+          'horizontal-rule',
+          '|',
+          'clean-block',
+          '|',
+          'preview',
+          'side-by-side',
+          'fullscreen',
+          {
+            name: 'guide',
+            action () {
+              window.open('https://commonmark.org/help/', '_blank')
+            },
+            className: 'fa fa-question-circle',
+            title: 'Markdown Guide',
+          }
+        ]
     })
     this.editor.codemirror.on('change', () => {
       this.$emit('input', this.editor.value())
     })
+  }
+
+  setInputAreaHeight () {
+    const inputAreaEl = document.getElementsByClassName('CodeMirror')[0] as HTMLElement
+    inputAreaEl.style.height = `${this.height}px`
   }
 
   save () {
@@ -111,17 +133,11 @@ export default class MarkdownEditor extends Vue {
 </script>
 
 <style scoped>
-/* .markdown-editor {
-  border: 1px solid #bbb;
-} */
 >>> .editor-toolbar,
 >>> .CodeMirror {
   border: none;
   border-radius: 0;
   border-bottom: 1px solid #bbb;
-}
->>> .CodeMirror {
-  height: 300px;
 }
 >>> .v-toolbar__content {
   padding-left: 0;

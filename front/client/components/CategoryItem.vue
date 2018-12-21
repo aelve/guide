@@ -10,6 +10,7 @@
     />
 
     <div class="category-item-body">
+
       <p class="category-item-section-title">
         Summary
         <v-btn
@@ -27,18 +28,20 @@
         </v-btn>
       </p>
       <div
+        v-if="!isDescriptionEdit"
         class="mb-2 category-item-description"
         v-html="itemDescriptionHtml"
-        v-if="!isDescriptionEdit"
       />
       <markdown-editor
+        v-else
         class="mb-2"
+        toolbar
         :value="itemDescriptionText"
         @cancel="toggleDescriptionEdit"
         @save="saveDescriptionEdit"
-        v-else
       />
-      <div class="flex-wrapper category-item-section pros-cons-box">
+
+      <div class="flex category-item-section pros-cons-box">
         <div class="width-50">
           <p class="category-item-section-title">Pros</p>
           <ul
@@ -201,7 +204,7 @@ export default class CategoryItem extends Vue {
   margin: 0 0 40px;
 }
 
-.flex-wrapper {
+.flex {
   display: flex;
 }
 

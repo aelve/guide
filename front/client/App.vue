@@ -21,7 +21,13 @@ import Toolbar from './components/Toolbar.vue'
     AFooter
   }
 })
-export default class RootComponent extends Vue { }
+export default class RootComponent extends Vue {
+  beforeMount () {
+    // This package can only be loaded after mounted (on client only) cause it uses "document"
+    // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
+    import('easymde')
+  }
+}
 </script>
 
 <style>
