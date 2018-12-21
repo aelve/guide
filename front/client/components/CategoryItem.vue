@@ -73,7 +73,6 @@
             v-html="notes"
           />
         </transition>
-        <!-- <markdown-editor /> -->
       </div>
     </div>
   </div>
@@ -82,13 +81,11 @@
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
-// import MarkdownEditor from 'vue-simplemde/src/markdown-editor.vue'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 
 @Component({
   components: {
-    CategoryItemToolbar/* ,
-    MarkdownEditor */
+    CategoryItemToolbar
   }
 })
 export default class CategoryItem extends Vue {
