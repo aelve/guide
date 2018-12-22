@@ -63,7 +63,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addEmptyArticleDescription();"
+            @click="toggleEditDescription(); addCategoryDescription(originalDescription, modifiedDescription);"
           >
             Save
           </v-btn>
@@ -118,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addEmptyArticleDescription();"
+            @click="toggleEditDescription(); addEmptyArticleDescription(originalDescription, modifiedDescription);"
           >
             Save
           </v-btn>
@@ -170,9 +170,7 @@
         :serverModified="serverModified"
         :modified="modified"
         :merged="merged"
-        @saveOriginal="saveOriginal"
-        @saveModified="saveModified"
-        @saveMerged="saveMerged"
+        @saveDescription="addCategoryDescription"
       />
     </div>
   </v-container>
@@ -266,12 +264,12 @@ export default class Category extends Vue {
     this.editDescriptionShown = false
   }
 
-  async addEmptyArticleDescription () {
+  async addCategoryDescription (original: string, modified: string) {
     try {
       await this.$store.dispatch('categoryItem/addCategoryDescription', {
         uid: this.categoryUid,
-        original: this.originalDescription,
-        modified: this.modifiedDescription
+        original: original,
+        modified: modified
       })
     } catch (err) {
       if (err.response.status === 409) {
@@ -285,69 +283,10 @@ export default class Category extends Vue {
     }
   }
 
-  saveDescription () {
-    this.toggleEditDescription()
-    this.addEmptyArticleDescription()
-  }
-
-  async saveOriginal () {
-    try {
-      await this.$store.dispatch('categoryItem/addCategoryDescription', {
-        uid: this.categoryUid,
-        original: this.serverModified,
-        modified: this.serverModified
-      })
-    } catch (err) {
-      if (err.response.status === 409) {
-        console.table(err)
-        this.serverModified = err.response.data.server_modified
-        this.modified = err.response.data.modified
-        this.merged = err.response.data.merged
-        this.isDescriptionConflict = true
-      }
-      throw err
-    }
-  }
-
-  async saveModified () {
-    try {
-      await this.$store.dispatch('categoryItem/addCategoryDescription', {
-        uid: this.categoryUid,
-        original: this.modified,
-        modified: this.modified
-      })
-    } catch (err) {
-      if (err.response.status === 409) {
-        console.table(err)
-        this.serverModified = err.response.data.server_modified
-        this.modified = err.response.data.modified
-        this.merged = err.response.data.merged
-        this.isDescriptionConflict = true
-      }
-      throw err
-    }
-  }
-
-  async saveMerged() {
-    try {
-      await this.$store.dispatch('categoryItem/addCategoryDescription', {
-        uid: this.categoryUid,
-        original: this.merged,
-        modified: this.merged
-      })
-    } catch (err) {
-      if (err.response.status === 409) {
-        console.table(err)
-        this.serverModified = err.response.data.server_modified
-        this.modified = err.response.data.modified
-        this.merged = err.response.data.merged
-        this.isDescriptionConflict = true
-      }
-      throw err
-    }
-  }
-
-  // Different method if Category Description exists
+  // saveDescription () {
+  //   this.toggleEditDescription()
+  //   this.addCategoryDescription()
+  // }
 }
 </script>
 

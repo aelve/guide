@@ -18,7 +18,7 @@
         <v-btn 
           depressed 
           small
-          @click="this.$emit('saveOriginal')"
+          @click="$emit(`${saveDescription(serverModified, serverModified)}`)"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="this.$emit('saveModified')"
+          @click="$emit(`${saveDescription(modified, modified)}`)"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -49,7 +49,7 @@
         <v-btn 
           depressed 
           small
-          @click="this.$emit('saveMerged')"
+          @click="$emit(`${saveDescription(merged, merged)}`)"
         >
           Submit the merged version
         </v-btn>
@@ -74,7 +74,7 @@ export default class ConflictDialog extends Vue {
 }
 </script>
 
-<style>
+<style scoped>
   .conflict-box {
     display: flex;
     background: #fff;
@@ -82,9 +82,8 @@ export default class ConflictDialog extends Vue {
     justify-content: space-between;
   }
   .conflict-content {
-    /* min-height: 100%; */
     flex: 1;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
   .conflict-item {
     width: 32%;
@@ -92,7 +91,7 @@ export default class ConflictDialog extends Vue {
     flex-flow: column;
   }
 
-  .conflict-item textarea {
+  .conflict-item >>> textarea {
     padding: 16px 16px 16px 4px;
     font-size: 14px;
     margin: 0 !important;
@@ -100,6 +99,10 @@ export default class ConflictDialog extends Vue {
 /* Костыль под textarea есть непонятный div - костыль для того чтобы не было разницы в height между блоками */
   .v-input__slot {
     padding-bottom: 8px;
+  }
+
+  .conflict-item >>> .v-text-field__details {
+    height: 0!important;
   }
 </style>
 
