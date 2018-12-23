@@ -118,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addEmptyArticleDescription(originalDescription, modifiedDescription);"
+            @click="toggleEditDescription(); addCategoryDescription(originalDescription, modifiedDescription);"
           >
             Save
           </v-btn>
