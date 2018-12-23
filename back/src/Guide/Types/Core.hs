@@ -179,7 +179,7 @@ data Item = Item {
   _itemName        :: Text,            -- ^ Item title
   _itemCreated     :: UTCTime,         -- ^ When the item was created
   _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
-  _itemHackage     :: Maybe Text,      -- ^ Hackage repository
+  _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
   _itemDescription :: MarkdownBlock,   -- ^ Item summary
   _itemPros        :: [Trait],         -- ^ Pros (positive traits)
   _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
@@ -197,7 +197,11 @@ makeFields ''Item
 
 changelog ''Item (Current 12, Past 11)
   [Removed "_itemKind"  [t|ItemKind|],
-   Added "_itemHackage" [hs|Nothing|]]
+   Added "_itemHackage" [hs|case _itemKind of
+     Library m -> m
+     Tool m -> m
+     Other -> Nothing
+     |]]
 deriveSafeCopySorted 11 'extension ''Item_v11
 
 changelog ''Item (Past 11, Past 10) []

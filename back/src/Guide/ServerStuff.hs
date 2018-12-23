@@ -163,7 +163,7 @@ undoEdit (Edit'SetItemGroup itemId old new) = do
 undoEdit (Edit'SetItemHackage itemId old new) = do
   now <- view hackage <$> dbQuery (GetItem itemId)
   if now /= new
-    then return (Left "hackage link has been changed further")
+    then return (Left "Hackage name has been changed further")
     else Right () <$ dbUpdate (SetItemHackage itemId old)
 undoEdit (Edit'SetItemDescription itemId old new) = do
   now <- view (description.mdSource) <$> dbQuery (GetItem itemId)

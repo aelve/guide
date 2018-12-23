@@ -264,8 +264,6 @@ addMethods = do
     -- TODO: do something if the category doesn't exist (e.g. has been
     -- already deleted)
     itemId <- randomShortUid
-    -- If the item name looks like a Hackage library, assume it's a Hackage
-    -- library.
     time <- liftIO getCurrentTime
     (edit, newItem) <- dbUpdate (AddItem catId itemId name' time)
     addEdit edit

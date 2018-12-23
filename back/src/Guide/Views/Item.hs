@@ -112,11 +112,11 @@ renderItemTitle item =
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item =
-   mustache "item-info" $ A.object [
+  mustache "item-info" $ A.object [
     "category" A..= cat,
     "item" A..= item,
     "link_to_item" A..= itemLink cat item,
-    "link_to_hackage" A..= (item^.hackage),
+    "name_on_hackage" A..= (item^.hackage),
     "category_groups" A..= do
         gr <- M.keys (cat^.groups)
         return $ A.object [

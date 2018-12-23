@@ -370,7 +370,7 @@ data CItemInfo = CItemInfo
   , ciiName    :: Text       ? "Item name"
   , ciiCreated :: UTCTime    ? "When the item was created"
   , ciiGroup   :: Maybe Text ? "Item group"
-  , ciiHackage :: Maybe Text ? "Hackage repository"
+  , ciiHackage :: Maybe Text ? "Package name on Hackage"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
   } deriving (Show, Generic)
 
@@ -389,7 +389,7 @@ data CItemFull = CItemFull
   , cifName        :: Text                     ? "Item name"
   , cifCreated     :: UTCTime                  ? "When the item was created"
   , cifGroup       :: Maybe Text               ? "Item group"
-  , cifHackage     :: Maybe Text               ? "Hackage repository"
+  , cifHackage     :: Maybe Text               ? "Package name on Hackage"
   , cifDescription :: CMarkdown                ? "Item summary (Markdown)"
   , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
   , cifCons        :: [CTrait]                 ? "Cons (negative traits)"

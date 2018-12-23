@@ -9,24 +9,23 @@ database and can be undone. In addition, each edit has a corresponding
 'EditDetails' (which stores IP, date, and ID of an edit).
 -}
 module Guide.Types.Edit
-(
-  Edit(..),
-  isVacuousEdit,
-  EditDetails(..),
-)
+    ( Edit(..)
+    , isVacuousEdit
+    , EditDetails(..)
+    )
 where
 
 
-import Imports
+import           Imports
 
 -- Network
-import Data.IP
+import           Data.IP
 -- acid-state
-import Data.SafeCopy hiding (kind)
-import Data.SafeCopy.Migrate
+import           Data.SafeCopy           hiding ( kind )
+import           Data.SafeCopy.Migrate
 
-import Guide.Types.Core
-import Guide.Utils
+import           Guide.Types.Core
+import           Guide.Utils
 
 
 -- | Edits made by users. It should always be possible to undo an edit.
@@ -136,9 +135,7 @@ deriveSafeCopySimple 9 'extension ''Edit
 
 genVer ''Edit 8 [
   -- Add
-  Custom "Edit'AddCategory" [
-      ("editCategoryUid"  , [t|Uid Category|]),
-      ("editCategoryTitle", [t|Text|]) ],
+  Copy 'Edit'AddCategory,
   Copy 'Edit'AddItem,
   Copy 'Edit'AddPro,
   Copy 'Edit'AddCon,
@@ -152,7 +149,10 @@ genVer ''Edit 8 [
   Copy 'Edit'SetItemName,
   Copy 'Edit'SetItemLink,
   Copy 'Edit'SetItemGroup,
-  Copy 'Edit'SetItemHackage,
+  Custom "Edit'SetItemKind" [
+    ("editItemUid", [t|Uid Item|]),
+    ("editItemKind", [t|ItemKind|]),
+    ("editItemNewKind", [t|ItemKind|])],
   Copy 'Edit'SetItemDescription,
   Copy 'Edit'SetItemNotes,
   Copy 'Edit'SetItemEcosystem,
@@ -166,17 +166,13 @@ genVer ''Edit 8 [
   Copy 'Edit'MoveItem,
   Copy 'Edit'MoveTrait ]
 
-deriveSafeCopySimple 8 'base ''Edit_v8
+deriveSafeCopySimple 8 'extension ''Edit_v8
 
 instance Migrate Edit where
   type MigrateFrom Edit = Edit_v8
   migrate = $(migrateVer ''Edit 8 [
-    CustomM "Edit'AddCategory" [|\x ->
-        Edit'AddCategory
-          { editCategoryUid = editCategoryUid_v8 x
-          , editCategoryTitle = editCategoryTitle_v8 x
-          , editCategoryGroup = toText "Miscellaneous"
-          } |],
+    -- Add
+    CopyM 'Edit'AddCategory,
     CopyM 'Edit'AddItem,
     CopyM 'Edit'AddPro,
     CopyM 'Edit'AddCon,
@@ -190,7 +186,19 @@ instance Migrate Edit where
     CopyM 'Edit'SetItemName,
     CopyM 'Edit'SetItemLink,
     CopyM 'Edit'SetItemGroup,
-    CopyM 'Edit'SetItemHackage,
+    CustomM "Edit'SetItemKind" [|\x ->
+      Edit'SetItemHackage
+        { editItemUid = editItemUid_v8 x
+        , editItemHackage = case editItemKind_v8 x of
+            Library m -> m
+            Tool m -> m
+            Other -> Nothing
+        , editItemNewHackage  = case editItemNewKind_v8 x of
+            Library m -> m
+            Tool m -> m
+            Other -> Nothing
+        }
+    |],
     CopyM 'Edit'SetItemDescription,
     CopyM 'Edit'SetItemNotes,
     CopyM 'Edit'SetItemEcosystem,
@@ -205,36 +213,102 @@ instance Migrate Edit where
     CopyM 'Edit'MoveTrait
     ])
 
+genVer ''Edit_v8 7 [
+  -- Add
+  Custom "Edit'AddCategory" [
+      ("editCategoryUid"  , [t|Uid Category|]),
+      ("editCategoryTitle", [t|Text|]) ],
+  Copy 'Edit'AddItem_v8,
+  Copy 'Edit'AddPro_v8,
+  Copy 'Edit'AddCon_v8,
+  -- Change category properties
+  Copy 'Edit'SetCategoryTitle_v8,
+  Copy 'Edit'SetCategoryGroup_v8,
+  Copy 'Edit'SetCategoryNotes_v8,
+  Copy 'Edit'SetCategoryStatus_v8,
+  Copy 'Edit'ChangeCategoryEnabledSections_v8,
+  -- Change item properties
+  Copy 'Edit'SetItemName_v8,
+  Copy 'Edit'SetItemLink_v8,
+  Copy 'Edit'SetItemGroup_v8,
+  Copy 'Edit'SetItemKind_v8,
+  Copy 'Edit'SetItemDescription_v8,
+  Copy 'Edit'SetItemNotes_v8,
+  Copy 'Edit'SetItemEcosystem_v8,
+  -- Change trait properties
+  Copy 'Edit'SetTraitContent_v8,
+  -- Delete
+  Copy 'Edit'DeleteCategory_v8,
+  Copy 'Edit'DeleteItem_v8,
+  Copy 'Edit'DeleteTrait_v8,
+  -- Other
+  Copy 'Edit'MoveItem_v8,
+  Copy 'Edit'MoveTrait_v8 ]
+
+deriveSafeCopySimple 7 'base ''Edit_v7
+
+instance Migrate Edit_v8 where
+  type MigrateFrom Edit_v8 = Edit_v7
+  migrate = $(migrateVer ''Edit_v8 7 [
+    CustomM "Edit'AddCategory" [|\x ->
+        Edit'AddCategory_v8
+          { editCategoryUid_v8 = editCategoryUid_v7 x
+          , editCategoryTitle_v8 = editCategoryTitle_v7 x
+          , editCategoryGroup_v8 = toText "Miscellaneous"
+          } |],
+    CopyM 'Edit'AddItem_v8,
+    CopyM 'Edit'AddPro_v8,
+    CopyM 'Edit'AddCon_v8,
+    -- Change category properties
+    CopyM 'Edit'SetCategoryTitle_v8,
+    CopyM 'Edit'SetCategoryGroup_v8,
+    CopyM 'Edit'SetCategoryKind_v8,
+    CopyM 'Edit'SetCategoryNotes_v8,
+    CopyM 'Edit'SetCategoryStatus_v8,
+    CopyM 'Edit'ChangeCategoryEnabledSections_v8,
+    -- Change item properties
+    CopyM 'Edit'SetItemName_v8,
+    CopyM 'Edit'SetItemLink_v8,
+    CopyM 'Edit'SetItemGroup_v8,
+    CopyM 'Edit'SetItemKind_v8,
+    CopyM 'Edit'SetItemDescription_v8,
+    CopyM 'Edit'SetItemNotes_v8,
+    CopyM 'Edit'SetItemEcosystem_v8,
+    -- Change trait properties
+    CopyM 'Edit'SetTraitContent_v8,
+    -- Delete
+    CopyM 'Edit'DeleteCategory_v8,
+    CopyM 'Edit'DeleteItem_v8,
+    CopyM 'Edit'DeleteTrait_v8,
+    -- Other
+    CopyM 'Edit'MoveItem_v8,
+    CopyM 'Edit'MoveTrait_v8
+    ])
+
 -- | Determine whether the edit doesn't actually change anything and so isn't
 -- worth recording in the list of pending edits.
 isVacuousEdit :: Edit -> Bool
-isVacuousEdit Edit'SetCategoryTitle{..} =
-  editCategoryTitle == editCategoryNewTitle
-isVacuousEdit Edit'SetCategoryGroup{..} =
-  editCategoryGroup == editCategoryNewGroup
-isVacuousEdit Edit'SetCategoryNotes{..} =
-  editCategoryNotes == editCategoryNewNotes
-isVacuousEdit Edit'SetCategoryStatus{..} =
-  editCategoryStatus == editCategoryNewStatus
+isVacuousEdit Edit'SetCategoryTitle {..} =
+    editCategoryTitle == editCategoryNewTitle
+isVacuousEdit Edit'SetCategoryGroup {..} =
+    editCategoryGroup == editCategoryNewGroup
+isVacuousEdit Edit'SetCategoryNotes {..} =
+    editCategoryNotes == editCategoryNewNotes
+isVacuousEdit Edit'SetCategoryStatus {..} =
+    editCategoryStatus == editCategoryNewStatus
 isVacuousEdit Edit'ChangeCategoryEnabledSections {..} =
-  null editCategoryEnableSections &&
-  null editCategoryDisableSections
-isVacuousEdit Edit'SetItemName{..} =
-  editItemName == editItemNewName
-isVacuousEdit Edit'SetItemLink{..} =
-  editItemLink == editItemNewLink
-isVacuousEdit Edit'SetItemGroup{..} =
-  editItemGroup == editItemNewGroup
-isVacuousEdit Edit'SetItemHackage{..} =
-  editItemHackage == editItemNewHackage
-isVacuousEdit Edit'SetItemDescription{..} =
-  editItemDescription == editItemNewDescription
-isVacuousEdit Edit'SetItemNotes{..} =
-  editItemNotes == editItemNewNotes
-isVacuousEdit Edit'SetItemEcosystem{..} =
-  editItemEcosystem == editItemNewEcosystem
-isVacuousEdit Edit'SetTraitContent{..} =
-  editTraitContent == editTraitNewContent
+    null editCategoryEnableSections && null editCategoryDisableSections
+isVacuousEdit Edit'SetItemName {..}    = editItemName == editItemNewName
+isVacuousEdit Edit'SetItemLink {..}    = editItemLink == editItemNewLink
+isVacuousEdit Edit'SetItemGroup {..}   = editItemGroup == editItemNewGroup
+isVacuousEdit Edit'SetItemHackage {..} = editItemHackage == editItemNewHackage
+isVacuousEdit Edit'SetItemDescription {..} =
+    editItemDescription == editItemNewDescription
+isVacuousEdit Edit'SetItemNotes {..} = editItemNotes == editItemNewNotes
+isVacuousEdit Edit'SetItemEcosystem {..} =
+    editItemEcosystem == editItemNewEcosystem
+isVacuousEdit Edit'SetTraitContent {..} =
+    editTraitContent == editTraitNewContent
 isVacuousEdit Edit'AddCategory{}    = False
 isVacuousEdit Edit'AddItem{}        = False
 isVacuousEdit Edit'AddPro{}         = False

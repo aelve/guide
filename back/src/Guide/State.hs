@@ -58,6 +58,7 @@ module Guide.State
   SetItemHackage(..),
   SetItemDescription(..),
   SetItemNotes(..),
+  SetItemKind(..),
   SetItemEcosystem(..),
   -- *** 'Trait'
   SetTraitContent(..),
@@ -889,7 +890,7 @@ makeAcidic ''GlobalState [
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'changeCategoryEnabledSections,
-  'setItemName, 'setItemLink, 'setItemGroup, 'setItemHackage,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemHackage, 'setItemKind,
     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete

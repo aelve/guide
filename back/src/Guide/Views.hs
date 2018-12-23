@@ -466,7 +466,7 @@ renderEdit globalState edit = do
       " from " >> code_ (toHtml (show oldGroup))
       " to "   >> code_ (toHtml (show newGroup))
     Edit'SetItemHackage itemId oldHackage newHackage -> p_ $ do
-      "changed hackage link of item " >> printItem itemId
+      "changed Hackage name of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldHackage))
       " to "   >> code_ (toHtml (show newHackage))
     Edit'SetItemDescription itemId oldDescr newDescr -> do
