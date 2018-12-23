@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit(`${saveDescription(modified, modified)}`)"
+          @click="$emit(`${saveDescription(serverModified, modified)}`)"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -42,14 +42,14 @@
       <div class="conflict-item">
         <p class="title mb-2">Merge version</p>
         <v-textarea
-          :value="merged"
+          :value="mergedDescipriprion"
           auto-grow
           solo
         />
         <v-btn 
           depressed 
           small
-          @click="$emit(`${saveDescription(merged, merged)}`)"
+          @click="$emit(`${saveDescription(serverModified, merged)}`)"
         >
           Submit the merged version
         </v-btn>
@@ -67,6 +67,8 @@ export default class ConflictDialog extends Vue {
   @Prop(String) serverModified!: string
   @Prop(String) modified!: string
   @Prop(String) merged!: string
+
+  mergedDescipriprion: string = this.merged
 
   close () {
     this.$emit('input', false)
@@ -103,6 +105,16 @@ export default class ConflictDialog extends Vue {
 
   .conflict-item >>> .v-text-field__details {
     height: 0!important;
+  }
+
+  @media screen and (max-width: 1200px) {
+    .conflict-item {
+      width: 49%;
+    }
+
+    .conflict-item:nth-last-child(1) {
+      width: 98%;
+    }
   }
 </style>
 
