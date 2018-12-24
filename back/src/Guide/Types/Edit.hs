@@ -133,59 +133,59 @@ data Edit
 
 deriveSafeCopySimple 9 'extension ''Edit
 
-genVer ''Edit 8 [
+genVer ''Edit (Current 9, Past 8) [
   -- Add
-  Copy 'Edit'AddCategory,
-  Copy 'Edit'AddItem,
-  Copy 'Edit'AddPro,
-  Copy 'Edit'AddCon,
+  Copy "Edit'AddCategory",
+  Copy "Edit'AddItem",
+  Copy "Edit'AddPro",
+  Copy "Edit'AddCon",
   -- Change category properties
-  Copy 'Edit'SetCategoryTitle,
-  Copy 'Edit'SetCategoryGroup,
-  Copy 'Edit'SetCategoryNotes,
-  Copy 'Edit'SetCategoryStatus,
-  Copy 'Edit'ChangeCategoryEnabledSections,
+  Copy "Edit'SetCategoryTitle",
+  Copy "Edit'SetCategoryGroup",
+  Copy "Edit'SetCategoryNotes",
+  Copy "Edit'SetCategoryStatus",
+  Copy "Edit'ChangeCategoryEnabledSections",
   -- Change item properties
-  Copy 'Edit'SetItemName,
-  Copy 'Edit'SetItemLink,
-  Copy 'Edit'SetItemGroup,
+  Copy "Edit'SetItemName",
+  Copy "Edit'SetItemLink",
+  Copy "Edit'SetItemGroup",
   Custom "Edit'SetItemKind" [
     ("editItemUid", [t|Uid Item|]),
     ("editItemKind", [t|ItemKind|]),
     ("editItemNewKind", [t|ItemKind|])],
-  Copy 'Edit'SetItemDescription,
-  Copy 'Edit'SetItemNotes,
-  Copy 'Edit'SetItemEcosystem,
+  Copy "Edit'SetItemDescription",
+  Copy "Edit'SetItemNotes",
+  Copy "Edit'SetItemEcosystem",
   -- Change trait properties
-  Copy 'Edit'SetTraitContent,
+  Copy "Edit'SetTraitContent",
   -- Delete
-  Copy 'Edit'DeleteCategory,
-  Copy 'Edit'DeleteItem,
-  Copy 'Edit'DeleteTrait,
+  Copy "Edit'DeleteCategory",
+  Copy "Edit'DeleteItem",
+  Copy "Edit'DeleteTrait",
   -- Other
-  Copy 'Edit'MoveItem,
-  Copy 'Edit'MoveTrait ]
+  Copy "Edit'MoveItem",
+  Copy "Edit'MoveTrait" ]
 
 deriveSafeCopySimple 8 'extension ''Edit_v8
 
 instance Migrate Edit where
   type MigrateFrom Edit = Edit_v8
-  migrate = $(migrateVer ''Edit 8 [
+  migrate = $(migrateVer ''Edit (Current 9, Past 8) [
     -- Add
-    CopyM 'Edit'AddCategory,
-    CopyM 'Edit'AddItem,
-    CopyM 'Edit'AddPro,
-    CopyM 'Edit'AddCon,
+    CopyM "Edit'AddCategory",
+    CopyM "Edit'AddItem",
+    CopyM "Edit'AddPro",
+    CopyM "Edit'AddCon",
     -- Change category properties
-    CopyM 'Edit'SetCategoryTitle,
-    CopyM 'Edit'SetCategoryGroup,
-    CopyM 'Edit'SetCategoryNotes,
-    CopyM 'Edit'SetCategoryStatus,
-    CopyM 'Edit'ChangeCategoryEnabledSections,
+    CopyM "Edit'SetCategoryTitle",
+    CopyM "Edit'SetCategoryGroup",
+    CopyM "Edit'SetCategoryNotes",
+    CopyM "Edit'SetCategoryStatus",
+    CopyM "Edit'ChangeCategoryEnabledSections",
     -- Change item properties
-    CopyM 'Edit'SetItemName,
-    CopyM 'Edit'SetItemLink,
-    CopyM 'Edit'SetItemGroup,
+    CopyM "Edit'SetItemName",
+    CopyM "Edit'SetItemLink",
+    CopyM "Edit'SetItemGroup",
     CustomM "Edit'SetItemKind" [|\x ->
       Edit'SetItemHackage
         { editItemUid = editItemUid_v8 x
@@ -199,90 +199,89 @@ instance Migrate Edit where
             Other -> Nothing
         }
     |],
-    CopyM 'Edit'SetItemDescription,
-    CopyM 'Edit'SetItemNotes,
-    CopyM 'Edit'SetItemEcosystem,
+    CopyM "Edit'SetItemDescription",
+    CopyM "Edit'SetItemNotes",
+    CopyM "Edit'SetItemEcosystem",
     -- Change trait properties
-    CopyM 'Edit'SetTraitContent,
+    CopyM "Edit'SetTraitContent",
     -- Delete
-    CopyM 'Edit'DeleteCategory,
-    CopyM 'Edit'DeleteItem,
-    CopyM 'Edit'DeleteTrait,
+    CopyM "Edit'DeleteCategory",
+    CopyM "Edit'DeleteItem",
+    CopyM "Edit'DeleteTrait",
     -- Other
-    CopyM 'Edit'MoveItem,
-    CopyM 'Edit'MoveTrait
+    CopyM "Edit'MoveItem",
+    CopyM "Edit'MoveTrait"
     ])
 
-genVer ''Edit_v8 7 [
+genVer ''Edit (Past 8, Past 7) [
   -- Add
   Custom "Edit'AddCategory" [
       ("editCategoryUid"  , [t|Uid Category|]),
       ("editCategoryTitle", [t|Text|]) ],
-  Copy 'Edit'AddItem_v8,
-  Copy 'Edit'AddPro_v8,
-  Copy 'Edit'AddCon_v8,
+  Copy "Edit'AddItem",
+  Copy "Edit'AddPro",
+  Copy "Edit'AddCon",
   -- Change category properties
-  Copy 'Edit'SetCategoryTitle_v8,
-  Copy 'Edit'SetCategoryGroup_v8,
-  Copy 'Edit'SetCategoryNotes_v8,
-  Copy 'Edit'SetCategoryStatus_v8,
-  Copy 'Edit'ChangeCategoryEnabledSections_v8,
+  Copy "Edit'SetCategoryTitle",
+  Copy "Edit'SetCategoryGroup",
+  Copy "Edit'SetCategoryNotes",
+  Copy "Edit'SetCategoryStatus",
+  Copy "Edit'ChangeCategoryEnabledSections",
   -- Change item properties
-  Copy 'Edit'SetItemName_v8,
-  Copy 'Edit'SetItemLink_v8,
-  Copy 'Edit'SetItemGroup_v8,
-  Copy 'Edit'SetItemKind_v8,
-  Copy 'Edit'SetItemDescription_v8,
-  Copy 'Edit'SetItemNotes_v8,
-  Copy 'Edit'SetItemEcosystem_v8,
+  Copy "Edit'SetItemName",
+  Copy "Edit'SetItemLink",
+  Copy "Edit'SetItemGroup",
+  Copy "Edit'SetItemKind",
+  Copy "Edit'SetItemDescription",
+  Copy "Edit'SetItemNotes",
+  Copy "Edit'SetItemEcosystem",
   -- Change trait properties
-  Copy 'Edit'SetTraitContent_v8,
+  Copy "Edit'SetTraitContent",
   -- Delete
-  Copy 'Edit'DeleteCategory_v8,
-  Copy 'Edit'DeleteItem_v8,
-  Copy 'Edit'DeleteTrait_v8,
+  Copy "Edit'DeleteCategory",
+  Copy "Edit'DeleteItem",
+  Copy "Edit'DeleteTrait",
   -- Other
-  Copy 'Edit'MoveItem_v8,
-  Copy 'Edit'MoveTrait_v8 ]
+  Copy "Edit'MoveItem",
+  Copy "Edit'MoveTrait" ]
 
 deriveSafeCopySimple 7 'base ''Edit_v7
 
 instance Migrate Edit_v8 where
   type MigrateFrom Edit_v8 = Edit_v7
-  migrate = $(migrateVer ''Edit_v8 7 [
+  migrate = $(migrateVer ''Edit (Past 8, Past 7) [
     CustomM "Edit'AddCategory" [|\x ->
         Edit'AddCategory_v8
           { editCategoryUid_v8 = editCategoryUid_v7 x
           , editCategoryTitle_v8 = editCategoryTitle_v7 x
           , editCategoryGroup_v8 = toText "Miscellaneous"
           } |],
-    CopyM 'Edit'AddItem_v8,
-    CopyM 'Edit'AddPro_v8,
-    CopyM 'Edit'AddCon_v8,
+    CopyM "Edit'AddItem",
+    CopyM "Edit'AddPro",
+    CopyM "Edit'AddCon",
     -- Change category properties
-    CopyM 'Edit'SetCategoryTitle_v8,
-    CopyM 'Edit'SetCategoryGroup_v8,
-    CopyM 'Edit'SetCategoryKind_v8,
-    CopyM 'Edit'SetCategoryNotes_v8,
-    CopyM 'Edit'SetCategoryStatus_v8,
-    CopyM 'Edit'ChangeCategoryEnabledSections_v8,
+    CopyM "Edit'SetCategoryTitle",
+    CopyM "Edit'SetCategoryGroup",
+    CopyM "Edit'SetCategoryNotes",
+    CopyM "Edit'SetCategoryStatus",
+    CopyM "Edit'ChangeCategoryEnabledSections",
     -- Change item properties
-    CopyM 'Edit'SetItemName_v8,
-    CopyM 'Edit'SetItemLink_v8,
-    CopyM 'Edit'SetItemGroup_v8,
-    CopyM 'Edit'SetItemKind_v8,
-    CopyM 'Edit'SetItemDescription_v8,
-    CopyM 'Edit'SetItemNotes_v8,
-    CopyM 'Edit'SetItemEcosystem_v8,
+    CopyM "Edit'SetItemName",
+    CopyM "Edit'SetItemLink",
+    CopyM "Edit'SetItemGroup",
+    CopyM "Edit'SetItemKind",
+    CopyM "Edit'SetItemDescription",
+    CopyM "Edit'SetItemNotes",
+    CopyM "Edit'SetItemEcosystem",
     -- Change trait properties
-    CopyM 'Edit'SetTraitContent_v8,
+    CopyM "Edit'SetTraitContent",
     -- Delete
-    CopyM 'Edit'DeleteCategory_v8,
-    CopyM 'Edit'DeleteItem_v8,
-    CopyM 'Edit'DeleteTrait_v8,
+    CopyM "Edit'DeleteCategory",
+    CopyM "Edit'DeleteItem",
+    CopyM "Edit'DeleteTrait",
     -- Other
-    CopyM 'Edit'MoveItem_v8,
-    CopyM 'Edit'MoveTrait_v8
+    CopyM "Edit'MoveItem",
+    CopyM "Edit'MoveTrait"
     ])
 
 -- | Determine whether the edit doesn't actually change anything and so isn't
