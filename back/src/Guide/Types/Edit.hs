@@ -16,16 +16,16 @@ module Guide.Types.Edit
 where
 
 
-import           Imports
+import Imports
 
 -- Network
-import           Data.IP
+import Data.IP
 -- acid-state
-import           Data.SafeCopy           hiding ( kind )
-import           Data.SafeCopy.Migrate
+import Data.SafeCopy hiding (kind)
+import Data.SafeCopy.Migrate
 
-import           Guide.Types.Core
-import           Guide.Utils
+import Guide.Types.Core
+import Guide.Utils
 
 
 -- | Edits made by users. It should always be possible to undo an edit.
@@ -191,12 +191,12 @@ instance Migrate Edit where
         { editItemUid = editItemUid_v8 x
         , editItemHackage = case editItemKind_v8 x of
             Library m -> m
-            Tool m -> m
-            Other -> Nothing
+            Tool m    -> m
+            Other     -> Nothing
         , editItemNewHackage  = case editItemNewKind_v8 x of
             Library m -> m
-            Tool m -> m
-            Other -> Nothing
+            Tool m    -> m
+            Other     -> Nothing
         }
     |],
     CopyM "Edit'SetItemDescription",
@@ -288,26 +288,26 @@ instance Migrate Edit_v8 where
 -- worth recording in the list of pending edits.
 isVacuousEdit :: Edit -> Bool
 isVacuousEdit Edit'SetCategoryTitle {..} =
-    editCategoryTitle == editCategoryNewTitle
+  editCategoryTitle == editCategoryNewTitle
 isVacuousEdit Edit'SetCategoryGroup {..} =
-    editCategoryGroup == editCategoryNewGroup
+  editCategoryGroup == editCategoryNewGroup
 isVacuousEdit Edit'SetCategoryNotes {..} =
-    editCategoryNotes == editCategoryNewNotes
+  editCategoryNotes == editCategoryNewNotes
 isVacuousEdit Edit'SetCategoryStatus {..} =
-    editCategoryStatus == editCategoryNewStatus
+  editCategoryStatus == editCategoryNewStatus
 isVacuousEdit Edit'ChangeCategoryEnabledSections {..} =
-    null editCategoryEnableSections && null editCategoryDisableSections
+  null editCategoryEnableSections && null editCategoryDisableSections
 isVacuousEdit Edit'SetItemName {..}    = editItemName == editItemNewName
 isVacuousEdit Edit'SetItemLink {..}    = editItemLink == editItemNewLink
 isVacuousEdit Edit'SetItemGroup {..}   = editItemGroup == editItemNewGroup
 isVacuousEdit Edit'SetItemHackage {..} = editItemHackage == editItemNewHackage
 isVacuousEdit Edit'SetItemDescription {..} =
-    editItemDescription == editItemNewDescription
+  editItemDescription == editItemNewDescription
 isVacuousEdit Edit'SetItemNotes {..} = editItemNotes == editItemNewNotes
 isVacuousEdit Edit'SetItemEcosystem {..} =
     editItemEcosystem == editItemNewEcosystem
 isVacuousEdit Edit'SetTraitContent {..} =
-    editTraitContent == editTraitNewContent
+  editTraitContent == editTraitNewContent
 isVacuousEdit Edit'AddCategory{}    = False
 isVacuousEdit Edit'AddItem{}        = False
 isVacuousEdit Edit'AddPro{}         = False
