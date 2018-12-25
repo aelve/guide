@@ -88,10 +88,10 @@ data Edit
       editItemHackage    :: Maybe Text,
       editItemNewHackage :: Maybe Text }
 
-  | Edit'SetItemDescription {
-      editItemUid            :: Uid Item,
-      editItemDescription    :: Text,
-      editItemNewDescription :: Text }
+  | Edit'SetItemSummary {
+      editItemUid        :: Uid Item,
+      editItemSummary    :: Text,
+      editItemNewSummary :: Text }
   | Edit'SetItemNotes {
       editItemUid      :: Uid Item,
       editItemNotes    :: Text,
@@ -153,7 +153,7 @@ genVer ''Edit (Current 9, Past 8) [
     ("editItemUid", [t|Uid Item|]),
     ("editItemKind", [t|ItemKind|]),
     ("editItemNewKind", [t|ItemKind|])],
-  Copy "Edit'SetItemDescription",
+  Copy "Edit'SetItemSummary",
   Copy "Edit'SetItemNotes",
   Copy "Edit'SetItemEcosystem",
   -- Change trait properties
@@ -190,16 +190,16 @@ instance Migrate Edit where
       Edit'SetItemHackage
         { editItemUid = editItemUid_v8 x
         , editItemHackage = case editItemKind_v8 x of
-            Library m -> m
-            Tool m    -> m
-            Other     -> Nothing
+          Library m -> m
+          Tool m    -> m
+          Other     -> Nothing
         , editItemNewHackage  = case editItemNewKind_v8 x of
-            Library m -> m
-            Tool m    -> m
-            Other     -> Nothing
+          Library m -> m
+          Tool m    -> m
+          Other     -> Nothing
         }
     |],
-    CopyM "Edit'SetItemDescription",
+    CopyM "Edit'SetItemSummary",
     CopyM "Edit'SetItemNotes",
     CopyM "Edit'SetItemEcosystem",
     -- Change trait properties
@@ -232,7 +232,7 @@ genVer ''Edit (Past 8, Past 7) [
   Copy "Edit'SetItemLink",
   Copy "Edit'SetItemGroup",
   Copy "Edit'SetItemKind",
-  Copy "Edit'SetItemDescription",
+  Copy "Edit'SetItemSummary",
   Copy "Edit'SetItemNotes",
   Copy "Edit'SetItemEcosystem",
   -- Change trait properties
@@ -251,11 +251,11 @@ instance Migrate Edit_v8 where
   type MigrateFrom Edit_v8 = Edit_v7
   migrate = $(migrateVer ''Edit (Past 8, Past 7) [
     CustomM "Edit'AddCategory" [|\x ->
-        Edit'AddCategory_v8
-          { editCategoryUid_v8 = editCategoryUid_v7 x
-          , editCategoryTitle_v8 = editCategoryTitle_v7 x
-          , editCategoryGroup_v8 = toText "Miscellaneous"
-          } |],
+      Edit'AddCategory_v8
+        { editCategoryUid_v8 = editCategoryUid_v7 x
+        , editCategoryTitle_v8 = editCategoryTitle_v7 x
+        , editCategoryGroup_v8 = toText "Miscellaneous"
+        } |],
     CopyM "Edit'AddItem",
     CopyM "Edit'AddPro",
     CopyM "Edit'AddCon",
@@ -270,7 +270,7 @@ instance Migrate Edit_v8 where
     CopyM "Edit'SetItemLink",
     CopyM "Edit'SetItemGroup",
     CopyM "Edit'SetItemKind",
-    CopyM "Edit'SetItemDescription",
+    CopyM "Edit'SetItemSummary",
     CopyM "Edit'SetItemNotes",
     CopyM "Edit'SetItemEcosystem",
     -- Change trait properties
@@ -297,15 +297,15 @@ isVacuousEdit Edit'SetCategoryStatus {..} =
   editCategoryStatus == editCategoryNewStatus
 isVacuousEdit Edit'ChangeCategoryEnabledSections {..} =
   null editCategoryEnableSections && null editCategoryDisableSections
-isVacuousEdit Edit'SetItemName {..}    = editItemName == editItemNewName
-isVacuousEdit Edit'SetItemLink {..}    = editItemLink == editItemNewLink
-isVacuousEdit Edit'SetItemGroup {..}   = editItemGroup == editItemNewGroup
+isVacuousEdit Edit'SetItemName {..} = editItemName == editItemNewName
+isVacuousEdit Edit'SetItemLink {..} = editItemLink == editItemNewLink
+isVacuousEdit Edit'SetItemGroup {..} = editItemGroup == editItemNewGroup
 isVacuousEdit Edit'SetItemHackage {..} = editItemHackage == editItemNewHackage
-isVacuousEdit Edit'SetItemDescription {..} =
-  editItemDescription == editItemNewDescription
+isVacuousEdit Edit'SetItemSummary {..} =
+  editItemSummary == editItemNewSummary
 isVacuousEdit Edit'SetItemNotes {..} = editItemNotes == editItemNewNotes
 isVacuousEdit Edit'SetItemEcosystem {..} =
-    editItemEcosystem == editItemNewEcosystem
+  editItemEcosystem == editItemNewEcosystem
 isVacuousEdit Edit'SetTraitContent {..} =
   editTraitContent == editTraitNewContent
 isVacuousEdit Edit'AddCategory{}    = False

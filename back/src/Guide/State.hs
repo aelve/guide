@@ -56,7 +56,7 @@ module Guide.State
   SetItemLink(..),
   SetItemGroup(..),
   SetItemHackage(..),
-  SetItemDescription(..),
+  SetItemSummary(..),
   SetItemNotes(..),
   SetItemEcosystem(..),
   -- *** 'Trait'
@@ -385,7 +385,7 @@ addItem catId itemId name' created' = do
         _itemCreated     = created',
         _itemGroup_      = Nothing,
         _itemHackage     = Nothing,
-        _itemDescription = toMarkdownBlock "",
+        _itemSummary     = toMarkdownBlock "",
         _itemPros        = [],
         _itemProsDeleted = [],
         _itemCons        = [],
@@ -516,11 +516,11 @@ setItemHackage itemId hackage' = do
     let edit = Edit'SetItemHackage itemId oldName hackage'
     (edit,) <$> use (itemById itemId)
 
-setItemDescription :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
-setItemDescription itemId description' = do
-  oldDescr <- itemById itemId . description <<.=
+setItemSummary :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemSummary itemId description' = do
+  oldDescr <- itemById itemId . summary <<.=
                 toMarkdownBlock description'
-  let edit = Edit'SetItemDescription itemId
+  let edit = Edit'SetItemSummary itemId
                (oldDescr ^. mdSource) description'
   (edit,) <$> use (itemById itemId)
 
@@ -889,7 +889,7 @@ makeAcidic ''GlobalState [
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'changeCategoryEnabledSections,
-  'setItemName, 'setItemLink, 'setItemGroup, 'setItemHackage,     'setItemDescription, 'setItemNotes, 'setItemEcosystem,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemHackage, 'setItemSummary, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete
   'deleteCategory,

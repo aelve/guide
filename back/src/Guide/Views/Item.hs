@@ -79,8 +79,8 @@ renderItemForFeed
   => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item
-  unless (markdownNull (item^.description)) $
-    toHtml (item^.description)
+  unless (markdownNull (item^.summary)) $
+    toHtml (item^.summary)
   when (ItemProsConsSection `elem` category^.enabledSections) $ do
     h2_ "Pros"
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)

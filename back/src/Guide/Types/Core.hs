@@ -50,7 +50,7 @@ module Guide.Types.Core
   hasUid,
   content,
   name,
-  description,
+  summary,
   notes,
   created,
   group_,
@@ -180,7 +180,7 @@ data Item = Item {
   _itemCreated     :: UTCTime,         -- ^ When the item was created
   _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
   _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
-  _itemDescription :: MarkdownBlock,   -- ^ Item summary
+  _itemSummary     :: MarkdownBlock,   -- ^ Item summary
   _itemPros        :: [Trait],         -- ^ Pros (positive traits)
   _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
                                        --   it'd be easy to restore them)

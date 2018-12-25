@@ -131,9 +131,9 @@ setItemInfo db requestDetails itemId CItemInfo{..} = do
 -- | Set item's summary.
 setItemSummary :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary db requestDetails itemId CTextEdit{..} = do
-  serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
+  serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (edit, _) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemSummary itemId $ unH cteModified)
   addEdit db requestDetails edit
   pure NoContent
 

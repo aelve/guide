@@ -390,7 +390,7 @@ data CItemFull = CItemFull
   , cifCreated     :: UTCTime                  ? "When the item was created"
   , cifGroup       :: Maybe Text               ? "Item group"
   , cifHackage     :: Maybe Text               ? "Package name on Hackage"
-  , cifDescription :: CMarkdown                ? "Item summary (Markdown)"
+  , cifSummary     :: CMarkdown                ? "Item summary (Markdown)"
   , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
   , cifCons        :: [CTrait]                 ? "Cons (negative traits)"
   , cifEcosystem   :: CMarkdown                ? "The ecosystem description (Markdown)"
@@ -424,7 +424,7 @@ toCItemFull Item{..} = CItemFull
   , cifCreated     = H $ _itemCreated
   , cifGroup       = H $ _itemGroup_
   , cifHackage     = H $ _itemHackage
-  , cifDescription = H $ toCMarkdown _itemDescription
+  , cifSummary     = H $ toCMarkdown _itemSummary
   , cifPros        = H $ fmap toCTrait _itemPros
   , cifCons        = H $ fmap toCTrait _itemCons
   , cifEcosystem   = H $ toCMarkdown _itemEcosystem
@@ -584,7 +584,7 @@ instance ToSchema CSRCategory where
 data CSRItem = CSRItem
   { csriCategory    :: CCategoryInfo   ? "Category that the item belongs to"
   , csriInfo        :: CItemInfo       ? "Info about the item"
-  , csriDescription :: Maybe CMarkdown ? "Item description (if the match was found there)"
+  , csriSummary     :: Maybe CMarkdown ? "Item description (if the match was found there)"
   , csriEcosystem   :: Maybe CMarkdown ? "Item ecosystem (if the match was found there)"
   } deriving (Show, Generic)
 
@@ -611,7 +611,7 @@ toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
     , csriInfo        = H $ toCItemInfo item
-    , csriDescription = H $ Just (toCMarkdown (item ^. G.description))
+    , csriSummary     = H $ Just (toCMarkdown (item ^. G.summary))
     , csriEcosystem   = H $ Nothing
     }
 -- TODO: currently if there are matches in both item description and item
@@ -620,7 +620,7 @@ toCSearchResult (SRItemEcosystem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
     , csriInfo        = H $ toCItemInfo item
-    , csriDescription = H $ Nothing
+    , csriSummary     = H $ Nothing
     , csriEcosystem   = H $ Just (toCMarkdown (item ^. ecosystem))
     }
 

@@ -181,10 +181,10 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "description") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (description.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- view (summary.mdSource) <$> dbQuery (GetItem itemId)
     if modified == original
       then do
-        (edit, item) <- dbUpdate (SetItemDescription itemId content')
+        (edit, item) <- dbUpdate (SetItemSummary itemId content')
         addEdit edit
         lucidIO $ renderItemDescription item
       else do

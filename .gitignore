@@ -22,6 +22,8 @@ cabal.config
 *.swp
 *.swo
 *#
+state/
+config.json
 
 # IDE/support
 .idea/
