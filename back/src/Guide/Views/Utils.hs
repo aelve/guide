@@ -298,7 +298,7 @@ mustache f v = do
   widgets <- readWidgets
   let templates = [(tname, t) | (HTML_ tname, t) <- widgets]
   when (null templates) $
-    error "View.mustache: no HTML templates found in templates/"
+    error "View.mustache: no HTML templates found in back/templates/"
   parsed <- for templates $ \(tname, t) -> do
     let pname = fromString (toString tname)
     case compileMustacheText pname t of
