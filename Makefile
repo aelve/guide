@@ -43,6 +43,6 @@ back/travis-docker:
 		docker/back/files/state
 	rm -rf docker/back/files/state/.git
 	cp .stack-work/install/*/*/*/bin/guide docker/back/files/
-	cp -R back/{config.json,static,templates} docker/back/files/
+	cp -R back/{static,templates} docker/back/files/
 	docker build docker/back -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/back/files
