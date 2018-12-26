@@ -36,8 +36,11 @@ back/run:
 # Docker file)
 .PHONY: back/travis-docker
 back/travis-docker:
-	git clone --depth 1 https://github.com/aelve/guide-database.git docker/back/state
-	rm -rf docker/back/state/.git
-	cp .stack-work/install/*/*/*/bin/guide docker/back/
-	docker build docker/back/ -t quay.io/aelve/guide:$(tag)
-	rm -rf docker/back/{guide,state}
+	rm -rf docker/back/files && mkdir docker/back/files
+	git clone --depth 1 https://github.com/aelve/guide-database.git \
+		docker/back/files/state
+	rm -rf docker/back/files/state/.git
+	cp .stack-work/install/*/*/*/bin/guide docker/back/files/
+	cp -R back/{config.json,static,templates} docker/back/files/
+	docker build docker/back/files -t quay.io/aelve/guide:$(tag)
+	rm -rf docker/back/files

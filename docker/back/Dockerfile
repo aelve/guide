@@ -2,9 +2,8 @@ FROM ubuntu:xenial
 
 RUN apt update && apt install -y libgmp-dev
 
-WORKDIR /opt
+WORKDIR /opt/guide
 
-COPY guide ./
-COPY state ./state
+COPY files ./
 
 CMD ./guide
