@@ -5,15 +5,13 @@ language: generic
 
 addons:
   apt:
-    sources:
-    - google-chrome
     packages:
     # GHC
     - libgmp-dev
     # Selenium
     - xvfb
     # Testcafe
-    - google-chrome-stable fluxbox
+    - fluxbox
   chrome: stable
 before_install:
   - # start your web application and listen on `localhost`
