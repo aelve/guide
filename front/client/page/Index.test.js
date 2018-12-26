@@ -34,14 +34,15 @@ test('Add category', async t => {
   }
 
   for (let i = 0; i < groupsCount; i++) {
-    const currentGroup = categoryGroups.nth(i)
-    const categoryGroupName = currentGroup.child('.category-group-name').innerText
+    let currentGroup = categoryGroups.nth(i)
+    let categoryGroupName = await currentGroup.child('.category-group-name').innerText
+    let groupInput = Selector('input[aria-label="Group"]').value;
 
-    const addButton = currentGroup.child('.add-category-btn')
+    let addButton = currentGroup.child('.add-category-btn')
 
-    const newCategoryName = 'mytest-' + new Date().toISOString()
+    let newCategoryName = 'mytest-' + new Date().toISOString()
     await t.click(addButton)
-    await t.expect(Selector('input[aria-label="Group"]').innerText).eql(categoryGroupName)
+    await t.expect(groupInput).eql(categoryGroupName)
     await t
       .typeText('input[aria-label="Category name"]', newCategoryName)
       .click('.add-category-submit-btn')
