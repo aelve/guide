@@ -215,7 +215,7 @@ export default class Category extends Vue {
   //   modified: this.hasDescription
   // }
   originalDescription: string = this.categoryDscMarkdown
-  modifiedDescription: string = ''
+  modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
 
   // clean dumb old data
   beforeCreate () {
@@ -236,7 +236,6 @@ export default class Category extends Vue {
 
   get categoryDscMarkdown () {
     return _get(this, '$store.state.category.category.description.text')
-    // return this.$store.state.category.category.description.text
   }
 
   get category () {
@@ -282,11 +281,6 @@ export default class Category extends Vue {
       throw err
     }
   }
-
-  // saveDescription () {
-  //   this.toggleEditDescription()
-  //   this.addCategoryDescription()
-  // }
 }
 </script>
 
