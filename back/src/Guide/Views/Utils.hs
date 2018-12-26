@@ -298,7 +298,7 @@ mustache f v = do
   widgets <- readWidgets
   let templates = [(tname, t) | (HTML_ tname, t) <- widgets]
   when (null templates) $
-    error "View.mustache: no HTML templates found in back/templates/"
+    error "View.mustache: no HTML templates found in templates/"
   parsed <- for templates $ \(tname, t) -> do
     let pname = fromString (toString tname)
     case compileMustacheText pname t of
@@ -359,7 +359,7 @@ readWidget fp = liftIO $ do
 readWidgets :: MonadIO m => m [(SectionType, Text)]
 readWidgets = liftIO $ do
   let isWidget = F.extension F.==? ".widget"
-  files' <- F.find F.always isWidget "back/templates/"
+  files' <- F.find F.always isWidget "templates/"
   concat <$> mapM readWidget files'
 
 getJS :: MonadIO m => m Text
