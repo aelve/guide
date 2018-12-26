@@ -52,7 +52,7 @@ jobs:
     - stage: "Test the backend"
       before_script:
         # Install chromedriver
-        - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
+        - wget http://chromedriver.storage.googleapis.com/2.45/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
         - chmod +x chromedriver
         - sudo mv -f chromedriver /usr/local/share/chromedriver
@@ -61,11 +61,10 @@ jobs:
         # Run selenium-server
         - export DISPLAY=:99.0
         - sh -e /etc/init.d/xvfb start
-        - travis_retry wget http://selenium-release.storage.googleapis.com/3.6/selenium-server-standalone-3.6.0.jar
-        - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
+        - travis_retry wget https://selenium-release.storage.googleapis.com/3.141/selenium-server-standalone-3.141.59.jar -O selenium.jar
+        - java -jar selenium.jar 2> /dev/null &
         - sleep 15
       script:
-        - stack --no-terminal build
         - stack --no-terminal test
         - make back/test-db
 
