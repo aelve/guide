@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 # Build the project
 .PHONY: back
 back:
