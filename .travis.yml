@@ -49,10 +49,10 @@ jobs:
 
     - stage: "Upload a Docker image for the backend"
       script:
-        - export BRANCH="$(echo "$(TRAVIS_BRANCH)" | tr '/' '-')"
-        - make back/travis-docker "tag=$(BRANCH)--back"
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - make back/travis-docker "tag=$BRANCH--back"
         - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        - docker push "quay.io/aelve/guide:$(BRANCH)--back"
+        - docker push "quay.io/aelve/guide:$BRANCH--back"
       if: type = push
 
     - stage: "Test the backend"
