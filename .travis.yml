@@ -1,7 +1,7 @@
 sudo: true
 dist: xenial
 
-language: c
+language: generic
 
 addons:
   apt:
