@@ -1,4 +1,5 @@
 sudo: true
+dist: xenial
 
 language: c
 
@@ -62,6 +63,13 @@ jobs:
         - stack --no-terminal build
         - stack --no-terminal test
         - make back/test-db
+
+    - stage: "Upload a Docker image for the backend"
+      script:
+        - make back/travis-docker "tag=back/$TRAVIS_BRANCH"
+        - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+        - docker push "quay.io/aelve/guide:back/$TRAVIS_BRANCH"
+      if: type = push
 
     - stage: "Build and test the frontend"
       before_script:
