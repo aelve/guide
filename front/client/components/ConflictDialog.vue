@@ -42,7 +42,8 @@
       <div class="conflict-item">
         <p class="title mb-2">Merge version</p>
         <v-textarea
-          :value="mergedDescipriprion"
+          :value="merged"
+          :v-model="showMergedDescription"
           auto-grow
           solo
         />
@@ -68,7 +69,11 @@ export default class ConflictDialog extends Vue {
   @Prop(String) modified!: string
   @Prop(String) merged!: string
 
-  mergedDescipriprion: string = this.merged
+  mergedDescription: string = ''
+  
+  showMergedDescription () {
+    return this.mergedDescription = this.merged
+  }
 
   close () {
     this.$emit('input', false)
