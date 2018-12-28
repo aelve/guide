@@ -22,6 +22,8 @@ cache:
     - $HOME/.stack
     - .stack-work
     - back/.stack-work
+    - back/static/js     # so that bundle.js would persist to the
+                         # "Push Docker image" stage
   timeout: 1000
 
 jobs:
