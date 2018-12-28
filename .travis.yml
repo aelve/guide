@@ -22,8 +22,9 @@ cache:
     - $HOME/.stack
     - .stack-work
     - back/.stack-work
-    - back/static/js     # so that bundle.js would persist to the
-                         # "Push Docker image" stage
+    - back/static/js     # Needed so that bundle.js would persist to the
+                         # "Push Docker image" stage and beyond - without it
+                         # the backend doesn't work and the tests don't run.
   timeout: 1000
 
 jobs:
