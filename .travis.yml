@@ -31,22 +31,13 @@ jobs:
   include:
     - stage: "Build backend dependencies"
       before_script:
-        - mkdir -p ~/.local/bin
-        - export PATH=$HOME/.local/bin:$PATH
-        - >-
-          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
-          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        - curl -sSL https://get.haskellstack.org/ | sh
       script:
         - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
 
     - stage: "Build the backend"
       before_script:
-        # Install Stack
-        - mkdir -p ~/.local/bin
-        - export PATH=$HOME/.local/bin:$PATH
-        - >-
-          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
-          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        - curl -sSL https://get.haskellstack.org/ | sh
       script:
         - stack --no-terminal build
 
@@ -60,6 +51,7 @@ jobs:
 
     - stage: "Test the backend"
       before_script:
+        - curl -sSL https://get.haskellstack.org/ | sh
         # Install chromedriver
         - wget http://chromedriver.storage.googleapis.com/2.45/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
