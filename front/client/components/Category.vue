@@ -170,7 +170,7 @@
         :serverModified="serverModified"
         :modified="modified"
         :merged="merged"
-        @saveDescription="addCategoryDescription"
+        v-on:saveDescription="saveConflictDescription"
       />
     </div>
   </v-container>
@@ -281,6 +281,10 @@ export default class Category extends Vue {
       }
       throw err
     }
+  }
+
+  saveConflictDescription (original: string, modified: string) {
+    this.addCategoryDescription(original, modified)
   }
 }
 </script>

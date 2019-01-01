@@ -18,7 +18,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit(`${saveDescription(serverModified, serverModified)}`)"
+          @click="$emit('saveDescription', {serverModified, serverModified})"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit(`${saveDescription(serverModified, modified)}`)"
+          @click="$emit('saveDescription', {serverModified, modified})"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -50,7 +50,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit(`${saveDescription(serverModified, merged)}`)"
+          @click="$emit('saveDescription', {serverModified, merged})"
         >
           Submit the merged version
         </v-btn>
@@ -113,12 +113,26 @@ export default class ConflictDialog extends Vue {
   }
 
   @media screen and (max-width: 1200px) {
+    .conflict-box {
+      flex-wrap: wrap;
+    }
+
     .conflict-item {
       width: 49%;
     }
 
     .conflict-item:nth-last-child(1) {
       width: 98%;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .conflict-box {
+      flex-flow: column;
+    }
+
+    .conflict-item {
+      width: 100%;
     }
   }
 </style>
