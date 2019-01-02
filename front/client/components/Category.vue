@@ -267,8 +267,8 @@ export default class Category extends Vue {
     try {
       await this.$store.dispatch('categoryItem/addCategoryDescription', {
         uid: this.categoryUid,
-        original: 'bruh some very strange string',
-        // original: original,
+        // original: 'bruh some very strange string',
+        original: original,
         modified: modified
       })
     } catch (err) {
@@ -283,7 +283,9 @@ export default class Category extends Vue {
     }
   }
 
-  saveConflictDescription (original: string, modified: string) {
+  saveConflictDescription (data: any) {
+    let { original, modified } = data
+
     this.addCategoryDescription(original, modified)
   }
 }

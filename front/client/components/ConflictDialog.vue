@@ -18,7 +18,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', {serverModified, serverModified})"
+          @click="$emit('saveDescription', { original: serverModified, modified: serverModified}); close();"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', {serverModified, modified})"
+          @click="$emit('saveDescription', { original: serverModified, modified: modified}); close();"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -50,7 +50,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', {serverModified, merged})"
+          @click="$emit('saveDescription', { original: serverModified, modified: merged}); close();"
         >
           Submit the merged version
         </v-btn>
