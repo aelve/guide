@@ -11,12 +11,13 @@
     "build-all": "npm run client:build && npm run server:build",
     "start:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
     "start:prod": "cross-env NODE_ENV=production node server/bin.js",
-    "test": "testcafe chrome client/page/*.test.js --app \"npm run start:dev\" --app-init-delay 10000"
+    "test": "testcafe chrome client/tests/*.test.js --app \"npm run start:dev\" --app-init-delay 10000"
   },
   "dependencies": {
     "@junyiz/koa-proxy-pass": "^1.2.1",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
+    "easymde": "^2.4.2",
     "koa": "^2.5.0",
     "koa-bodyparser": "^4.2.0",
     "koa-proxies": "^0.7.0",

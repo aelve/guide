@@ -1,6 +1,10 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
-import { ICategoryItem, CategoryItemService, ICreateCategoryItem } from 'client/service/CategoryItem'
-import { CategoryService, ICategoryFull } from 'client/service/Category'
+import {
+  ICategoryItem,
+  CategoryItemService,
+  ICreateCategoryItem,
+  ICategoryItemInfo
+} from 'client/service/CategoryItem'
 
 interface ICategoryItemState {
   categoryItemList: ICategoryItem[]
@@ -24,9 +28,14 @@ const actions: ActionTree<ICategoryItemState, any> = {
     dispatch('category/reloadCategory', null, { root: true })
     return createdId
   },
-  async deleteItemById ({ dispatch }: ActionContext<ICategoryItemState, any>, id: ICategoryItem['uid']) {
+  async deleteItemById (context, id: ICategoryItem['uid']) {
     await CategoryItemService.deleteItemById(id)
-    dispatch('category/reloadCategory', null, { root: true })
+  },
+  async updateItemInfo (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, body }: { id: ICategoryItem['uid'], body: ICategoryItemInfo }
+  ): Promise<void> {
+    await CategoryItemService.updateItemInfo(id, body)
   }
 }
 

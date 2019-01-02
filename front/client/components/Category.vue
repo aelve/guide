@@ -1,19 +1,19 @@
 <template>
   <v-container>
-    <div class="article-wrapper">
-      <div class="article-top">
+    <div class="category-wrapper">
+      <div class="category-top">
         <i class="fas fa-rss"/>
         <div
           v-if="category"
-          class="article-top-data"
+          class="category-top-data"
         >
           <router-link
-            class="article-top-link"
+            class="category-top-link"
             :to="categoryUrl"
           >
             {{category.title}}
           </router-link>
-          <p class="article-top-group"> {{category.group}} </p>
+          <p class="category-top-group"> {{category.group}} </p>
         </div>
         <v-btn
           class="ml-2 pl-0 add-item-btn"
@@ -27,27 +27,26 @@
       </div>
       <div
         v-if="categoryDescription"
-        class="article-description"
+        class="category-description"
       >
         <div v-html="categoryDescription" />
       </div>
       <template v-if="category">
-        <div
-          v-for="(value, index) in category.items"
-          :key="index"
-        > 
-          <article-content
-            :kind="value.name"
-            :group="value.group"
-            :itemDescription="value.description.html"
-            :pros="value.pros"
-            :cons="value.cons"
-            :ecosystem="value.ecosystem.html"
-            :tocArray="value.toc"
-            :notes="value.notes.html"
-            :itemUid="value.uid"
-          />
-        </div>
+        <category-item
+          v-for="value in category.items"
+          :key="value.uid"
+          :itemUid="value.uid"
+          :link="value.link"
+          :name="value.name"
+          :group="value.group"
+          :itemDescription="value.description.html"
+          :pros="value.pros"
+          :cons="value.cons"
+          :ecosystem="value.ecosystem.html"
+          :tocArray="value.toc"
+          :notes="value.notes.html"
+          :kind="value.kind"
+        />
       </template>
       <v-btn
         flat
@@ -58,7 +57,7 @@
         <v-icon class="mr-1" left>add</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog 
+      <add-item-dialog
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
@@ -70,18 +69,18 @@
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import ArticleContent from 'client/components/ArticleContent.vue'
+import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import category from 'client/store/modules/category'
 
 @Component({
-  name: 'article-component',
+  name: 'category-component',
   components: {
-    ArticleContent,
+    CategoryItem,
     AddItemDialog
   }
 })
-export default class ArticleItem extends Vue {
+export default class categoryItem extends Vue {
   @Prop(String) categoryId!: string
 
   isDialogOpen: boolean = false
@@ -112,19 +111,19 @@ export default class ArticleItem extends Vue {
 </script>
 
 <style scoped>
-.article-top {
+.category-top {
   display: flex;
   align-items: center;
   margin: 0 0 45px;
 }
 
-.article-top-data {
+.category-top-data {
   display: flex;
   align-items: center;
   flex: 1;
 }
 
-.article-top >>> i {
+.category-top >>> i {
   margin-right: 15px;
   font-size: 18px;
   color: #979797;
@@ -132,11 +131,11 @@ export default class ArticleItem extends Vue {
   transition: all ease-in-out 0.25s;
 }
 
-.article-top >>> i:hover {
+.category-top >>> i:hover {
   color: #000;
 }
 
-.article-top-link {
+.category-top-link {
   font-size: 24px;
   font-weight: 600;
   text-decoration: none;
@@ -146,34 +145,34 @@ export default class ArticleItem extends Vue {
   margin-right: 30px;
 }
 
-.article-top-group {
+.category-top-group {
   font-size: 24px;
 }
 
-.article-top-link:hover {
+.category-top-link:hover {
   color: #000;
   color: #979797;
 }
 
-.article-wrapper {
+.category-wrapper {
   width: 800px;
   margin: 0 auto;
 }
 
-.article-description {
+.category-description {
   margin: 0 0 60px;
 }
 
-.article-description >>> p {
+.category-description >>> p {
   font-size: 16px;
 }
 
-.article-description >>> h1 {
+.category-description >>> h1 {
   margin: 20px 0 5px;
 }
 
 @media screend and (max-width: 768px) {
-  .article-item {
+  .category-item {
     margin: 0 0 30px;
   }
 }
