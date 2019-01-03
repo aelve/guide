@@ -260,25 +260,10 @@ itemTests = session "items" $ using [chromeCaps] $ do
       wd "is present" $ do
         itemName item1 `shouldHaveText` "An item"
         fs <- fontSize (itemName item1); fs `shouldBeInRange` (20,26)
-      wd "doesn't link to Hackage" $ do
-        doesNotChangeURL $ click (itemName item1)
-        -- TODO: find a better test for this (maybe by checking all hrefs)
-        checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "can be changed" $ do
         form <- openItemEditForm item1
         enterInput "New item" (form :// ByName "name")
         itemName item1 `shouldHaveText` "New item"
-      wd "doesn't link to Hackage if changed to something without spaces" $ do
-        form <- openItemEditForm item1
-        enterInput "item1" (form :// ByName "name")
-        itemName item1 `shouldHaveText` "item1"
-        doesNotChangeURL $ click (itemName item1)
-        checkNotPresent (item1 :// ByLinkText "Hackage")
-      wd "links to Hackage if the name is originally a package name" $ do
-        item2 <- createItem "foo-bar-2"
-        itemName item2 `shouldHaveText` "foo-bar-2"
-        (item2 :// ByLinkText "Hackage")
-          `shouldLinkTo` "https://hackage.haskell.org/package/foo-bar-2"
     describe "group" $ do
       wd "is present and “other” by default" $ do
         itemGroup item1 `shouldHaveText` "other"
