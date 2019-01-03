@@ -9,10 +9,11 @@ database and can be undone. In addition, each edit has a corresponding
 'EditDetails' (which stores IP, date, and ID of an edit).
 -}
 module Guide.Types.Edit
-    ( Edit(..)
-    , isVacuousEdit
-    , EditDetails(..)
-    )
+(
+    Edit(..),
+    isVacuousEdit,
+    EditDetails(..),
+)
 where
 
 
@@ -297,13 +298,18 @@ isVacuousEdit Edit'SetCategoryStatus {..} =
   editCategoryStatus == editCategoryNewStatus
 isVacuousEdit Edit'ChangeCategoryEnabledSections {..} =
   null editCategoryEnableSections && null editCategoryDisableSections
-isVacuousEdit Edit'SetItemName {..} = editItemName == editItemNewName
-isVacuousEdit Edit'SetItemLink {..} = editItemLink == editItemNewLink
-isVacuousEdit Edit'SetItemGroup {..} = editItemGroup == editItemNewGroup
-isVacuousEdit Edit'SetItemHackage {..} = editItemHackage == editItemNewHackage
+isVacuousEdit Edit'SetItemName {..} =
+  editItemName == editItemNewName
+isVacuousEdit Edit'SetItemLink {..} =
+  editItemLink == editItemNewLink
+isVacuousEdit Edit'SetItemGroup {..} =
+  editItemGroup == editItemNewGroup
+isVacuousEdit Edit'SetItemHackage {..} =
+  editItemHackage == editItemNewHackage
 isVacuousEdit Edit'SetItemSummary {..} =
   editItemSummary == editItemNewSummary
-isVacuousEdit Edit'SetItemNotes {..} = editItemNotes == editItemNewNotes
+isVacuousEdit Edit'SetItemNotes {..} =
+  editItemNotes == editItemNewNotes
 isVacuousEdit Edit'SetItemEcosystem {..} =
   editItemEcosystem == editItemNewEcosystem
 isVacuousEdit Edit'SetTraitContent {..} =
