@@ -145,7 +145,8 @@ setMethods = do
     -- code and other notes saying where stuff is rendered, etc
     name' <- T.strip <$> param' "name"
     link' <- T.strip <$> param' "link"
-    hackage' <- param' "hackage"
+    hackage' <- (\x -> if T.null x then Nothing else Just x) . T.strip <$>
+                param' "hackage"
     group' <- do
       groupField <- param' "group"
       customGroupField <- param' "custom-group"
