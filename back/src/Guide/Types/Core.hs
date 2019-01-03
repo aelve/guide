@@ -197,11 +197,14 @@ makeFields ''Item
 
 changelog ''Item (Current 12, Past 11)
   [Removed "_itemKind"  [t|ItemKind|],
-   Added "_itemHackage" [hs|case _itemKind of
-     Library m -> m
-     Tool m -> m
-     Other -> Nothing
-     |]]
+   Added "_itemHackage" [hs|
+     case _itemKind of
+       Library m -> m
+       Tool m -> m
+       Other -> Nothing |],
+   Removed "_itemDescription" [t|MarkdownBlock|],
+   Added "_itemSummary" [hs|
+     _itemDescription |] ]
 deriveSafeCopySorted 11 'extension ''Item_v11
 
 changelog ''Item (Past 11, Past 10) []
