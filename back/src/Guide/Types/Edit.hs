@@ -10,9 +10,9 @@ database and can be undone. In addition, each edit has a corresponding
 -}
 module Guide.Types.Edit
 (
-    Edit(..),
-    isVacuousEdit,
-    EditDetails(..),
+  Edit(..),
+  isVacuousEdit,
+  EditDetails(..),
 )
 where
 
