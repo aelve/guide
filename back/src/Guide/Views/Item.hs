@@ -116,7 +116,7 @@ renderItemInfo cat item =
     "category" A..= cat,
     "item" A..= item,
     "link_to_item" A..= itemLink cat item,
-    "name_on_hackage" A..= (item^.hackage),
+    "hackage" A..= (item^.hackage),
     "category_groups" A..= do
         gr <- M.keys (cat^.groups)
         return $ A.object [

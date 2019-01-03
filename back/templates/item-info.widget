@@ -13,7 +13,7 @@ Required context:
 
   * link_to_item = e.g. /haskell/lenses-pt3tvnwt#item-e4t2tv2n
 
-  * name_on_hackage
+  * hackage
 
   * category_groups = e.g.
       [ {"name": "POSIX", "selected": false}
@@ -183,10 +183,10 @@ HTML: item-info-edit-form
   <input id="name" name="name" value="{{item.name}}"
           type="text" autocomplete="off">
 
-  <label for="name_on_hackage">
+  <label for="hackage">
     Name on Hackage
   </label>
-  <input id="name_on_hackage" name="name_on_hackage" value="{{item.hackage}}"
+  <input id="hackage" name="hackage" value="{{item.hackage}}"
           type="text" autocomplete="off">
 
   <label for="site">
