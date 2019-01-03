@@ -584,7 +584,7 @@ instance ToSchema CSRCategory where
 data CSRItem = CSRItem
   { csriCategory    :: CCategoryInfo   ? "Category that the item belongs to"
   , csriInfo        :: CItemInfo       ? "Info about the item"
-  , csriSummary     :: Maybe CMarkdown ? "Item description (if the match was found there)"
+  , csriSummary     :: Maybe CMarkdown ? "Item summary (if the match was found there)"
   , csriEcosystem   :: Maybe CMarkdown ? "Item ecosystem (if the match was found there)"
   } deriving (Show, Generic)
 
