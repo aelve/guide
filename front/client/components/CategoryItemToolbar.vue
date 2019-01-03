@@ -112,7 +112,7 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
   @Prop(String) itemGroup!: string
-  @Prop(Object) itemKind!: object
+  @Prop(Object) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
   isDeleteItemDialogOpen: boolean = false
@@ -152,7 +152,7 @@ export default class CategoryItemToolbar extends Vue {
         created: '2016-07-22T00:00:00Z',
         uid: this.itemUid,
         group: this.itemGroup,
-        kind: this.itemKind
+        hackage: this.itemHackage
       }
     })
     await this.$store.dispatch('category/reloadCategory')

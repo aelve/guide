@@ -6,7 +6,7 @@
       :itemName="name"
       :itemLink="link"
       :itemGroup="group"
-      :itemKind="kind"
+      :itemHackage="hackage"
     />
 
     <div class="category-item-body">
@@ -100,7 +100,7 @@ export default class CategoryItem extends Vue {
   @Prop(String) notes!: string
   @Prop(String) itemUid!: string
   @Prop(String) link!: string
-  @Prop(Object) kind!: object
+  @Prop(Object) hackage!: string
 
   isNoteExpanded: boolean = false
 

@@ -45,7 +45,7 @@
           :ecosystem="value.ecosystem.html"
           :tocArray="value.toc"
           :notes="value.notes.html"
-          :kind="value.kind"
+          :hackage="value.hackage"
         />
       </template>
       <v-btn
