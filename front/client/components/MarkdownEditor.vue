@@ -1,40 +1,43 @@
 <template>
 <!-- Wrapper div is required for correct destroying of component
      cause easyMDE adds new html elements next to textarea -->
-<div
-  class="elevation-2"
-  style="button { color: green; }"
-  @keydown.ctrl.enter="save"
-  v-show="editor && isReady"
->
-  <textarea ref="editor" />
-
-  <v-toolbar
-    flat
-    height="30"
-    color="#e5e5e5"
-    class="pa-2 markdown-editor-bottom-toolbar"
-    v-show="editor"
+  <div
+    class="elevation-2"
+    @keydown.capture.enter="onEnterDown"
+    @keydown.ctrl.enter="save"
+    @keydown.esc="cancel"
+    v-show="editor && isReady"
   >
-    <v-toolbar-items>
-      <v-btn
-        small
-        class="mr-2 text-transform-none"
-        @click="save"
-      >
-        Save
-      </v-btn>
-      <v-btn
-        small
-        class="text-transform-none"
-        @click="cancel"
-      >
-        Cancel
-      </v-btn>
-    </v-toolbar-items>
-    or press Ctrl+Enter to save
-  </v-toolbar>
-</div>
+    <textarea ref="editor" />
+
+    <v-toolbar
+      flat
+      height="30"
+      color="#e5e5e5"
+      class="pa-2 markdown-editor-bottom-toolbar"
+      v-show="editor"
+    >
+      <v-toolbar-items>
+        <v-btn
+          small
+          class="mr-2 text-transform-none"
+          @click="save"
+        >
+          Save
+        </v-btn>
+        <v-btn
+          small
+          class="text-transform-none"
+          @click="cancel"
+        >
+          Cancel
+        </v-btn>
+      </v-toolbar-items>
+      <span class="markdown-editor-save-tip ml-1">
+        {{ saveTip }}
+      </span>
+    </v-toolbar>
+  </div>
 </template>
 
 <script lang="ts">
@@ -52,9 +55,14 @@ export default class MarkdownEditor extends Vue {
     default: 300
   }) height: number
   @Prop(Boolean) toolbar: boolean
+  @Prop(Boolean) saveOnEnter: boolean
 
   editor: object = null
   isReady: boolean = false
+
+  get saveTip () {
+    return `press${this.saveOnEnter ? ' Enter or' : ''} Ctrl+Enter to save`
+  }
 
   @Watch('value')
   onValueChange (newVal: string): void {
@@ -68,6 +76,7 @@ export default class MarkdownEditor extends Vue {
     await this.createEditorInstance()
     this.setInputAreaHeight()
     this.isReady = true
+    this.focusInputArea()
   }
 
   async createEditorInstance () {
@@ -78,9 +87,9 @@ export default class MarkdownEditor extends Vue {
       initialValue: this.value,
       spellChecker: false,
       status: false,
-      toolbar: !this.toolbar
-        ? false
-        : [
+      minHeight: `${this.height}px`,
+      toolbar: this.toolbar
+        ? [
           'bold',
           'italic',
           'strikethrough',
@@ -111,6 +120,7 @@ export default class MarkdownEditor extends Vue {
             title: 'Markdown Guide',
           }
         ]
+        : false
     })
     this.editor.codemirror.on('change', () => {
       this.$emit('input', this.editor.value())
@@ -118,8 +128,25 @@ export default class MarkdownEditor extends Vue {
   }
 
   setInputAreaHeight () {
-    const inputAreaEl = document.getElementsByClassName('CodeMirror')[0] as HTMLElement
+    const inputAreaEl = this.$el.querySelector('.CodeMirror') as HTMLElement
+    if (!inputAreaEl) {
+      return
+    }
     inputAreaEl.style.height = `${this.height}px`
+  }
+
+  focusInputArea () {
+    // this function is triggered right after isReady set to true
+    // isReady controls v-show of entire markup of component
+    // nextTick is used cause html needs to be rendered after v-show triggered so focus will work
+    this.$nextTick(() => document.querySelector('.CodeMirror textarea').focus())
+  }
+
+  onEnterDown (event: KeyboardEvent) {
+    if (this.saveOnEnter) {
+      event.preventDefault()
+      this.save()
+    }
   }
 
   save () {
@@ -139,7 +166,19 @@ export default class MarkdownEditor extends Vue {
   border-radius: 0;
   border-bottom: 1px solid #bbb;
 }
+>>> .CodeMirror {
+  /* Fixes cutting of bottom edge of input
+     https://github.com/sparksuite/simplemde-markdown-editor/issues/619
+  */
+  box-sizing: content-box;
+}
+>>> .CodeMirror {
+  font-size: 12px;
+}
 >>> .v-toolbar__content {
   padding-left: 0;
+}
+.markdown-editor-save-tip {
+  font-size: 11px;
 }
 </style>

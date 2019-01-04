@@ -42,6 +42,8 @@ p {
 code.sourceCode {
   min-width: 100%;
   padding: 8px;
+}
+.sourceCode:not(:last-child) code.sourceCode {
   margin: 0 0 15px;
 }
 /* Transition styles */

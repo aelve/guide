@@ -24,29 +24,21 @@
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="category-item-toolbar-btns">
-          <v-btn
-            flat
-            icon
-            title="move item down"
-          >
-            <v-icon>fas fa-arrow-up</v-icon>
-          </v-btn>
+          <category-item-btn
+            title="move item up"
+            icon="fas fa-arrow-up"
+          />
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="move item down"
-          >
-            <v-icon>fas fa-arrow-down</v-icon>
-          </v-btn>
+            icon="fas fa-arrow-down"
+          />
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="edit item info"
+            icon="fas fa-cog"
             @click="toggleEditItemInfoMenu"
           >
-            <v-icon>fas fa-cog</v-icon>
             <v-icon
               v-if="isItemInfoEdited"
               class="edit-item-info-changed-icon"
@@ -55,16 +47,13 @@
             >
               fas fa-circle
             </v-icon>
-          </v-btn>
+          </category-item-btn>
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="delete item"
+            icon="fas fa-trash-alt"
             @click="openConfirmDeleteDialog"
-          >
-            <v-icon>fas fa-times</v-icon>
-          </v-btn>
+          />
         </v-toolbar-items>
       </v-toolbar>
       <v-layout column class="pa-3">
@@ -101,10 +90,12 @@
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
+import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 
 @Component({
   components: {
-    ConfirmDialog
+    ConfirmDialog,
+    CategoryItemBtn
   }
 })
 export default class CategoryItemToolbar extends Vue {

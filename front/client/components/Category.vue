@@ -39,13 +39,12 @@
           :link="value.link"
           :name="value.name"
           :group="value.group"
-          :itemDescriptionHtml="value.description.html"
-          :itemDescriptionText="value.description.text"
+          :description="value.description"
           :pros="value.pros"
           :cons="value.cons"
-          :ecosystem="value.ecosystem.html"
-          :tocArray="value.toc"
-          :notes="value.notes.html"
+          :ecosystem="value.ecosystem"
+          :toc="value.toc"
+          :notes="value.notes"
           :kind="value.kind"
         />
       </template>
@@ -75,13 +74,12 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
 import category from 'client/store/modules/category'
 
 @Component({
-  name: 'category-component',
   components: {
     CategoryItem,
     AddItemDialog
   }
 })
-export default class categoryItem extends Vue {
+export default class Category extends Vue {
   @Prop(String) categoryId!: string
 
   isDialogOpen: boolean = false
@@ -115,7 +113,7 @@ export default class categoryItem extends Vue {
 .category-top {
   display: flex;
   align-items: center;
-  margin: 0 0 45px;
+  margin: 0 0 5px;
 }
 
 .category-top-data {
@@ -156,12 +154,12 @@ export default class categoryItem extends Vue {
 }
 
 .category-wrapper {
-  width: 800px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
 .category-description {
-  margin: 0 0 60px;
+  margin: 0 0 40px;
 }
 
 .category-description >>> p {

@@ -65,7 +65,7 @@ export default class AddItemDialog extends Vue {
   isValid: boolean = false
 
   @Watch('value')
-  onOpen (newVal: boolean) {
+  onOpen () {
     this.itemName = ''
   }
 
