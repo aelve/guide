@@ -89,6 +89,7 @@
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import normalizeUrl from 'normalize-url'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 
@@ -110,6 +111,10 @@ export default class CategoryItemToolbar extends Vue {
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
 
+  get isItemInfoEdited () {
+    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
+  }
+
   @Watch('itemName')
   onItemNameChange (newVal: string) {
     this.itemNameEdit = newVal
@@ -128,16 +133,16 @@ export default class CategoryItemToolbar extends Vue {
     this.isDeleteItemDialogOpen = true
   }
 
-  get isItemInfoEdited () {
-    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
-  }
-
   async saveItemInfo (): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemInfo', {
       id: this.itemUid,
       body: {
         name: this.itemNameEdit,
-        link: this.itemLinkEdit,
+        // If link was changed we normalize it
+        // otherwise leave it as it was
+        link: this.itemLink !== this.itemLinkEdit
+          ? normalizeUrl(this.itemLinkEdit)
+          : this.itemLink,
         // TODO remove next two lines after changing API of editing item info
         // https://www.notion.so/aelve/Tasks-a157d6e3f22241ae83cf624fec3aaad5?p=fe081421dcf844e79e8877d9f4a103ad
         created: '2016-07-22T00:00:00Z',
