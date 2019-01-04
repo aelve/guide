@@ -60,7 +60,7 @@
                 :href="`#${value.slug}`"
                 @click="expandNotes"
               >
-                <p>{{value.constent.html}}</p>
+                <p>{{value.content.html}}</p>
               </a>
             </li>
           </ul>
