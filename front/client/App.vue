@@ -65,6 +65,9 @@ a:hover {
 .text-transform-none {
   text-transform: none !important;
 }
+.position-relative {
+  position: relative;
+}
 div.sourceCode {
   overflow-x: auto;
 }
