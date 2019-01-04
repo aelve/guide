@@ -22,11 +22,18 @@
         />
       </category-item-section>
 
-      <category-item-traits
-        :itemId="itemUid"
-        :cons="cons"
-        :pros="pros"
-      />
+      <div class="category-item-traits">
+        <category-item-traits
+          type="pro"
+          :itemId="itemUid"
+          :traits="pros"
+        />
+        <category-item-traits
+          type="con"
+          :itemId="itemUid"
+          :traits="cons"
+        />
+      </div>
 
       <category-item-section
         title="Ecosystem"
@@ -174,6 +181,18 @@ export default class CategoryItem extends Vue {
 .category-item {
   background: #e5e5e5;
   margin: 0 0 40px;
+}
+
+.category-item-traits {
+  display: flex;
+}
+
+.category-item-traits > * {
+  flex: 1;
+}
+
+.category-item-traits > *:not(:last-child) {
+  margin-right: 20px;
 }
 
 @media screend and (max-width: 768px) {
