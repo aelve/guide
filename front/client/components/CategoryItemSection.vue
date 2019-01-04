@@ -80,8 +80,4 @@ export default class CategoryItemSection extends Vue {
 .category-item-section:not(:last-child) {
   margin-bottom: 15px;
 }
->>> h1 {
-  font-size: 16px;
-  font-weight: 700;
-}
 </style>
