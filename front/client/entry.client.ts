@@ -8,21 +8,13 @@ import { createApp } from './app'
 const { app, router, store } = createApp()
 
 const STATE_KEY = '__INITIAL_STATE__'
-const SSR_ENABLED = window['__SSR_IS_ON__']
 
 if (window[STATE_KEY]) {
   store.replaceState(window[STATE_KEY])
 }
 
-if (!SSR_ENABLED) {
-  registerBeforeResolve()
-}
-
 router.onReady(() => {
-  // TODO get rid of SSR_ENABLED constant
-  if (SSR_ENABLED) {
-    registerBeforeResolve()
-  }
+  registerBeforeResolve()
   app.$mount('#app')
 })
 
