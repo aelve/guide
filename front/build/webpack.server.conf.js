@@ -7,7 +7,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const VueServerPlugin = require('vue-server-renderer/server-plugin')
 const axios = require('axios')
 const { distPath, env, ssrPort } = require('./build-config')
-const { cssLoader, stylusLoader } = require('./style-loader.conf')
 const baseConfig = require('./webpack.base.conf')
 
 axios.defaults.baseURL = `http://localhost:${ssrPort}`
@@ -32,12 +31,6 @@ const webpackConfig = merge(baseConfig, {
       /babel-polyfill/
     ]
   }),
-
-  module: {
-    rules: [
-      cssLoader, stylusLoader
-    ]
-  },
 
   plugins: [
     new VueServerPlugin(),
