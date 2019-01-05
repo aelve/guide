@@ -186,7 +186,7 @@ HTML: item-info-edit-form
   <label for="hackage">
     Name on Hackage
   </label>
-  <input id="hackage" name="hackage" value="{{name_on_hackage}}"
+  <input id="hackage" name="hackage" value="{{item.hackage}}"
           type="text" autocomplete="off">
 
   <label for="site">

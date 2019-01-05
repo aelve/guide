@@ -7,7 +7,7 @@ Required context:
 
   * item.link
     item.name
-    name_on_hackage
+    item.kind.contents (optional)
 
 
 HTML
@@ -21,7 +21,7 @@ HTML
 {{/ item.link }}
 
 {{! if the item is on Hackage, let's provide a link }}
-{{# hackage }}
-  {{ hackageLink = [|https://hackage.haskell.org/package/{{name_on_hackage}}|] }}
+{{# item.hackage }}
+  {{ hackageLink = [|https://hackage.haskell.org/package/{{item.hackage}}|] }}
   (<a href="{{hackageLink}}">Hackage</a>)
-{{/ hackage }}
+{{/ item.hackage }}
