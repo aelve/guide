@@ -39,7 +39,7 @@
           :link="value.link"
           :name="value.name"
           :group="value.group"
-          :itemDescription="value.description.html"
+          :itemDescription="value.summary.html"
           :pros="value.pros"
           :cons="value.cons"
           :ecosystem="value.ecosystem.html"
