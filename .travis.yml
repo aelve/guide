@@ -69,18 +69,18 @@ jobs:
         - stack --no-terminal test
         - make back/test-db
 
-    - stage: "Build and test the frontend"
-      before_script:
-        # Install dependencies
-        - cd front
-        - npm install
-        - "export DISPLAY=:99.0"
-        - "sh -e /etc/init.d/xvfb start"
-        - sleep 10
-        - fluxbox >/dev/null 2>&1 &
-      script:
-        # Run testcafe e2e testing
-        - npm run test
+    # - stage: "Build and test the frontend"
+    #   before_script:
+    #     # Install dependencies
+    #     - cd front
+    #     - npm install
+    #     - "export DISPLAY=:99.0"
+    #     - "sh -e /etc/init.d/xvfb start"
+    #     - sleep 10
+    #     - fluxbox >/dev/null 2>&1 &
+    #   script:
+    #     # Run testcafe e2e testing
+    #     - npm run test
 
 notifications:
   slack:
