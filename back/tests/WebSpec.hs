@@ -251,7 +251,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
   openGuide "/"
   wd "create a test category" $ do
     createCategory "Item test category"
-  wd "add a new item" $ do
+  wd "add new items" $ do
     createItem "An item"
   let item1 = Index 0 ".item"
 
@@ -283,6 +283,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
         setItemCustomGroup "some group" item1
       -- TODO: check that it works with 2 groups etc
       wd "is automatically put into all items' choosers" $ do
+        createItem "Another item"
         -- TODO: make a combinator for this
         items <- selectAll ".item"
         waitUntil wait_delay $ expect (length items >= 2)
@@ -384,17 +385,20 @@ itemTests = session "items" $ using [chromeCaps] $ do
 
   describe "items with the same name" $ do
     wd "can be present" $ do
-      createItem "item1"
+      createItem "same name"
+      createItem "same name"
       waitUntil wait_delay $
         expect . (== 2) . length =<< selectAll
-          (itemName ".item" :& HasText "item1")
+          (itemName ".item" :& HasText "same name")
     wd "can be changed separately" $ do
-      item2 <- select $
-        Index 1 (".item" :<// (".item-name" :& HasText "item1"))
-      form <- openItemEditForm item2
+      itemA <- select $
+        Index 0 (".item" :<// (".item-name" :& HasText "same name"))
+      itemB <- select $
+        Index 1 (".item" :<// (".item-name" :& HasText "same name"))
+      form <- openItemEditForm itemB
       enterInput "Blah" (form :// ByName "name")
-      itemName item1 `shouldHaveText` "item1"
-      itemName item2 `shouldHaveText` "Blah"
+      itemName itemA `shouldHaveText` "same name"
+      itemName itemB `shouldHaveText` "Blah"
   describe "moving items" $ do
     let getId :: CanSelect a => a -> WD Text
         getId x = attr x "id" >>= \case
