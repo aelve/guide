@@ -30,8 +30,8 @@ module Guide.Types.Core
     cons,
     consDeleted,
     ecosystem,
+    hackage,
     link,
-    kind,
   Hue(..),
     hueToDarkColor,
     hueToLightColor,
@@ -50,7 +50,7 @@ module Guide.Types.Core
   hasUid,
   content,
   name,
-  description,
+  summary,
   notes,
   created,
   group_,
@@ -179,7 +179,8 @@ data Item = Item {
   _itemName        :: Text,            -- ^ Item title
   _itemCreated     :: UTCTime,         -- ^ When the item was created
   _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
-  _itemDescription :: MarkdownBlock,   -- ^ Item summary
+  _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
+  _itemSummary     :: MarkdownBlock,   -- ^ Item summary
   _itemPros        :: [Trait],         -- ^ Pros (positive traits)
   _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
                                        --   it'd be easy to restore them)
@@ -187,15 +188,26 @@ data Item = Item {
   _itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
   _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
   _itemNotes       :: MarkdownTree,    -- ^ The notes section
-  _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
-  _itemKind        :: ItemKind         -- ^ Is it a library, tool, etc
+  _itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
   deriving (Show, Generic, Data)
 
-deriveSafeCopySorted 11 'extension ''Item
+deriveSafeCopySorted 12 'extension ''Item
 makeFields ''Item
 
-changelog ''Item (Current 11, Past 10) []
+changelog ''Item (Current 12, Past 11)
+  [Removed "_itemKind"  [t|ItemKind|],
+   Added "_itemHackage" [hs|
+     case _itemKind of
+       Library m -> m
+       Tool m -> m
+       Other -> Nothing |],
+   Removed "_itemDescription" [t|MarkdownBlock|],
+   Added "_itemSummary" [hs|
+     _itemDescription |] ]
+deriveSafeCopySorted 11 'extension ''Item_v11
+
+changelog ''Item (Past 11, Past 10) []
 deriveSafeCopySorted 10 'base ''Item_v10
 
 instance A.ToJSON Item where

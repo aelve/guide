@@ -35,17 +35,15 @@ export interface ICategoryItem {
   ecosystem: object
   notes: object
   link?: string
-  kind: object
-
+  hackage: string
 }
 
 export interface ICategoryItemInfo {
-
   uid?: string
   name?: string
   created?: string
   link?: string
-  kind?: object
+  hackage?: string
 }
 
 export interface ITrait {

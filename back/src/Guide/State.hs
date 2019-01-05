@@ -55,9 +55,8 @@ module Guide.State
   SetItemName(..),
   SetItemLink(..),
   SetItemGroup(..),
-  SetItemKind(..),
---   SetItemHackage(..),
-  SetItemDescription(..),
+  SetItemHackage(..),
+  SetItemSummary(..),
   SetItemNotes(..),
   SetItemEcosystem(..),
   -- *** 'Trait'
@@ -378,15 +377,15 @@ addItem
   -> Uid Item        -- ^ New item's id
   -> Text            -- ^ Name
   -> UTCTime         -- ^ Creation time
-  -> ItemKind        -- ^ Kind
   -> Acid.Update GlobalState (Edit, Item)
-addItem catId itemId name' created' kind' = do
+addItem catId itemId name' created' = do
   let newItem = Item {
         _itemUid         = itemId,
         _itemName        = name',
         _itemCreated     = created',
         _itemGroup_      = Nothing,
-        _itemDescription = toMarkdownBlock "",
+        _itemHackage     = Nothing,
+        _itemSummary     = toMarkdownBlock "",
         _itemPros        = [],
         _itemProsDeleted = [],
         _itemCons        = [],
@@ -394,9 +393,7 @@ addItem catId itemId name' created' kind' = do
         _itemEcosystem   = toMarkdownBlock "",
         _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
                            in  toMarkdownTree pref "",
-        _itemLink        = Nothing,
-        _itemKind        = kind'}
-        -- _itemHackage     = Nothing }
+        _itemLink        = Nothing}
   categoryById catId . items %= (++ [newItem])
   let edit = Edit'AddItem catId itemId name'
   return (edit, newItem)
@@ -513,23 +510,17 @@ setItemGroup itemId newGroup = do
   let edit = Edit'SetItemGroup itemId oldGroup newGroup
   (edit,) <$> use itemLens
 
-setItemKind :: Uid Item -> ItemKind -> Acid.Update GlobalState (Edit, Item)
-setItemKind itemId kind' = do
-  oldKind <- itemById itemId . kind <<.= kind'
-  let edit = Edit'SetItemKind itemId oldKind kind'
-  (edit,) <$> use (itemById itemId)
+setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
+setItemHackage itemId hackage' = do
+    oldName <- itemById itemId . hackage <<.= hackage'
+    let edit = Edit'SetItemHackage itemId oldName hackage'
+    (edit,) <$> use (itemById itemId)
 
--- setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
--- setItemHackage itemId hackage' = do
---     oldName <- itemById itemId . hackage <<.= hackage'
---     let edit = Edit'SetItemHackage itemId oldName hackage'
---     (edit,) <$> use (itemById itemId)
-
-setItemDescription :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
-setItemDescription itemId description' = do
-  oldDescr <- itemById itemId . description <<.=
+setItemSummary :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
+setItemSummary itemId description' = do
+  oldDescr <- itemById itemId . summary <<.=
                 toMarkdownBlock description'
-  let edit = Edit'SetItemDescription itemId
+  let edit = Edit'SetItemSummary itemId
                (oldDescr ^. mdSource) description'
   (edit,) <$> use (itemById itemId)
 
@@ -898,8 +889,7 @@ makeAcidic ''GlobalState [
   'setGlobalState,
   'setCategoryTitle, 'setCategoryGroup, 'setCategoryNotes, 'setCategoryStatus,
     'changeCategoryEnabledSections,
-  'setItemName, 'setItemLink, 'setItemGroup, 'setItemKind, --'setItemHackage,
-    'setItemDescription, 'setItemNotes, 'setItemEcosystem,
+  'setItemName, 'setItemLink, 'setItemGroup, 'setItemHackage, 'setItemSummary, 'setItemNotes, 'setItemEcosystem,
   'setTraitContent,
   -- delete
   'deleteCategory,

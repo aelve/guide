@@ -13,10 +13,7 @@ Required context:
 
   * link_to_item = e.g. /haskell/lenses-pt3tvnwt#item-e4t2tv2n
 
-  * possible_kinds = e.g.
-      [ {"name": "library", "caption": "Library", "selected": false}
-      , {"name": "tool", ...
-      ... ]
+  * hackage
 
   * category_groups = e.g.
       [ {"name": "POSIX", "selected": false}
@@ -186,20 +183,10 @@ HTML: item-info-edit-form
   <input id="name" name="name" value="{{item.name}}"
           type="text" autocomplete="off">
 
-  <label for="kind">
-    Kind
-  </label>
-  <select id="kind" name="kind" autocomplete="off">
-    {{! possible_kinds would have stuff like “library”, “tool”, “other” }}
-    {{#possible_kinds}}
-      <option value="{{name}}" {{%selectIf selected}}>{{caption}}</option>
-    {{/possible_kinds}}
-  </select>
- 
-  <label for="hackage-name">
+  <label for="hackage">
     Name on Hackage
   </label>
-  <input id="hackage-name" name="hackage-name" value="{{#item.kind.hackageName}}{{.}}{{/item.kind.hackageName}}"
+  <input id="hackage" name="hackage" value="{{item.hackage}}"
           type="text" autocomplete="off">
 
   <label for="site">
@@ -207,7 +194,7 @@ HTML: item-info-edit-form
   </label>
   <input id="site" name="link" value="{{item.link}}"
           type="text" autocomplete="off">
-  
+
 <div class="form-group">
   <label for="group">
     Group
@@ -222,7 +209,7 @@ HTML: item-info-edit-form
     {{/ category_groups }}
     <option value="">New group...</option>
     </select>
-  
+
   <input hidden class="custom-group-input" name="custom-group"
          type="text" autocomplete="off">
   </div>

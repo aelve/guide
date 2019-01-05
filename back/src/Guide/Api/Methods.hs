@@ -109,13 +109,8 @@ createItem db requestDetails catId name' = do
   _ <- getCategoryOrFail db catId
   when (T.null name') $ throwError err400{errBody = "Name not provided"}
   itemId <- randomShortUid
-  -- If the item name looks like a Hackage library, assume it's a Hackage
-  -- library.
-  let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-      looksLikeLibrary = T.all isAllowedChar name'
-      kind' = if looksLikeLibrary then Library (Just name') else Other
   time <- liftIO getCurrentTime
-  (edit, _) <- dbUpdate db (AddItem catId itemId name' time kind')
+  (edit, _) <- dbUpdate db (AddItem catId itemId name' time)
   addEdit db requestDetails edit
   pure itemId
 
@@ -129,16 +124,16 @@ setItemInfo db requestDetails itemId CItemInfo{..} = do
   (editName, _) <- dbUpdate db $ SetItemName itemId $ unH ciiName
   (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
   (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-  (editKind, _) <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
-  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editKind]
+  (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
+  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editHackage]
   pure NoContent
 
 -- | Set item's summary.
 setItemSummary :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary db requestDetails itemId CTextEdit{..} = do
-  serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
+  serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (edit, _) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemSummary itemId $ unH cteModified)
   addEdit db requestDetails edit
   pure NoContent
 

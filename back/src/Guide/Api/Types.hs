@@ -370,8 +370,8 @@ data CItemInfo = CItemInfo
   , ciiName    :: Text       ? "Item name"
   , ciiCreated :: UTCTime    ? "When the item was created"
   , ciiGroup   :: Maybe Text ? "Item group"
+  , ciiHackage :: Maybe Text ? "Package name on Hackage"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
-  , ciiKind    :: ItemKind   ? "Item kind, e.g. library, ..."
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
@@ -389,13 +389,13 @@ data CItemFull = CItemFull
   , cifName        :: Text                     ? "Item name"
   , cifCreated     :: UTCTime                  ? "When the item was created"
   , cifGroup       :: Maybe Text               ? "Item group"
-  , cifDescription :: CMarkdown                ? "Item summary (Markdown)"
+  , cifHackage     :: Maybe Text               ? "Package name on Hackage"
+  , cifSummary     :: CMarkdown                ? "Item summary (Markdown)"
   , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
   , cifCons        :: [CTrait]                 ? "Cons (negative traits)"
   , cifEcosystem   :: CMarkdown                ? "The ecosystem description (Markdown)"
   , cifNotes       :: CMarkdown                ? "Notes (Markdown)"
   , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
-  , cifKind        :: ItemKind                 ? "Item kind, e.g. library, ..."
   , cifToc         :: Forest CHeading          ? "Table of contents"
   } deriving (Show, Generic)
 
@@ -412,8 +412,8 @@ toCItemInfo Item{..} = CItemInfo
   , ciiName        = H $ _itemName
   , ciiCreated     = H $ _itemCreated
   , ciiGroup       = H $ _itemGroup_
+  , ciiHackage     = H $ _itemHackage
   , ciiLink        = H $ _itemLink
-  , ciiKind        = H $ _itemKind
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'
@@ -423,13 +423,13 @@ toCItemFull Item{..} = CItemFull
   , cifName        = H $ _itemName
   , cifCreated     = H $ _itemCreated
   , cifGroup       = H $ _itemGroup_
-  , cifDescription = H $ toCMarkdown _itemDescription
+  , cifHackage     = H $ _itemHackage
+  , cifSummary     = H $ toCMarkdown _itemSummary
   , cifPros        = H $ fmap toCTrait _itemPros
   , cifCons        = H $ fmap toCTrait _itemCons
   , cifEcosystem   = H $ toCMarkdown _itemEcosystem
   , cifNotes       = H $ toCMarkdown _itemNotes
   , cifLink        = H $ _itemLink
-  , cifKind        = H $ _itemKind
   , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
   where
@@ -584,7 +584,7 @@ instance ToSchema CSRCategory where
 data CSRItem = CSRItem
   { csriCategory    :: CCategoryInfo   ? "Category that the item belongs to"
   , csriInfo        :: CItemInfo       ? "Info about the item"
-  , csriDescription :: Maybe CMarkdown ? "Item description (if the match was found there)"
+  , csriSummary     :: Maybe CMarkdown ? "Item summary (if the match was found there)"
   , csriEcosystem   :: Maybe CMarkdown ? "Item ecosystem (if the match was found there)"
   } deriving (Show, Generic)
 
@@ -611,7 +611,7 @@ toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
     , csriInfo        = H $ toCItemInfo item
-    , csriDescription = H $ Just (toCMarkdown (item ^. G.description))
+    , csriSummary     = H $ Just (toCMarkdown (item ^. G.summary))
     , csriEcosystem   = H $ Nothing
     }
 -- TODO: currently if there are matches in both item description and item
@@ -620,7 +620,7 @@ toCSearchResult (SRItemEcosystem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = H $ toCCategoryInfo cat
     , csriInfo        = H $ toCItemInfo item
-    , csriDescription = H $ Nothing
+    , csriSummary     = H $ Nothing
     , csriEcosystem   = H $ Just (toCMarkdown (item ^. ecosystem))
     }
 

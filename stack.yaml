@@ -34,7 +34,7 @@ extra-deps:
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
 
 - git: https://github.com/aelve/safecopy-migrate
-  commit: c401315122f04624e5e848d77f9eaa948e38c21b
+  commit: 3971922c75ce2ca751b3da1653fefa109b746e21
 
 # Fork of 'servant-swagger' with some changes (see its README)
 - git: https://github.com/aelve/servant-swagger

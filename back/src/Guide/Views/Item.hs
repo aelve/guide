@@ -79,8 +79,8 @@ renderItemForFeed
   => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item
-  unless (markdownNull (item^.description)) $
-    toHtml (item^.description)
+  unless (markdownNull (item^.summary)) $
+    toHtml (item^.summary)
   when (ItemProsConsSection `elem` category^.enabledSections) $ do
     h2_ "Pros"
     ul_ $ mapM_ (p_ . li_ . toHtml . view content) (item^.pros)
@@ -112,21 +112,11 @@ renderItemTitle item =
 -- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item =
-  let itemkindname :: Text
-      itemkindname = case item^.kind of
-        Library{} -> "library"
-        Tool{}    -> "tool"
-        Other{}   -> "other"
-  in mustache "item-info" $ A.object [
+  mustache "item-info" $ A.object [
     "category" A..= cat,
     "item" A..= item,
     "link_to_item" A..= itemLink cat item,
-    "possible_kinds" A..= do
-        kindname <- ["library", "tool", "other"]
-        return $ A.object [
-          "name" A..= kindname,
-          "caption" A..= over _head toUpper kindname,
-          "selected" A..= (itemkindname == kindname) ],
+    "hackage" A..= (item^.hackage),
     "category_groups" A..= do
         gr <- M.keys (cat^.groups)
         return $ A.object [

@@ -1,7 +1,7 @@
 import { Selector } from 'testcafe'
 
 fixture`ItemAddDelete`
-  .page`http://localhost:5000/haskell`
+  .page`http://localhost:5000/haskell/data-structures-fum5aqch`
 
 const newItemName = 'mytest-' + new Date().toISOString()
 
@@ -17,9 +17,10 @@ test('Add New Item to category', async t => {
   const articleHeadings = Selector('.article-hd-textlg')
   const articleHeadingsCount = await articleHeadings.count
 
-  for (let i = 0; i < articleHeadingsCount; i++) {
-    await t.expect(Selector('.article-hd-textlg').nth(i).innerText).contains(newItemName)
-  }
+  // for (let i = 0; i < articleHeadingsCount; i++) {
+  //   await t.expect(Selector('.article-hd-textlg').nth(i).innerText).contains(newItemName)
+  // }
+  await t.expect(Selector('.article-hd-textlg').nth(articleHeadingsCount - 1).innerText).contains(newItemName)
 })
 
 test('Delete Item from category', async t => {

@@ -465,11 +465,11 @@ renderEdit globalState edit = do
       "changed group of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldGroup))
       " to "   >> code_ (toHtml (show newGroup))
-    Edit'SetItemKind itemId oldKind newKind -> p_ $ do
-      "changed kind of item " >> printItem itemId
-      " from " >> code_ (toHtml (show oldKind))
-      " to "   >> code_ (toHtml (show newKind))
-    Edit'SetItemDescription itemId oldDescr newDescr -> do
+    Edit'SetItemHackage itemId oldHackage newHackage -> p_ $ do
+      "changed Hackage name of item " >> printItem itemId
+      " from " >> code_ (toHtml (show oldHackage))
+      " to "   >> code_ (toHtml (show newHackage))
+    Edit'SetItemSummary itemId oldDescr newDescr -> do
       p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId
       renderDiff oldDescr newDescr
@@ -749,7 +749,7 @@ renderSearchResult r = do
         a_ [class_ "item-link", href_ (itemLink cat item)] $
           toHtml (item^.name)
         div_ [class_ "description notes-like"] $
-          toHtml (item^.description)
+          toHtml (item^.summary)
       SRItemEcosystem cat item -> do
         a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
           toHtml (cat^.title)
