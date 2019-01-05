@@ -33,6 +33,7 @@ module Guide.Api.Types
   , CSearchResult(..), toCSearchResult
 
   -- * Other types
+  , Move(..)
   , TraitType(..)
   , CTextEdit(..)
   , CMergeConflict(..)
@@ -196,6 +197,15 @@ data ItemSite route = ItemSite
       :> "item"
       :> Capture "id" (Uid Item)
       :> Delete '[JSON] NoContent
+
+  , _moveItem :: route :-
+      Summary "Move item"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "move"
+      :> Capture "type" Move
+      :> Put '[JSON] NoContent
   }
   deriving (Generic)
 
@@ -233,6 +243,18 @@ data TraitSite route = TraitSite
       :> "trait"
       :> Capture "id" (Uid Trait)
       :> Delete '[JSON] NoContent
+
+  , _moveTrait :: route :-
+      Summary "Move trait"
+      :> ErrorResponse 404 "Item not found"
+      :> ErrorResponse 404 "Trait not found"
+      :> "item"
+      :> Capture "item" (Uid Item)
+      :> "trait"
+      :> Capture "id" (Uid Trait)
+      :> "move"
+      :> Capture "type" Move
+      :> Put '[JSON] NoContent
   }
   deriving (Generic)
 
@@ -263,7 +285,7 @@ instance ToSchema TraitType where
 
 instance ToParamSchema TraitType where
     toParamSchema _ = mempty
-        & S.type_ .~ SwaggerString
+        & S.type_  .~ SwaggerString
         & S.format ?~ "Trait type"
 
 instance ToHttpApiData TraitType where
@@ -274,6 +296,27 @@ instance FromHttpApiData TraitType where
         "pro" -> Right Pro
         "con" -> Right Con
         _     -> Left "Invalid trait type!"
+
+-- | Move (Upper/Lower) item or trait and their instances.
+data Move = Upper | Lower -- 'Down' is busy.
+    deriving (Eq, Show, Generic)
+
+instance ToSchema Move where
+    declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+instance ToParamSchema Move where
+    toParamSchema _ = mempty
+        & S.type_  .~ SwaggerString
+        & S.format ?~ "Move"
+
+instance ToHttpApiData Move where
+    toUrlPiece = toText . map toLower . show
+
+instance FromHttpApiData Move where
+    parseUrlPiece t = case t of
+        "up"   -> Right Upper
+        "down" -> Right Lower
+        _      -> Left "Invalid move type!"
 
 ----------------------------------------------------------------------------
 -- Client types
