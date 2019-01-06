@@ -25,6 +25,9 @@ const actions: ActionTree<ICategoryState, any> = {
     { commit }: ActionContext<ICategoryState, any>,
     categoryId: ICategoryInfo['uid']
   ): Promise<any> {
+    // So we dont see old article summary
+    commit('setCategory', {})
+
     const data: ICategoryFull = await CategoryService.getCategoryById(categoryId)
     // TODO create set function for all the store
     commit('setCategory', data)

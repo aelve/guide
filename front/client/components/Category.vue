@@ -142,7 +142,7 @@
           <category-item
             :kind="value.name"
             :group="value.group"
-            :itemDescription="value.description.html"
+            :itemDescription="value.summary.html"
             :pros="value.pros"
             :cons="value.cons"
             :ecosystem="value.ecosystem.html"
@@ -217,11 +217,6 @@ export default class Category extends Vue {
   originalDescription: string = this.categoryDscMarkdown
   modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
 
-  // clean dumb old data
-  beforeCreate () {
-    // this.$store.replaceState({})
-  }
-
   async asyncData () {
     if (!this.categoryId) {
       return
@@ -231,11 +226,11 @@ export default class Category extends Vue {
   }
 
   get categoryDescription () {
-    return _get(this, '$store.state.category.category.description.html')
+    return _get(this, '$store.state.category.category.summary.html')
   }
 
   get categoryDscMarkdown () {
-    return _get(this, '$store.state.category.category.description.text')
+    return _get(this, '$store.state.category.category.summary.text')
   }
 
   get category () {
