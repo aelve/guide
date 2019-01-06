@@ -90,7 +90,7 @@
           solo
           name="input-7-4"
           label="Solo textarea"
-          :value="categoryDscMarkdown"
+          :value="textareaHasDescription"
           v-model="modifiedDescription"
           auto-grow
         />
@@ -214,6 +214,7 @@ export default class Category extends Vue {
   //   original: this.categoryDscMarkdown,
   //   modified: this.hasDescription
   // }
+  textareaHasDescription: string = ''
   originalDescription: string = this.categoryDscMarkdown
   modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
 
@@ -226,11 +227,12 @@ export default class Category extends Vue {
   }
 
   get categoryDescription () {
-    return _get(this, '$store.state.category.category.summary.html')
+    this.textareaHasDescription = _get(this, '$store.state.category.category.description.html')
+    return _get(this, '$store.state.category.category.description.html')
   }
 
   get categoryDscMarkdown () {
-    return _get(this, '$store.state.category.category.summary.text')
+    return _get(this, '$store.state.category.category.description.text')
   }
 
   get category () {
