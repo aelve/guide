@@ -53,13 +53,15 @@ guiderServer db requestDetails = Site
       , _setItemSummary   = setItemSummary db requestDetails
       , _setItemEcosystem = setItemEcosystem db requestDetails
       , _setItemNotes     = setItemNotes db requestDetails
-      , _deleteItem       = deleteItem db requestDetails }
+      , _deleteItem       = deleteItem db requestDetails
+      , _moveItem         = moveItem db requestDetails }
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
       { _createTrait = createTrait db requestDetails
       , _setTrait    = setTrait db requestDetails
-      , _deleteTrait = deleteTrait db requestDetails }
+      , _deleteTrait = deleteTrait db requestDetails
+      , _moveTrait   = moveTrait db requestDetails }
       :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite

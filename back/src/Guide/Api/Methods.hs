@@ -163,6 +163,14 @@ deleteItem db requestDetails itemId = do
     addEdit db requestDetails edit)
   pure NoContent
 
+-- | Move item up or down
+moveItem :: DB -> RequestDetails -> Uid Item -> CMove -> Guider NoContent
+moveItem db requestDetails itemId CMove{..} = do
+  _ <- getItemOrFail db itemId
+  edit <- dbUpdate db (MoveItem itemId (cmDirection == DirectionUp))
+  addEdit db requestDetails edit
+  pure NoContent
+
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
@@ -170,13 +178,13 @@ deleteItem db requestDetails itemId = do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
-createTrait :: DB -> RequestDetails -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
-createTrait db requestDetails itemId traitType text = do
-  when (T.null text) $ throwError err400{errBody = "Trait text not provided"}
+createTrait :: DB -> RequestDetails -> Uid Item -> CCreateTrait -> Guider (Uid Trait)
+createTrait db requestDetails itemId CCreateTrait{..} = do
+  when (T.null cctContent) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
-  (edit, _) <- case traitType of
-    Con -> dbUpdate db (AddCon itemId traitId text)
-    Pro -> dbUpdate db (AddPro itemId traitId text)
+  (edit, _) <- case cctType of
+    Con -> dbUpdate db (AddCon itemId traitId cctContent)
+    Pro -> dbUpdate db (AddPro itemId traitId cctContent)
   addEdit db requestDetails edit
   pure traitId
 
@@ -195,6 +203,14 @@ deleteTrait db requestDetails itemId traitId = do
   _ <- getTraitOrFail db itemId traitId
   dbUpdate db (DeleteTrait itemId traitId) >>= (mapM_ $ \edit -> do
     addEdit db requestDetails edit)
+  pure NoContent
+
+-- | Move trait up or down
+moveTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> CMove -> Guider NoContent
+moveTrait db requestDetails itemId traitId CMove{..} = do
+  _ <- getTraitOrFail db itemId traitId
+  edit <- dbUpdate db (MoveTrait itemId traitId (cmDirection == DirectionUp))
+  addEdit db requestDetails edit
   pure NoContent
 
 ----------------------------------------------------------------------------
