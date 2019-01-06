@@ -205,7 +205,7 @@ deleteTrait db requestDetails itemId traitId = do
     addEdit db requestDetails edit)
   pure NoContent
 
--- | Move trait upper or lower
+-- | Move trait up or down
 moveTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> Move -> Guider NoContent
 moveTrait db requestDetails itemId traitId Move{..} = do
   _ <- getTraitOrFail db itemId traitId
