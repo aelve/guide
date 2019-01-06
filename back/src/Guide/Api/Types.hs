@@ -309,7 +309,7 @@ instance A.FromJSON Direction where
   parseJSON = \case
     "up"   -> pure DirectionUp
     "down" -> pure DirectionDown
-    tag    -> fail ("unknown tag " ++ show tag)
+    tag    -> fail ("unknown direction " ++ show tag)
 
 ----------------------------------------------------------------------------
 -- Client types
