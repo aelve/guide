@@ -96,7 +96,7 @@ data CategorySite route = CategorySite
       Summary "Get contents of a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "category id" (Uid Category)
+      :> Capture "categoryId" (Uid Category)
       :> Get '[JSON] CCategoryFull
 
   , _createCategory :: route :-
@@ -119,7 +119,7 @@ data CategorySite route = CategorySite
       Summary "Edit category's notes"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "category id" (Uid Category)
+      :> Capture "categoryId" (Uid Category)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -129,7 +129,7 @@ data CategorySite route = CategorySite
       Summary "Set category's fields"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "category id" (Uid Category)
+      :> Capture "categoryId" (Uid Category)
       :> "info"
       :> ReqBody '[JSON] CCategoryInfoEdit
       :> Put '[JSON] NoContent
@@ -138,7 +138,7 @@ data CategorySite route = CategorySite
       Summary "Delete a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "category id" (Uid Category)
+      :> Capture "categoryId" (Uid Category)
       :> Delete '[JSON] NoContent
   }
   deriving (Generic)
@@ -150,7 +150,7 @@ data ItemSite route = ItemSite
       :> Description "Returns the ID of the created item."
       :> ErrorResponse 400 "'name' not provided"
       :> "item"
-      :> Capture "category id" (Uid Category)
+      :> Capture "categoryId" (Uid Category)
       :> QueryParam' '[Required, Strict] "name" Text
       :> Post '[JSON] (Uid Item)
 
@@ -158,7 +158,7 @@ data ItemSite route = ItemSite
       Summary "Set item's info"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "info"
       :> ReqBody '[JSON] CItemInfo
       :> Put '[JSON] NoContent
@@ -167,7 +167,7 @@ data ItemSite route = ItemSite
       Summary "Set item's summary"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "summary"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -177,7 +177,7 @@ data ItemSite route = ItemSite
       Summary "Set item's ecosystem"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "ecosystem"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -187,7 +187,7 @@ data ItemSite route = ItemSite
       Summary "Set item's notes"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -197,14 +197,14 @@ data ItemSite route = ItemSite
       Summary "Delete an item"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> Delete '[JSON] NoContent
 
   , _moveItem :: route :-
       Summary "Move item"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "move"
       :> ReqBody '[JSON] CMove
       :> Post '[JSON] NoContent
@@ -218,7 +218,7 @@ data TraitSite route = TraitSite
       :> Description "Returns the ID of the created trait."
       :> ErrorResponse 400 "'text' not provided"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "trait"
       :> ReqBody '[JSON] CCreateTrait
       :> Post '[JSON] (Uid Trait)
@@ -228,9 +228,9 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "trait"
-      :> Capture "trait id" (Uid Trait)
+      :> Capture "traitId" (Uid Trait)
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
@@ -240,9 +240,9 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "trait"
-      :> Capture "trait id" (Uid Trait)
+      :> Capture "traitId" (Uid Trait)
       :> Delete '[JSON] NoContent
 
   , _moveTrait :: route :-
@@ -250,9 +250,9 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item id" (Uid Item)
+      :> Capture "itemId" (Uid Item)
       :> "trait"
-      :> Capture "trait id" (Uid Trait)
+      :> Capture "traitId" (Uid Trait)
       :> "move"
       :> ReqBody '[JSON] CMove
       :> Post '[JSON] NoContent
