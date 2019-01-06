@@ -178,13 +178,13 @@ moveItem db requestDetails itemId Move{..} = do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
-createTrait :: DB -> RequestDetails -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
-createTrait db requestDetails itemId traitType text = do
-  when (T.null text) $ throwError err400{errBody = "Trait text not provided"}
+createTrait :: DB -> RequestDetails -> Uid Item -> CreateNewTrait -> Guider (Uid Trait)
+createTrait db requestDetails itemId CreateNewTrait{..} = do
+  when (T.null cntContent) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
-  (edit, _) <- case traitType of
-    Con -> dbUpdate db (AddCon itemId traitId text)
-    Pro -> dbUpdate db (AddPro itemId traitId text)
+  (edit, _) <- case cntType of
+    Con -> dbUpdate db (AddCon itemId traitId cntContent)
+    Pro -> dbUpdate db (AddPro itemId traitId cntContent)
   addEdit db requestDetails edit
   pure traitId
 

@@ -36,6 +36,7 @@ module Guide.Api.Types
   , Move(..)
   , Direction(..)
   , TraitType(..)
+  , CreateNewTrait(..)
   , CTextEdit(..)
   , CMergeConflict(..)
   )
@@ -219,8 +220,7 @@ data TraitSite route = TraitSite
       :> "item"
       :> Capture "item" (Uid Item)
       :> "trait"
-      :> Capture "type" TraitType
-      :> ReqBody '[JSON] Text
+      :> ReqBody '[JSON] CreateNewTrait
       :> Post '[JSON] (Uid Trait)
 
   , _setTrait :: route :-
@@ -284,19 +284,11 @@ data TraitType = Pro | Con
 instance ToSchema TraitType where
     declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
-instance ToParamSchema TraitType where
-    toParamSchema _ = mempty
-        & S.type_  .~ SwaggerString
-        & S.format ?~ "Trait type"
+instance A.ToJSON TraitType where
+  toJSON = A.genericToJSON jsonOptions
 
-instance ToHttpApiData TraitType where
-    toUrlPiece = toText . map toLower . show
-
-instance FromHttpApiData TraitType where
-    parseUrlPiece t = case t of
-        "pro" -> Right Pro
-        "con" -> Right Con
-        _     -> Left "Invalid trait type!"
+instance A.FromJSON TraitType where
+  parseJSON = A.genericParseJSON jsonOptions
 
 -- | Direction (Up/Down) for item or trait and their instances.
 data Direction = DirectionUp | DirectionDown
@@ -328,6 +320,21 @@ instance A.FromJSON Direction where
 -- to send these over the wire w/o having deep nested data,
 -- we might not need on front-end.
 ----------------------------------------------------------------------------
+
+-- | Client type to create new trait.
+data CreateNewTrait = CreateNewTrait
+  { cntType    :: TraitType
+  , cntContent :: Text
+  } deriving (Show, Generic)
+
+instance A.ToJSON CreateNewTrait where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CreateNewTrait where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema CreateNewTrait where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type to move trait or item up or down.
 data Move = Move
