@@ -163,7 +163,7 @@ deleteItem db requestDetails itemId = do
     addEdit db requestDetails edit)
   pure NoContent
 
--- | Move item upper or lower
+-- | Move item up or down
 moveItem :: DB -> RequestDetails -> Uid Item -> Move -> Guider NoContent
 moveItem db requestDetails itemId Move{..} = do
   _ <- getItemOrFail db itemId
