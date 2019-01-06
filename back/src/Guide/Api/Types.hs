@@ -34,6 +34,7 @@ module Guide.Api.Types
 
   -- * Other types
   , Move(..)
+  , Direction(..)
   , TraitType(..)
   , CTextEdit(..)
   , CMergeConflict(..)
@@ -204,8 +205,8 @@ data ItemSite route = ItemSite
       :> "item"
       :> Capture "item" (Uid Item)
       :> "move"
-      :> Capture "type" Move
-      :> Put '[JSON] NoContent
+      :> ReqBody '[JSON] Move
+      :> Post '[JSON] NoContent
   }
   deriving (Generic)
 
@@ -253,8 +254,8 @@ data TraitSite route = TraitSite
       :> "trait"
       :> Capture "id" (Uid Trait)
       :> "move"
-      :> Capture "type" Move
-      :> Put '[JSON] NoContent
+      :> ReqBody '[JSON] Move
+      :> Post '[JSON] NoContent
   }
   deriving (Generic)
 
@@ -297,26 +298,26 @@ instance FromHttpApiData TraitType where
         "con" -> Right Con
         _     -> Left "Invalid trait type!"
 
--- | Move (Upper/Lower) item or trait and their instances.
-data Move = Upper | Lower -- 'Down' is busy.
+-- | Direction (Up/Down) for item or trait and their instances.
+data Direction = DirectionUp | DirectionDown
     deriving (Eq, Show, Generic)
 
-instance ToSchema Move where
-    declareNamedSchema = genericDeclareNamedSchema schemaOptions
+instance ToSchema Direction where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+    { constructorTagModifier = \case
+        "DirectionUp" -> "up"
+        "DirectionDown" -> "down"
+        other -> error ("Direction schema: unknown tag " <> show other)
+    }
 
-instance ToParamSchema Move where
-    toParamSchema _ = mempty
-        & S.type_  .~ SwaggerString
-        & S.format ?~ "Move"
+instance A.ToJSON Direction where
+  toJSON = A.toJSON . drop (length ("Direction" :: String)) . show
 
-instance ToHttpApiData Move where
-    toUrlPiece = toText . map toLower . show
-
-instance FromHttpApiData Move where
-    parseUrlPiece t = case t of
-        "up"   -> Right Upper
-        "down" -> Right Lower
-        _      -> Left "Invalid move type!"
+instance A.FromJSON Direction where
+  parseJSON = \case
+    "up"   -> pure DirectionUp
+    "down" -> pure DirectionDown
+    tag    -> fail ("unknown tag " ++ show tag)
 
 ----------------------------------------------------------------------------
 -- Client types
@@ -327,6 +328,20 @@ instance FromHttpApiData Move where
 -- to send these over the wire w/o having deep nested data,
 -- we might not need on front-end.
 ----------------------------------------------------------------------------
+
+-- | Client type to move trait or item up or down.
+data Move = Move
+  { moveDirection :: Direction
+  } deriving (Show, Eq, Generic)
+
+instance A.ToJSON Move where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON Move where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema Move where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | A "light-weight" client type of 'Category', which describes a category
 -- but doesn't give the notes or the items.

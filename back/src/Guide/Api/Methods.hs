@@ -165,9 +165,9 @@ deleteItem db requestDetails itemId = do
 
 -- | Move item upper or lower
 moveItem :: DB -> RequestDetails -> Uid Item -> Move -> Guider NoContent
-moveItem db requestDetails itemId direction = do
+moveItem db requestDetails itemId Move{..} = do
   _ <- getItemOrFail db itemId
-  edit <- dbUpdate db (MoveItem itemId (direction == Upper))
+  edit <- dbUpdate db (MoveItem itemId (moveDirection == DirectionUp))
   addEdit db requestDetails edit
   pure NoContent
 
@@ -207,9 +207,9 @@ deleteTrait db requestDetails itemId traitId = do
 
 -- | Move trait upper or lower
 moveTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> Move -> Guider NoContent
-moveTrait db requestDetails itemId traitId direction = do
+moveTrait db requestDetails itemId traitId Move{..} = do
   _ <- getTraitOrFail db itemId traitId
-  edit <- dbUpdate db (MoveTrait itemId traitId (direction == Upper))
+  edit <- dbUpdate db (MoveTrait itemId traitId (moveDirection == DirectionUp))
   addEdit db requestDetails edit
   pure NoContent
 
