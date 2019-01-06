@@ -33,10 +33,10 @@ module Guide.Api.Types
   , CSearchResult(..), toCSearchResult
 
   -- * Other types
-  , Move(..)
-  , Direction(..)
-  , TraitType(..)
-  , CreateNewTrait(..)
+  , CMove(..)
+  , CDirection(..)
+  , CTraitType(..)
+  , CCreateTrait(..)
   , CTextEdit(..)
   , CMergeConflict(..)
   )
@@ -96,7 +96,7 @@ data CategorySite route = CategorySite
       Summary "Get contents of a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "id" (Uid Category)
+      :> Capture "category id" (Uid Category)
       :> Get '[JSON] CCategoryFull
 
   , _createCategory :: route :-
@@ -119,7 +119,7 @@ data CategorySite route = CategorySite
       Summary "Edit category's notes"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "id" (Uid Category)
+      :> Capture "category id" (Uid Category)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -129,7 +129,7 @@ data CategorySite route = CategorySite
       Summary "Set category's fields"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "id" (Uid Category)
+      :> Capture "category id" (Uid Category)
       :> "info"
       :> ReqBody '[JSON] CCategoryInfoEdit
       :> Put '[JSON] NoContent
@@ -138,7 +138,7 @@ data CategorySite route = CategorySite
       Summary "Delete a category"
       :> ErrorResponse 404 "Category not found"
       :> "category"
-      :> Capture "id" (Uid Category)
+      :> Capture "category id" (Uid Category)
       :> Delete '[JSON] NoContent
   }
   deriving (Generic)
@@ -150,7 +150,7 @@ data ItemSite route = ItemSite
       :> Description "Returns the ID of the created item."
       :> ErrorResponse 400 "'name' not provided"
       :> "item"
-      :> Capture "category" (Uid Category)
+      :> Capture "category id" (Uid Category)
       :> QueryParam' '[Required, Strict] "name" Text
       :> Post '[JSON] (Uid Item)
 
@@ -158,7 +158,7 @@ data ItemSite route = ItemSite
       Summary "Set item's info"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "info"
       :> ReqBody '[JSON] CItemInfo
       :> Put '[JSON] NoContent
@@ -167,7 +167,7 @@ data ItemSite route = ItemSite
       Summary "Set item's summary"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "summary"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -177,7 +177,7 @@ data ItemSite route = ItemSite
       Summary "Set item's ecosystem"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "ecosystem"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -187,7 +187,7 @@ data ItemSite route = ItemSite
       Summary "Set item's notes"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "notes"
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
@@ -197,16 +197,16 @@ data ItemSite route = ItemSite
       Summary "Delete an item"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "id" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> Delete '[JSON] NoContent
 
   , _moveItem :: route :-
       Summary "Move item"
       :> ErrorResponse 404 "Item not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "move"
-      :> ReqBody '[JSON] Move
+      :> ReqBody '[JSON] CMove
       :> Post '[JSON] NoContent
   }
   deriving (Generic)
@@ -218,9 +218,9 @@ data TraitSite route = TraitSite
       :> Description "Returns the ID of the created trait."
       :> ErrorResponse 400 "'text' not provided"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "trait"
-      :> ReqBody '[JSON] CreateNewTrait
+      :> ReqBody '[JSON] CCreateTrait
       :> Post '[JSON] (Uid Trait)
 
   , _setTrait :: route :-
@@ -228,9 +228,9 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "trait"
-      :> Capture "id" (Uid Trait)
+      :> Capture "trait id" (Uid Trait)
       :> ReqBody '[JSON] CTextEdit
       :> ErrorResponse 409 "Merge conflict occurred"
       :> Put '[JSON] NoContent
@@ -240,9 +240,9 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "trait"
-      :> Capture "id" (Uid Trait)
+      :> Capture "trait id" (Uid Trait)
       :> Delete '[JSON] NoContent
 
   , _moveTrait :: route :-
@@ -250,11 +250,11 @@ data TraitSite route = TraitSite
       :> ErrorResponse 404 "Item not found"
       :> ErrorResponse 404 "Trait not found"
       :> "item"
-      :> Capture "item" (Uid Item)
+      :> Capture "item id" (Uid Item)
       :> "trait"
-      :> Capture "id" (Uid Trait)
+      :> Capture "trait id" (Uid Trait)
       :> "move"
-      :> ReqBody '[JSON] Move
+      :> ReqBody '[JSON] CMove
       :> Post '[JSON] NoContent
   }
   deriving (Generic)
@@ -278,23 +278,23 @@ type Api = RequestDetails :> ToServant Site AsApi
 --------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
-data TraitType = Pro | Con
+data CTraitType = Pro | Con
     deriving (Show, Generic)
 
-instance ToSchema TraitType where
+instance ToSchema CTraitType where
     declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
-instance A.ToJSON TraitType where
+instance A.ToJSON CTraitType where
   toJSON = A.genericToJSON jsonOptions
 
-instance A.FromJSON TraitType where
+instance A.FromJSON CTraitType where
   parseJSON = A.genericParseJSON jsonOptions
 
 -- | Direction (Up/Down) for item or trait and their instances.
-data Direction = DirectionUp | DirectionDown
+data CDirection = DirectionUp | DirectionDown
     deriving (Eq, Show, Generic)
 
-instance ToSchema Direction where
+instance ToSchema CDirection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
     { constructorTagModifier = \case
         "DirectionUp" -> "up"
@@ -302,10 +302,12 @@ instance ToSchema Direction where
         other -> error ("Direction schema: unknown tag " <> show other)
     }
 
-instance A.ToJSON Direction where
-  toJSON = A.toJSON . drop (length ("Direction" :: String)) . show
+instance A.ToJSON CDirection where
+  toJSON = \case
+    DirectionUp -> "up"
+    DirectionDown -> "down"
 
-instance A.FromJSON Direction where
+instance A.FromJSON CDirection where
   parseJSON = \case
     "up"   -> pure DirectionUp
     "down" -> pure DirectionDown
@@ -322,32 +324,32 @@ instance A.FromJSON Direction where
 ----------------------------------------------------------------------------
 
 -- | Client type to create new trait.
-data CreateNewTrait = CreateNewTrait
-  { cntType    :: TraitType
-  , cntContent :: Text
+data CCreateTrait = CCreateTrait
+  { cctType    :: CTraitType
+  , cctContent :: Text
   } deriving (Show, Generic)
 
-instance A.ToJSON CreateNewTrait where
+instance A.ToJSON CCreateTrait where
   toJSON = A.genericToJSON jsonOptions
 
-instance A.FromJSON CreateNewTrait where
+instance A.FromJSON CCreateTrait where
   parseJSON = A.genericParseJSON jsonOptions
 
-instance ToSchema CreateNewTrait where
+instance ToSchema CCreateTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type to move trait or item up or down.
-data Move = Move
-  { moveDirection :: Direction
+data CMove = CMove
+  { cmDirection :: CDirection
   } deriving (Show, Eq, Generic)
 
-instance A.ToJSON Move where
+instance A.ToJSON CMove where
   toJSON = A.genericToJSON jsonOptions
 
-instance A.FromJSON Move where
+instance A.FromJSON CMove where
   parseJSON = A.genericParseJSON jsonOptions
 
-instance ToSchema Move where
+instance ToSchema CMove where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | A "light-weight" client type of 'Category', which describes a category
