@@ -26,17 +26,17 @@
         <v-toolbar-items class="category-item-toolbar-btns">
           <category-item-btn
             title="move item up"
-            icon="fas fa-arrow-up"
+            icon="arrow-up"
           />
 
           <category-item-btn
             title="move item down"
-            icon="fas fa-arrow-down"
+            icon="arrow-down"
           />
 
           <category-item-btn
             title="edit item info"
-            icon="fas fa-cog"
+            icon="cog"
             @click="toggleEditItemInfoMenu"
           >
             <v-icon
@@ -45,13 +45,13 @@
               color="#6495ed"
               size="8"
             >
-              fas fa-circle
+              $vuetify.icons.circle
             </v-icon>
           </category-item-btn>
 
           <category-item-btn
             title="delete item"
-            icon="fas fa-trash-alt"
+            icon="trash-alt"
             @click="openConfirmDeleteDialog"
           />
         </v-toolbar-items>
@@ -104,7 +104,7 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
   @Prop(String) itemGroup!: string
-  @Prop(Object) itemKind!: object
+  @Prop(Object) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
   isDeleteItemDialogOpen: boolean = false
@@ -148,7 +148,7 @@ export default class CategoryItemToolbar extends Vue {
         created: '2016-07-22T00:00:00Z',
         uid: this.itemUid,
         group: this.itemGroup,
-        kind: this.itemKind
+        hackage: this.itemHackage
       }
     })
     await this.$store.dispatch('category/reloadCategory')

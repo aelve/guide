@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 # Build the project
 .PHONY: back
 back:
@@ -30,3 +32,17 @@ back/test-db: back
 .PHONY: back/run
 back/run:
 	stack exec --cwd back -- guide
+
+# Create a Docker image for the backend; will only work on Travis because
+# the binary has to have been compiled on Ubuntu Trusty (the OS used in the
+# Docker file)
+.PHONY: back/travis-docker
+back/travis-docker:
+	rm -rf docker/back/files && mkdir docker/back/files
+	git clone --depth 1 https://github.com/aelve/guide-database.git \
+		docker/back/files/state
+	rm -rf docker/back/files/state/.git
+	cp .stack-work/install/*/*/*/bin/guide docker/back/files/
+	cp -R back/{static,templates} docker/back/files/
+	docker build docker/back -t quay.io/aelve/guide:$(tag)
+	rm -rf docker/back/files

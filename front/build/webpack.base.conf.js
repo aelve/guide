@@ -3,6 +3,7 @@ const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 const TSLintPlugin = require('tslint-webpack-plugin')
+const { cssLoader, stylusLoader } = require('./style-loader.conf')
 
 const { clientPort, ssrPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
@@ -27,6 +28,8 @@ module.exports = {
 
   module: {
     rules: [
+      cssLoader, 
+      stylusLoader,
       {
         test: /\.js$/,
         exclude: /node_modules/,

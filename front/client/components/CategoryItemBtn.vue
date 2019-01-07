@@ -10,9 +10,7 @@
       v-if="icon"
       color="#979797"
       :size="iconSizeValue"
-    >
-      {{ icon }}
-    </v-icon>
+    >{{ iconText }}</v-icon>
     <slot />
   </v-btn>
 </template>
@@ -41,6 +39,10 @@ export default class CategoryItemBtn extends Vue {
       return this.iconSize
     }
     return this.small ? 12 : undefined
+  }
+
+  get iconText () {
+    return `$vuetify.icons.${this.icon}`
   }
 }
 </script>

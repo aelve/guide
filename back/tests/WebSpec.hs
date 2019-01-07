@@ -251,7 +251,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
   openGuide "/"
   wd "create a test category" $ do
     createCategory "Item test category"
-  wd "add a new item" $ do
+  wd "add new items" $ do
     createItem "An item"
   let item1 = Index 0 ".item"
 
@@ -260,25 +260,10 @@ itemTests = session "items" $ using [chromeCaps] $ do
       wd "is present" $ do
         itemName item1 `shouldHaveText` "An item"
         fs <- fontSize (itemName item1); fs `shouldBeInRange` (20,26)
-      wd "doesn't link to Hackage" $ do
-        doesNotChangeURL $ click (itemName item1)
-        -- TODO: find a better test for this (maybe by checking all hrefs)
-        checkNotPresent (item1 :// ByLinkText "Hackage")
       wd "can be changed" $ do
         form <- openItemEditForm item1
         enterInput "New item" (form :// ByName "name")
         itemName item1 `shouldHaveText` "New item"
-      wd "doesn't link to Hackage if changed to something without spaces" $ do
-        form <- openItemEditForm item1
-        enterInput "item1" (form :// ByName "name")
-        itemName item1 `shouldHaveText` "item1"
-        doesNotChangeURL $ click (itemName item1)
-        checkNotPresent (item1 :// ByLinkText "Hackage")
-      wd "links to Hackage if the name is originally a package name" $ do
-        item2 <- createItem "foo-bar-2"
-        itemName item2 `shouldHaveText` "foo-bar-2"
-        (item2 :// ByLinkText "Hackage")
-          `shouldLinkTo` "https://hackage.haskell.org/package/foo-bar-2"
     describe "group" $ do
       wd "is present and “other” by default" $ do
         itemGroup item1 `shouldHaveText` "other"
@@ -298,6 +283,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
         setItemCustomGroup "some group" item1
       -- TODO: check that it works with 2 groups etc
       wd "is automatically put into all items' choosers" $ do
+        createItem "Another item"
         -- TODO: make a combinator for this
         items <- selectAll ".item"
         waitUntil wait_delay $ expect (length items >= 2)
@@ -399,17 +385,20 @@ itemTests = session "items" $ using [chromeCaps] $ do
 
   describe "items with the same name" $ do
     wd "can be present" $ do
-      createItem "item1"
+      createItem "same name"
+      createItem "same name"
       waitUntil wait_delay $
         expect . (== 2) . length =<< selectAll
-          (itemName ".item" :& HasText "item1")
+          (itemName ".item" :& HasText "same name")
     wd "can be changed separately" $ do
-      item2 <- select $
-        Index 1 (".item" :<// (".item-name" :& HasText "item1"))
-      form <- openItemEditForm item2
+      itemA <- select $
+        Index 0 (".item" :<// (".item-name" :& HasText "same name"))
+      itemB <- select $
+        Index 1 (".item" :<// (".item-name" :& HasText "same name"))
+      form <- openItemEditForm itemB
       enterInput "Blah" (form :// ByName "name")
-      itemName item1 `shouldHaveText` "item1"
-      itemName item2 `shouldHaveText` "Blah"
+      itemName itemA `shouldHaveText` "same name"
+      itemName itemB `shouldHaveText` "Blah"
   describe "moving items" $ do
     let getId :: CanSelect a => a -> WD Text
         getId x = attr x "id" >>= \case

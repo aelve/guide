@@ -1,7 +1,7 @@
 <template>
   <category-item-section
     customEdit
-    editBtnIcon="fas fa-plus"
+    editBtnIcon="plus"
     editBtnTitle="add"
     :title="title"
     @toggleEdit="toggleAddTrait"
@@ -28,8 +28,8 @@
           <category-item-btn
             slot="activator"
             size="22px"
-            :iconSize="22"
-            icon="more_vert"
+            :iconSize="14"
+            icon="ellipsis-v"
           />
           <v-list dense>
             <v-list-tile

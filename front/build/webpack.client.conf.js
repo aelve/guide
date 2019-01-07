@@ -6,7 +6,6 @@ const merge = require('webpack-merge')
 const VueClientPlugin = require('vue-server-renderer/client-plugin')
 
 const { appName, clientPort, distPath, env } = require('./build-config')
-const { cssLoader, stylusLoader } = require('./style-loader.conf')
 const baseConfig = require('./webpack.base.conf')
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -19,13 +18,6 @@ const webpackConfig = merge(baseConfig, {
   output: {
     path: distPath,
     filename: `static/js/[name].${isProduction ? '[hash].' : ''}js`
-  },
-
-  module: {
-    rules: [
-      cssLoader,
-      stylusLoader
-    ]
   },
 
   plugins: [

@@ -160,16 +160,16 @@ undoEdit (Edit'SetItemGroup itemId old new) = do
   if now /= new
     then return (Left "group has been changed further")
     else Right () <$ dbUpdate (SetItemGroup itemId old)
-undoEdit (Edit'SetItemKind itemId old new) = do
-  now <- view kind <$> dbQuery (GetItem itemId)
+undoEdit (Edit'SetItemHackage itemId old new) = do
+  now <- view hackage <$> dbQuery (GetItem itemId)
   if now /= new
-    then return (Left "kind has been changed further")
-    else Right () <$ dbUpdate (SetItemKind itemId old)
-undoEdit (Edit'SetItemDescription itemId old new) = do
-  now <- view (description.mdSource) <$> dbQuery (GetItem itemId)
+    then return (Left "Hackage name has been changed further")
+    else Right () <$ dbUpdate (SetItemHackage itemId old)
+undoEdit (Edit'SetItemSummary itemId old new) = do
+  now <- view (summary.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "description has been changed further")
-    else Right () <$ dbUpdate (SetItemDescription itemId old)
+    else Right () <$ dbUpdate (SetItemSummary itemId old)
 undoEdit (Edit'SetItemNotes itemId old new) = do
   now <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
   if now /= new

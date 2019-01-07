@@ -16,12 +16,12 @@
           <p class="category-top-group"> {{category.group}} </p>
         </div>
         <v-btn
-          class="ml-2 pl-0 add-item-btn"
+          class="ma-0 px-1"
           flat
           color="grey"
           @click="openAddItemDialog"
         >
-          <v-icon class="mr-1" left>add</v-icon>
+          <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
           Add new item
         </v-btn>
       </div>
@@ -50,11 +50,11 @@
       </template>
       <v-btn
         flat
-        class="ml-2 pl-0"
+        class="ma-0 px-1"
         color="grey"
         @click="openAddItemDialog"
       >
-        <v-icon class="mr-1" left>add</v-icon>
+        <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
       <add-item-dialog

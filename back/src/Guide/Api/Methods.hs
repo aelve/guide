@@ -109,13 +109,8 @@ createItem db requestDetails catId name' = do
   _ <- getCategoryOrFail db catId
   when (T.null name') $ throwError err400{errBody = "Name not provided"}
   itemId <- randomShortUid
-  -- If the item name looks like a Hackage library, assume it's a Hackage
-  -- library.
-  let isAllowedChar c = isAscii c && (isAlphaNum c || c == '-')
-      looksLikeLibrary = T.all isAllowedChar name'
-      kind' = if looksLikeLibrary then Library (Just name') else Other
   time <- liftIO getCurrentTime
-  (edit, _) <- dbUpdate db (AddItem catId itemId name' time kind')
+  (edit, _) <- dbUpdate db (AddItem catId itemId name' time)
   addEdit db requestDetails edit
   pure itemId
 
@@ -129,16 +124,16 @@ setItemInfo db requestDetails itemId CItemInfo{..} = do
   (editName, _) <- dbUpdate db $ SetItemName itemId $ unH ciiName
   (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
   (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-  (editKind, _) <- dbUpdate db $ SetItemKind itemId $ unH ciiKind
-  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editKind]
+  (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
+  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editHackage]
   pure NoContent
 
 -- | Set item's summary.
 setItemSummary :: DB -> RequestDetails -> Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary db requestDetails itemId CTextEdit{..} = do
-  serverModified <- markdownBlockMdSource . _itemDescription <$> getItemOrFail db itemId
+  serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail db itemId
   checkConflict CTextEdit{..} serverModified
-  (edit, _) <- dbUpdate db (SetItemDescription itemId $ unH cteModified)
+  (edit, _) <- dbUpdate db (SetItemSummary itemId $ unH cteModified)
   addEdit db requestDetails edit
   pure NoContent
 
@@ -168,6 +163,14 @@ deleteItem db requestDetails itemId = do
     addEdit db requestDetails edit)
   pure NoContent
 
+-- | Move item up or down
+moveItem :: DB -> RequestDetails -> Uid Item -> CMove -> Guider NoContent
+moveItem db requestDetails itemId CMove{..} = do
+  _ <- getItemOrFail db itemId
+  edit <- dbUpdate db (MoveItem itemId (cmDirection == DirectionUp))
+  addEdit db requestDetails edit
+  pure NoContent
+
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
@@ -175,13 +178,13 @@ deleteItem db requestDetails itemId = do
 -- TODO: move a trait
 
 -- | Create a trait (pro/con).
-createTrait :: DB -> RequestDetails -> Uid Item -> TraitType -> Text -> Guider (Uid Trait)
-createTrait db requestDetails itemId traitType text = do
-  when (T.null text) $ throwError err400{errBody = "Trait text not provided"}
+createTrait :: DB -> RequestDetails -> Uid Item -> CCreateTrait -> Guider (Uid Trait)
+createTrait db requestDetails itemId CCreateTrait{..} = do
+  when (T.null cctContent) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
-  (edit, _) <- case traitType of
-    Con -> dbUpdate db (AddCon itemId traitId text)
-    Pro -> dbUpdate db (AddPro itemId traitId text)
+  (edit, _) <- case cctType of
+    Con -> dbUpdate db (AddCon itemId traitId cctContent)
+    Pro -> dbUpdate db (AddPro itemId traitId cctContent)
   addEdit db requestDetails edit
   pure traitId
 
@@ -200,6 +203,14 @@ deleteTrait db requestDetails itemId traitId = do
   _ <- getTraitOrFail db itemId traitId
   dbUpdate db (DeleteTrait itemId traitId) >>= (mapM_ $ \edit -> do
     addEdit db requestDetails edit)
+  pure NoContent
+
+-- | Move trait up or down
+moveTrait :: DB -> RequestDetails -> Uid Item -> Uid Trait -> CMove -> Guider NoContent
+moveTrait db requestDetails itemId traitId CMove{..} = do
+  _ <- getTraitOrFail db itemId traitId
+  edit <- dbUpdate db (MoveTrait itemId traitId (cmDirection == DirectionUp))
+  addEdit db requestDetails edit
   pure NoContent
 
 ----------------------------------------------------------------------------

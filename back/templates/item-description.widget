@@ -20,14 +20,14 @@ HTML
           class  = "edit-item-description"
           action = [| editItemDescription(
                         {{{%js item.uid}}},
-                        {{{%js item.description.text}}}); |] }}
+                        {{{%js item.summary.text}}}); |] }}
     <div class="notes-like">
-      {{# item.description.text}}
-        {{{item.description.html}}}
-      {{/ item.description.text}}
-      {{^ item.description.text}}
+      {{# item.summary.text}}
+        {{{item.summary.html}}}
+      {{/ item.summary.text}}
+      {{^ item.summary.text}}
         <p>write something here!</p>
-      {{/ item.description.text}}
+      {{/ item.summary.text}}
     </div>
   </div>
 

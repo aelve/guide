@@ -1,18 +1,17 @@
 sudo: true
+dist: trusty
 
-language: c
+language: generic
 
 addons:
   apt:
-    sources:
-    - google-chrome
     packages:
     # GHC
     - libgmp-dev
     # Selenium
     - xvfb
     # Testcafe
-    - google-chrome-stable fluxbox
+    - fluxbox
   chrome: stable
 before_install:
   - # start your web application and listen on `localhost`
@@ -23,58 +22,65 @@ cache:
     - $HOME/.stack
     - .stack-work
     - back/.stack-work
+    - back/static/js     # Needed so that bundle.js would persist to the
+                         # "Push Docker image" stage and beyond - without it
+                         # the backend doesn't work and the tests don't run.
   timeout: 1000
 
 jobs:
   include:
     - stage: "Build backend dependencies"
       before_script:
-        - mkdir -p ~/.local/bin
-        - export PATH=$HOME/.local/bin:$PATH
-        - >-
-          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
-          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        - curl -sSL https://get.haskellstack.org/ | sh
       script:
         - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
 
-    - stage: "Build and test the backend"
+    - stage: "Build the backend"
       before_script:
-        # Install Stack
-        - mkdir -p ~/.local/bin
-        - export PATH=$HOME/.local/bin:$PATH
-        - >-
-          travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 |
-          tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        - curl -sSL https://get.haskellstack.org/ | sh
+      script:
+        - stack --no-terminal build
+
+    - stage: "Upload a Docker image for the backend"
+      script:
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - make back/travis-docker "tag=$BRANCH--back"
+        - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+        - docker push "quay.io/aelve/guide:$BRANCH--back"
+      if: type = push
+
+    - stage: "Test the backend"
+      before_script:
+        - curl -sSL https://get.haskellstack.org/ | sh
         # Install chromedriver
-        - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
+        - wget http://chromedriver.storage.googleapis.com/2.45/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
         - chmod +x chromedriver
         - sudo mv -f chromedriver /usr/local/share/chromedriver
         - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
         - sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
         # Run selenium-server
-        - export DISPLAY=:99.0
-        - sh -e /etc/init.d/xvfb start
-        - travis_retry wget http://selenium-release.storage.googleapis.com/3.6/selenium-server-standalone-3.6.0.jar
-        - java -jar selenium-server-standalone-3.6.0.jar 2> /dev/null &
+        - "export DISPLAY=:99.0"
+        - "sh -e /etc/init.d/xvfb start"
+        - travis_retry wget https://selenium-release.storage.googleapis.com/3.141/selenium-server-standalone-3.141.59.jar -O selenium.jar
+        - java -jar selenium.jar 2> /dev/null &
         - sleep 15
       script:
-        - stack --no-terminal build
         - stack --no-terminal test
         - make back/test-db
 
-    - stage: "Build and test the frontend"
-      before_script:
-        # Install dependencies
-        - cd front
-        - npm install
-        - "export DISPLAY=:99.0"
-        - "sh -e /etc/init.d/xvfb start"
-        - sleep 10
-        - fluxbox >/dev/null 2>&1 &
-      script:
-        # Run testcafe e2e testing
-        - npm run test
+    # - stage: "Build and test the frontend"
+    #   before_script:
+    #     # Install dependencies
+    #     - cd front
+    #     - npm install
+    #     - "export DISPLAY=:99.0"
+    #     - "sh -e /etc/init.d/xvfb start"
+    #     - sleep 10
+    #     - fluxbox >/dev/null 2>&1 &
+    #   script:
+    #     # Run testcafe e2e testing
+    #     - npm run test
 
 notifications:
   slack:

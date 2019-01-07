@@ -50,7 +50,7 @@ export default class CategoryItemSection extends Vue {
   }) editorHeight: number
   @Prop({
     type: String,
-    default: 'fas fa-pencil-alt'
+    default: 'pencil-alt'
   }) editBtnIcon: string
   @Prop({
     type: String,
