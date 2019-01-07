@@ -43,6 +43,7 @@
           :pros="value.pros"
           :cons="value.cons"
           :ecosystem="value.ecosystem"
+          :hackage="value.hackage"
           :toc="value.toc"
           :notes="value.notes"
           :kind="value.kind"

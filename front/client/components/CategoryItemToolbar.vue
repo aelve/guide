@@ -46,9 +46,7 @@
               class="edit-item-info-changed-icon"
               color="#6495ed"
               size="8"
-            >
-              $vuetify.icons.circle
-            </v-icon>
+            >$vuetify.icons.circle</v-icon>
           </category-item-btn>
 
           <category-item-btn
@@ -106,7 +104,7 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
   @Prop(String) itemGroup!: string
-  @Prop(Object) itemHackage!: string
+  @Prop(String) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
   isDeleteItemDialogOpen: boolean = false
@@ -176,7 +174,7 @@ export default class CategoryItemToolbar extends Vue {
 .edit-item-info-changed-icon {
   position: absolute;
   bottom: 0;
-  right: 0;
+  right: 5px;
 }
 .category-item-toolbar >>> .v-toolbar__title {
   overflow: visible;

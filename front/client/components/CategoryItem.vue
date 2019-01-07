@@ -101,13 +101,9 @@ import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
 
 @Component({
   components: {
-<<<<<<< HEAD
     CategoryItemToolbar,
     CategoryItemSection,
     CategoryItemTraits
-=======
-    CategoryItemToolbar
->>>>>>> develop
   }
 })
 export default class CategoryItem extends Vue {
@@ -123,7 +119,7 @@ export default class CategoryItem extends Vue {
   @Prop(Object) notes!: { text: string, html: string }
   @Prop(String) itemUid!: string
   @Prop(String) link!: string
-  @Prop(Object) hackage!: string
+  @Prop(String) hackage!: string
 
   isNoteExpanded: boolean = false
 
