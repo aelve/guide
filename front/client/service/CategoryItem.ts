@@ -17,10 +17,10 @@ class CategoryItemService {
   async  updateItemInfo (id: ICategoryItem['uid'], body: ICategoryItemInfo): Promise<void> {
     await axios.put(`api/item/${id}/info`, body)
   }
-  async  updateItemDescription (
+  async  updateItemSummary (
     id: ICategoryItem['uid'],
-    original: ICategoryItem['description'],
-    modified: ICategoryItem['description']
+    original: ICategoryItem['summary'],
+    modified: ICategoryItem['summary']
   ): Promise<void> {
     await axios.put(`api/item/${id}/summary`, {
       original,
@@ -63,7 +63,7 @@ class CategoryItemService {
     traitId: ITrait['uid'],
     direction: string
   ): Promise<void> {
-    await axios.post(`api/move/item/${itemId}/trait/${traitId}`, {
+    await axios.post(`api/item/${itemId}/trait/${traitId}/move`, {
       direction
     })
   }
@@ -96,9 +96,9 @@ export interface ICategoryItem {
   name: string
   created: string
   group?: string
-  // TODO add appropriate types for description, ecosystem and other properties with structure like
+  // TODO add appropriate types for summary, ecosystem and other properties with structure like
   // { text: string, html: string }
-  description: object
+  summary: object
   pros: ITrait[]
   cons: ITrait[]
   ecosystem: object

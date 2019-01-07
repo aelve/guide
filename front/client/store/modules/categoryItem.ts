@@ -38,11 +38,11 @@ const actions: ActionTree<ICategoryItemState, any> = {
   ): Promise<void> {
     await CategoryItemService.updateItemInfo(id, body)
   },
-  async updateItemDescription (
+  async updateItemSummary (
     context: ActionContext<ICategoryItemState, any>,
-    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['description'], modified: ICategoryItem['description'] }
+    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['summary'], modified: ICategoryItem['summary'] }
   ): Promise<void> {
-    await CategoryItemService.updateItemDescription(id, original, modified)
+    await CategoryItemService.updateItemSummary(id, original, modified)
   },
   async updateItemEcosystem (
     context: ActionContext<ICategoryItemState, any>,

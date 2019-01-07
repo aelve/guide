@@ -13,12 +13,12 @@
 
       <category-item-section
         title="Summary"
-        :editText="description.text"
-        @save="updateDescription"
+        :editText="summary.text"
+        @save="updateSummary"
       >
         <div
-          class="mb-2 category-item-description"
-          v-html="description.html"
+          class="mb-2 category-item-summary"
+          v-html="summary.html"
         />
       </category-item-section>
 
@@ -110,7 +110,7 @@ export default class CategoryItem extends Vue {
   // TODO get rid of so many props and pass the item fully
   @Prop(String) name!: string
   @Prop(String) group!: string
-  @Prop(Object) description!: { text: string, html: string }
+  @Prop(Object) summary!: { text: string, html: string }
   @Prop(Array) pros!: any[]
   @Prop(Array) cons!: any[]
   @Prop(Object) ecosystem!: { text: string, html: string }
@@ -131,10 +131,10 @@ export default class CategoryItem extends Vue {
     this.isNoteExpanded = false
   }
 
-  async updateDescription (newValue: string): Promise<void> {
-    await this.$store.dispatch('categoryItem/updateItemDescription', {
+  async updateSummary (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemSummary', {
       id: this.itemUid,
-      original: this.description.text,
+      original: this.summary.text,
       modified: newValue
     })
     await this.$store.dispatch('category/reloadCategory')
@@ -174,7 +174,7 @@ export default class CategoryItem extends Vue {
   font-size: 16px;
 }
 
-.category-item-description >>> h1 {
+.category-item-summary >>> h1 {
   margin: 25px 0 5px;
 }
 
