@@ -38,6 +38,12 @@ const actions: ActionTree<ICategoryItemState, any> = {
   ): Promise<void> {
     await CategoryItemService.updateItemInfo(id, body)
   },
+  async moveItem (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, direction }: { id: ICategoryItem['uid'], direction: string }
+  ): Promise<void> {
+    await CategoryItemService.moveItem(id, direction)
+  },
   async updateItemSummary (
     context: ActionContext<ICategoryItemState, any>,
     { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['summary'], modified: ICategoryItem['summary'] }

@@ -17,6 +17,11 @@ class CategoryItemService {
   async  updateItemInfo (id: ICategoryItem['uid'], body: ICategoryItemInfo): Promise<void> {
     await axios.put(`api/item/${id}/info`, body)
   }
+  async moveItem (id: ICategoryItem['uid'], direction: string): Promise<void> {
+    await axios.post(`api/item/${id}/move`, {
+      direction
+    })
+  }
   async  updateItemSummary (
     id: ICategoryItem['uid'],
     original: ICategoryItem['summary'],

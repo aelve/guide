@@ -27,11 +27,13 @@
           <category-item-btn
             title="move item up"
             icon="arrow-up"
+            @click="moveItem('up')"
           />
 
           <category-item-btn
             title="move item down"
             icon="arrow-down"
+            @click="moveItem('down')"
           />
 
           <category-item-btn
@@ -71,7 +73,7 @@
           <v-btn
             class="mr-0"
             :disabled="!isItemInfoEdited"
-            @click="saveItemInfo"
+            @click="updateItemInfo"
           >
             Save
           </v-btn>
@@ -133,7 +135,7 @@ export default class CategoryItemToolbar extends Vue {
     this.isDeleteItemDialogOpen = true
   }
 
-  async saveItemInfo (): Promise<void> {
+  async updateItemInfo (): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemInfo', {
       id: this.itemUid,
       body: {
@@ -157,6 +159,14 @@ export default class CategoryItemToolbar extends Vue {
 
   async deleteItem (): Promise<void> {
     await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
+    await this.$store.dispatch('category/reloadCategory')
+  }
+
+  async moveItem (direction: string) {
+    await this.$store.dispatch('categoryItem/moveItem', {
+      id: this.itemUid,
+      direction
+    })
     await this.$store.dispatch('category/reloadCategory')
   }
 }
