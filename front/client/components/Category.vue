@@ -21,7 +21,7 @@
           color="grey"
           @click="openAddItemDialog"
         >
-          <v-icon class="mr-1" left>add</v-icon>
+          <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
           Add new item
         </v-btn>
       </div>
@@ -54,7 +54,7 @@
         color="grey"
         @click="openAddItemDialog"
       >
-        <v-icon class="mr-1" left>add</v-icon>
+        <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
       <add-item-dialog

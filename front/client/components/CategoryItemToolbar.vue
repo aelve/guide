@@ -29,7 +29,7 @@
             icon
             title="move item down"
           >
-            <v-icon>fas fa-arrow-up</v-icon>
+            <v-icon>$vuetify.icons.arrow-up</v-icon>
           </v-btn>
 
           <v-btn
@@ -37,7 +37,7 @@
             icon
             title="move item down"
           >
-            <v-icon>fas fa-arrow-down</v-icon>
+            <v-icon>$vuetify.icons.arrow-down</v-icon>
           </v-btn>
 
           <v-btn
@@ -46,14 +46,14 @@
             title="edit item info"
             @click="toggleEditItemInfoMenu"
           >
-            <v-icon>fas fa-cog</v-icon>
+            <v-icon>$vuetify.icons.cog</v-icon>
             <v-icon
               v-if="isItemInfoEdited"
               class="edit-item-info-changed-icon"
               color="#6495ed"
               size="8"
             >
-              fas fa-circle
+              $vuetify.icons.circle
             </v-icon>
           </v-btn>
 
@@ -63,7 +63,7 @@
             title="delete item"
             @click="openConfirmDeleteDialog"
           >
-            <v-icon>fas fa-times</v-icon>
+            <v-icon>$vuetify.icons.times</v-icon>
           </v-btn>
         </v-toolbar-items>
       </v-toolbar>
