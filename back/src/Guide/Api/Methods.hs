@@ -9,6 +9,7 @@ module Guide.Api.Methods where
 
 import Imports
 
+import Control.Monad.Extra (whenJust)
 import Data.Acid as Acid
 import Data.Aeson (encode)
 import Data.Text (Text)
@@ -121,11 +122,18 @@ setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfo -> Guider NoContent
 setItemInfo db requestDetails itemId CItemInfo{..} = do
   _ <- getItemOrFail db itemId
   -- TODO diff and merge
-  (editName, _) <- dbUpdate db $ SetItemName itemId $ unH ciiName
-  (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
-  (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-  (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
-  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editHackage]
+  whenJust (unH ciiName) $ \name' -> do
+    (editName, _) <- dbUpdate db $ SetItemName itemId name'
+    addEdit db requestDetails editName
+  when (isJust $ unH ciiGroup) $ do
+    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+    addEdit db requestDetails editGroup
+  when (isJust $ unH ciiHackage) $ do
+    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
+    addEdit db requestDetails editHackage
+  when (isJust $ unH ciiLink) $ do
+    (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+    addEdit db requestDetails editLink
   pure NoContent
 
 -- | Set item's summary.

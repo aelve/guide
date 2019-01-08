@@ -433,19 +433,32 @@ instance ToSchema ItemSection where
 --
 -- When updating it, don't forget to also update 'setItemInfo'.
 data CItemInfo = CItemInfo
-  { ciiUid     :: Uid Item   ? "Item ID"
-  , ciiName    :: Text       ? "Item name"
-  , ciiCreated :: UTCTime    ? "When the item was created"
+  { ciiName    :: Maybe Text ? "Item name"
   , ciiGroup   :: Maybe Text ? "Item group"
   , ciiHackage :: Maybe Text ? "Package name on Hackage"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
-  toJSON = A.genericToJSON jsonOptions
+  toJSON cii = A.object
+    [ "name"    A..= (unH $ ciiName cii)
+    , "group"   A..= (unH $ ciiGroup cii)
+    , "hackage" A..= (unH $ ciiHackage cii)
+    , "link"    A..= (unH $ ciiLink cii)
+    ]
 
 instance A.FromJSON CItemInfo where
-  parseJSON = A.genericParseJSON jsonOptions
+  parseJSON = A.withObject "CItemInfo" $ \o -> do
+    ciiName'    <- o A..:? "name"
+    ciiGroup'   <- o A..:? "group"
+    ciiHackage' <- o A..:? "hackage"
+    ciiLink'    <- o A..:? "link"
+    return CItemInfo
+      { ciiName = H ciiName'
+      , ciiGroup = H ciiGroup'
+      , ciiHackage = H ciiHackage'
+      , ciiLink = H ciiLink'
+      }
 
 instance ToSchema CItemInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -475,9 +488,7 @@ instance ToSchema CItemFull where
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
-  { ciiUid         = H $ _itemUid
-  , ciiName        = H $ _itemName
-  , ciiCreated     = H $ _itemCreated
+  { ciiName        = H $ pure _itemName
   , ciiGroup       = H $ _itemGroup_
   , ciiHackage     = H $ _itemHackage
   , ciiLink        = H $ _itemLink
