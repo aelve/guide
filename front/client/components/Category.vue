@@ -91,7 +91,7 @@
           name="input-7-4"
           label="Solo textarea"
           :value="textareaHasDescription"
-          v-model="modifiedDescription"
+          v-model="textareaHasDescription"
           auto-grow
         />
         <v-btn
@@ -205,15 +205,6 @@ export default class Category extends Vue {
   serverModified: string = ''
   modified: string = ''
   merged: string = ''
-  // emptyDescriptionData: object = {
-  //   original: '',
-  //   modified: this.emptyDescription
-  // }
-  // hasDescription: string = this.categoryDscMarkdown
-  // hasDescritpionData: object = {
-  //   original: this.categoryDscMarkdown,
-  //   modified: this.hasDescription
-  // }
   textareaHasDescription: string = ''
   originalDescription: string = this.categoryDscMarkdown
   modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
@@ -223,11 +214,11 @@ export default class Category extends Vue {
       return
     }
     await this.$store.dispatch('category/loadCategory', this.categoryId)
+    this.textareaHasDescription = _get(this, '$store.state.category.category.description.text')
     this.originalDescription = this.categoryDscMarkdown
   }
 
   get categoryDescription () {
-    this.textareaHasDescription = _get(this, '$store.state.category.category.description.html')
     return _get(this, '$store.state.category.category.description.html')
   }
 
