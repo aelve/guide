@@ -122,17 +122,17 @@ setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfo -> Guider NoContent
 setItemInfo db requestDetails itemId CItemInfo{..} = do
   _ <- getItemOrFail db itemId
   -- TODO diff and merge
-  whenJust (unH ciiName) $ \name' -> do
-    (editName, _) <- dbUpdate db $ SetItemName itemId name'
+  whenJust (unH ciiName) $ \ciiName' -> do
+    (editName, _) <- dbUpdate db $ SetItemName itemId ciiName'
     addEdit db requestDetails editName
-  when (isJust $ unH ciiGroup) $ do
-    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
+  whenJust (unH ciiGroup) $ \ciiGroup' -> do
+    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId ciiGroup'
     addEdit db requestDetails editGroup
-  when (isJust $ unH ciiHackage) $ do
-    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
+  whenJust (unH ciiHackage) $ \ciiHackage' -> do
+    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId ciiHackage'
     addEdit db requestDetails editHackage
-  when (isJust $ unH ciiLink) $ do
-    (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
+  whenJust (unH ciiLink) $ \ciiLink' -> do
+    (editLink, _) <- dbUpdate db $ SetItemLink itemId ciiLink'
     addEdit db requestDetails editLink
   pure NoContent
 

@@ -433,10 +433,10 @@ instance ToSchema ItemSection where
 --
 -- When updating it, don't forget to also update 'setItemInfo'.
 data CItemInfo = CItemInfo
-  { ciiName    :: Maybe Text ? "Item name"
-  , ciiGroup   :: Maybe Text ? "Item group"
-  , ciiHackage :: Maybe Text ? "Package name on Hackage"
-  , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
+  { ciiName    :: Maybe Text         ? "Item name"
+  , ciiGroup   :: Maybe (Maybe Text) ? "Item group"
+  , ciiHackage :: Maybe (Maybe Text) ? "Package name on Hackage"
+  , ciiLink    :: Maybe (Maybe Url)  ? "Link to the official site, if exists"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
@@ -454,10 +454,10 @@ instance A.FromJSON CItemInfo where
     ciiHackage' <- o A..:? "hackage"
     ciiLink'    <- o A..:? "link"
     return CItemInfo
-      { ciiName = H ciiName'
-      , ciiGroup = H ciiGroup'
+      { ciiName    = H ciiName'
+      , ciiGroup   = H ciiGroup'
       , ciiHackage = H ciiHackage'
-      , ciiLink = H ciiLink'
+      , ciiLink    = H ciiLink'
       }
 
 instance ToSchema CItemInfo where
@@ -489,9 +489,9 @@ instance ToSchema CItemFull where
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
   { ciiName        = H $ pure _itemName
-  , ciiGroup       = H $ _itemGroup_
-  , ciiHackage     = H $ _itemHackage
-  , ciiLink        = H $ _itemLink
+  , ciiGroup       = H $ pure _itemGroup_
+  , ciiHackage     = H $ pure _itemHackage
+  , ciiLink        = H $ pure _itemLink
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'
