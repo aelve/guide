@@ -10,70 +10,84 @@
     />
 
     <div class="category-item-body">
-      <p class="category-item-section-title">Summary</p>
-      <div
-        class="category-item-description"
-        v-html="itemDescription"
-      />
-      <div class="flex-wrapper category-item-section pros-cons-box">
-        <div class="width-50">
-          <p class="category-item-section-title">Pros</p>
-          <ul
-            v-if="pros"
-            v-for="(value, index) in pros"
+
+      <category-item-section
+        title="Summary"
+        :editText="summary.text"
+        @save="updateSummary"
+      >
+        <div
+          class="mb-2 category-item-summary"
+          v-html="summary.html"
+        />
+      </category-item-section>
+
+      <div class="category-item-traits">
+        <category-item-traits
+          type="pro"
+          :itemId="itemUid"
+          :traits="pros"
+        />
+        <category-item-traits
+          type="con"
+          :itemId="itemUid"
+          :traits="cons"
+        />
+      </div>
+
+      <category-item-section
+        title="Ecosystem"
+        :editText="ecosystem.text"
+        @save="updateEcosystem"
+      >
+        <div v-html="ecosystem.html" />
+      </category-item-section>
+
+      <category-item-section
+        title="Notes"
+        :editText="notes.text"
+        @save="updateNotes"
+      >
+        <v-btn
+          small
+          dark
+          round
+          class="mx-0"
+          @click="expandNotes"
+        >
+          expand
+        </v-btn>
+        <v-btn
+          small
+          dark
+          round
+          class="mx-0"
+          @click="collapseNotes"
+        >
+          collapse
+        </v-btn>
+
+        <ul>
+          <li
+            v-for="(value, index) in toc"
             :key="index"
           >
-            <li v-html="value.content.html"/>
-          </ul>
-        </div>
-        <div class="width-50">
-          <p class="category-item-section-title">Cons</p>
-          <ul v-if="cons" v-for="(value, index) in cons" :key="index">
-            <li v-html="value.content.html"></li>
-          </ul>
-        </div>
-      </div>
-      <div class="category-item-section">
-        <p class="category-item-section-title">Ecosystem</p>
-        <div v-html="ecosystem" />
-      </div>
-      <div class="category-item-section notes-box">
-        <p class="category-item-section-title">Notes</p>
-        <div class="notes-settings">
-          <!-- TODO change a to vue markup element -->
-          <button class="notes-settings-btn" @click="expandNotes">expand notes</button>
-          <button class="notes-settings-btn" @click="collapseNotes">collapse notes</button>
-          <button class="notes-settings-btn" style="display: none;">edit notes</button>
-        </div>
-        <div
-          v-for="(value, index) in tocArray"
-          :key="index"
-        >
-          <ul>
-            <li
-              class="notes-toc-item"
-              :key="index"
-              v-for="(value, index) in value"
-              v-if="value.content"
-            >
-              <a
-                :href="`#${value.slug}`"
-                @click="expandNotes"
-              >
-                <p>{{value.content.html}}</p>
-              </a>
-            </li>
-          </ul>
-        </div>
-        <!-- TODO lookslike transition not working -->
-        <transition name="slidedown">
+            <a
+              :href="`#${value[0].slug}`"
+              v-html="value[0].content.html"
+              @click="expandNotes"
+            />
+          </li>
+        </ul>
+
+        <v-slide-y-transition hide-on-leave>
           <div
-            class="notes-content"
             v-show="isNoteExpanded"
-            v-html="notes"
+            v-html="notes.html"
           />
-        </transition>
-      </div>
+        </v-slide-y-transition>
+      </category-item-section>
+
     </div>
   </div>
 </template>
@@ -82,41 +96,73 @@
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
+import CategoryItemSection from 'client/components/CategoryItemSection.vue'
+import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
 
 @Component({
   components: {
-    CategoryItemToolbar
+    CategoryItemToolbar,
+    CategoryItemSection,
+    CategoryItemTraits
   }
 })
 export default class CategoryItem extends Vue {
+  // TODO get rid of so many props and pass the item fully
   @Prop(String) name!: string
   @Prop(String) group!: string
-  @Prop(String) itemDescription!: string
-  @Prop(Array) pros!: [any]
-  @Prop(Array) cons!: [any]
-  @Prop(String) ecosystem!: string
-  @Prop(Array) tocArray!: [any]
+  @Prop(Object) summary!: { text: string, html: string }
+  @Prop(Array) pros!: any[]
+  @Prop(Array) cons!: any[]
+  @Prop(Object) ecosystem!: { text: string, html: string }
+  @Prop(Array) toc!: any[]
   @Prop(Object) tocItemContent!: object
-  @Prop(String) notes!: string
+  @Prop(Object) notes!: { text: string, html: string }
   @Prop(String) itemUid!: string
   @Prop(String) link!: string
-  @Prop(Object) hackage!: string
+  @Prop(String) hackage!: string
 
   isNoteExpanded: boolean = false
 
-  expandNotes () {
+  expandNotes (): void {
     this.isNoteExpanded = true
   }
 
-  collapseNotes () {
+  collapseNotes (): void {
     this.isNoteExpanded = false
+  }
+
+  async updateSummary (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemSummary', {
+      id: this.itemUid,
+      original: this.summary.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
+  }
+
+  async updateEcosystem (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemEcosystem', {
+      id: this.itemUid,
+      original: this.ecosystem.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
+  }
+
+  async updateNotes (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemNotes', {
+      id: this.itemUid,
+      original: this.notes.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
   }
 }
 </script>
 
 <style scoped>
 .category-item-body {
-  padding: 15px 20px 25px;
+  padding: 15px 20px;
 }
 
 .category-item-body >>> p {
@@ -128,34 +174,8 @@ export default class CategoryItem extends Vue {
   font-size: 16px;
 }
 
-.category-item-description {
-  margin: 10px 0 60px;
-}
-
-.category-item-description p {
-  margin: 0 0 15px;
-  font-size: 16px;
-}
-
-.category-item-description >>> h1 {
+.category-item-summary >>> h1 {
   margin: 25px 0 5px;
-}
-
-.category-item-section {
-  margin: 30px 0;
-}
-
-.notes-box {
-  position: relative;
-}
-
-.category-item-section.pros-cons-box,
-.category-item-section.notes-box >>> li {
-  margin: 0 0 5px;
-}
-
-.category-item-section.notes-box >>> h1 {
-  margin: 20px 0;
 }
 
 .category-item {
@@ -163,72 +183,16 @@ export default class CategoryItem extends Vue {
   margin: 0 0 40px;
 }
 
-.flex-wrapper {
+.category-item-traits {
   display: flex;
 }
 
-.width-50 {
-  width: 50%;
-  padding-right: 20px;
+.category-item-traits > * {
+  flex: 1;
 }
 
-.width-50:nth-last-child(1) {
-  padding-right: 0;
-  padding-left: 20px;
-}
-
-.category-item-section-title {
-  display: block;
-  margin: 0 0 8px;
-  font-size: 22px !important;
-  font-weight: 600;
-}
-
-.notes-toc-item >>> p {
-  margin: 0;
-}
-
-.notes-toc-item >>> a {
-  text-decoration: none;
-  transition: all ease-in-out 0.25s;
-}
-
-.notes-toc-item >>> a:hover {
-  color: #7eb2e5;
-}
-
-.notes-settings {
-  display: flex;
-  width: 100%;
-  padding: 0 0 12px;
-}
-
-.notes-settings-btn {
-  margin-left: 20px;
-  padding: 3px 8px 2px;
-  background: #212121;
-  border-radius: 4px;
-  color: #fff;
-  transition: all ease-in-out 0.25s;
-}
-
-.notes-settings-btn:hover {
-  background: #424242;
-}
-
-.notes-settings-btn:focus,
-.notes-settings-btn:active {
-  outline: none;
-}
-
-.notes-settings-btn:nth-child(1) {
-  margin-left: 0;
-}
-
-.notes-content {
-  /* position: absolute; */
-  transform-origin: top;
-  /* bottom: 0; */
+.category-item-traits > *:not(:last-child) {
+  margin-right: 20px;
 }
 
 @media screend and (max-width: 768px) {

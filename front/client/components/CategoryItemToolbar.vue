@@ -24,47 +24,36 @@
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="category-item-toolbar-btns">
-          <v-btn
-            flat
-            icon
-            title="move item down"
-          >
-            <v-icon>$vuetify.icons.arrow-up</v-icon>
-          </v-btn>
+          <category-item-btn
+            title="move item up"
+            icon="arrow-up"
+            @click="moveItem('up')"
+          />
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="move item down"
-          >
-            <v-icon>$vuetify.icons.arrow-down</v-icon>
-          </v-btn>
+            icon="arrow-down"
+            @click="moveItem('down')"
+          />
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="edit item info"
+            icon="cog"
             @click="toggleEditItemInfoMenu"
           >
-            <v-icon>$vuetify.icons.cog</v-icon>
             <v-icon
               v-if="isItemInfoEdited"
               class="edit-item-info-changed-icon"
               color="#6495ed"
               size="8"
-            >
-              $vuetify.icons.circle
-            </v-icon>
-          </v-btn>
+            >$vuetify.icons.circle</v-icon>
+          </category-item-btn>
 
-          <v-btn
-            flat
-            icon
+          <category-item-btn
             title="delete item"
+            icon="trash-alt"
             @click="openConfirmDeleteDialog"
-          >
-            <v-icon>$vuetify.icons.times</v-icon>
-          </v-btn>
+          />
         </v-toolbar-items>
       </v-toolbar>
       <v-layout column class="pa-3">
@@ -82,7 +71,7 @@
           <v-btn
             class="mr-0"
             :disabled="!isItemInfoEdited"
-            @click="saveItemInfo"
+            @click="updateItemInfo"
           >
             Save
           </v-btn>
@@ -100,11 +89,14 @@
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import normalizeUrl from 'normalize-url'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
+import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 
 @Component({
   components: {
-    ConfirmDialog
+    ConfirmDialog,
+    CategoryItemBtn
   }
 })
 export default class CategoryItemToolbar extends Vue {
@@ -112,12 +104,16 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
   @Prop(String) itemGroup!: string
-  @Prop(Object) itemHackage!: string
+  @Prop(String) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
   isDeleteItemDialogOpen: boolean = false
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
+
+  get isItemInfoEdited () {
+    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
+  }
 
   @Watch('itemName')
   onItemNameChange (newVal: string) {
@@ -137,16 +133,16 @@ export default class CategoryItemToolbar extends Vue {
     this.isDeleteItemDialogOpen = true
   }
 
-  get isItemInfoEdited () {
-    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
-  }
-
-  async saveItemInfo (): Promise<void> {
+  async updateItemInfo (): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemInfo', {
       id: this.itemUid,
       body: {
         name: this.itemNameEdit,
-        link: this.itemLinkEdit,
+        // If link was changed we normalize it
+        // otherwise leave it as it was
+        link: this.itemLink !== this.itemLinkEdit
+          ? normalizeUrl(this.itemLinkEdit)
+          : this.itemLink,
         // TODO remove next two lines after changing API of editing item info
         // https://www.notion.so/aelve/Tasks-a157d6e3f22241ae83cf624fec3aaad5?p=fe081421dcf844e79e8877d9f4a103ad
         created: '2016-07-22T00:00:00Z',
@@ -163,6 +159,14 @@ export default class CategoryItemToolbar extends Vue {
     await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
     await this.$store.dispatch('category/reloadCategory')
   }
+
+  async moveItem (direction: string) {
+    await this.$store.dispatch('categoryItem/moveItem', {
+      id: this.itemUid,
+      direction
+    })
+    await this.$store.dispatch('category/reloadCategory')
+  }
 }
 </script>
 
@@ -170,7 +174,7 @@ export default class CategoryItemToolbar extends Vue {
 .edit-item-info-changed-icon {
   position: absolute;
   bottom: 0;
-  right: 0;
+  right: 5px;
 }
 .category-item-toolbar >>> .v-toolbar__title {
   overflow: visible;

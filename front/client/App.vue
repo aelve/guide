@@ -21,7 +21,13 @@ import Toolbar from './components/Toolbar.vue'
     AFooter
   }
 })
-export default class RootComponent extends Vue { }
+export default class RootComponent extends Vue {
+  beforeMount () {
+    // This package can only be loaded after mounted (on client only) cause it uses "document"
+    // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
+    import('easymde')
+  }
+}
 </script>
 
 <style>
@@ -36,6 +42,8 @@ p {
 code.sourceCode {
   min-width: 100%;
   padding: 8px;
+}
+.sourceCode:not(:last-child) code.sourceCode {
   margin: 0 0 15px;
 }
 /* Transition styles */
@@ -58,6 +66,9 @@ a:hover {
 }
 .text-transform-none {
   text-transform: none !important;
+}
+.position-relative {
+  position: relative;
 }
 div.sourceCode {
   overflow-x: auto;

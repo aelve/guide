@@ -16,7 +16,7 @@
           <p class="category-top-group"> {{category.group}} </p>
         </div>
         <v-btn
-          class="ml-2 pl-0 add-item-btn"
+          class="ma-0 px-1"
           flat
           color="grey"
           @click="openAddItemDialog"
@@ -39,18 +39,19 @@
           :link="value.link"
           :name="value.name"
           :group="value.group"
-          :itemDescription="value.summary.html"
+          :summary="value.summary"
           :pros="value.pros"
           :cons="value.cons"
-          :ecosystem="value.ecosystem.html"
-          :tocArray="value.toc"
-          :notes="value.notes.html"
+          :ecosystem="value.ecosystem"
           :hackage="value.hackage"
+          :toc="value.toc"
+          :notes="value.notes"
+          :kind="value.kind"
         />
       </template>
       <v-btn
         flat
-        class="ml-2 pl-0"
+        class="ma-0 px-1"
         color="grey"
         @click="openAddItemDialog"
       >
@@ -74,13 +75,12 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
 import category from 'client/store/modules/category'
 
 @Component({
-  name: 'category-component',
   components: {
     CategoryItem,
     AddItemDialog
   }
 })
-export default class categoryItem extends Vue {
+export default class Category extends Vue {
   @Prop(String) categoryId!: string
 
   isDialogOpen: boolean = false
@@ -114,7 +114,7 @@ export default class categoryItem extends Vue {
 .category-top {
   display: flex;
   align-items: center;
-  margin: 0 0 45px;
+  margin: 0 0 5px;
 }
 
 .category-top-data {
@@ -155,12 +155,12 @@ export default class categoryItem extends Vue {
 }
 
 .category-wrapper {
-  width: 800px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
 .category-description {
-  margin: 0 0 60px;
+  margin: 0 0 40px;
 }
 
 .category-description >>> p {

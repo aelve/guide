@@ -73,7 +73,7 @@
           </router-link>
 
           <v-btn
-            class="ma-0 px-1 add-category-btn"
+            class="ma-0 px-1"
             color="grey"
             flat
             @click="openAddCategoryDialog(groupName)"
