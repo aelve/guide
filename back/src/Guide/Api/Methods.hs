@@ -80,7 +80,7 @@ setCategoryInfo db requestDetails catId CCategoryInfoEdit{..} = do
   -- TODO diff and merge
   (editTitle, _) <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
   (editGroup, _) <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
-  (editStatus, _) <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+  (editStatus, _) <- dbUpdate db $ SetCategoryStatus catId ccieStatus
   let oldEnabledSections = category ^. enabledSections
   let newEnabledSections = unH ccieSections
   (editSection, _) <- dbUpdate db $ ChangeCategoryEnabledSections catId
