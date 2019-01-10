@@ -37,7 +37,7 @@
           name="input-7-4"
           label="Solo textarea"
           placeholder="Write new description here"
-          v-model="modifiedDescription"
+          v-model="textareaHasDescription"
         />
         <v-btn
           v-if="!editDescriptionShown"
@@ -63,7 +63,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addCategoryDescription(originalDescription, modifiedDescription);"
+            @click="toggleEditDescription(); addCategoryDescription(originalDescription, textareaHasDescription);"
           >
             Save
           </v-btn>
@@ -118,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addCategoryDescription(originalDescription, modifiedDescription);"
+            @click="toggleEditDescription(); addCategoryDescription(originalDescription, textareaHasDescription);"
           >
             Save
           </v-btn>
@@ -214,7 +214,6 @@ export default class Category extends Vue {
       return
     }
     await this.$store.dispatch('category/loadCategory', this.categoryId)
-    this.textareaHasDescription = _get(this, '$store.state.category.category.description.text')
     this.originalDescription = this.categoryDscMarkdown
   }
 
@@ -223,6 +222,7 @@ export default class Category extends Vue {
   }
 
   get categoryDscMarkdown () {
+    this.textareaHasDescription = _get(this, '$store.state.category.category.description.text')
     return _get(this, '$store.state.category.category.description.text')
   }
 
@@ -255,10 +255,10 @@ export default class Category extends Vue {
     try {
       await this.$store.dispatch('categoryItem/addCategoryDescription', {
         uid: this.categoryUid,
-        // original: 'bruh some very strange string',
         original: original,
         modified: modified
       })
+      this.$store.dispatch('category/reloadCategory', null, { root: true })
     } catch (err) {
       if (err.response.status === 409) {
         console.table(err)
