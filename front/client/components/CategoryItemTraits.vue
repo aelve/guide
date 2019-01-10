@@ -94,6 +94,7 @@
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import _cloneDeep from 'lodash/cloneDeep'
+import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
@@ -165,8 +166,8 @@ export default class CategoryItemTraits extends Vue {
     await this.$store.dispatch('category/reloadCategory')
   }
 
+  @Confirm({ text: 'delete this trait' })
   async deleteTrait (trait: any) {
-    // TODO confirmation
     await this.$store.dispatch('categoryItem/deleteItemTrait', {
       itemId: this.itemId,
       traitId: trait.uid

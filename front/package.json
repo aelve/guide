@@ -31,10 +31,10 @@
     "reflect-metadata": "^0.1.12",
     "vue": "^2.5.21",
     "vue-class-component": "^6.2.0",
-    "vue-meta": "^1.5.0",
+    "vue-mixin-decorator": "^1.0.0",
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
-    "vue-server-renderer": "https://github.com/aelve/vue-server-renderer",
+    "vue-server-renderer": "https://github.com/aelve/vue-server-renderer#ead33010fb5cb064981f4f3fb632f65cf190d694",
     "vuetify": "^1.4.0",
     "vuex": "^3.0.1",
     "vuex-router-sync": "^5.0.0"
