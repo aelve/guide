@@ -81,7 +81,7 @@
         <v-flex align-self-end>
           <v-btn
             class="mr-0"
-            :disabled="!isItemInfoEdited"
+            :disabled="!isInfoSaveEnabled"
             @click="saveItemInfo"
           >
             Save
@@ -129,6 +129,14 @@ export default class CategoryItemToolbar extends Vue {
     this.itemLinkEdit = newVal
   }
 
+  get isItemInfoEdited () {
+    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
+  }
+
+  get isInfoSaveEnabled () {
+    return this.isItemInfoEdited && this.itemNameEdit
+  }
+
   toggleEditItemInfoMenu () {
     this.isEditItemInfoMenuOpen = !this.isEditItemInfoMenuOpen
   }
@@ -137,22 +145,12 @@ export default class CategoryItemToolbar extends Vue {
     this.isDeleteItemDialogOpen = true
   }
 
-  get isItemInfoEdited () {
-    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
-  }
-
   async saveItemInfo (): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemInfo', {
       id: this.itemUid,
       body: {
         name: this.itemNameEdit,
-        link: this.itemLinkEdit,
-        // TODO remove next two lines after changing API of editing item info
-        // https://www.notion.so/aelve/Tasks-a157d6e3f22241ae83cf624fec3aaad5?p=fe081421dcf844e79e8877d9f4a103ad
-        created: '2016-07-22T00:00:00Z',
-        uid: this.itemUid,
-        group: this.itemGroup,
-        hackage: this.itemHackage
+        link: this.itemLinkEdit.trim() || null
       }
     })
     await this.$store.dispatch('category/reloadCategory')
