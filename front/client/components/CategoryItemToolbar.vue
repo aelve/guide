@@ -70,7 +70,7 @@
         <v-flex align-self-end>
           <v-btn
             class="mr-0"
-            :disabled="!isItemInfoEdited"
+            :disabled="!isInfoSaveEnabled"
             @click="updateItemInfo"
           >
             Save
@@ -107,6 +107,10 @@ export default class CategoryItemToolbar extends Vue {
     return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
   }
 
+  get isInfoSaveEnabled () {
+    return this.isItemInfoEdited && this.itemNameEdit
+  }
+
   @Watch('itemName')
   onItemNameChange (newVal: string) {
     this.itemNameEdit = newVal
@@ -126,21 +130,19 @@ export default class CategoryItemToolbar extends Vue {
       id: this.itemUid,
       body: {
         name: this.itemNameEdit,
-        // If link was changed we normalize it
-        // otherwise leave it as it was
-        link: this.itemLink !== this.itemLinkEdit
-          ? normalizeUrl(this.itemLinkEdit)
-          : this.itemLink,
-        // TODO remove next two lines after changing API of editing item info
-        // https://www.notion.so/aelve/Tasks-a157d6e3f22241ae83cf624fec3aaad5?p=fe081421dcf844e79e8877d9f4a103ad
-        created: '2016-07-22T00:00:00Z',
-        uid: this.itemUid,
-        group: this.itemGroup,
-        hackage: this.itemHackage
+        link: this.getLinkForSave()
       }
     })
     await this.$store.dispatch('category/reloadCategory')
     this.toggleEditItemInfoMenu()
+  }
+
+  async getLinkForSave () {
+    const trimmed = this.itemLinkEdit.trim()
+    if (!trimmed) {
+      return null
+    }
+    return this.itemLink === trimmed ? this.itemLink : normalizeUrl(trimmed)
   }
 
   @Confirm({ text: 'delete this item' })

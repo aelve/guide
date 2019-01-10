@@ -9,6 +9,7 @@ module Guide.Api.Methods where
 
 import Imports
 
+import Control.Monad.Extra (whenJust)
 import Data.Acid as Acid
 import Data.Aeson (encode)
 import Data.Text (Text)
@@ -79,7 +80,7 @@ setCategoryInfo db requestDetails catId CCategoryInfoEdit{..} = do
   -- TODO diff and merge
   (editTitle, _) <- dbUpdate db $ SetCategoryTitle catId $ unH ccieTitle
   (editGroup, _) <- dbUpdate db $ SetCategoryGroup catId $ unH ccieGroup
-  (editStatus, _) <- dbUpdate db $ SetCategoryStatus catId $ unH ccieStatus
+  (editStatus, _) <- dbUpdate db $ SetCategoryStatus catId ccieStatus
   let oldEnabledSections = category ^. enabledSections
   let newEnabledSections = unH ccieSections
   (editSection, _) <- dbUpdate db $ ChangeCategoryEnabledSections catId
@@ -116,16 +117,23 @@ createItem db requestDetails catId name' = do
 
 -- TODO: move an item
 
--- | Set item's info
-setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfo -> Guider NoContent
-setItemInfo db requestDetails itemId CItemInfo{..} = do
+-- | Modify item info. Fields that are not present ('Nothing') are not modified.
+setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfoEdit -> Guider NoContent
+setItemInfo db requestDetails itemId CItemInfoEdit{..} = do
   _ <- getItemOrFail db itemId
   -- TODO diff and merge
-  (editName, _) <- dbUpdate db $ SetItemName itemId $ unH ciiName
-  (editGroup, _) <- dbUpdate db $ SetItemGroup itemId $ unH ciiGroup
-  (editLink, _) <- dbUpdate db $ SetItemLink itemId $ unH ciiLink
-  (editHackage, _) <- dbUpdate db $ SetItemHackage itemId $ unH ciiHackage
-  mapM_ (addEdit db requestDetails) [editName, editGroup, editLink, editHackage]
+  whenJust (unH ciieName) $ \ciieName' -> do
+    (editName, _) <- dbUpdate db $ SetItemName itemId ciieName'
+    addEdit db requestDetails editName
+  whenJust (unH ciieGroup) $ \ciieGroup' -> do
+    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId ciieGroup'
+    addEdit db requestDetails editGroup
+  whenJust (unH ciieHackage) $ \ciieHackage' -> do
+    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId ciieHackage'
+    addEdit db requestDetails editHackage
+  whenJust (unH ciieLink) $ \ciieLink' -> do
+    (editLink, _) <- dbUpdate db $ SetItemLink itemId ciieLink'
+    addEdit db requestDetails editLink
   pure NoContent
 
 -- | Set item's summary.

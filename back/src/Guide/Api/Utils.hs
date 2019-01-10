@@ -17,6 +17,7 @@ module Guide.Api.Utils
   , schemaOptions
   , type (?)(..)
   , unH
+  , Primitive
   , BranchTag
   , RequestDetails(..)
   ) where
@@ -36,11 +37,14 @@ import Network.HTTP.Types.Header (hReferer,hUserAgent)
 import Network.Wai (Request, requestHeaders, remoteHost)
 import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck)
 
-import Guide.Utils (sockAddrToIP)
+import Guide.Utils (sockAddrToIP, Uid)
 
 import qualified Network.HTTP.Types.Header as NHTH
 import qualified Data.Text as T
 
+----------------------------------------------------------------------------
+-- Options
+----------------------------------------------------------------------------
 
 -- | Nice JSON options.
 --
@@ -56,7 +60,13 @@ jsonOptions = defaultOptions{ fieldLabelModifier = camelTo2 '_' . trim }
 schemaOptions :: SchemaOptions
 schemaOptions = fromAesonOptions jsonOptions
 
--- | A way to provide descriptions for record fields.
+----------------------------------------------------------------------------
+-- Descriptions for record fields
+----------------------------------------------------------------------------
+
+-- | A way to provide descriptions for record fields. Should only be used
+-- for primitive types, because adding a description to a ref field is
+-- impossible: <https://github.com/swagger-api/swagger-ui/issues/4732>
 newtype (?) (field :: *) (help :: Symbol) = H field
   deriving (Eq, Generic, Show)
 
@@ -66,19 +76,34 @@ instance ToJSON field => ToJSON (field ? help) where
 instance FromJSON field => FromJSON (field ? help) where
     parseJSON f = H <$> parseJSON f
 
-instance (KnownSymbol help, ToSchema a) => ToSchema (a ? help) where
+instance (KnownSymbol help, Primitive a, ToSchema a) => ToSchema (a ? help) where
   declareNamedSchema _ = do
     NamedSchema _ s <- declareNamedSchema (Proxy @a)
     return $ NamedSchema Nothing (s & description ?~ toText desc)
     where
       desc = symbolVal (Proxy @help)
 
-instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, ToSchema c) => GToSchema (S1 s (K1 i (Maybe c ? help))) where
+instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, Primitive c, ToSchema c)
+  => GToSchema (S1 s (K1 i (Maybe c ? help))) where
   gdeclareNamedSchema opts _ = fmap unnamed . withFieldSchema opts (Proxy2 :: Proxy2 s (K1 i (Maybe c ? help))) False
 
 -- | Unwrapper for @field '?' help@
 unH :: forall field help . (field ? help) -> field
 unH (H field) = field
+
+-- | Types that are allowed to be used with '?'.
+class Primitive a
+
+instance Primitive a => Primitive (Maybe a)
+instance Primitive [a]
+instance Primitive (Set a)
+instance Primitive Text
+instance Primitive (Uid a)
+instance Primitive UTCTime
+
+----------------------------------------------------------------------------
+-- BranchTag
+----------------------------------------------------------------------------
 
 -- | A way to name branches of Swagger API.
 --
@@ -103,6 +128,10 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desc) =>
              symbolVal (Proxy @desc))
             Nothing
      in toSwagger (Proxy @api) & applyTags [tag]
+
+----------------------------------------------------------------------------
+-- RequestDetails
+----------------------------------------------------------------------------
 
 -- | Servant request details, can be captured by adding @RequestDetails :>@ to an API branch.
 data RequestDetails = RequestDetails

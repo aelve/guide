@@ -22,12 +22,16 @@ module Guide.Api.Types
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
-  , CCategoryInfoEdit(..)
   , CCategoryFull(..), toCCategoryFull
   , CItemInfo(..), toCItemInfo
   , CItemFull(..), toCItemFull
   , CMarkdown(..), toCMarkdown
   , CTrait(..), toCTrait
+
+  -- * Request and response types
+  , CCreateTrait(..)
+  , CCategoryInfoEdit(..)
+  , CItemInfoEdit(..)
 
   -- * Search
   , CSearchResult(..), toCSearchResult
@@ -36,7 +40,6 @@ module Guide.Api.Types
   , CMove(..)
   , CDirection(..)
   , CTraitType(..)
-  , CCreateTrait(..)
   , CTextEdit(..)
   , CMergeConflict(..)
   )
@@ -156,11 +159,13 @@ data ItemSite route = ItemSite
 
   , _setItemInfo :: route :-
       Summary "Set item's info"
+      :> Description "Note: all fields are optional. If you don't pass a field, \
+                     \it won't be modified. To erase a field, send `null`."
       :> ErrorResponse 404 "Item not found"
       :> "item"
       :> Capture "itemId" (Uid Item)
       :> "info"
-      :> ReqBody '[JSON] CItemInfo
+      :> ReqBody '[JSON] CItemInfoEdit
       :> Put '[JSON] NoContent
 
   , _setItemSummary :: route :-
@@ -216,7 +221,7 @@ data TraitSite route = TraitSite
   { _createTrait :: route :-
       Summary "Create a new trait in the given item"
       :> Description "Returns the ID of the created trait."
-      :> ErrorResponse 400 "'text' not provided"
+      :> ErrorResponse 400 "'content' not provided"
       :> "item"
       :> Capture "itemId" (Uid Item)
       :> "trait"
@@ -355,11 +360,11 @@ instance ToSchema CMove where
 -- | A "light-weight" client type of 'Category', which describes a category
 -- but doesn't give the notes or the items.
 data CCategoryInfo = CCategoryInfo
-  { cciUid     :: Uid Category   ? "Category ID"
+  { cciUid     :: Uid Category
   , cciTitle   :: Text           ? "Category title"
   , cciCreated :: UTCTime        ? "When the category was created"
   , cciGroup_  :: Text           ? "Category group ('grandcategory')"
-  , cciStatus  :: CategoryStatus ? "Status (done, in progress, ...)"
+  , cciStatus  :: CategoryStatus
   }
   deriving (Show, Generic)
 
@@ -372,21 +377,21 @@ instance ToSchema CCategoryInfo where
 -- | Factory to create a 'CCategoryInfo' from a 'Category'
 toCCategoryInfo :: Category -> CCategoryInfo
 toCCategoryInfo Category{..} = CCategoryInfo
-  { cciUid     = H _categoryUid
-  , cciTitle   = H _categoryTitle
-  , cciCreated = H _categoryCreated
-  , cciGroup_  = H _categoryGroup_
-  , cciStatus  = H _categoryStatus
+  { cciUid     = _categoryUid
+  , cciTitle   = H $ _categoryTitle
+  , cciCreated = H $ _categoryCreated
+  , cciGroup_  = H $ _categoryGroup_
+  , cciStatus  = _categoryStatus
   }
 
 -- | A "light-weight" client type of 'Category', which gives all available
 -- information about a category
 data CCategoryFull = CCategoryFull
-  { ccfUid         :: Uid Category   ? "Category ID"
+  { ccfUid         :: Uid Category
   , ccfTitle       :: Text           ? "Category title"
   , ccfGroup       :: Text           ? "Category group ('grandcategory')"
-  , ccfStatus      :: CategoryStatus ? "Status, e.g. done, in progress, ..."
-  , ccfDescription :: CMarkdown      ? "Category description/notes (Markdown)"
+  , ccfStatus      :: CategoryStatus
+  , ccfDescription :: CMarkdown
   , ccfItems       :: [CItemFull]    ? "All items in the category"
   }
   deriving (Show, Generic)
@@ -400,19 +405,19 @@ instance ToSchema CCategoryFull where
 -- | Factory to create a 'CCategoryFull' from a 'Category'
 toCCategoryFull :: Category -> CCategoryFull
 toCCategoryFull Category{..} = CCategoryFull
-  { ccfUid         = H $ _categoryUid
+  { ccfUid         = _categoryUid
   , ccfTitle       = H $ _categoryTitle
   , ccfGroup       = H $ _categoryGroup_
-  , ccfDescription = H $ toCMarkdown _categoryNotes
+  , ccfDescription = toCMarkdown _categoryNotes
   , ccfItems       = H $ fmap toCItemFull _categoryItems
-  , ccfStatus      = H $ _categoryStatus
+  , ccfStatus      = _categoryStatus
   }
 
 -- | Client type to edit meta category information.
 data CCategoryInfoEdit = CCategoryInfoEdit
     { ccieTitle    :: Text            ? "Category title"
     , ccieGroup    :: Text            ? "Category group ('grandcategory')"
-    , ccieStatus   :: CategoryStatus  ? "Status (done, in progress, ...)"
+    , ccieStatus   :: CategoryStatus
     , ccieSections :: Set ItemSection ? "Enabled item sections"
     }
     deriving (Show, Generic)
@@ -429,13 +434,14 @@ instance ToSchema CCategoryInfoEdit where
 instance ToSchema ItemSection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | A lightweight info type about an 'Item'.
+-- | A lightweight info type about an 'Item'. Doesn't contain e.g. item
+-- traits.
 --
--- When updating it, don't forget to also update 'setItemInfo'.
+-- When updating it, don't forget to update 'CItemInfoEdit' and 'setItemInfo'.
 data CItemInfo = CItemInfo
-  { ciiUid     :: Uid Item   ? "Item ID"
-  , ciiName    :: Text       ? "Item name"
+  { ciiUid     :: Uid Item
   , ciiCreated :: UTCTime    ? "When the item was created"
+  , ciiName    :: Text       ? "Item name"
   , ciiGroup   :: Maybe Text ? "Item group"
   , ciiHackage :: Maybe Text ? "Package name on Hackage"
   , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
@@ -444,24 +450,54 @@ data CItemInfo = CItemInfo
 instance A.ToJSON CItemInfo where
   toJSON = A.genericToJSON jsonOptions
 
-instance A.FromJSON CItemInfo where
-  parseJSON = A.genericParseJSON jsonOptions
-
 instance ToSchema CItemInfo where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | A type for item edit requests. @Nothing@ means that the field should be
+-- left untouched; @Just Nothing@ means that the field should be erased.
+data CItemInfoEdit = CItemInfoEdit
+  { ciieName    :: Maybe Text         ? "Item name"
+  , ciieGroup   :: Maybe (Maybe Text) ? "Item group"
+  , ciieHackage :: Maybe (Maybe Text) ? "Package name on Hackage"
+  , ciieLink    :: Maybe (Maybe Url)  ? "Link to the official site, if exists"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CItemInfoEdit where
+  toJSON ciie = A.object $ catMaybes
+    [ ("name"    A..=) <$> unH (ciieName ciie)
+    , ("group"   A..=) <$> unH (ciieGroup ciie)
+    , ("hackage" A..=) <$> unH (ciieHackage ciie)
+    , ("link"    A..=) <$> unH (ciieLink ciie)
+    ]
+
+instance A.FromJSON CItemInfoEdit where
+  parseJSON = A.withObject "CItemInfoEdit" $ \o -> do
+    ciieName'    <- o A..:! "name"
+    ciieGroup'   <- o A..:! "group"
+    ciieHackage' <- o A..:! "hackage"
+    ciieLink'    <- o A..:! "link"
+    return CItemInfoEdit
+      { ciieName    = H ciieName'
+      , ciieGroup   = H ciieGroup'
+      , ciieHackage = H ciieHackage'
+      , ciieLink    = H ciieLink'
+      }
+
+instance ToSchema CItemInfoEdit where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type of 'Item'
 data CItemFull = CItemFull
-  { cifUid         :: Uid Item                 ? "Item ID"
+  { cifUid         :: Uid Item
   , cifName        :: Text                     ? "Item name"
   , cifCreated     :: UTCTime                  ? "When the item was created"
   , cifGroup       :: Maybe Text               ? "Item group"
   , cifHackage     :: Maybe Text               ? "Package name on Hackage"
-  , cifSummary     :: CMarkdown                ? "Item summary (Markdown)"
+  , cifSummary     :: CMarkdown
   , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
   , cifCons        :: [CTrait]                 ? "Cons (negative traits)"
-  , cifEcosystem   :: CMarkdown                ? "The ecosystem description (Markdown)"
-  , cifNotes       :: CMarkdown                ? "Notes (Markdown)"
+  , cifEcosystem   :: CMarkdown
+  , cifNotes       :: CMarkdown
   , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
   , cifToc         :: Forest CHeading          ? "Table of contents"
   } deriving (Show, Generic)
@@ -475,9 +511,9 @@ instance ToSchema CItemFull where
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
-  { ciiUid         = H $ _itemUid
-  , ciiName        = H $ _itemName
+  { ciiUid         = _itemUid
   , ciiCreated     = H $ _itemCreated
+  , ciiName        = H $ _itemName
   , ciiGroup       = H $ _itemGroup_
   , ciiHackage     = H $ _itemHackage
   , ciiLink        = H $ _itemLink
@@ -486,16 +522,16 @@ toCItemInfo Item{..} = CItemInfo
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
 toCItemFull Item{..} = CItemFull
-  { cifUid         = H $ _itemUid
+  { cifUid         = _itemUid
   , cifName        = H $ _itemName
   , cifCreated     = H $ _itemCreated
   , cifGroup       = H $ _itemGroup_
   , cifHackage     = H $ _itemHackage
-  , cifSummary     = H $ toCMarkdown _itemSummary
+  , cifSummary     = toCMarkdown _itemSummary
   , cifPros        = H $ fmap toCTrait _itemPros
   , cifCons        = H $ fmap toCTrait _itemCons
-  , cifEcosystem   = H $ toCMarkdown _itemEcosystem
-  , cifNotes       = H $ toCMarkdown _itemNotes
+  , cifEcosystem   = toCMarkdown _itemEcosystem
+  , cifNotes       = toCMarkdown _itemNotes
   , cifLink        = H $ _itemLink
   , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
@@ -504,8 +540,8 @@ toCItemFull Item{..} = CItemFull
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
-  { ctUid     :: Uid Trait ? "Trait ID"
-  , ctContent :: CMarkdown ? "Trait text (Markdown)"
+  { ctUid     :: Uid Trait
+  , ctContent :: CMarkdown
   } deriving (Show, Generic)
 
 instance A.ToJSON CTrait where
@@ -517,8 +553,8 @@ instance ToSchema CTrait where
 -- | Factory to create a 'CTrait' from a 'Trait'
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid     = H $ trait ^. uid
-  , ctContent = H $ toCMarkdown $ trait ^. content
+  { ctUid     = trait ^. uid
+  , ctContent = toCMarkdown $ trait ^. content
   }
 
 -- | Client type of 'Markdown'
@@ -555,7 +591,7 @@ instance ToCMarkdown MarkdownTree where
     }
 
 data CHeading = CHeading
-  { chContent :: CMarkdown    ? "Rendered heading"
+  { chContent :: CMarkdown
   , chSlug    :: Text         ? "In-page anchor for linking"
   } deriving (Show, Generic)
 
@@ -567,7 +603,7 @@ instance ToSchema CHeading where
 
 toCHeading :: Heading -> CHeading
 toCHeading h = CHeading
-  { chContent = H $ toCMarkdown $ headingMd h
+  { chContent = toCMarkdown $ headingMd h
   , chSlug    = H $ headingSlug h
   }
 
@@ -637,8 +673,8 @@ instance ToSchema CSearchResult where
 
 -- | A category was found.
 data CSRCategory = CSRCategory
-  { csrcInfo        :: CCategoryInfo ? "Info about the category"
-  , csrcDescription :: CMarkdown     ? "Category description"
+  { csrcInfo        :: CCategoryInfo
+  , csrcDescription :: CMarkdown
   } deriving (Show, Generic)
 
 instance A.ToJSON CSRCategory where
@@ -649,10 +685,10 @@ instance ToSchema CSRCategory where
 
 -- | An item was found.
 data CSRItem = CSRItem
-  { csriCategory    :: CCategoryInfo   ? "Category that the item belongs to"
-  , csriInfo        :: CItemInfo       ? "Info about the item"
-  , csriSummary     :: Maybe CMarkdown ? "Item summary (if the match was found there)"
-  , csriEcosystem   :: Maybe CMarkdown ? "Item ecosystem (if the match was found there)"
+  { csriCategory    :: CCategoryInfo
+  , csriInfo        :: CItemInfo
+  , csriSummary     :: Maybe CMarkdown
+  , csriEcosystem   :: Maybe CMarkdown
   } deriving (Show, Generic)
 
 instance A.ToJSON CSRItem where
@@ -660,12 +696,15 @@ instance A.ToJSON CSRItem where
 
 instance ToSchema CSRItem where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
+    & mapped.mapped.schema.S.description ?~
+      "Note: fields `summary` and `ecosystem` will be present only if the match \
+      \was found in those fields."
 
 toCSearchResult :: SearchResult -> CSearchResult
 toCSearchResult (SRCategory cat) =
   CSRCategoryResult $ CSRCategory
-    { csrcInfo        = H $ toCCategoryInfo cat
-    , csrcDescription = H $ toCMarkdown $
+    { csrcInfo        = toCCategoryInfo cat
+    , csrcDescription = toCMarkdown $
         -- Extract the part before the first heading, to avoid showing the
         -- full description (we assume that the full description is too long
         -- and that the preface will accurately represent what the category
@@ -676,19 +715,19 @@ toCSearchResult (SRCategory cat) =
     }
 toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
-    { csriCategory    = H $ toCCategoryInfo cat
-    , csriInfo        = H $ toCItemInfo item
-    , csriSummary     = H $ Just (toCMarkdown (item ^. G.summary))
-    , csriEcosystem   = H $ Nothing
+    { csriCategory    = toCCategoryInfo cat
+    , csriInfo        = toCItemInfo item
+    , csriSummary     = Just (toCMarkdown (item ^. G.summary))
+    , csriEcosystem   = Nothing
     }
 -- TODO: currently if there are matches in both item description and item
 -- ecosystem, we'll show two matches instead of one
 toCSearchResult (SRItemEcosystem cat item) =
   CSRItemResult $ CSRItem
-    { csriCategory    = H $ toCCategoryInfo cat
-    , csriInfo        = H $ toCItemInfo item
-    , csriSummary     = H $ Nothing
-    , csriEcosystem   = H $ Just (toCMarkdown (item ^. ecosystem))
+    { csriCategory    = toCCategoryInfo cat
+    , csriInfo        = toCItemInfo item
+    , csriSummary     = Nothing
+    , csriEcosystem   = Just (toCMarkdown (item ^. ecosystem))
     }
 
 ----------------------------------------------------------------------------
