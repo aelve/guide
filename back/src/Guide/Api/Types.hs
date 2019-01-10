@@ -472,10 +472,10 @@ instance A.ToJSON CItemInfoEdit where
 
 instance A.FromJSON CItemInfoEdit where
   parseJSON = A.withObject "CItemInfoEdit" $ \o -> do
-    ciieName'    <- o A..:? "name"
-    ciieGroup'   <- o A..:? "group"
-    ciieHackage' <- o A..:? "hackage"
-    ciieLink'    <- o A..:? "link"
+    ciieName'    <- o A..:! "name"
+    ciieGroup'   <- o A..:! "group"
+    ciieHackage' <- o A..:! "hackage"
+    ciieLink'    <- o A..:! "link"
     return CItemInfoEdit
       { ciieName    = H ciieName'
       , ciieGroup   = H ciieGroup'
