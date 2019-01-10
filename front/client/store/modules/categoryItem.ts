@@ -3,7 +3,8 @@ import {
   ICategoryItem,
   CategoryItemService,
   ICreateCategoryItem,
-  ICategoryItemInfo
+  ICategoryItemInfo,
+  ITrait
 } from 'client/service/CategoryItem'
 
 interface ICategoryItemState {
@@ -36,6 +37,85 @@ const actions: ActionTree<ICategoryItemState, any> = {
     { id, body }: { id: ICategoryItem['uid'], body: ICategoryItemInfo }
   ): Promise<void> {
     await CategoryItemService.updateItemInfo(id, body)
+  },
+  async moveItem (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, direction }: { id: ICategoryItem['uid'], direction: string }
+  ): Promise<void> {
+    await CategoryItemService.moveItem(id, direction)
+  },
+  async updateItemSummary (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['summary'], modified: ICategoryItem['summary'] }
+  ): Promise<void> {
+    await CategoryItemService.updateItemSummary(id, original, modified)
+  },
+  async updateItemEcosystem (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['ecosystem'], modified: ICategoryItem['ecosystem'] }
+  ): Promise<void> {
+    await CategoryItemService.updateItemEcosystem(id, original, modified)
+  },
+  async updateItemNotes (
+    context: ActionContext<ICategoryItemState, any>,
+    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['notes'], modified: ICategoryItem['notes'] }
+  ): Promise<void> {
+    await CategoryItemService.updateItemNotes(id, original, modified)
+  },
+  async updateItemTrait (
+    context: ActionContext<ICategoryItemState, any>,
+    {
+      itemId,
+      traitId,
+      original,
+      modified
+    }: {
+      itemId: ICategoryItem['uid'],
+      traitId: ITrait['uid'],
+      original: string,
+      modified: string
+    }
+  ): Promise<void> {
+    await CategoryItemService.updateItemTrait(itemId, traitId, original, modified)
+  },
+  async moveItemTrait (
+    context: ActionContext<ICategoryItemState, any>,
+    {
+      itemId,
+      traitId,
+      direction
+    }: {
+      itemId: ICategoryItem['uid'],
+      traitId: ITrait['uid'],
+      direction: string
+    }
+  ): Promise<void> {
+    await CategoryItemService.moveItemTrait(itemId, traitId, direction)
+  },
+  async deleteItemTrait (
+    context: ActionContext<ICategoryItemState, any>,
+    {
+      itemId,
+      traitId,
+    }: {
+      itemId: ICategoryItem['uid'],
+      traitId: ITrait['uid']
+    }
+  ): Promise<void> {
+    await CategoryItemService.deleteItemTrait(itemId, traitId)
+  },
+  async createItemTrait (
+    context: ActionContext<ICategoryItemState, any>,
+    { itemId,
+      type,
+      text
+    }: {
+      itemId: ICategoryItem['uid'],
+      type: string,
+      text: string,
+    }
+  ): Promise<void> {
+    await CategoryItemService.createItemTrait(itemId, type, text)
   }
 }
 

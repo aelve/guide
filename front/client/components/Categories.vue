@@ -73,12 +73,12 @@
           </router-link>
 
           <v-btn
-            class="ml-2 pl-0 add-category-btn"
+            class="ma-0 px-1"
             color="grey"
             flat
             @click="openAddCategoryDialog(groupName)"
           >
-            <v-icon class="mr-1" left>add</v-icon>
+            <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
             Add new category
           </v-btn>
         </div>
@@ -149,13 +149,5 @@ export default class Categories extends Vue {
 }
 .category-title:not(:last-child) {
   margin-bottom: 5px;
-}
-.test-btn {
-  background: #000;
-  color: #fff;
-  padding: 8px 14px 7px;
-  border-radius: 25px;
-  text-transform: uppercase;
-  margin: 0 0 20px;
 }
 </style>

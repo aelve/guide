@@ -6,8 +6,11 @@ import { sync } from 'vuex-router-sync'
 import axios from 'axios'
 import ALink from 'client/components/ALink.vue'
 import 'vuetify/dist/vuetify.css'
-import '@fortawesome/fontawesome-free/css/all.css'
-import 'material-design-icons-iconfont/dist/material-design-icons.css'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+library.add(fas)
+
 import 'client/assets/code-highlight.css'
 
 import AppComponent from './App.vue'
@@ -18,11 +21,26 @@ import { createStore } from './store'
 declare var BASE_URL: string
 axios.defaults.baseURL = BASE_URL
 
+const icons = {}
+// TODO import and add only used icons for production
+Object.values(fas).forEach(({ iconName }) => {
+  icons[iconName] = {
+    component: 'font-awesome-icon',
+    props: {
+      icon: iconName
+    }
+  }
+})
+
 function initVue () {
   Vue.use(VueRouter)
   Vue.use(Vuex)
-  Vue.use(Vuetify)
   Vue.component('ALink', ALink)
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
+  Vue.use(Vuetify, {
+    iconfont: 'faSvg',
+    icons
+  })
 }
 
 function createApp () {
