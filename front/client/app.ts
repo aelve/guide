@@ -5,6 +5,7 @@ import Vuetify from 'vuetify'
 import { sync } from 'vuex-router-sync'
 import axios from 'axios'
 import ALink from 'client/components/ALink.vue'
+import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
 import 'vuetify/dist/vuetify.css'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
@@ -35,6 +36,7 @@ Object.values(fas).forEach(({ iconName }) => {
 function initVue () {
   Vue.use(VueRouter)
   Vue.use(Vuex)
+  Vue.mixin(confirmDialogMixin)
   Vue.component('ALink', ALink)
   Vue.component('font-awesome-icon', FontAwesomeIcon)
   Vue.use(Vuetify, {
