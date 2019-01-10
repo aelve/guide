@@ -22,12 +22,16 @@ module Guide.Api.Types
 
   -- * View types
   , CCategoryInfo(..), toCCategoryInfo
-  , CCategoryInfoEdit(..)
   , CCategoryFull(..), toCCategoryFull
   , CItemInfo(..), toCItemInfo
   , CItemFull(..), toCItemFull
   , CMarkdown(..), toCMarkdown
   , CTrait(..), toCTrait
+
+  -- * Request and response types
+  , CCreateTrait(..)
+  , CCategoryInfoEdit(..)
+  , CItemInfoEdit(..)
 
   -- * Search
   , CSearchResult(..), toCSearchResult
@@ -36,7 +40,6 @@ module Guide.Api.Types
   , CMove(..)
   , CDirection(..)
   , CTraitType(..)
-  , CCreateTrait(..)
   , CTextEdit(..)
   , CMergeConflict(..)
   )
@@ -160,7 +163,7 @@ data ItemSite route = ItemSite
       :> "item"
       :> Capture "itemId" (Uid Item)
       :> "info"
-      :> ReqBody '[JSON] CItemInfo
+      :> ReqBody '[JSON] CItemInfoEdit
       :> Put '[JSON] NoContent
 
   , _setItemSummary :: route :-
@@ -429,38 +432,56 @@ instance ToSchema CCategoryInfoEdit where
 instance ToSchema ItemSection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | A lightweight info type about an 'Item'.
+-- | A lightweight info type about an 'Item'. Doesn't contain e.g. item
+-- traits.
 --
--- When updating it, don't forget to also update 'setItemInfo'.
+-- When updating it, don't forget to update 'CItemInfoEdit' and 'setItemInfo'.
 data CItemInfo = CItemInfo
-  { ciiName    :: Maybe Text         ? "Item name"
-  , ciiGroup   :: Maybe (Maybe Text) ? "Item group"
-  , ciiHackage :: Maybe (Maybe Text) ? "Package name on Hackage"
-  , ciiLink    :: Maybe (Maybe Url)  ? "Link to the official site, if exists"
+  { ciiUid     :: Uid Item   ? "Item ID"
+  , ciiCreated :: UTCTime    ? "When the item was created"
+  , ciiName    :: Text       ? "Item name"
+  , ciiGroup   :: Maybe Text ? "Item group"
+  , ciiHackage :: Maybe Text ? "Package name on Hackage"
+  , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
-  toJSON cii = A.object $ catMaybes
-    [ ("name"    A..=) <$> unH (ciiName cii)
-    , ("group"   A..=) <$> unH (ciiGroup cii)
-    , ("hackage" A..=) <$> unH (ciiHackage cii)
-    , ("link"    A..=) <$> unH (ciiLink cii)
-    ]
-
-instance A.FromJSON CItemInfo where
-  parseJSON = A.withObject "CItemInfo" $ \o -> do
-    ciiName'    <- o A..:? "name"
-    ciiGroup'   <- o A..:? "group"
-    ciiHackage' <- o A..:? "hackage"
-    ciiLink'    <- o A..:? "link"
-    return CItemInfo
-      { ciiName    = H ciiName'
-      , ciiGroup   = H ciiGroup'
-      , ciiHackage = H ciiHackage'
-      , ciiLink    = H ciiLink'
-      }
+  toJSON = A.genericToJSON jsonOptions
 
 instance ToSchema CItemInfo where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | A type for item edit requests. @Nothing@ means that the field should be
+-- left untouched; @Just Nothing@ means that the field should be erased.
+data CItemInfoEdit = CItemInfoEdit
+  { ciieName    :: Maybe Text         ? "Item name"
+  , ciieGroup   :: Maybe (Maybe Text) ? "Item group"
+  , ciieHackage :: Maybe (Maybe Text) ? "Package name on Hackage"
+  , ciieLink    :: Maybe (Maybe Url)  ? "Link to the official site, if exists"
+  } deriving (Show, Generic)
+
+instance A.ToJSON CItemInfoEdit where
+  toJSON ciie = A.object $ catMaybes
+    [ ("name"    A..=) <$> unH (ciieName ciie)
+    , ("group"   A..=) <$> unH (ciieGroup ciie)
+    , ("hackage" A..=) <$> unH (ciieHackage ciie)
+    , ("link"    A..=) <$> unH (ciieLink ciie)
+    ]
+
+instance A.FromJSON CItemInfoEdit where
+  parseJSON = A.withObject "CItemInfoEdit" $ \o -> do
+    ciieName'    <- o A..:? "name"
+    ciieGroup'   <- o A..:? "group"
+    ciieHackage' <- o A..:? "hackage"
+    ciieLink'    <- o A..:? "link"
+    return CItemInfoEdit
+      { ciieName    = H ciieName'
+      , ciieGroup   = H ciieGroup'
+      , ciieHackage = H ciieHackage'
+      , ciieLink    = H ciieLink'
+      }
+
+instance ToSchema CItemInfoEdit where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type of 'Item'
@@ -488,10 +509,12 @@ instance ToSchema CItemFull where
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
-  { ciiName        = H $ pure _itemName
-  , ciiGroup       = H $ pure _itemGroup_
-  , ciiHackage     = H $ pure _itemHackage
-  , ciiLink        = H $ pure _itemLink
+  { ciiUid         = H $ _itemUid
+  , ciiCreated     = H $ _itemCreated
+  , ciiName        = H $ _itemName
+  , ciiGroup       = H $ _itemGroup_
+  , ciiHackage     = H $ _itemHackage
+  , ciiLink        = H $ _itemLink
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'

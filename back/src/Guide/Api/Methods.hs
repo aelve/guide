@@ -117,22 +117,22 @@ createItem db requestDetails catId name' = do
 
 -- TODO: move an item
 
--- | Set item's info
-setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfo -> Guider NoContent
-setItemInfo db requestDetails itemId CItemInfo{..} = do
+-- | Modify item info. Fields that are not present ('Nothing') are not modified.
+setItemInfo :: DB -> RequestDetails -> Uid Item -> CItemInfoEdit -> Guider NoContent
+setItemInfo db requestDetails itemId CItemInfoEdit{..} = do
   _ <- getItemOrFail db itemId
   -- TODO diff and merge
-  whenJust (unH ciiName) $ \ciiName' -> do
-    (editName, _) <- dbUpdate db $ SetItemName itemId ciiName'
+  whenJust (unH ciieName) $ \ciieName' -> do
+    (editName, _) <- dbUpdate db $ SetItemName itemId ciieName'
     addEdit db requestDetails editName
-  whenJust (unH ciiGroup) $ \ciiGroup' -> do
-    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId ciiGroup'
+  whenJust (unH ciieGroup) $ \ciieGroup' -> do
+    (editGroup, _) <- dbUpdate db $ SetItemGroup itemId ciieGroup'
     addEdit db requestDetails editGroup
-  whenJust (unH ciiHackage) $ \ciiHackage' -> do
-    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId ciiHackage'
+  whenJust (unH ciieHackage) $ \ciieHackage' -> do
+    (editHackage, _) <- dbUpdate db $ SetItemHackage itemId ciieHackage'
     addEdit db requestDetails editHackage
-  whenJust (unH ciiLink) $ \ciiLink' -> do
-    (editLink, _) <- dbUpdate db $ SetItemLink itemId ciiLink'
+  whenJust (unH ciieLink) $ \ciieLink' -> do
+    (editLink, _) <- dbUpdate db $ SetItemLink itemId ciieLink'
     addEdit db requestDetails editLink
   pure NoContent
 
