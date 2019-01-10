@@ -440,11 +440,11 @@ data CItemInfo = CItemInfo
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
-  toJSON cii = A.object
-    [ "name"    A..= (unH $ ciiName cii)
-    , "group"   A..= (unH $ ciiGroup cii)
-    , "hackage" A..= (unH $ ciiHackage cii)
-    , "link"    A..= (unH $ ciiLink cii)
+  toJSON cii = A.object $ catMaybes
+    [ ("name"    A..=) <$> unH (ciiName cii)
+    , ("group"   A..=) <$> unH (ciiGroup cii)
+    , ("hackage" A..=) <$> unH (ciiHackage cii)
+    , ("link"    A..=) <$> unH (ciiLink cii)
     ]
 
 instance A.FromJSON CItemInfo where
