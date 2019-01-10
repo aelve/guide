@@ -206,7 +206,7 @@ export default class Category extends Vue {
   modified: string = ''
   merged: string = ''
   textareaHasDescription: string = ''
-  originalDescription: string = this.categoryDscMarkdown
+  originalDescription: string = ''
   modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
 
   async asyncData () {
