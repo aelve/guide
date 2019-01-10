@@ -117,6 +117,7 @@ export default class Categories extends Vue {
   get categories () {
     return this.$store.state.category.categoryList
   }
+  // TODO refactor
   get groups () {
     const groupedByGroupName = _groupBy(this.categories, 'group')
     const groupedEntries = Object.entries(groupedByGroupName)

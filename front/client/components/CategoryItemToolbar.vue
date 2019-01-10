@@ -52,7 +52,7 @@
           <category-item-btn
             title="delete item"
             icon="trash-alt"
-            @click="openConfirmDeleteDialog"
+            @click="deleteItem"
           />
         </v-toolbar-items>
       </v-toolbar>
@@ -78,24 +78,17 @@
         </v-flex>
       </v-layout>
     </v-expansion-panel-content>
-
-    <confirm-dialog
-      confirmationText="delete this item"
-      v-model="isDeleteItemDialogOpen"
-      @confirmed="deleteItem"
-    />
   </v-expansion-panel>
 </template>
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import normalizeUrl from 'normalize-url'
-import ConfirmDialog from 'client/components/ConfirmDialog.vue'
+import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 
 @Component({
   components: {
-    ConfirmDialog,
     CategoryItemBtn
   }
 })
@@ -107,7 +100,6 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
-  isDeleteItemDialogOpen: boolean = false
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
 
@@ -127,10 +119,6 @@ export default class CategoryItemToolbar extends Vue {
 
   toggleEditItemInfoMenu () {
     this.isEditItemInfoMenuOpen = !this.isEditItemInfoMenuOpen
-  }
-
-  openConfirmDeleteDialog () {
-    this.isDeleteItemDialogOpen = true
   }
 
   async updateItemInfo (): Promise<void> {
@@ -155,6 +143,7 @@ export default class CategoryItemToolbar extends Vue {
     this.toggleEditItemInfoMenu()
   }
 
+  @Confirm({ text: 'delete this item' })
   async deleteItem (): Promise<void> {
     await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
     await this.$store.dispatch('category/reloadCategory')
