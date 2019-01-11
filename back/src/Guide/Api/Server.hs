@@ -26,46 +26,45 @@ import Servant.Swagger.UI
 -- putStrLn that works well with concurrency
 import Say (say)
 
-import Guide.Api.Guider (GuiderServer, guiderToHandler)
+import Guide.Api.Guider (GuiderServer, ConfigHub(..), guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Api.Utils (RequestDetails (..))
 import Guide.Config (Config (..))
 import Guide.State
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
 
-guiderServer :: DB -> RequestDetails -> Site GuiderServer
-guiderServer db requestDetails = Site
+guiderServer :: Site GuiderServer
+guiderServer = Site
   { _categorySite = toServant (CategorySite
-      { _getCategories    = getCategories db
-      , _getCategory      = getCategory db
-      , _createCategory   = createCategory db requestDetails
-      , _setCategoryNotes = setCategoryNotes db requestDetails
-      , _setCategoryInfo  = setCategoryInfo db requestDetails
-      , _deleteCategory   = deleteCategory db requestDetails }
+      { _getCategories    = getCategories
+      , _getCategory      = getCategory
+      , _createCategory   = createCategory
+      , _setCategoryNotes = setCategoryNotes
+      , _setCategoryInfo  = setCategoryInfo
+      , _deleteCategory   = deleteCategory }
       :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = createItem db requestDetails
-      , _setItemInfo      = setItemInfo db requestDetails
-      , _setItemSummary   = setItemSummary db requestDetails
-      , _setItemEcosystem = setItemEcosystem db requestDetails
-      , _setItemNotes     = setItemNotes db requestDetails
-      , _deleteItem       = deleteItem db requestDetails
-      , _moveItem         = moveItem db requestDetails }
+      { _createItem       = createItem
+      , _setItemInfo      = setItemInfo
+      , _setItemSummary   = setItemSummary
+      , _setItemEcosystem = setItemEcosystem
+      , _setItemNotes     = setItemNotes
+      , _deleteItem       = deleteItem
+      , _moveItem         = moveItem }
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait = createTrait db requestDetails
-      , _setTrait    = setTrait db requestDetails
-      , _deleteTrait = deleteTrait db requestDetails
-      , _moveTrait   = moveTrait db requestDetails }
+      { _createTrait = createTrait
+      , _setTrait    = setTrait
+      , _deleteTrait = deleteTrait
+      , _moveTrait   = moveTrait }
       :: TraitSite GuiderServer)
 
   , _searchSite = toServant (SearchSite
-      { _search = search db }
+      { _search = search }
       :: SearchSite GuiderServer)
   }
 
@@ -84,8 +83,10 @@ fullServer db config =
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
 api :: DB -> Config -> Server Api
-api db config = hoistServer (Proxy @Api) (guiderToHandler config)
-  (\requestDetails -> toServant $ guiderServer db requestDetails)
+api db config = do
+  requestDetails <- ask
+  hoistServer (Proxy @Api) (guiderToHandler (ConfigHub config db requestDetails))
+      (const $ toServant guiderServer)
 
 -- | Serve the API on port 4400.
 --
