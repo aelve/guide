@@ -18,7 +18,7 @@ import Guide.Api.Utils (RequestDetails)
 import Guide.State (DB)
 
 
--- | Custom 'Guider' type holds the 'Config' always on hand.
+-- | A type for Guide handlers. Provides access to everything in 'ConfigHub'.
 newtype Guider a = Guider
   { runGuider :: ReaderT ConfigHub IO a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ConfigHub)
