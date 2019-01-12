@@ -26,7 +26,7 @@ import Servant.Swagger.UI
 -- putStrLn that works well with concurrency
 import Say (say)
 
-import Guide.Api.Guider (GuiderServer, ConfigHub(..), guiderToHandler)
+import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Config (Config (..))
@@ -85,7 +85,7 @@ fullServer db config =
 api :: DB -> Config -> Server Api
 api db config = do
   requestDetails <- ask
-  hoistServer (Proxy @Api) (guiderToHandler (ConfigHub config db requestDetails))
+  hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails))
       (const $ toServant guiderServer)
 
 -- | Serve the API on port 4400.

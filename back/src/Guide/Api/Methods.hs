@@ -15,7 +15,7 @@ import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
 
-import Guide.Api.Guider (Guider, ConfigHub(..))
+import Guide.Api.Guider (Context (..), Guider)
 import Guide.Api.Types
 import Guide.Api.Utils
 import Guide.Config (Config (..))
@@ -35,10 +35,7 @@ import qualified Guide.Search as Search
 
 -- | Get a list of available categories.
 getCategories :: Guider [CCategoryInfo]
-getCategories = do
-  ConfigHub{..} <- ask
-  dbQuery chDB GetCategories <&> \xs ->
-    map toCCategoryInfo xs
+getCategories = dbQuery GetCategories <&> map toCCategoryInfo
 
 -- | Get a single category and all of its items.
 getCategory :: Uid Category -> Guider CCategoryFull
@@ -50,11 +47,10 @@ getCategory catId = toCCategoryFull <$> getCategoryOrFail catId
 -- category with this title exists already).
 createCategory :: Text -> Text -> Guider (Uid Category)
 createCategory title' group' = do
-  ConfigHub{..} <- ask
   when (T.null title') $ throwError err400{errBody = "Title not provided"}
   when (T.null group') $ throwError err400{errBody = "Group' not provided"}
   -- If the category exists already, don't create it
-  cats <- view categories <$> dbQuery chDB GetGlobalState
+  cats <- view categories <$> dbQuery GetGlobalState
   let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
         && T.toCaseFold (cat^.group_) == T.toCaseFold group'
   case find isDuplicate cats of
@@ -62,30 +58,28 @@ createCategory title' group' = do
     Nothing -> do
       catId <- randomShortUid
       time <- liftIO getCurrentTime
-      addEdit . fst =<< dbUpdate chDB (AddCategory catId title' group' time)
+      addEdit . fst =<< dbUpdate (AddCategory catId title' group' time)
       return catId
 
 -- | Edit categoty's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
 setCategoryNotes catId CTextEdit{..} = do
-  ConfigHub{..} <- ask
   serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
   checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate chDB (SetCategoryNotes catId $ unH cteModified)
+  addEdit . fst =<< dbUpdate (SetCategoryNotes catId $ unH cteModified)
   pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: Uid Category -> CCategoryInfoEdit -> Guider NoContent
 setCategoryInfo catId CCategoryInfoEdit{..} = do
-  ConfigHub{..} <- ask
   category <- getCategoryOrFail catId
   -- TODO diff and merge
-  (editTitle, _) <- dbUpdate chDB $ SetCategoryTitle catId $ unH ccieTitle
-  (editGroup, _) <- dbUpdate chDB $ SetCategoryGroup catId $ unH ccieGroup
-  (editStatus, _) <- dbUpdate chDB $ SetCategoryStatus catId ccieStatus
+  (editTitle, _) <- dbUpdate $ SetCategoryTitle catId $ unH ccieTitle
+  (editGroup, _) <- dbUpdate $ SetCategoryGroup catId $ unH ccieGroup
+  (editStatus, _) <- dbUpdate $ SetCategoryStatus catId ccieStatus
   let oldEnabledSections = category ^. enabledSections
   let newEnabledSections = unH ccieSections
-  (editSection, _) <- dbUpdate chDB $ ChangeCategoryEnabledSections catId
+  (editSection, _) <- dbUpdate $ ChangeCategoryEnabledSections catId
       (newEnabledSections S.\\ oldEnabledSections)
       (oldEnabledSections S.\\ newEnabledSections)
   mapM_ addEdit [editTitle, editGroup, editStatus, editSection]
@@ -94,9 +88,8 @@ setCategoryInfo catId CCategoryInfoEdit{..} = do
 -- | Delete a category.
 deleteCategory :: Uid Category -> Guider NoContent
 deleteCategory catId = do
-  ConfigHub{..} <- ask
   _ <- getCategoryOrFail catId
-  dbUpdate chDB (DeleteCategory catId) >>= mapM_ addEdit
+  dbUpdate (DeleteCategory catId) >>= mapM_ addEdit
   pure NoContent
 
 ----------------------------------------------------------------------------
@@ -109,12 +102,11 @@ deleteCategory catId = do
 -- with duplicated names.
 createItem :: Uid Category -> Text -> Guider (Uid Item)
 createItem catId name' = do
-  ConfigHub{..} <- ask
   _ <- getCategoryOrFail catId
   when (T.null name') $ throwError err400{errBody = "Name not provided"}
   itemId <- randomShortUid
   time <- liftIO getCurrentTime
-  addEdit . fst =<< dbUpdate chDB (AddItem catId itemId name' time)
+  addEdit . fst =<< dbUpdate (AddItem catId itemId name' time)
   pure itemId
 
 -- TODO: move an item
@@ -122,60 +114,54 @@ createItem catId name' = do
 -- | Modify item info. Fields that are not present ('Nothing') are not modified.
 setItemInfo :: Uid Item -> CItemInfoEdit -> Guider NoContent
 setItemInfo itemId CItemInfoEdit{..} = do
-  ConfigHub{..} <- ask
   _ <- getItemOrFail itemId
   -- TODO diff and merge
   whenJust (unH ciieName) $ \ciieName' ->
-    addEdit . fst =<< (dbUpdate chDB $ SetItemName itemId ciieName')
+    addEdit . fst =<< dbUpdate (SetItemName itemId ciieName')
   whenJust (unH ciieGroup) $ \ciieGroup' ->
-    addEdit . fst =<< (dbUpdate chDB $ SetItemGroup itemId ciieGroup')
+    addEdit . fst =<< dbUpdate (SetItemGroup itemId ciieGroup')
   whenJust (unH ciieHackage) $ \ciieHackage' ->
-    addEdit . fst =<< (dbUpdate chDB $ SetItemHackage itemId ciieHackage')
+    addEdit . fst =<< dbUpdate (SetItemHackage itemId ciieHackage')
   whenJust (unH ciieLink) $ \ciieLink' -> do
-    addEdit . fst =<< (dbUpdate chDB $ SetItemLink itemId ciieLink')
+    addEdit . fst =<< dbUpdate (SetItemLink itemId ciieLink')
   pure NoContent
 
 -- | Set item's summary.
 setItemSummary :: Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary itemId CTextEdit{..} = do
-  ConfigHub{..} <- ask
   serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate chDB (SetItemSummary itemId $ unH cteModified)
+  addEdit . fst =<< dbUpdate (SetItemSummary itemId $ unH cteModified)
   pure NoContent
 
 -- | Set item's ecosystem.
 setItemEcosystem :: Uid Item -> CTextEdit -> Guider NoContent
 setItemEcosystem itemId CTextEdit{..} = do
-  ConfigHub{..} <- ask
   serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate chDB (SetItemEcosystem itemId $ unH cteModified)
+  addEdit . fst =<< dbUpdate (SetItemEcosystem itemId $ unH cteModified)
   pure NoContent
 
 -- | Set item's notes.
 setItemNotes :: Uid Item -> CTextEdit -> Guider NoContent
 setItemNotes  itemId CTextEdit{..} = do
-  ConfigHub{..} <- ask
   serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate chDB (SetItemNotes itemId $ unH cteModified)
+  addEdit . fst =<< dbUpdate (SetItemNotes itemId $ unH cteModified)
   pure NoContent
 
 -- | Delete an item.
 deleteItem :: Uid Item -> Guider NoContent
 deleteItem itemId = do
-  ConfigHub{..} <- ask
   _ <- getItemOrFail itemId
-  dbUpdate chDB (DeleteItem itemId) >>= mapM_ addEdit
+  dbUpdate (DeleteItem itemId) >>= mapM_ addEdit
   pure NoContent
 
 -- | Move item up or down
 moveItem :: Uid Item -> CMove -> Guider NoContent
 moveItem itemId CMove{..} = do
-  ConfigHub{..} <- ask
   _ <- getItemOrFail itemId
-  addEdit =<< dbUpdate chDB (MoveItem itemId (cmDirection == DirectionUp))
+  addEdit =<< dbUpdate (MoveItem itemId (cmDirection == DirectionUp))
   pure NoContent
 
 ----------------------------------------------------------------------------
@@ -187,37 +173,33 @@ moveItem itemId CMove{..} = do
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
 createTrait itemId CCreateTrait{..} = do
-  ConfigHub{..} <- ask
   when (T.null cctContent) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
   addEdit . fst =<< case cctType of
-    Con -> dbUpdate chDB (AddCon itemId traitId cctContent)
-    Pro -> dbUpdate chDB (AddPro itemId traitId cctContent)
+    Con -> dbUpdate (AddCon itemId traitId cctContent)
+    Pro -> dbUpdate (AddPro itemId traitId cctContent)
   pure traitId
 
 -- | Update the text of a trait (pro/con).
 setTrait :: Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
 setTrait itemId traitId CTextEdit{..} = do
-  ConfigHub{..} <- ask
   serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail itemId traitId
   checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate chDB (SetTraitContent itemId traitId $ unH cteModified)
+  addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId $ unH cteModified)
   pure NoContent
 
 -- | Delete a trait (pro/con).
 deleteTrait :: Uid Item -> Uid Trait -> Guider NoContent
 deleteTrait itemId traitId = do
-  ConfigHub{..} <- ask
   _ <- getTraitOrFail itemId traitId
-  dbUpdate chDB (DeleteTrait itemId traitId) >>= mapM_ addEdit
+  dbUpdate (DeleteTrait itemId traitId) >>= mapM_ addEdit
   pure NoContent
 
 -- | Move trait up or down
 moveTrait :: Uid Item -> Uid Trait -> CMove -> Guider NoContent
 moveTrait itemId traitId CMove{..} = do
-  ConfigHub{..} <- ask
   _ <- getTraitOrFail itemId traitId
-  addEdit =<< dbUpdate chDB (MoveTrait itemId traitId (cmDirection == DirectionUp))
+  addEdit =<< dbUpdate (MoveTrait itemId traitId (cmDirection == DirectionUp))
   pure NoContent
 
 ----------------------------------------------------------------------------
@@ -229,8 +211,7 @@ moveTrait itemId traitId CMove{..} = do
 -- Returns at most 100 results.
 search :: Text -> Guider [CSearchResult]
 search searchQuery = do
-  ConfigHub{..} <- ask
-  gs <- dbQuery chDB GetGlobalState
+  gs <- dbQuery GetGlobalState
   pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
 ----------------------------------------------------------------------------
@@ -238,38 +219,40 @@ search searchQuery = do
 ----------------------------------------------------------------------------
 
 -- | Update something in the database.
-dbUpdate :: (MonadIO m, EventState event ~ GlobalState, UpdateEvent event)
-         => DB -> event -> m (EventResult event)
-dbUpdate db x = liftIO $ do
-  Acid.update db SetDirty
-  Acid.update db x
+dbUpdate :: (EventState event ~ GlobalState, UpdateEvent event)
+         => event -> Guider (EventResult event)
+dbUpdate x = do
+  Context{..} <- ask
+  liftIO $ do
+    Acid.update chDB SetDirty
+    Acid.update chDB x
 
 -- | Read something from the database.
-dbQuery :: (MonadIO m, EventState event ~ GlobalState, QueryEvent event)
-        => DB -> event -> m (EventResult event)
-dbQuery db x = liftIO $ Acid.query db x
+dbQuery :: (EventState event ~ GlobalState, QueryEvent event)
+        => event -> Guider (EventResult event)
+dbQuery x = do
+  Context{..} <- ask
+  liftIO $ Acid.query chDB x
 
 -- Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()
 addEdit edit = unless (isVacuousEdit edit) $ do
     time <- liftIO getCurrentTime
-    ConfigHub Config{..} db RequestDetails{..} <- ask
-    dbUpdate db $ RegisterEdit edit rdIp time
-    dbUpdate db $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
+    Context Config{..} _ RequestDetails{..} <- ask
+    dbUpdate $ RegisterEdit edit rdIp time
+    dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category
 getCategoryOrFail catId = do
-  ConfigHub{..} <- ask
-  dbQuery chDB (GetCategoryMaybe catId) >>= \case
+  dbQuery (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Category not found"}
     Just cat -> pure cat
 
 -- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
 getItemOrFail :: Uid Item -> Guider Item
 getItemOrFail itemId = do
-  ConfigHub{..} <- ask
-  dbQuery chDB (GetItemMaybe itemId) >>= \case
+  dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Item not found"}
     Just item -> pure item
 
@@ -277,11 +260,10 @@ getItemOrFail itemId = do
 -- either the item or the trait doesn't exist.
 getTraitOrFail :: Uid Item -> Uid Trait -> Guider Trait
 getTraitOrFail itemId traitId = do
-  ConfigHub{..} <- ask
-  dbQuery chDB (GetItemMaybe itemId) >>= \case
+  dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Item not found"}
     Just _ -> do
-      dbQuery chDB (GetTraitMaybe itemId traitId) >>= \case
+      dbQuery (GetTraitMaybe itemId traitId) >>= \case
         Nothing -> throwError $ err404 {errBody = "Trait not found"}
         Just trait -> pure trait
 
