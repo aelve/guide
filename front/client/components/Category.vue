@@ -214,7 +214,6 @@ export default class Category extends Vue {
       return
     }
     await this.$store.dispatch('category/loadCategory', this.categoryId)
-    this.originalDescription = this.categoryDscMarkdown
   }
 
   get categoryDescription () {
@@ -222,6 +221,7 @@ export default class Category extends Vue {
   }
 
   get categoryDscMarkdown () {
+    this.originalDescription = _get(this, '$store.state.category.category.description.text')
     this.textareaHasDescription = _get(this, '$store.state.category.category.description.text')
     return _get(this, '$store.state.category.category.description.text')
   }
@@ -258,7 +258,7 @@ export default class Category extends Vue {
         original: original,
         modified: modified
       })
-      this.$store.dispatch('category/reloadCategory', null, { root: true })
+      this.originalDescription = modified
     } catch (err) {
       if (err.response.status === 409) {
         console.table(err)
