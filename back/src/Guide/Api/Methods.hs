@@ -224,15 +224,15 @@ dbUpdate :: (EventState event ~ GlobalState, UpdateEvent event)
 dbUpdate x = do
   Context{..} <- ask
   liftIO $ do
-    Acid.update chDB SetDirty
-    Acid.update chDB x
+    Acid.update cDB SetDirty
+    Acid.update cDB x
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event)
         => event -> Guider (EventResult event)
 dbQuery x = do
   Context{..} <- ask
-  liftIO $ Acid.query chDB x
+  liftIO $ Acid.query cDB x
 
 -- Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()

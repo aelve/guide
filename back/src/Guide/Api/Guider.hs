@@ -25,9 +25,9 @@ newtype Guider a = Guider
 
 -- | Context of Guider
 data Context = Context
-  { chConfig  :: Config
-  , chDB      :: DB
-  , chDetails :: RequestDetails
+  { cConfig  :: Config
+  , cDB      :: DB
+  , cDetails :: RequestDetails
   }
 
 instance MonadError ServantErr Guider where
