@@ -1,318 +1,206 @@
 <template>
-  <div class="article-item">
-    <div class="article-header">
-      <p class="article-hd-textlg">{{ kind }}</p>
-      <a-link 
-        openInNewTab :url="`http://hackage.haskell.org/package/${kind}`" 
-        class="article-header-link">
-        (Hackage)
-      </a-link>
-      <p class="article-hd-textsm">{{ group }}</p>
-      <div class="article-header-icons">
-        <i class="fas fa-arrow-up"></i>
-        <i class="fas fa-arrow-down"></i>
-        <div class="header-func-icons">
-          <i class="fas fa-cogs"></i>
-          <button @click="openConfirmDialog">
-            <i class="fas fa-times item-del-btn"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="article-content">
-      <p class="article-section-title">Summary</p>
-      <div 
-        class="article-description" 
-        v-html="itemDescription"/>
-      <div class="flex-wrapper article-section pros-cons-box">
-        <div class="width-50">
-          <p class="article-section-title">Pros</p>
-          <ul 
-            v-if="pros" 
-            v-for="(value, index) in pros" 
-            :key="index">
-            <li v-html="value.content.html"/>
-          </ul>
-        </div>
-        <div class="width-50">
-          <p class="article-section-title">Cons</p>
-          <ul v-if="cons" v-for="(value, index) in cons" :key="index">
-            <li v-html="value.content.html"></li>
-          </ul>
-        </div>
-      </div>
-      <div class="article-section">
-        <p class="article-section-title">Ecosystem</p>
-        <div v-html="ecosystem"></div>
-      </div>
-      <div class="article-section notes-box">
-        <p class="article-section-title">Notes</p>
-        <div class="notes-settings">
-          <!-- TODO change a to vue markup element -->
-          <button class="notes-settings-btn" @click="expandNotes">expand notes</button>
-          <button class="notes-settings-btn" @click="collapseNotes">collapse notes</button>
-          <button class="notes-settings-btn" style="display: none;">edit notes</button>
-        </div>
-        <div 
-          v-for="(value, index) in tocArray" 
-          :key="index">
-          <!-- TODO refactor v-for from ul to li -->
-          <ul 
-            v-for="(value, index) in value" 
-            :key="index">
-            <li 
-              class="notes-toc-item" 
-              v-if="value.content">
-              <a 
-                :href="`#${value.slug}`" 
-                @click="expandNotes">
-                <p>{{value.content.html}}</p>
-              </a>
-            </li>
-          </ul>
-        </div>
-        <transition name="slidedown">
-          <div
-            class="notes-content"
-            v-show="isNoteExpanded" 
-            v-html="notes">
-          </div>
-        </transition>
-      </div>
-    </div>
-    <confirm-dialog
-      confirmationText="delete this item"
-      v-model="isDeleteItemDialogOpen"
-      @confirmed="deleteItem"
+  <div class="category-item">
+
+    <category-item-toolbar
+      :itemUid="itemUid"
+      :itemName="name"
+      :itemLink="link"
+      :itemGroup="group"
+      :itemHackage="hackage"
     />
+
+    <div class="category-item-body">
+
+      <category-item-section
+        title="Summary"
+        :editText="summary.text"
+        @save="updateSummary"
+      >
+        <div
+          class="mb-2 category-item-summary"
+          v-html="summary.html"
+        />
+      </category-item-section>
+
+      <div class="category-item-traits">
+        <category-item-traits
+          type="pro"
+          :itemId="itemUid"
+          :traits="pros"
+        />
+        <category-item-traits
+          type="con"
+          :itemId="itemUid"
+          :traits="cons"
+        />
+      </div>
+
+      <category-item-section
+        title="Ecosystem"
+        :editText="ecosystem.text"
+        @save="updateEcosystem"
+      >
+        <div v-html="ecosystem.html" />
+      </category-item-section>
+
+      <category-item-section
+        title="Notes"
+        :editText="notes.text"
+        @save="updateNotes"
+      >
+        <v-btn
+          small
+          dark
+          round
+          class="mx-0"
+          @click="expandNotes"
+        >
+          expand
+        </v-btn>
+        <v-btn
+          small
+          dark
+          round
+          class="mx-0"
+          @click="collapseNotes"
+        >
+          collapse
+        </v-btn>
+
+        <ul>
+          <li
+            v-for="(value, index) in toc"
+            :key="index"
+          >
+            <a
+              :href="`#${value[0].slug}`"
+              v-html="value[0].content.html"
+              @click="expandNotes"
+            />
+          </li>
+        </ul>
+
+        <v-slide-y-transition hide-on-leave>
+          <div
+            v-show="isNoteExpanded"
+            v-html="notes.html"
+          />
+        </v-slide-y-transition>
+      </category-item-section>
+
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
+import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
+import CategoryItemSection from 'client/components/CategoryItemSection.vue'
+import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
 
 @Component({
   components: {
-    ConfirmDialog
+    CategoryItemToolbar,
+    CategoryItemSection,
+    CategoryItemTraits
   }
 })
 export default class CategoryItem extends Vue {
-  @Prop(String) kind!: any
-  @Prop(String) group!: any
-  @Prop(String) itemDescription!: any
-  @Prop(Array) pros!: [any]
-  @Prop(Array) cons!: [any]
-  @Prop(String) ecosystem!: any
-  @Prop(Array) tocArray!: [any]
-  @Prop(Object) tocItemContent!: any
-  @Prop(String) notes!: any
-  @Prop(String) itemUid!: any
+  // TODO get rid of so many props and pass the item fully
+  @Prop(String) name!: string
+  @Prop(String) group!: string
+  @Prop(Object) summary!: { text: string, html: string }
+  @Prop(Array) pros!: any[]
+  @Prop(Array) cons!: any[]
+  @Prop(Object) ecosystem!: { text: string, html: string }
+  @Prop(Array) toc!: any[]
+  @Prop(Object) tocItemContent!: object
+  @Prop(Object) notes!: { text: string, html: string }
+  @Prop(String) itemUid!: string
+  @Prop(String) link!: string
+  @Prop(String) hackage!: string
 
   isNoteExpanded: boolean = false
-  isDeleteItemDialogOpen: boolean = false
 
-  expandNotes () {
+  expandNotes (): void {
     this.isNoteExpanded = true
   }
 
-  collapseNotes () {
+  collapseNotes (): void {
     this.isNoteExpanded = false
   }
 
-  async deleteItem (): Promise<void> {
-    await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
+  async updateSummary (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemSummary', {
+      id: this.itemUid,
+      original: this.summary.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
   }
 
-  openConfirmDialog () {
-    this.isDeleteItemDialogOpen = true
+  async updateEcosystem (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemEcosystem', {
+      id: this.itemUid,
+      original: this.ecosystem.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
+  }
+
+  async updateNotes (newValue: string): Promise<void> {
+    await this.$store.dispatch('categoryItem/updateItemNotes', {
+      id: this.itemUid,
+      original: this.notes.text,
+      modified: newValue
+    })
+    await this.$store.dispatch('category/reloadCategory')
   }
 }
 </script>
 
 <style scoped>
-.article-content >>> p {
+.category-item-body {
+  padding: 15px 20px;
+}
+
+.category-item-body >>> p {
   font-size: 16px;
   margin: 0 0 10px;
 }
 
-.article-content >>> li {
+.category-item-body >>> li {
   font-size: 16px;
 }
 
-.article-description {
-  margin: 10px 0 60px;
-}
-
-.article-description >>> p {
-  margin: 0;
-}
-
-.article-description >>> p {
-  margin: 0 0 15px;
-  font-size: 16px;
-}
-
-.article-description >>> h1 {
+.category-item-summary >>> h1 {
   margin: 25px 0 5px;
 }
 
-.article-section {
-  margin: 30px 0;
-}
-
-.notes-box {
-  position: relative;
-}
-
-.article-section.pros-cons-box,
-.article-section.notes-box >>> li {
-  margin: 0 0 5px;
-}
-
-.article-section.notes-box >>> h1 {
-  margin: 20px 0;
-}
-
-.article-item {
+.category-item {
   background: #e5e5e5;
-  padding: 15px 20px 25px;
-  margin: 0 0 80px;
+  margin: 0 0 40px;
 }
 
-.article-header {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  margin: -15px -20px 15px;
-  background: #c8c8c8;
-}
-
-.flex-wrapper {
+.category-item-traits {
   display: flex;
 }
 
-.width-50 {
-  width: 50%;
-  padding-right: 20px;
-}
-
-.width-50:nth-last-child(1) {
-  padding-right: 0;
-  padding-left: 20px;
-}
-
-.article-section-title {
-  display: block;
-  margin: 0 0 8px;
-  font-size: 22px !important;
-  font-weight: 600;
-}
-
-.article-hd-textlg {
-  font-size: 22px;
-}
-
-.article-hd-textsm {
-  font-size: 18px;
-}
-
-.article-header-link {
-  font-size: 22px;
-  padding: 0 32px 0 8px;
-}
-
-.article-header-icons {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+.category-item-traits > * {
   flex: 1;
 }
 
-.article-header-icons >>> i {
-  margin-right: 5px;
-  font-size: 18px;
-  color: #979797;
-  cursor: pointer;
-  transition: all ease-in-out 0.25s;
-}
-
-.article-header-icons >>> i:nth-last-child(1) {
-  margin: 0;
-}
-
-.article-header-icons >>> i:hover {
-  color: #000;
-}
-
-.header-func-icons {
-  padding-left: 20px;
-}
-
-.notes-toc-item >>> p {
-  margin: 0;
-}
-
-.notes-toc-item >>> a {
-  text-decoration: none;
-  transition: all ease-in-out 0.25s;
-}
-
-.notes-toc-item >>> a:hover {
-  color: #7eb2e5;
-}
-
-.notes-settings {
-  display: flex;
-  width: 100%;
-  padding: 0 0 12px;
-}
-
-.notes-settings-btn {
-  margin-left: 20px;
-  padding: 3px 8px 2px;
-  background: #212121;
-  border-radius: 4px;
-  color: #fff;
-  transition: all ease-in-out 0.25s;
-}
-
-.notes-settings-btn:hover {
-  background: #424242;
-}
-
-.notes-settings-btn:focus,
-.notes-settings-btn:active {
-  outline: none;
-}
-
-.notes-settings-btn:nth-child(1) {
-  margin-left: 0;
-}
-
-.notes-content {
-  /* position: absolute; */
-  transform-origin: top;
-  /* bottom: 0; */
+.category-item-traits > *:not(:last-child) {
+  margin-right: 20px;
 }
 
 @media screend and (max-width: 768px) {
-  .article-content {
+  .category-item-body {
     width: 100%;
   }
-  .article-item {
+  .category-item {
     margin: 0 0 30px;
-  }
-  .article-hd-textlg {
-    font-size: 20px;
-  }
-  .article-hd-textsm {
-    font-size: 16px;
-  }
-  .article-header-link {
-    font-size: 20px;
-    padding: 0 32px 0 8px;
   }
 }
 </style>
