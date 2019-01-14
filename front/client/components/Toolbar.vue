@@ -5,14 +5,6 @@
     </v-toolbar-title>
     <v-spacer></v-spacer>
     <search-field />
-    <v-toolbar-items>
-      <v-btn
-        flat
-        v-on:click="getApi"
-      >
-        Login
-      </v-btn>
-    </v-toolbar-items>
   </v-toolbar>
 </template>
 
@@ -29,9 +21,5 @@ import axios from 'axios'
     Logo
   }
 })
-export default class Toolbar extends Vue {
-  async getApi() {
-    const { data } = await axios.get('api');
-  }
-}
+export default class Toolbar extends Vue {}
 </script>
