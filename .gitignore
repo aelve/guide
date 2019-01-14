@@ -32,13 +32,15 @@ TAGS
 tags
 
 # backend database
-/state/
+/back/state/
 
 # backend config
-/config.json
+/back/config.json
+
+# backend JavaScript artifacts
+/back/guidejs/node_modules/
+/back/guidejs/package-lock.json
+/back/static/js/
 
 # frontend
-/guidejs/node_modules/
-/guidejs/package-lock.json
 /front/node_modules/
-/static/js/

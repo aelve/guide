@@ -3,6 +3,7 @@ const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 const TSLintPlugin = require('tslint-webpack-plugin')
+const { cssLoader, stylusLoader } = require('./style-loader.conf')
 
 const { clientPort, ssrPort } = require('./build-config')
 const isDev = process.env.NODE_ENV === 'development'
@@ -21,13 +22,14 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js',
       client: path.resolve(__dirname, '../client/')
     }
   },
 
   module: {
     rules: [
+      cssLoader, 
+      stylusLoader,
       {
         test: /\.js$/,
         exclude: /node_modules/,
@@ -52,21 +54,6 @@ module.exports = {
       {
         test: /\.vue$/,
         loader: 'vue-loader'
-      },
-      {
-        test: /\.(jade|pug)$/,
-        oneOf: [
-          // For vue Jade / Pug template.
-          {
-            resourceQuery: /^\?vue/,
-            use: ['pug-plain-loader']
-          },
-
-          // For Jade / Pug standalone files.
-          {
-            use: ['pug-loader']
-          }
-        ]
       },
       {
         test: /\.(png|jpg|gif|svg|woff|woff2|eot|ttf)$/,

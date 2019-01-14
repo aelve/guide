@@ -1,0 +1,270 @@
+Description
+============================================================
+
+A header of an item (a dark bar with the title and edit buttons). It consists of a title (item-info-title), controls (item-info-controls), and a form for editing item info (item-info-edit-form).
+
+Required context:
+
+  * item
+  * category
+
+  * item_color.light
+    item_color.dark
+
+  * link_to_item = e.g. /haskell/lenses-pt3tvnwt#item-e4t2tv2n
+
+  * hackage
+
+  * category_groups = e.g.
+      [ {"name": "POSIX", "selected": false}
+      , {"name": "PCRE", "selected": true}
+      ... ]
+
+  * item_no_group = true if the item's group is Nothing
+
+
+HTML
+============================================================
+<div class="item-info" style="background-color:{{item_color.dark}}">
+  <div class="section normal shown noscript-shown">
+    {{> item-info-anchor }}
+    {{> item-info-title }}
+    {{> item-info-controls }}
+  </div>
+  <div class="section editing">
+    {{> item-info-edit-form }}
+  </div>
+</div>
+
+CSS
+------------------------------------------------------------
+.item-info {
+  padding-bottom: 12px;
+  padding: 10px 15px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.item-info .section.normal {
+  display: flex;
+}
+
+HTML: item-info-anchor
+------------------------------------------------------------
+<div style="font-size:23px; line-height:27px;">
+  <a class="anchor" href="{{link_to_item}}">#</a>
+</div>
+
+HTML: item-info-title
+------------------------------------------------------------
+<div style="font-size:23px; line-height:27px;">
+  {{> item-title}}
+</div>
+<div class="item-group" style="line-height:27px;">
+  {{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
+</div>
+
+CSS
+------------------------------------------------------------
+.item-group {
+  padding-left: 2em;
+}
+
+HTML: item-info-controls
+------------------------------------------------------------
+<div class="controls">
+  <span>
+    {{> img-button
+          src    = "/arrow-thick-top.svg"
+          title  = "move item up"
+          class  = "move-item-up"
+          action = [| moveItem("up", {{{%js item.uid}}}); |] }}
+    {{> img-button
+          src    = "/arrow-thick-bottom.svg"
+          title  = "move item down"
+          class  = "move-item-down"
+          action = [| moveItem("down", {{{%js item.uid}}}); |] }}
+  </span>
+  <span>
+    {{> img-button
+          src    = "/cog.svg"
+          title  = "edit item info"
+          class  = "edit-item-info"
+          action = [| editItemInfo({{{%js item.uid}}}); |] }}
+    {{> space em=0.4 }}
+    {{> img-button
+          src    = "/x.svg"
+          title  = "delete item"
+          class  = "delete-item"
+          action = [| deleteItem({{{%js item.uid}}}); |] }}
+  </span>
+</div>
+
+CSS
+------------------------------------------------------------
+.item-info .controls {
+  margin-left: auto;
+  padding-left: 2em;
+}
+.item-info .controls > span {
+  white-space: nowrap;
+}
+/* on big screens we don't want to wrap the controls */
+@media (min-width: 480px) {
+  .item-info .controls {
+    white-space: nowrap;
+  }
+  .item-info .controls > span:first-child {
+    padding-right: 1em;
+  }
+}
+.item-info .controls img {
+  opacity: 0.4;
+  height: 20px;
+  position: relative;
+  bottom: -3px;
+}
+
+JS
+------------------------------------------------------------
+function moveItem(dir, itemUid) {
+  var url = "/haskell/move/item/" + itemUid;
+      itemNode = '#item-' + itemUid;
+  $.post(url, {direction: dir})
+   .done(function () {
+      if (dir == "up") moveNodeUp(itemNode); else moveNodeDown(itemNode);
+      fadeIn(itemNode);
+   });
+}
+
+function deleteItem(itemUid) {
+  var itemNode = '#item-' + itemUid;
+  if (confirm("Confirm deletion?")) {
+    $.post("/haskell/delete/item/" + itemUid)
+     .done(function () {
+        fadeOutAndRemove(itemNode);
+     });
+  }
+}
+
+function editItemInfo(itemUid) {
+  switchSection("#item-" + itemUid + " .item-info", "editing");
+}
+
+CSS
+------------------------------------------------------------
+.item-info-edit-form label {
+  display: block;
+  margin-bottom: 5px;
+  margin-top: 15px;
+}
+
+.item-info-edit-form {
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.form-btn-group {
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.form-btn-group .save {
+  margin-right: 25px;
+}
+
+HTML: item-info-edit-form
+------------------------------------------------------------
+{{! "autocomplete=off" everywhere: http://stackoverflow.com/q/8311455 }}
+<form class="item-info-edit-form" onsubmit="submitItemInfo('{{item.uid}}', this); return false;">
+  <label for="name">
+    Name
+  </label>
+  <input id="name" name="name" value="{{item.name}}"
+          type="text" autocomplete="off">
+
+  <label for="hackage">
+    Name on Hackage
+  </label>
+  <input id="hackage" name="hackage" value="{{item.hackage}}"
+          type="text" autocomplete="off">
+
+  <label for="site">
+    Site (optional)
+  </label>
+  <input id="site" name="link" value="{{item.link}}"
+          type="text" autocomplete="off">
+
+<div class="form-group">
+  <label for="group">
+    Group
+  </label>
+  {{! When “new group” is selected in the list, we show a field for
+      entering new group's name }}
+  <select id="group" name="group" onchange="itemGroupSelectHandler(this);"
+          autocomplete="off">
+    <option value="-" {{%selectIf item_no_group}}>-</option>
+    {{# category_groups }}
+      <option value="{{name}}" {{%selectIf selected}}>{{name}}</option>
+    {{/ category_groups }}
+    <option value="">New group...</option>
+    </select>
+
+  <input hidden class="custom-group-input" name="custom-group"
+         type="text" autocomplete="off">
+  </div>
+
+  <div class="form-btn-group">
+    <input value="Save" class="save" type="submit">
+    <input value="Cancel" class="cancel" type="button"
+          onclick="itemInfoCancelEdit('{{item.uid}}');">
+  </div>
+</form>
+
+
+JS
+------------------------------------------------------------
+
+function itemInfoCancelEdit(itemUid) {
+  switchSection("#item-" + itemUid + " > .item-info", "normal");
+}
+
+function itemGroupSelectHandler(select) {
+  var customInput = $(select).closest("form").find(".custom-group-input");
+  if ($(select)[0].value == "") {
+    customInput.show();
+    customInput.focus();
+  } else {
+    customInput.hide();
+  }
+}
+
+function submitItemInfo(itemUid, form) {
+  custom = $(form)[0].elements["custom-group"].value;
+  // If the group was changed, we need to recolor the whole item,
+  // but we don't want to rerender the item on the server because
+  // it would lose the item's state (e.g. what if the traits were
+  // being edited? etc). So, instead we query colors from the server
+  // and change the color of the item's body manually.
+  var url = "/haskell/set/item/" + itemUid + "/info";
+      itemNode = '#item-' + itemUid;
+  $.post(url, $(form).serialize())
+   .done(function (data) {
+      $.get("/haskell/render/item/"+itemUid+"/colors")
+       .done(function (colors) {
+          $(itemNode + " .item-body").css("background-color", colors.light);
+          $(itemNode + " .item-info").replaceWith(data);
+       });
+      // And now, if a custom group was created, we should add it to other
+      // items' lists.
+      if (custom != "") {
+        $(".item").each(function (i, item) {
+          groups = $(item).find("select[name=group]")[0];
+          isOurOption = function (opt) {return opt.text == custom};
+          alreadyExists = $.grep(groups.options, isOurOption).length > 0;
+          if (!alreadyExists) {
+            groups.add(new Option(custom, custom), 1); }
+        });
+      }
+   });
+}

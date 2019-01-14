@@ -1,7 +1,7 @@
 resolver: lts-12.4
 
 packages:
-- location: .
+- back/
 
 nix:
   shell-file: shell.nix
@@ -14,7 +14,6 @@ extra-deps:
 - Spock-lucid-0.4.0.1
 - reroute-0.5.0.0
 - cmark-0.5.6
-- cmark-highlight-0.2.0.0
 - fmt-0.6
 - cmark-sections-0.3.0.1
 - acid-state-0.14.3
@@ -24,11 +23,18 @@ extra-deps:
 - swagger2-2.3
 - lzma-clib-5.2.2
 
+# We pin the precise versions of 'highlighting-kate' and 'cmark-highlight'
+# because the frontend has copied a stylesheet from 'highlighting-kate'. If
+# the version changes, we also have to update the stylesheet on the
+# frontend. (See App.vue, or just grep for things like "span.st".)
+- highlighting-kate-0.6.4
+- cmark-highlight-0.2.0.0
+
 - git: https://github.com/aelve/stache-plus
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
 
 - git: https://github.com/aelve/safecopy-migrate
-  commit: c401315122f04624e5e848d77f9eaa948e38c21b
+  commit: 3971922c75ce2ca751b3da1653fefa109b746e21
 
 # Fork of 'servant-swagger' with some changes (see its README)
 - git: https://github.com/aelve/servant-swagger

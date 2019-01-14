@@ -10,7 +10,7 @@
       wrap
     >
       <span class="mr-3">
-        made by 
+        made by
         <a-link
           openInNewTab
           url="https://aelve.com/"

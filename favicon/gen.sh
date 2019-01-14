@@ -20,4 +20,4 @@ convert favicon-*.png favicon.ico
 rm -f favicon-*.png gen gen.o gen.hi
 
 echo ""
-echo "now move favicon.ico to static/"
+echo "now move favicon.ico to back/static/"

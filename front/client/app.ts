@@ -3,11 +3,16 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import Vuetify from 'vuetify'
 import { sync } from 'vuex-router-sync'
-import ALink from 'client/components/ALink.vue'
-import 'vuetify/dist/vuetify.css' // Ensure you are using css-loader
-import '@fortawesome/fontawesome-free/css/all.css'
-import 'material-design-icons-iconfont/dist/material-design-icons.css'
 import axios from 'axios'
+import ALink from 'client/components/ALink.vue'
+import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
+import 'vuetify/dist/vuetify.css'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+library.add(fas)
+
+import 'client/assets/code-highlight.css'
 
 import AppComponent from './App.vue'
 import { createRouter } from './router'
@@ -17,14 +22,30 @@ import { createStore } from './store'
 declare var BASE_URL: string
 axios.defaults.baseURL = BASE_URL
 
-function initVue() {
+const icons = {}
+// TODO import and add only used icons for production
+Object.values(fas).forEach(({ iconName }) => {
+  icons[iconName] = {
+    component: 'font-awesome-icon',
+    props: {
+      icon: iconName
+    }
+  }
+})
+
+function initVue () {
   Vue.use(VueRouter)
   Vue.use(Vuex)
-  Vue.use(Vuetify)
+  Vue.mixin(confirmDialogMixin)
   Vue.component('ALink', ALink)
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
+  Vue.use(Vuetify, {
+    iconfont: 'faSvg',
+    icons
+  })
 }
 
-function createApp() {
+function createApp () {
   const router = createRouter()
   const store = createStore()
 
@@ -44,7 +65,6 @@ function createApp() {
 }
 
 initVue()
-
 
 export {
   createApp

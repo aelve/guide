@@ -2,6 +2,7 @@ import axios from 'axios'
 import { ICategoryFull } from './Category'
 
 class CategoryItemService {
+  // TODO replace all axios api request to axios instance to remove duplication of 'api/*'
   async createItem ({ category, name }: ICreateCategoryItem) {
     const { data } = await axios.post(`api/item/${category}`, null, {
       params: {
@@ -13,26 +14,80 @@ class CategoryItemService {
   async deleteItemById (id: ICategoryItem['uid']): Promise<void> {
     await axios.delete(`api/item/${id}`)
   }
-
-  // add here category description add/edit
-  async addCategoryDescription ({ uid, original, modified }: {uid: string, original: string, modified: string}): Promise<any> {
-    // try {
-    //   const { data } = await axios.put(`api/category/${uid}/notes`, {
-    //       original,
-    //       modified
-    //   })
-    //   return data
-    // } catch(err) {
-    //   if (err.response.status === '409') {
-    //     console.log(409 + ' blyat')
-    //   }
-    //   throw err
-    // }
-    const { data } = await axios.put(`api/category/${uid}/notes`, {
+  async  updateItemInfo (id: ICategoryItem['uid'], body: ICategoryItemInfo): Promise<void> {
+    await axios.put(`api/item/${id}/info`, body)
+  }
+  async moveItem (id: ICategoryItem['uid'], direction: string): Promise<void> {
+    await axios.post(`api/item/${id}/move`, {
+      direction
+    })
+  }
+  async  updateItemSummary (
+    id: ICategoryItem['uid'],
+    original: ICategoryItem['summary'],
+    modified: ICategoryItem['summary']
+  ): Promise<void> {
+    await axios.put(`api/item/${id}/summary`, {
       original,
       modified
     })
-    return data
+  }
+  async updateItemEcosystem (
+    id: ICategoryItem['uid'],
+    original: ICategoryItem['ecosystem'],
+    modified: ICategoryItem['ecosystem']
+  ): Promise<void> {
+    await axios.put(`api/item/${id}/ecosystem`, {
+      original,
+      modified
+    })
+  }
+  async updateItemNotes (
+    id: ICategoryItem['uid'],
+    original: ICategoryItem['notes'],
+    modified: ICategoryItem['notes']
+  ): Promise<void> {
+    await axios.put(`api/item/${id}/notes`, {
+      original,
+      modified
+    })
+  }
+  async updateItemTrait (
+    itemId: ICategoryItem['uid'],
+    traitId: ITrait['uid'],
+    original: string,
+    modified: string
+  ): Promise<void> {
+    await axios.put(`api/item/${itemId}/trait/${traitId}`, {
+      original,
+      modified
+    })
+  }
+  async moveItemTrait (
+    itemId: ICategoryItem['uid'],
+    traitId: ITrait['uid'],
+    direction: string
+  ): Promise<void> {
+    await axios.post(`api/item/${itemId}/trait/${traitId}/move`, {
+      direction
+    })
+  }
+  async deleteItemTrait (
+    itemId: ICategoryItem['uid'],
+    traitId: ITrait['uid'],
+  ): Promise<void> {
+    await axios.delete(`api/item/${itemId}/trait/${traitId}`)
+  }
+  async createItemTrait (
+    itemId: ICategoryItem['uid'],
+    type: string,
+    text: string,
+  ): Promise<void> {
+    await axios.post(`api/item/${itemId}/trait/${type}`, JSON.stringify(text), {
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8'
+      }
+    })
   }
 }
 
@@ -46,14 +101,23 @@ export interface ICategoryItem {
   name: string
   created: string
   group?: string
-  description: object
+  // TODO add appropriate types for summary, ecosystem and other properties with structure like
+  // { text: string, html: string }
+  summary: object
   pros: ITrait[]
   cons: ITrait[]
   ecosystem: object
   notes: object
   link?: string
-  kind: object
+  hackage: string
+}
 
+export interface ICategoryItemInfo {
+  uid?: string
+  name?: string
+  created?: string
+  link?: string
+  hackage?: string
 }
 
 export interface ITrait {

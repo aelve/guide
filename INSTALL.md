@@ -1,11 +1,10 @@
 # Points to keep in mind
 
-The `state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
+The `back/state/` directory contains the database. You can download the current database of [guide.aelve.com](http://guide.aelve.com) by doing this:
 
-    $ git clone https://github.com/aelve/guide-database
-    $ mv guide-database state
+    $ make back/db
 
-The `config.json` file contains the config (it will be created at the 1st start). There are 5 settings so far:
+The `back/config.json` file contains the config (it will be created at the first start):
 
   * `admin-password` is the password for the admin panel (at `/admin`). Leave it empty if you don't want any password.
 
@@ -19,8 +18,8 @@ The `config.json` file contains the config (it will be created at the 1st start)
 
 First install NPM (important!). Then do:
 
-    $ stack build
-    $ stack exec guide
+    $ make back
+    $ make back/run
 
 And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:8080/admin>.
 
@@ -38,7 +37,8 @@ Clone and build `guide`:
 
     $ git clone https://github.com/aelve/guide
     $ cd guide
-    $ stack build --no-test --no-bench --copy-bins
+    $ make back
+    $ stack install --fast
 
 Make a new subdomain in Apache. For me, it means writing this to `/etc/apache2/sites-available/guide.conf`:
 

@@ -9,12 +9,12 @@
 
     <v-card>
       <v-card-text>
-        Are you sure you want to {{ confirmationText }}
+        Are you sure you want to {{ text }} ?
       </v-card-text>
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn 
+        <v-btn
           flat
           color="primary"
           class="confirm-btn"
@@ -39,7 +39,7 @@ import { Vue, Component, Prop } from 'vue-property-decorator'
 
 @Component
 export default class ConfirmDialog extends Vue {
-  @Prop(String) confirmationText!: string
+  @Prop(String) text!: string
   @Prop(Boolean) value!: boolean
   @Prop({ default: 'Continue' }) confirmBtnText!: string
   @Prop({ default: 'Cancel' }) cancelBtnText!: string
