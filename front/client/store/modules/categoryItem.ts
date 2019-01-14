@@ -116,6 +116,18 @@ const actions: ActionTree<ICategoryItemState, any> = {
     }
   ): Promise<void> {
     await CategoryItemService.createItemTrait(itemId, type, text)
+  },
+  async addCategoryDescription (
+    { dispatch }: ActionContext<ICategoryItemState, any>,
+    { uid, original, modified }: {uid: string, original: string, modified: string}
+  ) {
+    const createdDescription = await CategoryItemService.addCategoryDescription({
+      uid,
+      original,
+      modified
+    })
+    dispatch('category/reloadCategory', null, { root: true })
+    return createdDescription
   }
 }
 
