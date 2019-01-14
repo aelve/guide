@@ -1,6 +1,5 @@
 <template>
   <v-toolbar dark app>
-    <v-toolbar-side-icon />
     <v-toolbar-title>
       <logo />
     </v-toolbar-title>
