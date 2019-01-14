@@ -99,16 +99,16 @@ import { ICategoryItem } from 'client/service/CategoryItem.ts'
   }
 })
 export default class CategoryItem extends Vue {
-  @Prop(String) kind!: string
-  @Prop(String) group!: string
-  @Prop(String) itemDescription!: string
+  @Prop(String) kind!: any
+  @Prop(String) group!: any
+  @Prop(String) itemDescription!: any
   @Prop(Array) pros!: [any]
   @Prop(Array) cons!: [any]
-  @Prop(String) ecosystem!: string
+  @Prop(String) ecosystem!: any
   @Prop(Array) tocArray!: [any]
-  @Prop(Object) tocItemContent!: object
-  @Prop(String) notes!: string
-  @Prop(String) itemUid!: string
+  @Prop(Object) tocItemContent!: any
+  @Prop(String) notes!: any
+  @Prop(String) itemUid!: any
 
   isNoteExpanded: boolean = false
   isDeleteItemDialogOpen: boolean = false

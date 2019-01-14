@@ -18,7 +18,7 @@ router.onReady(() => {
   app.$mount('#app')
 })
 
-function registerBeforeResolve() {
+function registerBeforeResolve () {
   router.afterEach(async (to, from) => {
     Vue.nextTick(() => {
       for (const matchedRoute of to.matched) {
@@ -40,7 +40,7 @@ function registerBeforeResolve() {
   })
 }
 
-function getComponentAndItsChildren(component, result?) {
+function getComponentAndItsChildren (component, result?) {
   if (!result) {
     result = []
   }
