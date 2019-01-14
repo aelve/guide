@@ -56,21 +56,6 @@ module.exports = {
         loader: 'vue-loader'
       },
       {
-        test: /\.(jade|pug)$/,
-        oneOf: [
-          // For vue Jade / Pug template.
-          {
-            resourceQuery: /^\?vue/,
-            use: ['pug-plain-loader']
-          },
-
-          // For Jade / Pug standalone files.
-          {
-            use: ['pug-loader']
-          }
-        ]
-      },
-      {
         test: /\.(png|jpg|gif|svg|woff|woff2|eot|ttf)$/,
         use: [
           {
