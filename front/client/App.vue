@@ -60,6 +60,7 @@ code.sourceCode {
 } */
 a {
   text-decoration-line: none;
+  color: #0061c0;
 }
 a:hover {
   text-decoration-line: underline;
