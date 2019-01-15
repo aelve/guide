@@ -27,7 +27,7 @@
       </div>
  <!-- When no category description show stub -->
       <div 
-        v-if="categoryDescription == ''"
+        v-if="!categoryDescription"
         class="category-description"
       >
         <p v-if="!editDescriptionShown">This category has no description yet, you can contribute to the category by adding description</p>
@@ -63,7 +63,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addCategoryDescription(originalDescription, textareaHasDescription);"
+            @click="addCategoryDescription(originalDescription, textareaHasDescription);"
           >
             Save
           </v-btn>
@@ -118,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="toggleEditDescription(); addCategoryDescription(originalDescription, textareaHasDescription);"
+            @click="addCategoryDescription(originalDescription, textareaHasDescription);"
           >
             Save
           </v-btn>
@@ -204,15 +204,12 @@ export default class Category extends Vue {
 
   isDialogOpen: boolean = false
   editDescriptionShown: boolean = false
-  catUid: string = ''
-  emptyDescription: string = ''
   isDescriptionConflict: boolean = false
   serverModified: string = ''
   modified: string = ''
   merged: string = ''
   textareaHasDescription: string = ''
   originalDescription: string = ''
-  modifiedDescription: string = !this.categoryDscMarkdown ? '' : this.categoryDscMarkdown
 
   async asyncData () {
     if (!this.categoryId) {
@@ -222,6 +219,8 @@ export default class Category extends Vue {
   }
 
   get categoryDescription () {
+    console.log(typeof _get(this, '$store.state.category.category.description.html'));
+    
     return _get(this, '$store.state.category.category.description.html')
   }
 
@@ -248,12 +247,7 @@ export default class Category extends Vue {
   }
 
   toggleEditDescription () {
-    if (this.editDescriptionShown === false) {
-      this.editDescriptionShown = true
-      return
-    }
-
-    this.editDescriptionShown = false
+    !this.editDescriptionShown ? this.editDescriptionShown = true : this.editDescriptionShown = false
   }
 
   async addCategoryDescription (original: string, modified: string) {
@@ -274,6 +268,8 @@ export default class Category extends Vue {
       }
       throw err
     }
+
+    this.toggleEditDescription();
   }
 
   saveConflictDescription (data: any) {
