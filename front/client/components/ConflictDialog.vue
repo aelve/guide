@@ -13,12 +13,12 @@
           color="#fdd"
           class="conflict-content"
         >
-          <v-card-text>{{serverModified}}</v-card-text>
+          <v-card-text>{{modified}}</v-card-text>
         </v-card>
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', { original: serverModified, modified: serverModified}); close();"
+          @click="$emit('saveDescription', { original: serverModified, modified: modified }); close();"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -29,12 +29,12 @@
           color="#cfc"
           class="conflict-content"
         >
-          <v-card-text>{{modified}}</v-card-text>
+          <v-card-text>{{serverModified}}</v-card-text>
         </v-card>
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', { original: serverModified, modified: modified}); close();"
+          @click="$emit('saveDescription', { original: serverModified, modified: serverModified }); close();"
         >
           Accept this version, disregard my changes
         </v-btn>

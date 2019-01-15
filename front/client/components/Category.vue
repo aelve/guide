@@ -63,7 +63,7 @@
             small
             light
             color="lightgrey"
-            @click="addCategoryDescription(originalDescription, textareaHasDescription);"
+            @click="addCategoryDescription(originalDescription, textareaHasDescription)"
           >
             Save
           </v-btn>
@@ -90,7 +90,7 @@
           solo
           name="input-7-4"
           label="Solo textarea"
-          :value="textareaHasDescription"
+          :value="categoryDscMarkdown"
           v-model="textareaHasDescription"
           auto-grow
         />
@@ -118,7 +118,7 @@
             small
             light
             color="lightgrey"
-            @click="addCategoryDescription(originalDescription, textareaHasDescription);"
+            @click="addCategoryDescription(originalDescription, textareaHasDescription)"
           >
             Save
           </v-btn>
@@ -247,7 +247,7 @@ export default class Category extends Vue {
   }
 
   toggleEditDescription () {
-    !this.editDescriptionShown ? this.editDescriptionShown = true : this.editDescriptionShown = false
+    this.editDescriptionShown = !this.editDescriptionShown
   }
 
   async addCategoryDescription (original: string, modified: string) {
