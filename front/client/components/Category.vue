@@ -31,13 +31,16 @@
         class="category-description"
       >
         <p v-if="!editDescriptionShown">This category has no description yet, you can contribute to the category by adding description</p>
-        <v-textarea
-          v-if="editDescriptionShown"
-          solo
-          name="input-7-4"
-          label="Solo textarea"
-          placeholder="Write new description here"
-          v-model="textareaHasDescription"
+        
+        <slot v-if="!editDescriptionShown"/>
+
+        <markdown-editor
+          v-else
+          class="mb-2"
+          toolbar
+          :value="categoryDscMarkdown"
+          @cancel="toggleEditDescription"
+          @save="addCategoryDescription"
         />
         <v-btn
           v-if="!editDescriptionShown"
@@ -48,36 +51,9 @@
           color="lightgrey"
           @click="toggleEditDescription"
         >
-          <v-icon class="mr-1" left>add</v-icon>
+          <!-- <v-icon class="mr-1" left>add</v-icon> -->
           add description
         </v-btn>
-        <v-layout
-          v-if="editDescriptionShown" 
-          align-center 
-          justify-start 
-          row
-        >
-          <v-btn
-            class="ml-0"
-            depressed
-            small
-            light
-            color="lightgrey"
-            @click="addCategoryDescription(originalDescription, textareaHasDescription)"
-          >
-            Save
-          </v-btn>
-          <v-btn
-            class="ml-2"
-            depressed
-            small
-            light
-            color="lightgrey"
-            @click="toggleEditDescription"
-          >
-            Cancel
-          </v-btn>
-        </v-layout>
       </div>
       <!-- END When no category description show stub -->
       <div
@@ -85,15 +61,18 @@
         class="article-description"
       >
         <div v-if="!editDescriptionShown" v-html="categoryDescription" />
-        <v-textarea
-          v-if="editDescriptionShown"
-          solo
-          name="input-7-4"
-          label="Solo textarea"
+
+        <slot v-if="!editDescriptionShown"/>
+
+        <markdown-editor
+          v-else
+          class="mb-2"
+          toolbar
           :value="categoryDscMarkdown"
-          v-model="textareaHasDescription"
-          auto-grow
+          @cancel="toggleEditDescription"
+          @save="addCategoryDescription"
         />
+
         <v-btn
           v-if="!editDescriptionShown"
           class="pl-0 edit-descr-btn"
@@ -106,33 +85,6 @@
           <!-- <v-icon class="mr-1" left>edit</v-icon> -->
           Edit description
         </v-btn>
-        <v-layout
-          v-if="editDescriptionShown" 
-          align-center 
-          justify-start 
-          row
-        >
-          <v-btn
-            class="ml-0"
-            depressed
-            small
-            light
-            color="lightgrey"
-            @click="addCategoryDescription(originalDescription, textareaHasDescription)"
-          >
-            Save
-          </v-btn>
-          <v-btn
-            class="ml-2"
-            depressed
-            small
-            light
-            color="lightgrey"
-            @click="toggleEditDescription"
-          >
-            Cancel
-          </v-btn>
-        </v-layout>
       </div>
       <template v-if="category">
         <div
@@ -185,6 +137,7 @@
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
+import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import ConflictDialog from 'client/components/ConflictDialog.vue'
@@ -195,7 +148,8 @@ import category from 'client/store/modules/category'
   components: {
     CategoryItem,
     AddItemDialog,
-    ConflictDialog
+    ConflictDialog,
+    MarkdownEditor
   }
 })
 export default class Category extends Vue {
@@ -219,8 +173,6 @@ export default class Category extends Vue {
   }
 
   get categoryDescription () {
-    console.log(typeof _get(this, '$store.state.category.category.description.html'));
-    
     return _get(this, '$store.state.category.category.description.html')
   }
 
@@ -250,14 +202,14 @@ export default class Category extends Vue {
     this.editDescriptionShown = !this.editDescriptionShown
   }
 
-  async addCategoryDescription (original: string, modified: string) {
+  async addCategoryDescription (newValue: string) {
     try {
       await this.$store.dispatch('categoryItem/addCategoryDescription', {
         uid: this.categoryUid,
-        original: original,
-        modified: modified
+        original: this.originalDescription,
+        modified: newValue
       })
-      this.originalDescription = modified
+      this.originalDescription = newValue
     } catch (err) {
       if (err.response.status === 409) {
         console.table(err)
