@@ -47,10 +47,16 @@
           auto-grow
           solo
         />
+        <markdown-editor
+          class="mb-2"
+          toolbar
+          :value="merged"
+          @save="saveDescription"
+        />
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', { original: serverModified, modified: merged}); close();"
+          @click="saveMerged"
         >
           Submit the merged version
         </v-btn>
@@ -61,8 +67,13 @@
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 
-@Component
+@Component({
+  components: {
+    MarkdownEditor,
+  }
+})
 export default class ConflictDialog extends Vue {
   @Prop(Boolean) value!: boolean
   @Prop(String) serverModified!: string
@@ -75,7 +86,12 @@ export default class ConflictDialog extends Vue {
     return this.mergedDescription = this.merged
   }
 
-  close () {
+  saveMerged (newVal: string) {
+    this.$emit('saveDescription', { original: this.serverModified, modified: newVal})
+    this.close()
+  }
+
+  close ():void {
     this.$emit('input', false)
   }
 }
