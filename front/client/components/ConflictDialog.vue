@@ -40,26 +40,13 @@
         </v-btn>
       </div>
       <div class="conflict-item">
-        <p class="title mb-2">Merge version</p>
-        <v-textarea
-          :value="merged"
-          :v-model="showMergedDescription"
-          auto-grow
-          solo
-        />
+        <p class="title mb-2">Merged version</p>
         <markdown-editor
           class="mb-2"
           toolbar
           :value="merged"
-          @save="saveDescription"
+          @save="saveMerged"
         />
-        <v-btn 
-          depressed 
-          small
-          @click="saveMerged"
-        >
-          Submit the merged version
-        </v-btn>
       </div>
     </div>
   </v-dialog>
