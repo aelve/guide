@@ -75,7 +75,7 @@
 
         <v-btn
           v-if="!editDescriptionShown"
-          class="pl-0 edit-descr-btn"
+          class="edit-descr-btn"
           depressed
           small
           light
@@ -111,11 +111,10 @@
       </template>
       <v-btn
         flat
-        class="ml-2 pl-0"
+        class="ml-2"
         color="grey"
         @click="openAddItemDialog"
       >
-        <v-icon class="mr-1" left>add</v-icon>
         Add new item
       </v-btn>
       <add-item-dialog 
