@@ -46,6 +46,7 @@
           toolbar
           :value="merged"
           @save="saveMerged"
+          @cancel="close"
         />
       </div>
     </div>
@@ -94,6 +95,7 @@ export default class ConflictDialog extends Vue {
   .conflict-content {
     flex: 1;
     margin-bottom: 16px;
+    white-space: pre-wrap;
   }
   .conflict-item {
     width: 32%;
