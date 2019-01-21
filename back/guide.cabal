@@ -50,6 +50,7 @@ library
   exposed-modules:
     Guide.App
     Guide.Api
+      Guide.Api.Matomo
       Guide.Api.Methods
       Guide.Api.Server
       Guide.Api.Types

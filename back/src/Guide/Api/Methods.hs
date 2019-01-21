@@ -16,6 +16,7 @@ import Data.Text (Text)
 import Servant
 
 import Guide.Api.Guider (Context (..), Guider)
+import Guide.Api.Matomo (Matomo (..), postMatomo)
 import Guide.Api.Types
 import Guide.Api.Utils
 import Guide.Config (Config (..))
@@ -241,6 +242,7 @@ addEdit edit = unless (isVacuousEdit edit) $ do
     Context Config{..} _ RequestDetails{..} <- ask
     dbUpdate $ RegisterEdit edit rdIp time
     dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
+    postMatomo $ Matomo rdIp rdUserAgent rdReferer edit
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category
