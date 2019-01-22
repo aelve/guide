@@ -34,8 +34,8 @@
       <template v-if="category">
         <category-item
           v-for="value in category.items"
-          :key="value.uid"
-          :itemUid="value.uid"
+          :key="value.id"
+          :itemUid="value.id"
           :link="value.link"
           :name="value.name"
           :group="value.group"
@@ -101,7 +101,7 @@ export default class Category extends Vue {
   }
 
   get categoryUrl () {
-    return this.category && `${_toKebabCase(this.category.title)}-${this.category.uid}`
+    return this.category && `${_toKebabCase(this.category.title)}-${this.category.id}`
   }
 
   openAddItemDialog () {
