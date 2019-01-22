@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
 
 {- |
 Various HTML utils, Mustache utils, etc.
@@ -308,7 +307,7 @@ mustache f v = do
   let combined = (Semigroup.sconcat (NonEmpty.fromList parsed)) {
                    templateActual = f }
   (rendered, warnings) <- liftIO $ renderMustacheM functions combined v
-  when (not (null warnings)) $
+  unless (null warnings) $
     error $ printf "View.mustache: warnings when rendering %s:\n%s"
                    (unPName f) (unlines warnings)
   toHtmlRaw rendered
@@ -333,7 +332,7 @@ readWidget fp = liftIO $ do
   s <- T.readFile fp
   let isDivide line = (T.all (== '=') line || T.all (== '-') line) &&
                       T.length line >= 20
-  let go (x:y:[]) = [(T.strip (last x), unlinesSection y)]
+  let go [x,y]    = [(T.strip (last x), unlinesSection y)]
       go (x:y:xs) = (T.strip (last x), unlinesSection (init y)) : go (y : xs)
       go _        = error $ "View.readWidget: couldn't read " ++ fp
   let sections = go (splitWhen isDivide (T.lines s))

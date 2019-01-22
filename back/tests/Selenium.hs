@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# ANN module "HLint: ignore" #-}
 
 module Selenium
 (
