@@ -24,7 +24,7 @@ data Matomo = Matomo
   , mTag      :: Edit
   } deriving (Eq, Show)
 
--- | Post log of any editions to Matomo.
+-- | Notify Matomo that an edit has been made.
 postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = liftIO $ do
     manager  <- liftIO $ newManager tlsManagerSettings
