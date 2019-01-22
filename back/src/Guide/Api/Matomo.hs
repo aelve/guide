@@ -27,7 +27,7 @@ data Matomo = Matomo
 -- | Notify Matomo that an edit has been made.
 postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = liftIO $ do
-    manager  <- liftIO $ newManager tlsManagerSettings
+    manager <- newManager tlsManagerSettings
     req <- setQueryString
       [ ("idsite", Just "1")
       , ("rec", Just "1")
