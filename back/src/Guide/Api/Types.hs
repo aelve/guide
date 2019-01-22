@@ -148,7 +148,14 @@ data CategorySite route = CategorySite
 
 -- | Working with items
 data ItemSite route = ItemSite
-  { _createItem :: route :-
+  { _getItem :: route :-
+      Summary "Get item by id"
+      :> ErrorResponse 404 "Item not found"
+      :> "item"
+      :> Capture "itemId" (Uid Item)
+      :> Get '[JSON] CItemFull
+
+  , _createItem :: route :-
       Summary "Create a new item in the given category"
       :> Description "Returns the ID of the created item."
       :> ErrorResponse 400 "'name' not provided"

@@ -96,6 +96,14 @@ deleteCategory catId = do
 -- Items
 ----------------------------------------------------------------------------
 
+-- | Get item by item id
+getItem :: Uid Item -> Guider CItemFull
+getItem itemId = do
+  item <- dbQuery (GetItemMaybe itemId) >>= \case
+    Nothing -> throwError $ err404 {errBody = "Item not found"}
+    Just it -> pure it
+  pure $ toCItemFull item
+
 -- | Create a new item, given the name.
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items

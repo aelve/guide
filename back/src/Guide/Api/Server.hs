@@ -47,7 +47,8 @@ guiderServer = Site
       :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = createItem
+      { _getItem          = getItem
+      , _createItem       = createItem
       , _setItemInfo      = setItemInfo
       , _setItemSummary   = setItemSummary
       , _setItemEcosystem = setItemEcosystem
