@@ -76,6 +76,7 @@ export default class MarkdownEditor extends Vue {
     await this.createEditorInstance()
     this.setInputAreaHeight()
     this.isReady = true
+    // this.isReady ? this.focusInputArea() : this.isReady = true
     this.focusInputArea()
   }
 
