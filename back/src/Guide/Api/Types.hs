@@ -265,7 +265,7 @@ data TraitSite route = TraitSite
   deriving (Generic)
 
 -- | Site-wide search
-data SearchSite route = SearchSite
+newtype SearchSite route = SearchSite
   { _search :: route :-
       Summary "Search categories and items"
       :> Description "Note: returns at most 100 search results."
@@ -344,7 +344,7 @@ instance ToSchema CCreateTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type to move trait or item up or down.
-data CMove = CMove
+newtype CMove = CMove
   { cmDirection :: CDirection
   } deriving (Show, Eq, Generic)
 
@@ -360,7 +360,7 @@ instance ToSchema CMove where
 -- | A "light-weight" client type of 'Category', which describes a category
 -- but doesn't give the notes or the items.
 data CCategoryInfo = CCategoryInfo
-  { cciUid     :: Uid Category
+  { cciId      :: Uid Category
   , cciTitle   :: Text           ? "Category title"
   , cciCreated :: UTCTime        ? "When the category was created"
   , cciGroup_  :: Text           ? "Category group ('grandcategory')"
@@ -377,17 +377,17 @@ instance ToSchema CCategoryInfo where
 -- | Factory to create a 'CCategoryInfo' from a 'Category'
 toCCategoryInfo :: Category -> CCategoryInfo
 toCCategoryInfo Category{..} = CCategoryInfo
-  { cciUid     = _categoryUid
-  , cciTitle   = H $ _categoryTitle
-  , cciCreated = H $ _categoryCreated
-  , cciGroup_  = H $ _categoryGroup_
+  { cciId      = _categoryUid
+  , cciTitle   = H _categoryTitle
+  , cciCreated = H _categoryCreated
+  , cciGroup_  = H _categoryGroup_
   , cciStatus  = _categoryStatus
   }
 
 -- | A "light-weight" client type of 'Category', which gives all available
 -- information about a category
 data CCategoryFull = CCategoryFull
-  { ccfUid         :: Uid Category
+  { ccfId          :: Uid Category
   , ccfTitle       :: Text           ? "Category title"
   , ccfGroup       :: Text           ? "Category group ('grandcategory')"
   , ccfStatus      :: CategoryStatus
@@ -405,9 +405,9 @@ instance ToSchema CCategoryFull where
 -- | Factory to create a 'CCategoryFull' from a 'Category'
 toCCategoryFull :: Category -> CCategoryFull
 toCCategoryFull Category{..} = CCategoryFull
-  { ccfUid         = _categoryUid
-  , ccfTitle       = H $ _categoryTitle
-  , ccfGroup       = H $ _categoryGroup_
+  { ccfId          = _categoryUid
+  , ccfTitle       = H _categoryTitle
+  , ccfGroup       = H _categoryGroup_
   , ccfDescription = toCMarkdown _categoryNotes
   , ccfItems       = H $ fmap toCItemFull _categoryItems
   , ccfStatus      = _categoryStatus
@@ -439,7 +439,7 @@ instance ToSchema ItemSection where
 --
 -- When updating it, don't forget to update 'CItemInfoEdit' and 'setItemInfo'.
 data CItemInfo = CItemInfo
-  { ciiUid     :: Uid Item
+  { ciiId      :: Uid Item
   , ciiCreated :: UTCTime    ? "When the item was created"
   , ciiName    :: Text       ? "Item name"
   , ciiGroup   :: Maybe Text ? "Item group"
@@ -488,7 +488,7 @@ instance ToSchema CItemInfoEdit where
 
 -- | Client type of 'Item'
 data CItemFull = CItemFull
-  { cifUid         :: Uid Item
+  { cifId          :: Uid Item
   , cifName        :: Text                     ? "Item name"
   , cifCreated     :: UTCTime                  ? "When the item was created"
   , cifGroup       :: Maybe Text               ? "Item group"
@@ -511,28 +511,28 @@ instance ToSchema CItemFull where
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
-  { ciiUid         = _itemUid
-  , ciiCreated     = H $ _itemCreated
-  , ciiName        = H $ _itemName
-  , ciiGroup       = H $ _itemGroup_
-  , ciiHackage     = H $ _itemHackage
-  , ciiLink        = H $ _itemLink
+  { ciiId          = _itemUid
+  , ciiCreated     = H _itemCreated
+  , ciiName        = H _itemName
+  , ciiGroup       = H _itemGroup_
+  , ciiHackage     = H _itemHackage
+  , ciiLink        = H _itemLink
   }
 
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
 toCItemFull Item{..} = CItemFull
-  { cifUid         = _itemUid
-  , cifName        = H $ _itemName
-  , cifCreated     = H $ _itemCreated
-  , cifGroup       = H $ _itemGroup_
-  , cifHackage     = H $ _itemHackage
+  { cifId          = _itemUid
+  , cifName        = H _itemName
+  , cifCreated     = H _itemCreated
+  , cifGroup       = H _itemGroup_
+  , cifHackage     = H _itemHackage
   , cifSummary     = toCMarkdown _itemSummary
   , cifPros        = H $ fmap toCTrait _itemPros
   , cifCons        = H $ fmap toCTrait _itemCons
   , cifEcosystem   = toCMarkdown _itemEcosystem
   , cifNotes       = toCMarkdown _itemNotes
-  , cifLink        = H $ _itemLink
+  , cifLink        = H _itemLink
   , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
   }
   where
@@ -540,7 +540,7 @@ toCItemFull Item{..} = CItemFull
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
-  { ctUid     :: Uid Trait
+  { ctId      :: Uid Trait
   , ctContent :: CMarkdown
   } deriving (Show, Generic)
 
@@ -553,7 +553,7 @@ instance ToSchema CTrait where
 -- | Factory to create a 'CTrait' from a 'Trait'
 toCTrait :: Trait -> CTrait
 toCTrait trait = CTrait
-  { ctUid     = trait ^. uid
+  { ctId     = trait ^. uid
   , ctContent = toCMarkdown $ trait ^. content
   }
 

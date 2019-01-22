@@ -21,7 +21,7 @@ const actions: ActionTree<ICategoryItemState, any> = {
   async createItem (
     { dispatch }: ActionContext<ICategoryItemState, any>,
     { category, name }: ICreateCategoryItem
-  ): Promise<ICategoryItem['uid']> {
+  ): Promise<ICategoryItem['id']> {
     const createdId = await CategoryItemService.createItem({
       category,
       name
@@ -29,36 +29,36 @@ const actions: ActionTree<ICategoryItemState, any> = {
     dispatch('category/reloadCategory', null, { root: true })
     return createdId
   },
-  async deleteItemById (context, id: ICategoryItem['uid']) {
+  async deleteItemById (context, id: ICategoryItem['id']) {
     await CategoryItemService.deleteItemById(id)
   },
   async updateItemInfo (
     context: ActionContext<ICategoryItemState, any>,
-    { id, body }: { id: ICategoryItem['uid'], body: ICategoryItemInfo }
+    { id, body }: { id: ICategoryItem['id'], body: ICategoryItemInfo }
   ): Promise<void> {
     await CategoryItemService.updateItemInfo(id, body)
   },
   async moveItem (
     context: ActionContext<ICategoryItemState, any>,
-    { id, direction }: { id: ICategoryItem['uid'], direction: string }
+    { id, direction }: { id: ICategoryItem['id'], direction: string }
   ): Promise<void> {
     await CategoryItemService.moveItem(id, direction)
   },
   async updateItemSummary (
     context: ActionContext<ICategoryItemState, any>,
-    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['summary'], modified: ICategoryItem['summary'] }
+    { id, original, modified }: { id: ICategoryItem['id'], original: ICategoryItem['summary'], modified: ICategoryItem['summary'] }
   ): Promise<void> {
     await CategoryItemService.updateItemSummary(id, original, modified)
   },
   async updateItemEcosystem (
     context: ActionContext<ICategoryItemState, any>,
-    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['ecosystem'], modified: ICategoryItem['ecosystem'] }
+    { id, original, modified }: { id: ICategoryItem['id'], original: ICategoryItem['ecosystem'], modified: ICategoryItem['ecosystem'] }
   ): Promise<void> {
     await CategoryItemService.updateItemEcosystem(id, original, modified)
   },
   async updateItemNotes (
     context: ActionContext<ICategoryItemState, any>,
-    { id, original, modified }: { id: ICategoryItem['uid'], original: ICategoryItem['notes'], modified: ICategoryItem['notes'] }
+    { id, original, modified }: { id: ICategoryItem['id'], original: ICategoryItem['notes'], modified: ICategoryItem['notes'] }
   ): Promise<void> {
     await CategoryItemService.updateItemNotes(id, original, modified)
   },
@@ -70,8 +70,8 @@ const actions: ActionTree<ICategoryItemState, any> = {
       original,
       modified
     }: {
-      itemId: ICategoryItem['uid'],
-      traitId: ITrait['uid'],
+      itemId: ICategoryItem['id'],
+      traitId: ITrait['id'],
       original: string,
       modified: string
     }
@@ -85,8 +85,8 @@ const actions: ActionTree<ICategoryItemState, any> = {
       traitId,
       direction
     }: {
-      itemId: ICategoryItem['uid'],
-      traitId: ITrait['uid'],
+      itemId: ICategoryItem['id'],
+      traitId: ITrait['id'],
       direction: string
     }
   ): Promise<void> {
@@ -98,8 +98,8 @@ const actions: ActionTree<ICategoryItemState, any> = {
       itemId,
       traitId,
     }: {
-      itemId: ICategoryItem['uid'],
-      traitId: ITrait['uid']
+      itemId: ICategoryItem['id'],
+      traitId: ITrait['id']
     }
   ): Promise<void> {
     await CategoryItemService.deleteItemTrait(itemId, traitId)
@@ -110,7 +110,7 @@ const actions: ActionTree<ICategoryItemState, any> = {
       type,
       text
     }: {
-      itemId: ICategoryItem['uid'],
+      itemId: ICategoryItem['id'],
       type: string,
       text: string,
     }

@@ -135,7 +135,7 @@ export default class CategoryItemTraits extends Vue {
   async saveEdit (trait: any, modifiedText: string) {
     await this.$store.dispatch('categoryItem/updateItemTrait', {
       itemId: this.itemId,
-      traitId: trait.uid,
+      traitId: trait.id,
       original: trait.content.text,
       modified: modifiedText
     })
@@ -146,7 +146,7 @@ export default class CategoryItemTraits extends Vue {
   async moveTrait (trait: any, direction: string) {
     await this.$store.dispatch('categoryItem/moveItemTrait', {
       itemId: this.itemId,
-      traitId: trait.uid,
+      traitId: trait.id,
       direction
     })
     await this.$store.dispatch('category/reloadCategory')
@@ -170,7 +170,7 @@ export default class CategoryItemTraits extends Vue {
   async deleteTrait (trait: any) {
     await this.$store.dispatch('categoryItem/deleteItemTrait', {
       itemId: this.itemId,
-      traitId: trait.uid
+      traitId: trait.id
     })
     await this.$store.dispatch('category/reloadCategory')
   }
