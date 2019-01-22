@@ -42,6 +42,8 @@ data Config = Config {
   _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          -- ^ Port for EKG stats.
+  _portMatomo    :: Maybe Int,    -- ^ Port for Matomo statistic.
+  _pageMatomo    :: Maybe Text,   -- ^ Page on Matomo to send statisic.
   _cors          :: Bool,         -- ^ CORS switch on/off
   _ekg           :: Bool          -- ^ EKG switch on/off
   }
@@ -58,6 +60,8 @@ instance Default Config where
     _portMain      = 8080,
     _portApi       = 4400,
     _portEkg       = 5050,
+    _portMatomo    = Nothing,
+    _pageMatomo    = Nothing,
     _cors          = False,
     _ekg           = False
      }
@@ -71,6 +75,8 @@ instance FromJSON Config where
     _portMain      <- o .:? "port-main"      .!= _portMain def
     _portApi       <- o .:? "port-api"       .!= _portApi def
     _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
+    _portMatomo    <- o .:? "port-matomo"    .!= _portMatomo def
+    _pageMatomo    <- o .:? "page-matomo"    .!= _pageMatomo def
     _cors          <- o .:? "cors"           .!= _cors def
     _ekg           <- o .:? "ekg"            .!= _ekg def
     return Config{..}
@@ -84,6 +90,8 @@ instance ToJSON Config where
     "port-main"      .= _portMain,
     "port-api"       .= _portApi,
     "port-ekg"       .= _portEkg,
+    "port-matomo"    .= _portMatomo,
+    "page-matomo"    .= _pageMatomo,
     "cors"           .= _cors,
     "ekg"            .= _ekg ]
 

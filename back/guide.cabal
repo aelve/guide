@@ -50,7 +50,6 @@ library
   exposed-modules:
     Guide.App
     Guide.Api
-      Guide.Api.Matomo
       Guide.Api.Methods
       Guide.Api.Server
       Guide.Api.Types
@@ -75,6 +74,7 @@ library
       Guide.Diff.Tokenize
       Guide.Diff.Merge
     Guide.Markdown
+    Guide.Matomo
     Guide.Archival
     Guide.Search
     Guide.JS
@@ -97,6 +97,7 @@ library
                      , acid-state
                      , aeson
                      , aeson-pretty
+                     , async
                      , base < 5
                      , base-prelude
                      , bytestring

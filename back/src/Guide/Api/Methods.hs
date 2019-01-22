@@ -16,7 +16,7 @@ import Data.Text (Text)
 import Servant
 
 import Guide.Api.Guider (Context (..), Guider)
-import Guide.Api.Matomo (Matomo (..), postMatomo)
+import Guide.Matomo (Matomo (..), postMatomo)
 import Guide.Api.Types
 import Guide.Api.Utils
 import Guide.Config (Config (..))
