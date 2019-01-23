@@ -22,6 +22,8 @@ import Guide.Config (Config (..))
 import Guide.Types.Edit (Edit (..))
 import Guide.Utils (Url)
 
+import qualified Data.ByteString as BS
+
 
 -- | Request with log data to send to Matomo
 data Matomo = Matomo
@@ -44,15 +46,20 @@ postMatomo Matomo{..} = do
           , ("url", toByteString . show <$> mIP) -- The full URL for the current action.
           , ("ua", toByteString <$> mUA) -- An override value for the User-Agent HTTP header field.
           , ("urlref", toByteString <$> mReferrer) -- The full HTTP Referrer URL.
-          , ("action_name", Just $ showConstructor mTag) --  The title of the action being tracked.
+          , ("action_name", action_name) --  The title of the action being tracked.
           ] <$> parseRequest (piwik matomo)
         -- TODO: log if the request to Matomo hass failed
         httpLbs req manager
       pure ()
     pure ()
   where
+    action_name :: Maybe ByteString
+    action_name = Just (BS.intercalate "/" ["Haskell", "Edit", showConstructor mTag])
     showConstructor :: Edit -> ByteString
-    showConstructor = toByteString . takeWhile (not . isSpace) . show
+    showConstructor = toByteString
+      . drop (length ("Edit'" :: String))
+      . takeWhile (not . isSpace)
+      . show
     piwik :: Url -> String
     piwik matomo = format "POST {}" matomo
 
