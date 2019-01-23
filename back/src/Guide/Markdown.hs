@@ -238,7 +238,7 @@ parseLink = either (Left . show) Right . parse p ""
     p :: Parsec Void Text (Text, Maybe Text, Maybe Text)
     p = do
       _ <- char '@'
-      (,,) <$> toText <$> shortcut
+      (,,) <$> (toText <$> shortcut)
            <*> optional (toText <$> opt)
            <*> optional (toText <$> text)
 

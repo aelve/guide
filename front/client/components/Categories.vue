@@ -24,7 +24,7 @@
           <router-link
             class="category-title"
             v-for="category in groupCategories[CategoryStatus.finished]"
-            :key="category.uid"
+            :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
           >
             <h6
@@ -43,7 +43,7 @@
           <router-link
             class="category-title ml-3"
             v-for="category in groupCategories[CategoryStatus.inProgress]"
-            :key="category.uid"
+            :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
           >
             <h6
@@ -62,7 +62,7 @@
           <router-link
             class="category-title ml-3"
             v-for="category in groupCategories[CategoryStatus.toBeWritten]"
-            :key="category.uid"
+            :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
           >
             <h6
@@ -135,7 +135,7 @@ export default class Categories extends Vue {
     this.isAddGroupDialogOpen = true
   }
   getCategoryUrl (category: ICategoryInfo): string {
-    return `${_toKebabCase(category.title)}-${category.uid}`
+    return `${_toKebabCase(category.title)}-${category.id}`
   }
 }
 </script>

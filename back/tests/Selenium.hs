@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-
 module Selenium
 (
   module Test.Hspec.WebDriver,
@@ -55,7 +54,6 @@ module Selenium
 )
 where
 
-
 import BasePrelude hiding (catch, bracket, (:|))
 -- Lenses
 import Lens.Micro.Platform
@@ -79,6 +77,8 @@ import qualified Test.Hspec.Expectations as Hspec
 import Control.Monad.Catch
 
 import Guide.Utils (ordNub)
+
+{-# ANN module ("HLint: ignore" :: String) #-}
 
 
 getLink :: CanSelect s => s -> WD String

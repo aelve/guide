@@ -11,19 +11,19 @@ class CategoryItemService {
     })
     return data
   }
-  async deleteItemById (id: ICategoryItem['uid']): Promise<void> {
+  async deleteItemById (id: ICategoryItem['id']): Promise<void> {
     await axios.delete(`api/item/${id}`)
   }
-  async  updateItemInfo (id: ICategoryItem['uid'], body: ICategoryItemInfo): Promise<void> {
+  async  updateItemInfo (id: ICategoryItem['id'], body: ICategoryItemInfo): Promise<void> {
     await axios.put(`api/item/${id}/info`, body)
   }
-  async moveItem (id: ICategoryItem['uid'], direction: string): Promise<void> {
+  async moveItem (id: ICategoryItem['id'], direction: string): Promise<void> {
     await axios.post(`api/item/${id}/move`, {
       direction
     })
   }
   async  updateItemSummary (
-    id: ICategoryItem['uid'],
+    id: ICategoryItem['id'],
     original: ICategoryItem['summary'],
     modified: ICategoryItem['summary']
   ): Promise<void> {
@@ -33,7 +33,7 @@ class CategoryItemService {
     })
   }
   async updateItemEcosystem (
-    id: ICategoryItem['uid'],
+    id: ICategoryItem['id'],
     original: ICategoryItem['ecosystem'],
     modified: ICategoryItem['ecosystem']
   ): Promise<void> {
@@ -43,7 +43,7 @@ class CategoryItemService {
     })
   }
   async updateItemNotes (
-    id: ICategoryItem['uid'],
+    id: ICategoryItem['id'],
     original: ICategoryItem['notes'],
     modified: ICategoryItem['notes']
   ): Promise<void> {
@@ -53,8 +53,8 @@ class CategoryItemService {
     })
   }
   async updateItemTrait (
-    itemId: ICategoryItem['uid'],
-    traitId: ITrait['uid'],
+    itemId: ICategoryItem['id'],
+    traitId: ITrait['id'],
     original: string,
     modified: string
   ): Promise<void> {
@@ -64,8 +64,8 @@ class CategoryItemService {
     })
   }
   async moveItemTrait (
-    itemId: ICategoryItem['uid'],
-    traitId: ITrait['uid'],
+    itemId: ICategoryItem['id'],
+    traitId: ITrait['id'],
     direction: string
   ): Promise<void> {
     await axios.post(`api/item/${itemId}/trait/${traitId}/move`, {
@@ -73,13 +73,13 @@ class CategoryItemService {
     })
   }
   async deleteItemTrait (
-    itemId: ICategoryItem['uid'],
-    traitId: ITrait['uid'],
+    itemId: ICategoryItem['id'],
+    traitId: ITrait['id'],
   ): Promise<void> {
     await axios.delete(`api/item/${itemId}/trait/${traitId}`)
   }
   async createItemTrait (
-    itemId: ICategoryItem['uid'],
+    itemId: ICategoryItem['id'],
     type: string,
     text: string,
   ): Promise<void> {
@@ -105,7 +105,7 @@ export interface ICreateCategoryItem {
 }
 
 export interface ICategoryItem {
-  uid: string
+  id: string
   name: string
   created: string
   group?: string
@@ -121,7 +121,7 @@ export interface ICategoryItem {
 }
 
 export interface ICategoryItemInfo {
-  uid?: string
+  id?: string
   name?: string
   created?: string
   link?: string
@@ -129,7 +129,7 @@ export interface ICategoryItemInfo {
 }
 
 export interface ITrait {
-  uid: string
+  id: string
   content: object
 }
 

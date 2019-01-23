@@ -16,6 +16,7 @@ import Data.Text (Text)
 import Servant
 
 import Guide.Api.Guider (Context (..), Guider)
+import Guide.Matomo (Matomo (..), postMatomo)
 import Guide.Api.Types
 import Guide.Api.Utils
 import Guide.Config (Config (..))
@@ -96,6 +97,10 @@ deleteCategory catId = do
 -- Items
 ----------------------------------------------------------------------------
 
+-- | Get item by item id
+getItem :: Uid Item -> Guider CItemFull
+getItem itemId = toCItemFull <$> getItemOrFail itemId
+
 -- | Create a new item, given the name.
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
@@ -167,8 +172,9 @@ moveItem itemId CMove{..} = do
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
-
--- TODO: move a trait
+-- | Get a trait (pro/con)
+getTrait :: Uid Item -> Uid Trait -> Guider CTrait
+getTrait itemId traitId = toCTrait <$> getTraitOrFail itemId traitId
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
@@ -241,6 +247,7 @@ addEdit edit = unless (isVacuousEdit edit) $ do
     Context Config{..} _ RequestDetails{..} <- ask
     dbUpdate $ RegisterEdit edit rdIp time
     dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
+    postMatomo $ Matomo rdIp rdUserAgent rdReferer edit
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category

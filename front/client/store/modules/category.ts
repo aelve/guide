@@ -19,11 +19,11 @@ const actions: ActionTree<ICategoryState, any> = {
     if (!category) {
       return
     }
-    dispatch('loadCategory', category.uid)
+    dispatch('loadCategory', category.id)
   },
   async loadCategory (
     { commit }: ActionContext<ICategoryState, any>,
-    categoryId: ICategoryInfo['uid']
+    categoryId: ICategoryInfo['id']
   ): Promise<any> {
     // So we dont see old article summary
     commit('setCategory', {})
@@ -39,7 +39,7 @@ const actions: ActionTree<ICategoryState, any> = {
   async createCategory (
     { dispatch }: ActionContext<ICategoryState, any>,
     { title, group }: { title: ICategoryInfo['title'], group: ICategoryInfo['group'] }
-  ): Promise<ICategoryInfo['uid']> {
+  ): Promise<ICategoryInfo['id']> {
     const createdId = await CategoryService.createCategory({
       title,
       group

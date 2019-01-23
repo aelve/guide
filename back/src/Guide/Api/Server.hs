@@ -47,7 +47,8 @@ guiderServer = Site
       :: CategorySite GuiderServer)
 
   , _itemSite = toServant (ItemSite
-      { _createItem       = createItem
+      { _getItem          = getItem
+      , _createItem       = createItem
       , _setItemInfo      = setItemInfo
       , _setItemSummary   = setItemSummary
       , _setItemEcosystem = setItemEcosystem
@@ -57,7 +58,8 @@ guiderServer = Site
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait = createTrait
+      { _getTrait    = getTrait    
+      , _createTrait = createTrait
       , _setTrait    = setTrait
       , _deleteTrait = deleteTrait
       , _moveTrait   = moveTrait }
@@ -81,7 +83,7 @@ fullServer db config =
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
 
--- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
+-- | 'hoistServer' brings custom type server to 'Handler' type server. Custom types not consumed by servant.
 api :: DB -> Config -> Server Api
 api db config = do
   requestDetails <- ask
