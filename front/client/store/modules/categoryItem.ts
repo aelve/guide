@@ -119,10 +119,10 @@ const actions: ActionTree<ICategoryItemState, any> = {
   },
   async addCategoryDescription (
     { dispatch }: ActionContext<ICategoryItemState, any>,
-    { uid, original, modified }: {uid: string, original: string, modified: string}
+    { id, original, modified }: {id: string, original: string, modified: string}
   ) {
     const createdDescription = await CategoryItemService.addCategoryDescription({
-      uid,
+      id,
       original,
       modified
     })

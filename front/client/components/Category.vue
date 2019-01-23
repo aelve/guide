@@ -40,7 +40,7 @@
           toolbar
           :value="categoryDscMarkdown"
           @cancel="toggleEditDescription"
-          @save="addCategoryDescription"
+          @save="saveDescription"
         />
         <v-btn
           v-if="!editDescriptionShown"
@@ -190,7 +190,7 @@ export default class Category extends Vue {
   }
 
   get categoryUid () {
-    return this.$store.state.category.category.uid
+    return this.$store.state.category.category.id
   }
 
   openAddItemDialog () {
@@ -204,7 +204,7 @@ export default class Category extends Vue {
   async addCategoryDescription (original: any, modified: any) {
     try {
       await this.$store.dispatch('categoryItem/addCategoryDescription', {
-        uid: this.categoryUid,
+        id: this.categoryUid,
         original: original,
         modified: modified
       })
