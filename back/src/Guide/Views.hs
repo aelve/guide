@@ -254,8 +254,8 @@ renderStats globalState acts = do
           rawVisits = [(catId, actionIP d) |
                        (Action'CategoryVisit catId, d) <- acts']
       let visits :: [(Uid Category, (Int, Int))]
-          visits = map (over _2 (length &&& length.ordNub)) .
-                   map (fst.head &&& map snd) .
+          visits = map (over _2 (length &&& length.ordNub) .
+                        (fst.head &&& map snd)) .
                    groupWith fst
                      $ rawVisits
       for_ (reverse $ sortWith (fst.snd) visits) $ \(catId, (n, u)) -> do

@@ -282,7 +282,7 @@ data TraitSite route = TraitSite
   deriving (Generic)
 
 -- | Site-wide search
-newtype SearchSite route = SearchSite
+data SearchSite route = SearchSite
   { _search :: route :-
       Summary "Search categories and items"
       :> Description "Note: returns at most 100 search results."
@@ -361,7 +361,7 @@ instance ToSchema CCreateTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 -- | Client type to move trait or item up or down.
-newtype CMove = CMove
+data CMove = CMove
   { cmDirection :: CDirection
   } deriving (Show, Eq, Generic)
 

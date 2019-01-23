@@ -83,7 +83,7 @@ fullServer db config =
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
 
--- | 'hoistServer' brings custom type server to 'Handler' type server. Custem types not consumed by servant.
+-- | 'hoistServer' brings custom type server to 'Handler' type server. Custom types not consumed by servant.
 api :: DB -> Config -> Server Api
 api db config = do
   requestDetails <- ask

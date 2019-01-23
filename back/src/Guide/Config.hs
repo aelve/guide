@@ -39,6 +39,9 @@ data Config = Config {
   _adminPassword :: Text,         -- ^ Password for the admin user
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
+  _matomoLink    :: Maybe Url,    -- ^ Link of Matomo to send statistic
+                                  --    of user's action. Format of link shoud be
+                                  --    like <http://localhost:8081/piwik.php>
   _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          -- ^ Port for EKG stats.
@@ -55,6 +58,7 @@ instance Default Config where
     _googleToken   = "",
     _adminPassword = "",
     _discussLink   = Nothing,
+    _matomoLink    = Nothing,
     _portMain      = 8080,
     _portApi       = 4400,
     _portEkg       = 5050,
@@ -68,6 +72,7 @@ instance FromJSON Config where
     _googleToken   <- o .:? "google-token"   .!= _googleToken def
     _adminPassword <- o .:? "admin-password" .!= _adminPassword def
     _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
+    _matomoLink    <- o .:? "matomo-link"    .!= _matomoLink def
     _portMain      <- o .:? "port-main"      .!= _portMain def
     _portApi       <- o .:? "port-api"       .!= _portApi def
     _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
@@ -81,6 +86,7 @@ instance ToJSON Config where
     "google-token"   .= _googleToken,
     "admin-password" .= _adminPassword,
     "discuss-link"   .= _discussLink,
+    "matomo-link"    .= _matomoLink,
     "port-main"      .= _portMain,
     "port-api"       .= _portApi,
     "port-ekg"       .= _portEkg,
