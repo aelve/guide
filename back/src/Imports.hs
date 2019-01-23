@@ -9,7 +9,7 @@ module Imports
 (
   module X,
   LByteString,
-  LText
+  LText,
 )
 where
 

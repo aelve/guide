@@ -240,20 +240,19 @@ addGroupIfDoesNotExist g gs
     firstNotTaken = head $ map Hue [1..] \\ M.elems gs
 
 traitById :: Uid Trait -> Lens' Item Trait
-traitById uid' = singular $
-  (pros.each . filtered (hasUid uid')) `failing`
-  (cons.each . filtered (hasUid uid')) `failing`
+traitById traitId = singular $
+  maybeTraitById traitId `failing`
   error ("traitById: couldn't find trait with uid " ++
-         toString (uidToText uid'))
+         toString (uidToText traitId))
 
 maybeTraitById :: Uid Trait -> Traversal' Item Trait
-maybeTraitById uid' =
-  (pros.each . filtered (hasUid uid')) `failing`
-  (cons.each . filtered (hasUid uid'))
+maybeTraitById traitId =
+  (pros.each . filtered (hasUid traitId)) `failing`
+  (cons.each . filtered (hasUid traitId))
 
 categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
-  categories.each . filtered (hasUid catId) `failing`
+  maybeCategoryById catId `failing`
   error ("categoryById: couldn't find category with uid " ++
          toString (uidToText catId))
 
@@ -262,7 +261,7 @@ maybeCategoryById catId = categories.each . filtered (hasUid catId)
 
 itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
-  categories.each . items.each . filtered (hasUid itemId) `failing`
+  maybeItemById itemId `failing`
   error ("itemById: couldn't find item with uid " ++
          toString (uidToText itemId))
 
