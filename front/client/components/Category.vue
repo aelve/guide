@@ -58,7 +58,7 @@
       <!-- END When no category description show stub -->
       <div
         v-if="categoryDescription"
-        class="article-description"
+        class="category-description"
       >
         <div v-if="!editDescriptionShown" v-html="categoryDescription" />
 
@@ -294,6 +294,10 @@ export default class Category extends Vue {
 
 .category-description >>> h1 {
   margin: 20px 0 5px;
+}
+
+.category-description >>> div:first-child {
+  white-space: pre-wrap;
 }
 
 @media screend and (max-width: 768px) {
