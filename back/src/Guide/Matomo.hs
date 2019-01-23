@@ -48,7 +48,7 @@ postMatomo Matomo{..} = do
           , ("urlref", toByteString <$> mReferrer) -- The full HTTP Referrer URL.
           , ("action_name", action_name) --  The title of the action being tracked.
           ] <$> parseRequest (piwik matomo)
-        -- TODO: log if the request to Matomo hass failed
+        -- TODO: log if the request to Matomo has failed
         httpLbs req manager
       pure ()
     pure ()
