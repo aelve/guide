@@ -39,7 +39,7 @@ data Config = Config {
   _adminPassword :: Text,         -- ^ Password for the admin user
   _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
                                   --    Will be placed in the header
-  _matomoLink    :: Maybe Url,    -- ^ Link of Matomo to send statistic of user`s action.
+  _matomoLink    :: Maybe Url,    -- ^ Link of Matomo to send statistic of user`s action. Format of link shoud be like <http://localhost:8081/piwik.php>
   _portMain      :: Int,          -- ^ Port for the main site.
   _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          -- ^ Port for EKG stats.
