@@ -58,7 +58,8 @@ guiderServer = Site
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _createTrait = createTrait
+      { _getTrait    = getTrait    
+      , _createTrait = createTrait
       , _setTrait    = setTrait
       , _deleteTrait = deleteTrait
       , _moveTrait   = moveTrait }

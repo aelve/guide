@@ -225,7 +225,17 @@ data ItemSite route = ItemSite
 
 -- | Working with item traits
 data TraitSite route = TraitSite
-  { _createTrait :: route :-
+  { _getTrait :: route :-
+      Summary "Get trait by id"
+      :> ErrorResponse 404 "Item not found"
+      :> ErrorResponse 404 "Trait not found"
+      :> "item"
+      :> Capture "itemId" (Uid Item)
+      :> "trait"
+      :> Capture "traitId" (Uid Trait)
+      :> Get '[JSON] CTrait
+
+  ,  _createTrait :: route :-
       Summary "Create a new trait in the given item"
       :> Description "Returns the ID of the created trait."
       :> ErrorResponse 400 "'content' not provided"

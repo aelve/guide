@@ -171,8 +171,9 @@ moveItem itemId CMove{..} = do
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
-
--- TODO: move a trait
+-- | Get a trait (pro/con)
+getTrait :: Uid Item -> Uid Trait -> Guider CTrait
+getTrait itemId traitId = toCTrait <$> getTraitOrFail itemId traitId
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)

@@ -257,8 +257,8 @@ categoryById catId = singular $
   error ("categoryById: couldn't find category with uid " ++
          toString (uidToText catId))
 
-maybeСategoryById :: Uid Category -> Traversal' GlobalState Category
-maybeСategoryById catId = categories.each . filtered (hasUid catId)
+maybeCategoryById :: Uid Category -> Traversal' GlobalState Category
+maybeCategoryById catId = categories.each . filtered (hasUid catId)
 
 itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
@@ -336,7 +336,7 @@ getCategory :: Uid Category -> Acid.Query GlobalState Category
 getCategory uid' = view (categoryById uid')
 
 getCategoryMaybe :: Uid Category -> Acid.Query GlobalState (Maybe Category)
-getCategoryMaybe uid' = preview (maybeСategoryById uid')
+getCategoryMaybe uid' = preview (maybeCategoryById uid')
 
 getCategoryByItem :: Uid Item -> Acid.Query GlobalState Category
 getCategoryByItem uid' = findCategoryByItem uid' <$> ask
