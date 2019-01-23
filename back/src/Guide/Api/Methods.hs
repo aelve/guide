@@ -97,6 +97,10 @@ deleteCategory catId = do
 -- Items
 ----------------------------------------------------------------------------
 
+-- | Get item by item id
+getItem :: Uid Item -> Guider CItemFull
+getItem itemId = toCItemFull <$> getItemOrFail itemId
+
 -- | Create a new item, given the name.
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
@@ -168,8 +172,9 @@ moveItem itemId CMove{..} = do
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
-
--- TODO: move a trait
+-- | Get a trait (pro/con)
+getTrait :: Uid Item -> Uid Trait -> Guider CTrait
+getTrait itemId traitId = toCTrait <$> getTraitOrFail itemId traitId
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)

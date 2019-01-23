@@ -240,23 +240,33 @@ addGroupIfDoesNotExist g gs
     firstNotTaken = head $ map Hue [1..] \\ M.elems gs
 
 traitById :: Uid Trait -> Lens' Item Trait
-traitById uid' = singular $
-  (pros.each . filtered (hasUid uid')) `failing`
-  (cons.each . filtered (hasUid uid')) `failing`
+traitById traitId = singular $
+  maybeTraitById traitId `failing`
   error ("traitById: couldn't find trait with uid " ++
-         toString (uidToText uid'))
+         toString (uidToText traitId))
+
+maybeTraitById :: Uid Trait -> Traversal' Item Trait
+maybeTraitById traitId =
+  (pros.each . filtered (hasUid traitId)) `failing`
+  (cons.each . filtered (hasUid traitId))
 
 categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
-  categories.each . filtered (hasUid catId) `failing`
+  maybeCategoryById catId `failing`
   error ("categoryById: couldn't find category with uid " ++
          toString (uidToText catId))
 
+maybeCategoryById :: Uid Category -> Traversal' GlobalState Category
+maybeCategoryById catId = categories.each . filtered (hasUid catId)
+
 itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
-  categories.each . items.each . filtered (hasUid itemId) `failing`
+  maybeItemById itemId `failing`
   error ("itemById: couldn't find item with uid " ++
          toString (uidToText itemId))
+
+maybeItemById :: Uid Item -> Traversal' GlobalState Item
+maybeItemById itemId = categories.each . items.each . filtered (hasUid itemId)
 
 findCategoryByItem :: Uid Item -> GlobalState -> Category
 findCategoryByItem itemId s =
@@ -325,7 +335,7 @@ getCategory :: Uid Category -> Acid.Query GlobalState Category
 getCategory uid' = view (categoryById uid')
 
 getCategoryMaybe :: Uid Category -> Acid.Query GlobalState (Maybe Category)
-getCategoryMaybe uid' = preview (categoryById uid')
+getCategoryMaybe uid' = preview (maybeCategoryById uid')
 
 getCategoryByItem :: Uid Item -> Acid.Query GlobalState Category
 getCategoryByItem uid' = findCategoryByItem uid' <$> ask
@@ -334,7 +344,7 @@ getItem :: Uid Item -> Acid.Query GlobalState Item
 getItem uid' = view (itemById uid')
 
 getItemMaybe :: Uid Item -> Acid.Query GlobalState (Maybe Item)
-getItemMaybe uid' = preview (itemById uid')
+getItemMaybe uid' = preview (maybeItemById uid')
 
 -- TODO: this doesn't need the item id, but then we have to be a bit cleverer
 -- and store a (TraitId -> ItemId) map in global state (and update it
@@ -343,7 +353,7 @@ getTrait :: Uid Item -> Uid Trait -> Acid.Query GlobalState Trait
 getTrait itemId traitId = view (itemById itemId . traitById traitId)
 
 getTraitMaybe :: Uid Item -> Uid Trait -> Acid.Query GlobalState (Maybe Trait)
-getTraitMaybe itemId traitId = preview (itemById itemId . traitById traitId)
+getTraitMaybe itemId traitId = preview (maybeItemById itemId . maybeTraitById traitId)
 
 -- add
 
