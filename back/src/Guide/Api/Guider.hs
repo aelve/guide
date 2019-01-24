@@ -23,13 +23,13 @@ import Di.Core as Di
 import Di.Monad as Di
 import Df1
 
-type DefDiT = DiT Level Text Text IO
-type DefDi  = Di Level Text Text
+type DefDiT = DiT Level Text Message IO
+type DefDi  = Di Level Text Message
 
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider
   { runGuider :: ReaderT Context DefDiT a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Text, Exc.MonadThrow)
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Message, Exc.MonadThrow)
 
 -- | Context of Guider
 data Context = Context

@@ -14,6 +14,7 @@ import Data.Acid as Acid
 import Data.Aeson (encode)
 import Data.Text (Text)
 import Servant
+import Di
 
 import Guide.Api.Guider (Context (..), Guider)
 import Guide.Matomo (Matomo (..), postMatomo)
@@ -36,7 +37,10 @@ import qualified Guide.Search as Search
 
 -- | Get a list of available categories.
 getCategories :: Guider [CCategoryInfo]
-getCategories = dbQuery GetCategories <&> map toCCategoryInfo
+getCategories = do
+  debug $ "getCategories"
+  --Imports.error "exception!!!"
+  dbQuery GetCategories <&> map toCCategoryInfo
 
 -- | Get a single category and all of its items.
 getCategory :: Uid Category -> Guider CCategoryFull
