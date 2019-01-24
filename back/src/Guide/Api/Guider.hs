@@ -29,7 +29,7 @@ type DefDi  = Di Level Text Text
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider
   { runGuider :: ReaderT Context DefDiT a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context)
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Text)
 
 -- | Context of Guider
 data Context = Context
