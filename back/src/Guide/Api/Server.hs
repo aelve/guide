@@ -29,11 +29,10 @@ import Say (say)
 import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler, DefDi)
 import Guide.Api.Methods
 import Guide.Api.Types
+import Guide.Api.Logger 
 import Guide.Config (Config (..))
 import Guide.State
 
-import qualified Data.Sequence as Seq
-import qualified Df1
 import qualified Di.Core as Di
 
 import Data.Acid as Acid
@@ -99,8 +98,9 @@ api db di config = do
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: Config -> AcidState GlobalState -> IO ()
-runApiServer Config{..} db = do
-  Di.new  (\(Di.Log _ (_ :: Df1.Level) (_ :: Seq.Seq Text) msg) -> say msg) $ \di -> do
+runApiServer cfg@Config{..} db = do
+  logHandler <- initLogger cfg
+  Di.new logHandler $ \di -> do
     say $ format "API is running on port {}" _portApi
     run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
   where
