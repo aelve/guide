@@ -2,13 +2,12 @@
   <v-dialog
     :value="value"
     @input="close"
-    @keyup.esc.native="close"
     max-width="500px"
   >
 
     <slot slot="activator" />
 
-    <v-card>
+    <v-card @keyup.esc.native="close" tabindex="0">
       <v-card-text>
         <v-form
           ref="form"
