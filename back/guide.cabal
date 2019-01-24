@@ -110,6 +110,10 @@ library
                      , deepseq >= 1.2.0.0
                      , digestive-functors
                      , directory >= 1.2
+                     , di
+                     , di-monad
+                     , di-core
+                     , df1
                      , ekg
                      , ekg-core
                      , exceptions
