@@ -2,6 +2,7 @@
   <v-dialog
     :value="value"
     @input="close"
+    @keyup.esc.native="close"
     max-width="500px"
   >
 
