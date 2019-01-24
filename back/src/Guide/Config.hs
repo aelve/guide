@@ -46,7 +46,9 @@ data Config = Config {
   _portApi       :: Int,          -- ^ Port for the API.
   _portEkg       :: Int,          -- ^ Port for EKG stats.
   _cors          :: Bool,         -- ^ CORS switch on/off
-  _ekg           :: Bool          -- ^ EKG switch on/off
+  _ekg           :: Bool,         -- ^ EKG switch on/off
+  _logToStderr   :: Bool,         -- ^ log to stderr on/off
+  _logToFile     :: Maybe String  -- ^ log to file
   }
   deriving (Eq, Show)
 
@@ -63,7 +65,9 @@ instance Default Config where
     _portApi       = 4400,
     _portEkg       = 5050,
     _cors          = False,
-    _ekg           = False
+    _ekg           = False,
+    _logToStderr   = True,
+    _logToFile     = Nothing
      }
 
 instance FromJSON Config where
@@ -78,6 +82,8 @@ instance FromJSON Config where
     _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
     _cors          <- o .:? "cors"           .!= _cors def
     _ekg           <- o .:? "ekg"            .!= _ekg def
+    _logToStderr   <- o .:? "log-to-stderr"  .!= _logToStderr def
+    _logToFile     <- o .:? "log-to-file"    .!= _logToFile def
     return Config{..}
 
 instance ToJSON Config where
@@ -91,7 +97,10 @@ instance ToJSON Config where
     "port-api"       .= _portApi,
     "port-ekg"       .= _portEkg,
     "cors"           .= _cors,
-    "ekg"            .= _ekg ]
+    "ekg"            .= _ekg,
+    "log-to-stderr"  .= _logToStderr,
+    "log-to-file"    .= _logToFile
+    ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).
