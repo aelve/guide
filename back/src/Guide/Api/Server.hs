@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
-
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Guide.Api.Server
   ( runApiServer
@@ -26,14 +26,19 @@ import Servant.Swagger.UI
 -- putStrLn that works well with concurrency
 import Say (say)
 
-import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler)
+import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler, DefDi)
 import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Config (Config (..))
 import Guide.State
 
+import qualified Data.Sequence as Seq
+import qualified Df1
+import qualified Di.Core as Di
+
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
+
 
 guiderServer :: Site GuiderServer
 guiderServer = Site
@@ -74,9 +79,9 @@ type FullApi =
   Api :<|>
   SwaggerSchemaUI "api" "swagger.json"
 
-fullServer :: DB -> Config -> Server FullApi
-fullServer db config =
-  api db config :<|>
+fullServer :: DB -> DefDi -> Config -> Server FullApi
+fullServer db di config =
+  api db di config :<|>
   swaggerSchemaUIServer doc
   where
     doc = toSwagger (Proxy @Api)
@@ -84,10 +89,10 @@ fullServer db config =
             & info.version .~ "alpha"
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custom types not consumed by servant.
-api :: DB -> Config -> Server Api
-api db config = do
+api :: DB -> DefDi -> Config -> Server Api
+api db di config = do
   requestDetails <- ask
-  hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails))
+  hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails) di)
       (const $ toServant guiderServer)
 
 -- | Serve the API on port 4400.
@@ -95,8 +100,9 @@ api db config = do
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: Config -> AcidState GlobalState -> IO ()
 runApiServer Config{..} db = do
-  say $ format "API is running on port {}" _portApi
-  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db Config{..})
+  Di.new  (\(Di.Log _ (_ :: Df1.Level) (_ :: Seq.Seq Text) msg) -> say msg) $ \di -> do
+    say $ format "API is running on port {}" _portApi
+    run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =

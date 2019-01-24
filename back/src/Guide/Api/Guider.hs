@@ -5,6 +5,7 @@ module Guide.Api.Guider
        ( Guider (..)
        , GuiderServer
        , Context (..)
+       , DefDi
        , guiderToHandler
        ) where
 
