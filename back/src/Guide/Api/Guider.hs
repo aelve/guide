@@ -19,7 +19,7 @@ import qualified Control.Monad.Catch as Exc
 import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
 import Guide.State (DB)
-import Di.Core as Di (Di)
+import Di.Core as Di
 import Di.Monad as Di
 import Df1
 
@@ -29,7 +29,7 @@ type DefDi  = Di Level Text Text
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider
   { runGuider :: ReaderT Context DefDiT a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Text)
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Text, Exc.MonadThrow)
 
 -- | Context of Guider
 data Context = Context
@@ -40,7 +40,7 @@ data Context = Context
 
 instance MonadError ServantErr Guider where
   throwError :: ServantErr -> Guider a
-  throwError = liftIO . throwIO
+  throwError = Exc.throwM
 
   catchError :: Guider a -> (ServantErr -> Guider a) -> Guider a
   catchError (Guider m) f = Guider $ ReaderT $ \context ->
