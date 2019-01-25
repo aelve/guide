@@ -131,6 +131,7 @@ createItem catId name' = do
 -- | Modify item info. Fields that are not present ('Nothing') are not modified.
 setItemInfo :: Uid Item -> CItemInfoEdit -> Guider NoContent
 setItemInfo itemId CItemInfoEdit{..} = do
+  debugT $ "setItemInfo: " +|| itemId ||+ ""
   _ <- getItemOrFail itemId
   -- TODO diff and merge
   whenJust (unH ciieName) $ \ciieName' ->
@@ -146,6 +147,7 @@ setItemInfo itemId CItemInfoEdit{..} = do
 -- | Set item's summary.
 setItemSummary :: Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary itemId CTextEdit{..} = do
+  debugT $ "setItemSummary: " +|| itemId ||+ ""
   serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
   addEdit . fst =<< dbUpdate (SetItemSummary itemId $ unH cteModified)
@@ -154,6 +156,7 @@ setItemSummary itemId CTextEdit{..} = do
 -- | Set item's ecosystem.
 setItemEcosystem :: Uid Item -> CTextEdit -> Guider NoContent
 setItemEcosystem itemId CTextEdit{..} = do
+  debugT $ "setItemEcosystem: " +|| itemId ||+ ""
   serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
   addEdit . fst =<< dbUpdate (SetItemEcosystem itemId $ unH cteModified)
@@ -162,6 +165,7 @@ setItemEcosystem itemId CTextEdit{..} = do
 -- | Set item's notes.
 setItemNotes :: Uid Item -> CTextEdit -> Guider NoContent
 setItemNotes  itemId CTextEdit{..} = do
+  debugT $ "setItemNotes: " +|| itemId ||+ ""
   serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
   checkConflict CTextEdit{..} serverModified
   addEdit . fst =<< dbUpdate (SetItemNotes itemId $ unH cteModified)
@@ -170,6 +174,7 @@ setItemNotes  itemId CTextEdit{..} = do
 -- | Delete an item.
 deleteItem :: Uid Item -> Guider NoContent
 deleteItem itemId = do
+  debugT $ "deleteItem: " +|| itemId ||+ ""
   _ <- getItemOrFail itemId
   dbUpdate (DeleteItem itemId) >>= mapM_ addEdit
   pure NoContent
@@ -177,6 +182,7 @@ deleteItem itemId = do
 -- | Move item up or down
 moveItem :: Uid Item -> CMove -> Guider NoContent
 moveItem itemId CMove{..} = do
+  debugT $ "moveItem: " +|| itemId ||+ ""
   _ <- getItemOrFail itemId
   addEdit =<< dbUpdate (MoveItem itemId (cmDirection == DirectionUp))
   pure NoContent
@@ -186,7 +192,9 @@ moveItem itemId CMove{..} = do
 ----------------------------------------------------------------------------
 -- | Get a trait (pro/con)
 getTrait :: Uid Item -> Uid Trait -> Guider CTrait
-getTrait itemId traitId = toCTrait <$> getTraitOrFail itemId traitId
+getTrait itemId traitId = do
+  debugT $ "getTrait: " +|| itemId ||+ " " +|| traitId ||+ ""
+  toCTrait <$> getTraitOrFail itemId traitId
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
