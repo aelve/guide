@@ -43,7 +43,9 @@ getCategories = do
 
 -- | Get a single category and all of its items.
 getCategory :: Uid Category -> Guider CCategoryFull
-getCategory catId = toCCategoryFull <$> getCategoryOrFail catId
+getCategory catId = do
+  debugT $ "getCategory: " +| catId |+ ""
+  toCCategoryFull <$> getCategoryOrFail catId
 
 -- | Create a new category, given the title and the grandparent (aka group).
 --
@@ -51,6 +53,7 @@ getCategory catId = toCCategoryFull <$> getCategoryOrFail catId
 -- category with this title exists already).
 createCategory :: Text -> Text -> Guider (Uid Category)
 createCategory title' group' = do
+  debugT $ "createCategory: title = \"" <> title' <> "\", group =\"" <> group' <> "\""
   when (T.null title') $ throwError err400{errBody = "Title not provided"}
   when (T.null group') $ throwError err400{errBody = "Group' not provided"}
   -- If the category exists already, don't create it
@@ -68,6 +71,7 @@ createCategory title' group' = do
 -- | Edit categoty's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
 setCategoryNotes catId CTextEdit{..} = do
+  debugT $ "setCategoryNotes: " +|| catId ||+ ""
   serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
   checkConflict CTextEdit{..} serverModified
   addEdit . fst =<< dbUpdate (SetCategoryNotes catId $ unH cteModified)
@@ -76,6 +80,7 @@ setCategoryNotes catId CTextEdit{..} = do
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: Uid Category -> CCategoryInfoEdit -> Guider NoContent
 setCategoryInfo catId CCategoryInfoEdit{..} = do
+  debugT $ "setCategoryInfo: " +|| catId ||+ ""
   category <- getCategoryOrFail catId
   -- TODO diff and merge
   (editTitle, _) <- dbUpdate $ SetCategoryTitle catId $ unH ccieTitle
@@ -92,6 +97,7 @@ setCategoryInfo catId CCategoryInfoEdit{..} = do
 -- | Delete a category.
 deleteCategory :: Uid Category -> Guider NoContent
 deleteCategory catId = do
+  debugT $ "deleteCategory: " +|| catId ||+ ""
   _ <- getCategoryOrFail catId
   dbUpdate (DeleteCategory catId) >>= mapM_ addEdit
   pure NoContent
@@ -102,7 +108,9 @@ deleteCategory catId = do
 
 -- | Get item by item id
 getItem :: Uid Item -> Guider CItemFull
-getItem itemId = toCItemFull <$> getItemOrFail itemId
+getItem itemId = do
+  debugT $ "getItem: " +|| itemId ||+ ""
+  toCItemFull <$> getItemOrFail itemId
 
 -- | Create a new item, given the name.
 --
@@ -110,6 +118,7 @@ getItem itemId = toCItemFull <$> getItemOrFail itemId
 -- with duplicated names.
 createItem :: Uid Category -> Text -> Guider (Uid Item)
 createItem catId name' = do
+  debugT $ "createItem in category " +|| catId ||+ "with name" +| name' |+ ""
   _ <- getCategoryOrFail catId
   when (T.null name') $ throwError err400{errBody = "Name not provided"}
   itemId <- randomShortUid
