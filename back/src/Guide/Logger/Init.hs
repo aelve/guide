@@ -1,8 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE FlexibleContexts    #-}
 
-module Guide.Api.Logger where
+module Guide.Logger.Init where
 
 import Imports
 import Say (sayErr)
@@ -13,6 +14,9 @@ import qualified Data.Text      as T
 import Guide.Config (Config (..))
 import qualified Df1
 import qualified Di.Core as Di
+import qualified Di.Core as DC
+import Di.Monad
+import Di
 
 deriving instance Read Df1.Level
 

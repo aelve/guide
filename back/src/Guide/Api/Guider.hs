@@ -20,13 +20,11 @@ import qualified Control.Monad.Catch as Exc
 import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
 import Guide.State (DB)
+import Guide.Logger
 import Di.Core as Di
 import Di.Monad as Di
 import Df1
 import qualified Di 
-
-type DefDiT = DiT Level Text Message IO
-type DefDi  = Di Level Text Message
 
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider

@@ -29,7 +29,7 @@ import Say (say)
 import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler, DefDi)
 import Guide.Api.Methods
 import Guide.Api.Types
-import Guide.Api.Logger 
+import Guide.Logger
 import Guide.Config (Config (..))
 import Guide.State
 
