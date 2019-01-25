@@ -39,6 +39,7 @@ import qualified Guide.Search as Search
 getCategories :: Guider [CCategoryInfo]
 getCategories = do
   debug $ "getCategories"
+  --throwError $ err404 {errBody = "Item not found"}
   --Imports.error "exception!!!"
   dbQuery GetCategories <&> map toCCategoryInfo
 

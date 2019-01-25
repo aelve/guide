@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 {- | 'Guider' monad with 'Config' to replace servant's 'Handler'. -}
 module Guide.Api.Guider
@@ -22,6 +23,7 @@ import Guide.State (DB)
 import Di.Core as Di
 import Di.Monad as Di
 import Df1
+import qualified Di 
 
 type DefDiT = DiT Level Text Message IO
 type DefDi  = Di Level Text Message
@@ -49,7 +51,12 @@ instance MonadError ServantErr Guider where
 -- | The custom type won't be accepted by servant server without this conventor used with 'hoistServer'.
 guiderToHandler :: Context -> DefDi -> Guider a -> Handler a
 guiderToHandler context di (Guider m) =
-  Handler $ ExceptT $ try $ runDiT di $ runReaderT m context
+  Handler $ ExceptT $ try $ runDiT di $
+    Exc.catch
+      (runReaderT m context)
+      (\(err :: SomeException) -> Di.error (fromString $ show err) >> Exc.throwM err)
+
+
 
 -- | 'GuiderServer' used to create 'Guider' api.
 type GuiderServer = AsServerT Guider
