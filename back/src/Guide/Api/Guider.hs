@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 {- | 'Guider' monad with 'Config' to replace servant's 'Handler'. -}
 module Guide.Api.Guider
@@ -48,7 +49,7 @@ instance MonadError ServantErr Guider where
 -- | The custom type won't be accepted by servant server without this conventor used with 'hoistServer'.
 guiderToHandler :: Context -> DefDi -> Guider a -> Handler a
 guiderToHandler context di (Guider m) =
-  Handler $ ExceptT $ try $ runDiT di $
+  Handler $ ExceptT $ try $ runDiT di $ push "api" $ do
     Exc.catch
       (runReaderT m context)
       (\(err :: SomeException) -> Di.error (fromString $ show err) >> Exc.throwM err)

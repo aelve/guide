@@ -1,7 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts    #-}
 
-module Guide.Logger.Methods where
+module Guide.Logger.Methods (
+  debugT, infoT, noticeT, warningT, errorT, alertT, criticalT, emergencyT,
+  debugIO, infoIO, noticeIO, warningIO, errorIO, alertIO, criticalIO, emergencyIO,
+  Di.Monad.push,
+  ) where
 
 import Imports
 
