@@ -48,7 +48,8 @@ data Config = Config {
   _cors          :: Bool,         -- ^ CORS switch on/off
   _ekg           :: Bool,         -- ^ EKG switch on/off
   _logToStderr   :: Bool,         -- ^ log to stderr on/off
-  _logToFile     :: Maybe String  -- ^ log to file
+  _logToFile     :: Maybe String,  -- ^ log to file
+  _logTimeFormat :: String
   }
   deriving (Eq, Show)
 
@@ -67,7 +68,8 @@ instance Default Config where
     _cors          = False,
     _ekg           = False,
     _logToStderr   = True,
-    _logToFile     = Just "/tmp/guide.log"
+    _logToFile     = Just "/tmp/guide.log",
+    _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
      }
 
 instance FromJSON Config where
@@ -84,6 +86,7 @@ instance FromJSON Config where
     _ekg           <- o .:? "ekg"            .!= _ekg def
     _logToStderr   <- o .:? "log-to-stderr"  .!= _logToStderr def
     _logToFile     <- o .:? "log-to-file"    .!= _logToFile def
+    _logTimeFormat <- o .:? "log-time-format" .!= _logTimeFormat def
     return Config{..}
 
 instance ToJSON Config where
@@ -99,7 +102,8 @@ instance ToJSON Config where
     "cors"           .= _cors,
     "ekg"            .= _ekg,
     "log-to-stderr"  .= _logToStderr,
-    "log-to-file"    .= _logToFile
+    "log-to-file"    .= _logToFile,
+    "log-time-format" .= _logTimeFormat
     ]
 
 -- | Read config from @config.json@ (creating a default config if the file

@@ -38,7 +38,7 @@ initLogger Config{..} = do
         logMsg = toStrict $ Df1.unMessage msg
 
         timeMark :: Text
-        timeMark = T.pack (formatTime defaultTimeLocale "%a %b %e %H:%M:%S:%q %Z %Y" (systemToUTCTime time))
+        timeMark = T.pack (formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time))
 
         logLvlMark :: Text
         logLvlMark =
