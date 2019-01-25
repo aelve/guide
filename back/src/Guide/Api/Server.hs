@@ -23,17 +23,12 @@ import Servant.API.Generic
 import Servant.Swagger
 import Servant.Swagger.UI
 
--- putStrLn that works well with concurrency
-import Say (say)
-
 import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler, DefDi)
 import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Logger
 import Guide.Config (Config (..))
 import Guide.State
-
-import qualified Di.Core as Di
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
@@ -97,12 +92,10 @@ api db di config = do
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
-runApiServer :: Config -> AcidState GlobalState -> IO ()
-runApiServer cfg@Config{..} db = do
-  logHandler <- initLogger cfg
-  Di.new logHandler $ \di -> do
-    say $ format "API is running on port {}" _portApi
-    run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
+runApiServer :: DefDi -> Config -> AcidState GlobalState -> IO ()
+runApiServer di Config{..} db = do
+  debugIO di $ format "API is running on port {}" _portApi
+  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =

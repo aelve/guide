@@ -67,7 +67,7 @@ instance Default Config where
     _cors          = False,
     _ekg           = False,
     _logToStderr   = True,
-    _logToFile     = Nothing
+    _logToFile     = Just "/tmp/guide.log"
      }
 
 instance FromJSON Config where

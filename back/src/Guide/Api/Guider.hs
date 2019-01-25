@@ -21,7 +21,6 @@ import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
 import Guide.State (DB)
 import Guide.Logger
-import Di.Core as Di
 import Di.Monad as Di
 import Df1
 import qualified Di 

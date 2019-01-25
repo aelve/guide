@@ -48,8 +48,7 @@ import Data.Serialize.Get as Cereal
 import System.IO
 -- Catching Ctrl-C and termination
 import System.Signal
--- putStrLn that works well with concurrency
-import Say (say)
+
 -- HVect
 import Data.HVect hiding (length)
 
@@ -57,6 +56,7 @@ import Guide.Api (runApiServer)
 import Guide.App
 import Guide.Config
 import Guide.Handlers
+import Guide.Logger
 import Guide.JS (JS (..), allJSFunctions)
 import Guide.Routes (authRoute, haskellRoute)
 import Guide.ServerStuff
@@ -136,18 +136,20 @@ lucidWithConfig x = do
 main :: IO ()
 main = do
   config <- readConfig
-  mainWith config
+  logHandler <- initLogger config
+  new logHandler $ \di -> do
+    mainWith di config
 
 -- | Start the site with a specific 'Config'.
-mainWith :: Config -> IO ()
-mainWith config@Config{..} = do
+mainWith :: DefDi -> Config -> IO ()
+mainWith di config@Config{..} = do
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
   do args <- getArgs
      let option = headDef "" args
      when (option == "--dry-run") $ do
        db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       say "loaded the database successfully"
+       debugIO di "loaded the database successfully"
        closeAcidState db
        exitSuccess
      -- USAGE: --load-public <filename>
@@ -162,7 +164,7 @@ mainWith config@Config{..} = do
            db <- openLocalStateFrom "state/" emptyState
            Acid.update db (ImportPublicDB publicDB)
            createCheckpointAndClose' db
-           say "PublicDB imported to GlobalState"
+           debugIO di "PublicDB imported to GlobalState"
            exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
@@ -174,7 +176,7 @@ mainWith config@Config{..} = do
         when _ekg $ do
           -- Killing EKG has to be done last, because of
           -- <https://github.com/tibbe/ekg/issues/62>
-          say "Killing EKG"
+          debugIO di "Killing EKG"
           mapM_ killThread =<< readIORef ekgId
         putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
@@ -189,7 +191,7 @@ mainWith config@Config{..} = do
     mWaiMetrics <- if _ekg
         then do
           ekg <- do
-            say $ format "EKG is running on port {}" _portEkg
+            debugIO di $ format "EKG is running on port {}" _portEkg
             EKG.forkServer "localhost" _portEkg
           writeIORef ekgId (Just (EKG.serverThreadId ekg))
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
@@ -205,7 +207,7 @@ mainWith config@Config{..} = do
           pure (Just waiMetrics)
         else pure Nothing
     -- Run the API
-    _ <- Slave.fork $ runApiServer config db
+    _ <- Slave.fork $ runApiServer di config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -227,7 +229,7 @@ mainWith config@Config{..} = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
-    say $ format "Spock is running on port {}" _portMain
+    debugIO di $ format "Spock is running on port {}" _portMain
     runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
     `finally` (killThread workThread >> takeMVar workFinished)
