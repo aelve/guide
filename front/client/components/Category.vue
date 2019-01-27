@@ -51,7 +51,6 @@
           color="lightgrey"
           @click="toggleEditDescription"
         >
-          <!-- <v-icon class="mr-1" left>add</v-icon> -->
           add description
         </v-btn>
       </div>
@@ -82,7 +81,6 @@
           color="lightgrey"
           @click="toggleEditDescription"
         >
-          <!-- <v-icon class="mr-1" left>edit</v-icon> -->
           Edit description
         </v-btn>
       </div>
@@ -161,13 +159,13 @@ export default class Category extends Vue {
   serverModified: string = ''
   modified: string = ''
   merged: string = ''
-  textareaHasDescription: string = ''
   originalDescription: string = ''
 
   async asyncData () {
     if (!this.categoryId) {
       return
     }
+    this.originalDescription = _get(this, '$store.state.category.category.description.text')
     await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
@@ -176,8 +174,6 @@ export default class Category extends Vue {
   }
 
   get categoryDscMarkdown () {
-    this.originalDescription = _get(this, '$store.state.category.category.description.text')
-    this.textareaHasDescription = _get(this, '$store.state.category.category.description.text')
     return _get(this, '$store.state.category.category.description.text')
   }
 
