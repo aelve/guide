@@ -18,7 +18,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', { original: serverModified, modified: modified }); close();"
+          @click="saveUserVersion"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="$emit('saveDescription', { original: serverModified, modified: serverModified }); close();"
+          @click="saveServerVersion"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -68,10 +68,14 @@ export default class ConflictDialog extends Vue {
   @Prop(String) modified!: string
   @Prop(String) merged!: string
 
-  mergedDescription: string = ''
-  
-  showMergedDescription () {
-    return this.mergedDescription = this.merged
+  saveUserVersion () {
+    this.$emit('saveDescription', { original: this.serverModified, modified: this.modified })
+    this.close()
+  }
+
+  saveServerVersion () {
+    this.$emit('saveDescription', { original: this.serverModified, modified: this.serverModified })
+    this.close()
   }
 
   saveMerged (newVal: string) {

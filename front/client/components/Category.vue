@@ -44,13 +44,13 @@
         />
         <v-btn
           v-if="!editDescriptionShown"
-          class="pl-0 edit-descr-btn"
           depressed
           small
           light
           color="lightgrey"
           @click="toggleEditDescription"
         >
+          <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
           add description
         </v-btn>
       </div>
@@ -74,14 +74,14 @@
 
         <v-btn
           v-if="!editDescriptionShown"
-          class="edit-descr-btn"
           depressed
           small
           light
           color="lightgrey"
           @click="toggleEditDescription"
         >
-          Edit description
+          <v-icon size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
+          edit description
         </v-btn>
       </div>
       <template v-if="category">
@@ -167,6 +167,10 @@ export default class Category extends Vue {
     }
     this.originalDescription = _get(this, '$store.state.category.category.description.text')
     await this.$store.dispatch('category/loadCategory', this.categoryId)
+  }
+
+  beforeDestroy () {
+    this.$store.commit('category/setCategory', {})
   }
 
   get categoryDescription () {
