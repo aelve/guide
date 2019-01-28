@@ -51,7 +51,7 @@
           @click="toggleEditDescription"
         >
           <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
-          add description
+          <p>add description</p>
         </v-btn>
       </div>
       <!-- END When no category description show stub -->
@@ -81,7 +81,7 @@
           @click="toggleEditDescription"
         >
           <v-icon size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
-          edit description
+          <p>edit description</p>
         </v-btn>
       </div>
       <template v-if="category">
@@ -124,7 +124,7 @@
         :serverModified="serverModified"
         :modified="modified"
         :merged="merged"
-        v-on:saveDescription="saveConflictDescription"
+        @saveDescription="saveConflictDescription"
       />
     </div>
   </v-container>
@@ -201,9 +201,9 @@ export default class Category extends Vue {
     this.editDescriptionShown = !this.editDescriptionShown
   }
 
-  async addCategoryDescription (original: any, modified: any) {
+  async updateCategoryDescription (original: any, modified: any) {
     try {
-      await this.$store.dispatch('categoryItem/addCategoryDescription', {
+      await this.$store.dispatch('categoryItem/updateCategoryDescription', {
         id: this.categoryUid,
         original: original,
         modified: modified
@@ -224,13 +224,13 @@ export default class Category extends Vue {
   }
 
   saveDescription(newValue: string) {
-    this.addCategoryDescription(this.originalDescription, newValue)
+    this.updateCategoryDescription(this.originalDescription, newValue)
   }
 
   saveConflictDescription (data: any) {
     let { original, modified } = data
 
-    this.addCategoryDescription(original, modified)
+    this.updateCategoryDescription(original, modified)
   }
 }
 </script>

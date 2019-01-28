@@ -121,7 +121,7 @@ const actions: ActionTree<ICategoryItemState, any> = {
     { dispatch }: ActionContext<ICategoryItemState, any>,
     { id, original, modified }: {id: string, original: string, modified: string}
   ) {
-    const createdDescription = await CategoryItemService.addCategoryDescription({
+    const createdDescription = await CategoryItemService.updateCategoryDescription({
       id,
       original,
       modified

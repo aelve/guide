@@ -90,7 +90,7 @@ class CategoryItemService {
     })
   }
   // add here category description add/edit
-  async addCategoryDescription ({ id, original, modified }: {id: string, original: string, modified: string}): Promise<any> {
+  async updateCategoryDescription ({ id, original, modified }: {id: string, original: string, modified: string}): Promise<any> {
     const { data } = await axios.put(`api/category/${id}/notes`, {
       original,
       modified
