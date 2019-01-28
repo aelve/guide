@@ -67,8 +67,8 @@ instance Default Config where
     _portEkg       = 5050,
     _cors          = False,
     _ekg           = False,
-    _logToStderr   = True,
-    _logToFile     = Just "/tmp/guide.log",
+    _logToStderr   = False,
+    _logToFile     = Nothing,
     _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
      }
 

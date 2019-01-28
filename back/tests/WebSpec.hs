@@ -29,7 +29,8 @@ import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
 import qualified Guide.Main
-import Guide.Config (Config(..))
+import Guide.Logger
+import Guide.Config (Config(..), def)
 
 
 -----------------------------------------------------------------------------
@@ -600,16 +601,20 @@ run ts = do
         --
         -- Using 'Slave.fork' in 'Guide.mainWith' ensures that threads started
         -- inside of 'mainWith' will be killed too when the thread dies.
-        tid <- Slave.fork $ Guide.Main.mainWith Config {
-          _baseUrl       = "/",
-          _googleToken   = "some-google-token",
-          _adminPassword = "123",
-          _discussLink   = Just "http://discuss.link",
-          _portMain      = 8080,
-          _portApi       = 4400,
-          _portEkg       = 5050,
-          _cors          = False,
-          _ekg           = False }
+        let config = def {
+              _baseUrl       = "/",
+              _googleToken   = "some-google-token",
+              _adminPassword = "123",
+              _discussLink   = Just "http://discuss.link",
+              _portMain      = 8080,
+              _portApi       = 4400,
+              _portEkg       = 5050,
+              _cors          = False,
+              _ekg           = False }
+        logHandler <- initLogger config
+
+        tid <- Slave.fork $ new logHandler $ \di ->
+          Guide.Main.mainWith di config
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
         threadDelay 100000
