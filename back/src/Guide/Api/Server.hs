@@ -14,8 +14,8 @@ module Guide.Api.Server
 import Imports
 
 import Data.Swagger.Lens hiding (format)
-import Network.Wai (Middleware)
-import Network.Wai.Handler.Warp (run)
+import Network.Wai (Middleware, Request)
+import Network.Wai.Handler.Warp (runSettings, defaultSettings, setPort, setOnException)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
@@ -89,13 +89,17 @@ api db di config = do
   hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails) di)
       (const $ toServant guiderServer)
 
+emptyOnException :: Maybe Request -> SomeException -> IO ()
+emptyOnException _ _ = pure ()
+
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: DefDi -> Config -> AcidState GlobalState -> IO ()
 runApiServer di Config{..} db = do
   debugIO di $ format "API is running on port {}" _portApi
-  run _portApi $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
+  let guideSettings = setOnException emptyOnException $ setPort _portApi defaultSettings
+  runSettings guideSettings $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =
