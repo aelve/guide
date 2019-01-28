@@ -25,41 +25,11 @@
           Add new item
         </v-btn>
       </div>
- <!-- When no category description show stub -->
-      <div 
-        v-if="!categoryDescription"
-        class="category-description"
-      >
-        <p v-if="!editDescriptionShown">This category has no description yet, you can contribute to the category by adding description</p>
-        
-        <slot v-if="!editDescriptionShown"/>
-
-        <markdown-editor
-          v-else
-          class="mb-2"
-          toolbar
-          :value="categoryDscMarkdown"
-          @cancel="toggleEditDescription"
-          @save="saveDescription"
-        />
-        <v-btn
-          v-if="!editDescriptionShown"
-          depressed
-          small
-          light
-          color="lightgrey"
-          @click="toggleEditDescription"
-        >
-          <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
-          <p>add description</p>
-        </v-btn>
-      </div>
-      <!-- END When no category description show stub -->
-      <div
-        v-if="categoryDescription"
-        class="category-description"
-      >
-        <div v-if="!editDescriptionShown" v-html="categoryDescription" />
+      <div class="category-description">
+        <div v-if="!editDescriptionShown">
+          <p v-if="!categoryDescription">This category has no description yet, you can contribute to the category by adding description</p>
+          <div v-else v-html="categoryDescription" />
+        </div>
 
         <slot v-if="!editDescriptionShown"/>
 
@@ -80,15 +50,13 @@
           color="lightgrey"
           @click="toggleEditDescription"
         >
-          <v-icon size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
-          <p>edit description</p>
+          <v-icon v-if="!categoryDescription" size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
+          <v-icon v-else size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
+          <p v-if="!categoryDescription">add description</p>
+          <p v-else>edit description</p>
         </v-btn>
       </div>
       <template v-if="category">
-        <div
-          v-for="(value, index) in category.items"
-          :key="index"
-        > 
         <category-item
           v-for="value in category.items"
           :key="value.id"
@@ -105,7 +73,6 @@
           :notes="value.notes"
           :kind="value.kind"
         />
-        </div>
       </template>
       <v-btn
         flat
