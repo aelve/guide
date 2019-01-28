@@ -21,6 +21,7 @@ import Guide.Api.Guider (Context (..), Guider)
 import Guide.Config (Config (..))
 import Guide.Types.Edit (Edit (..))
 import Guide.Utils (Url)
+import Guide.Logger
 
 import qualified Data.ByteString as BS
 
@@ -36,6 +37,7 @@ data Matomo = Matomo
 -- | Notify Matomo that an edit has been made.
 postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = do
+    debugT "postMatomo"
     Context Config{..} _ _ <- ask
     whenJust _matomoLink $ \matomo -> liftIO $ do
       async $ do
