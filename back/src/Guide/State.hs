@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TypeFamilies      #-}
-
+{-# LANGUAGE StandaloneDeriving#-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -929,6 +929,41 @@ makeAcidic ''GlobalState [
   'importPublicDB,
   'exportPublicDB
   ]
+
+-- global state
+deriving instance Show GetGlobalState
+-- category
+deriving instance Show GetCategories
+deriving instance Show GetCategoryMaybe
+deriving instance Show AddCategory
+deriving instance Show DeleteCategory
+deriving instance Show SetCategoryGroup
+deriving instance Show SetCategoryTitle
+deriving instance Show SetCategoryNotes
+deriving instance Show SetCategoryStatus
+deriving instance Show ChangeCategoryEnabledSections
+-- items
+deriving instance Show GetItemMaybe
+deriving instance Show MoveItem
+deriving instance Show DeleteItem
+deriving instance Show AddItem
+deriving instance Show SetItemName
+deriving instance Show SetItemNotes
+deriving instance Show SetItemLink
+deriving instance Show SetItemGroup
+deriving instance Show SetItemEcosystem
+deriving instance Show SetItemHackage
+deriving instance Show SetItemSummary
+-- trait
+deriving instance Show MoveTrait
+deriving instance Show DeleteTrait
+deriving instance Show GetTraitMaybe
+deriving instance Show SetTraitContent
+deriving instance Show AddPro
+deriving instance Show AddCon
+-- action
+deriving instance Show RegisterAction
+deriving instance Show RegisterEdit
 
 ----------------------------------------------------------------------------
 -- DB helpers (have to be at the end of the file)

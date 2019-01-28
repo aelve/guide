@@ -199,6 +199,7 @@ getTrait itemId traitId = do
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
 createTrait itemId CCreateTrait{..} = do
+  debugT $ "createTrait: " +|| itemId ||+ ""
   when (T.null cctContent) $ throwError err400{errBody = "Trait text not provided"}
   traitId <- randomShortUid
   addEdit . fst =<< case cctType of
@@ -209,6 +210,7 @@ createTrait itemId CCreateTrait{..} = do
 -- | Update the text of a trait (pro/con).
 setTrait :: Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
 setTrait itemId traitId CTextEdit{..} = do
+  debugT $ "setTrait: " +|| itemId ||+ " " +|| traitId ||+ ""
   serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail itemId traitId
   checkConflict CTextEdit{..} serverModified
   addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId $ unH cteModified)
@@ -217,6 +219,7 @@ setTrait itemId traitId CTextEdit{..} = do
 -- | Delete a trait (pro/con).
 deleteTrait :: Uid Item -> Uid Trait -> Guider NoContent
 deleteTrait itemId traitId = do
+  debugT $ "deleteTrait: " +|| itemId ||+ " " +|| traitId ||+ ""
   _ <- getTraitOrFail itemId traitId
   dbUpdate (DeleteTrait itemId traitId) >>= mapM_ addEdit
   pure NoContent
@@ -224,6 +227,7 @@ deleteTrait itemId traitId = do
 -- | Move trait up or down
 moveTrait :: Uid Item -> Uid Trait -> CMove -> Guider NoContent
 moveTrait itemId traitId CMove{..} = do
+  debugT $ "moveTrait: " +|| itemId ||+ " " +|| traitId ||+ ""
   _ <- getTraitOrFail itemId traitId
   addEdit =<< dbUpdate (MoveTrait itemId traitId (cmDirection == DirectionUp))
   pure NoContent
@@ -237,6 +241,7 @@ moveTrait itemId traitId CMove{..} = do
 -- Returns at most 100 results.
 search :: Text -> Guider [CSearchResult]
 search searchQuery = do
+  debugT $ "search: " +|| searchQuery ||+ " "
   gs <- dbQuery GetGlobalState
   pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
@@ -245,24 +250,29 @@ search searchQuery = do
 ----------------------------------------------------------------------------
 
 -- | Update something in the database.
-dbUpdate :: (EventState event ~ GlobalState, UpdateEvent event)
+dbUpdate :: (EventState event ~ GlobalState, UpdateEvent event, Show event)
          => event -> Guider (EventResult event)
 dbUpdate x = do
+  debugT $ "dbUpdate: " +|| x ||+ ""
   Context{..} <- ask
   liftIO $ do
     Acid.update cDB SetDirty
     Acid.update cDB x
 
 -- | Read something from the database.
-dbQuery :: (EventState event ~ GlobalState, QueryEvent event)
+dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
         => event -> Guider (EventResult event)
 dbQuery x = do
+  debugT $ "dbQuery: " +|| x ||+ ""
   Context{..} <- ask
   liftIO $ Acid.query cDB x
 
 -- Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()
-addEdit edit = unless (isVacuousEdit edit) $ do
+addEdit edit = do
+  debugT $ "addEdit: " +|| edit ||+ ""
+  unless (isVacuousEdit edit) $ do
+    debugT $ "addEdit: it makes sense to edit."
     time <- liftIO getCurrentTime
     Context Config{..} _ RequestDetails{..} <- ask
     dbUpdate $ RegisterEdit edit rdIp time
@@ -272,6 +282,7 @@ addEdit edit = unless (isVacuousEdit edit) $ do
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category
 getCategoryOrFail catId = do
+  debugT $ "getCategoryOrFail: " +|| catId ||+ ""
   dbQuery (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Category not found"}
     Just cat -> pure cat
@@ -279,6 +290,7 @@ getCategoryOrFail catId = do
 -- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
 getItemOrFail :: Uid Item -> Guider Item
 getItemOrFail itemId = do
+  debugT $ "getItemOrFail: " +|| itemId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Item not found"}
     Just item -> pure item
@@ -287,6 +299,7 @@ getItemOrFail itemId = do
 -- either the item or the trait doesn't exist.
 getTraitOrFail :: Uid Item -> Uid Trait -> Guider Trait
 getTraitOrFail itemId traitId = do
+  debugT $ "getTraitOrFail: " +|| itemId ||+ ", " +|| traitId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errBody = "Item not found"}
     Just _ -> do
@@ -297,6 +310,7 @@ getTraitOrFail itemId traitId = do
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Guider ()
 checkConflict CTextEdit{..} serverModified = do
+  debugT $ "checkConflict"
   let original = unH cteOriginal
   let modified = unH cteModified
   when (original /= serverModified) $ do
