@@ -4,28 +4,70 @@
 
 module Api where
 
-import BasePrelude
+import BasePrelude hiding (Category)
 
+import qualified Data.Text             as T
 import qualified Data.ByteString.Char8 as S8
 import qualified Data.Yaml             as Yaml
-import           Network.HTTP.Simple
-import           Control.Monad.Catch
+import Network.HTTP.Simple
+import Control.Monad.Catch
+import Network.HTTP.Types.Status
 
 import Guide.Api.Types
+import Guide.Types.Core
+import Guide.Utils (Uid (..), Url)
 import qualified Test.Hspec as H
+
+getCategoriesRequest :: IO [CCategoryInfo]
+getCategoriesRequest = do
+  request <- makeRequest
+    (Host "http://localhost/categories")
+    (Port 4400)
+    (Method "GET")
+  (_, categories) :: (Status, [CCategoryInfo]) <- runRequest request
+  pure $ categories
 
 apiTests = do
   H.it "api: get categories request" $ do
-    request <- makeRequest
-      (Host "http://localhost/categories")
-      (Port 4400)
-      (Method "GET")
-    _ :: [CCategoryInfo] <- runRequest request
-    threadDelay 100000
+    [] <- getCategoriesRequest
     pure ()
 
-runRequest :: Yaml.FromJSON a => Request -> IO a
-runRequest request = getResponseBody <$> httpJSON request
+  H.it "api: fail request" $ do
+    request <- makeRequest
+      (Host "http://localhost/fail")
+      (Port 4400)
+      (Method "GET")
+    Status 404 "Not Found" <- runFailRequest request
+    pure ()
+
+  H.it "api: createCategory" $ do
+    request <- makeRequest
+      (Host "http://localhost/category?title=NewCategory&group=Model")
+      (Port 4400)
+      (Method "POST")
+    _ :: (Status, Uid Category) <- runRequest request
+    pure ()
+
+  H.it "api get category by id" $ do
+    -- get id of category from DB
+    categoryInfo <- head <$> getCategoriesRequest
+    let Uid categoryId = cciId categoryInfo
+    request <- makeRequest
+      (Host $ "http://localhost/category/" <> T.unpack categoryId)
+      (Port 4400)
+      (Method "GET")
+    _ :: (Status, CCategoryFull) <- runRequest request
+    pure ()
+
+
+
+runFailRequest :: Request -> IO Status
+runFailRequest request = getResponseStatus <$> httpNoBody request
+
+runRequest :: Yaml.FromJSON a => Request -> IO (Status, a)
+runRequest request = do
+  response <- httpJSON request
+  pure (getResponseStatus response, getResponseBody response)
 
 newtype Host   = Host String
 newtype Port   = Port Int

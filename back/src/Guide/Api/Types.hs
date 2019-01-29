@@ -419,6 +419,9 @@ data CCategoryFull = CCategoryFull
 instance A.ToJSON CCategoryFull where
   toJSON = A.genericToJSON jsonOptions
 
+instance A.FromJSON CCategoryFull where
+  parseJSON = A.genericParseJSON jsonOptions
+
 instance ToSchema CCategoryFull where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
@@ -525,6 +528,9 @@ data CItemFull = CItemFull
 instance A.ToJSON CItemFull where
   toJSON = A.genericToJSON jsonOptions
 
+instance A.FromJSON CItemFull where
+  parseJSON = A.genericParseJSON jsonOptions
+
 instance ToSchema CItemFull where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
@@ -567,6 +573,9 @@ data CTrait = CTrait
 instance A.ToJSON CTrait where
   toJSON = A.genericToJSON jsonOptions
 
+instance A.FromJSON CTrait where
+  parseJSON = A.genericParseJSON jsonOptions
+
 instance ToSchema CTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
@@ -586,6 +595,9 @@ data CMarkdown = CMarkdown
 instance A.ToJSON CMarkdown where
   toJSON = A.genericToJSON jsonOptions
 
+instance A.FromJSON CMarkdown where
+  parseJSON = A.genericParseJSON jsonOptions
+  
 instance ToSchema CMarkdown where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
@@ -617,6 +629,9 @@ data CHeading = CHeading
 
 instance A.ToJSON CHeading where
   toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CHeading where
+  parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CHeading where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
