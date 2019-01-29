@@ -25,37 +25,7 @@
           Add new item
         </v-btn>
       </div>
-      <div class="category-description">
-        <div v-if="!editDescriptionShown">
-          <p v-if="!categoryDescription">This category has no description yet, you can contribute to the category by adding description</p>
-          <div v-else v-html="categoryDescription" />
-        </div>
-
-        <slot v-if="!editDescriptionShown"/>
-
-        <markdown-editor
-          v-else
-          class="mb-2"
-          toolbar
-          :value="categoryDscMarkdown"
-          @cancel="toggleEditDescription"
-          @save="saveDescription"
-        />
-
-        <v-btn
-          v-if="!editDescriptionShown"
-          depressed
-          small
-          light
-          color="lightgrey"
-          @click="toggleEditDescription"
-        >
-          <v-icon v-if="!categoryDescription" size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
-          <v-icon v-else size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
-          <p v-if="!categoryDescription">add description</p>
-          <p v-else>edit description</p>
-        </v-btn>
-      </div>
+      <category-description :originalDescription="originalDescription" />
       <template v-if="category">
         <category-item
           v-for="value in category.items"
@@ -86,13 +56,6 @@
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
-      <conflict-dialog
-        v-model="isDescriptionConflict"
-        :serverModified="serverModified"
-        :modified="modified"
-        :merged="merged"
-        @saveDescription="saveConflictDescription"
-      />
     </div>
   </v-container>
 </template>
@@ -101,19 +64,16 @@
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
-import ConflictDialog from 'client/components/ConflictDialog.vue'
+import CategoryDescription from 'client/components/CategoryDescription.vue'
 import category from 'client/store/modules/category'
 
 @Component({
-  name: 'article-component',
   components: {
     CategoryItem,
     AddItemDialog,
-    ConflictDialog,
-    MarkdownEditor
+    CategoryDescription
   }
 })
 export default class Category extends Vue {
@@ -121,11 +81,6 @@ export default class Category extends Vue {
   @Prop(String) categoryDsc!: string
 
   isDialogOpen: boolean = false
-  editDescriptionShown: boolean = false
-  isDescriptionConflict: boolean = false
-  serverModified: string = ''
-  modified: string = ''
-  merged: string = ''
   originalDescription: string = ''
 
   async asyncData () {
@@ -140,14 +95,6 @@ export default class Category extends Vue {
     this.$store.commit('category/setCategory', {})
   }
 
-  get categoryDescription () {
-    return _get(this, '$store.state.category.category.description.html')
-  }
-
-  get categoryDscMarkdown () {
-    return _get(this, '$store.state.category.category.description.text')
-  }
-
   get category () {
     return this.$store.state.category.category
   }
@@ -156,48 +103,8 @@ export default class Category extends Vue {
     return this.category && `${_toKebabCase(this.category.title)}-${this.category.id}`
   }
 
-  get categoryUid () {
-    return this.$store.state.category.category.id
-  }
-
   openAddItemDialog () {
     this.isDialogOpen = true
-  }
-
-  toggleEditDescription () {
-    this.editDescriptionShown = !this.editDescriptionShown
-  }
-
-  async updateCategoryDescription (original: any, modified: any) {
-    try {
-      await this.$store.dispatch('categoryItem/updateCategoryDescription', {
-        id: this.categoryUid,
-        original: original,
-        modified: modified
-      })
-      this.originalDescription = modified
-    } catch (err) {
-      if (err.response.status === 409) {
-        console.table(err)
-        this.serverModified = err.response.data.server_modified
-        this.modified = err.response.data.modified
-        this.merged = err.response.data.merged
-        this.isDescriptionConflict = true
-      }
-      throw err
-    }
-
-    this.toggleEditDescription();
-  }
-
-  saveDescription(newValue: string) {
-    this.updateCategoryDescription(this.originalDescription, newValue)
-  }
-
-  saveConflictDescription (data: any) {
-    let { original, modified } = data
-
-    this.updateCategoryDescription(original, modified)
   }
 }
 </script>
