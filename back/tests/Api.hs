@@ -56,13 +56,11 @@ apiTests = H.describe "api" $ do
         (Port 4400)
         (Method "PUT")
       let req = setRequestBodyJSON (makeEditObject "" "string") request
-      Status 200 s1 <- runRequestNoBody req
-      print s1
-      Status 409 s2 <- runRequestNoBody req
-      print s2
+      Status 200 _ <- runRequestNoBody req
+      Status 409 _ <- runRequestNoBody req
       void $ deleteCategory categoryId
-      Status 404 s3 <- runRequestNoBody req
-      print s3
+      Status 404 _ <- runRequestNoBody req
+      pure ()
     H.it "modify info of category" $ do
       categoryId <- postCreateCategory
       let Uid tCategoryId = categoryId 
