@@ -52,10 +52,9 @@ import ConflictDialog from 'client/components/ConflictDialog.vue'
   }
 })
 export default class CategoryDescriptiom extends Vue {
-  @Prop(String) originalDescription!: string
-
   editDescriptionShown: boolean = false
   isDescriptionConflict: boolean = false
+  originalDescription: string = _get(this, '$store.state.category.category.description.text')
   serverModified: string = ''
   modified: string = ''
   merged: string = ''

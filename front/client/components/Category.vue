@@ -25,7 +25,7 @@
           Add new item
         </v-btn>
       </div>
-      <category-description :originalDescription="originalDescription" />
+      <category-description />
       <template v-if="category">
         <category-item
           v-for="value in category.items"
@@ -81,13 +81,11 @@ export default class Category extends Vue {
   @Prop(String) categoryDsc!: string
 
   isDialogOpen: boolean = false
-  originalDescription: string = ''
 
   async asyncData () {
     if (!this.categoryId) {
       return
     }
-    this.originalDescription = _get(this, '$store.state.category.category.description.text')
     await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
