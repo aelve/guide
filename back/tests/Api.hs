@@ -5,7 +5,7 @@
 module Api where
 
 import BasePrelude hiding (Category)
-
+import Data.Aeson
 import qualified Data.Text             as T
 import qualified Data.ByteString.Char8 as S8
 import qualified Data.Yaml             as Yaml
@@ -17,6 +17,77 @@ import Guide.Api.Types
 import Guide.Types.Core
 import Guide.Utils (Uid (..), Url)
 import qualified Test.Hspec as H
+
+apiTests = H.describe "api" $ do
+  H.it "fail request" $ do
+    request <- makeRequest
+      (Host "http://localhost/fail")
+      (Port 4400)
+      (Method "GET")
+    Status 404 "Not Found" <- runFailRequest request
+    pure ()
+
+  -- category tests
+  H.it "get categories request" $ do
+    [] <- getCategoriesRequest
+    pure ()
+
+  H.it "createCategory" $ void $ postCreateCategory
+
+  H.it "get category by id" $ do
+    -- get id of category from DB
+    categoryInfo <- head <$> getCategoriesRequest
+    let Uid categoryId = cciId categoryInfo
+    request <- makeRequest
+      (Host $ "http://localhost/category/" <> T.unpack categoryId)
+      (Port 4400)
+      (Method "GET")
+    _ :: (Status, CCategoryFull) <- runRequest request
+    pure ()
+  H.it "delete category by id" $ do
+    categoryInfo <- head <$> getCategoriesRequest
+    Just True    <- deleteCategory (cciId categoryInfo)
+    []           <- getCategoriesRequest
+    pure ()
+  H.it "modify notes of category" $ do
+    categoryId <- postCreateCategory
+    let Uid tCategoryId = categoryId 
+    request <- makeRequest
+      (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/notes")
+      (Port 4400)
+      (Method "PUT")
+    let req = setRequestBodyJSON (makeEditObject "" "string") request
+    Status 200 _ <- runRequestNoBody req
+    Status 409 _ <- runRequestNoBody req
+    void $ deleteCategory categoryId
+    Status 404 _ <- runRequestNoBody req
+    pure ()
+  H.it "modify info of category" $ do
+    categoryId <- postCreateCategory
+    let Uid tCategoryId = categoryId 
+    request <- makeRequest
+      (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/info")
+      (Port 4400)
+      (Method "PUT")
+    let req = setRequestBodyJSON makeEditCategoryInfo request
+    Status 200 _ <- runRequestNoBody req
+    void $ deleteCategory categoryId
+    Status 404 _ <- runRequestNoBody req
+    pure ()
+
+makeEditCategoryInfo :: Value
+makeEditCategoryInfo = object
+  [ "title"    .= ("oldText" :: String)
+  , "group"    .= ("Model" :: String)
+  , "status"   .= ("CategoryStub" :: String)
+  , "sections" .= [("ItemProsConsSection" :: String)]
+  ]
+
+makeEditObject :: String -> String -> Value
+makeEditObject oldText newText = object
+  [ "original" .= oldText
+  , "modified" .= newText
+  ]
 
 getCategoriesRequest :: IO [CCategoryInfo]
 getCategoriesRequest = do
@@ -45,37 +116,6 @@ deleteCategory (Uid categoryId) = do
     Status 200 _                    -> Just True
     Status 404 "Category not found" -> Just False
     _                               -> Nothing
-
-apiTests = do
-  H.it "api: fail request" $ do
-    request <- makeRequest
-      (Host "http://localhost/fail")
-      (Port 4400)
-      (Method "GET")
-    Status 404 "Not Found" <- runFailRequest request
-    pure ()
-
-  H.it "api: get categories request" $ do
-    [] <- getCategoriesRequest
-    pure ()
-
-  H.it "api: createCategory" $ void $ postCreateCategory
-
-  H.it "api get category by id" $ do
-    -- get id of category from DB
-    categoryInfo <- head <$> getCategoriesRequest
-    let Uid categoryId = cciId categoryInfo
-    request <- makeRequest
-      (Host $ "http://localhost/category/" <> T.unpack categoryId)
-      (Port 4400)
-      (Method "GET")
-    _ :: (Status, CCategoryFull) <- runRequest request
-    pure ()
-  H.it "api delete category by id" $ do
-    categoryInfo <- head <$> getCategoriesRequest
-    Just True    <- deleteCategory (cciId categoryInfo)
-    []           <- getCategoriesRequest
-    pure ()
 
 runRequestNoBody, runFailRequest :: Request -> IO Status
 runRequestNoBody request = getResponseStatus <$> httpNoBody request
