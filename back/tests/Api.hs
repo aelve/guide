@@ -26,54 +26,55 @@ apiTests = H.describe "api" $ do
       (Method "GET")
     Status 404 "Not Found" <- runFailRequest request
     pure ()
+  H.describe "category" $ do
+    H.it "get categories request" $ do
+      [] <- getCategoriesRequest
+      pure ()
 
-  -- category tests
-  H.it "get categories request" $ do
-    [] <- getCategoriesRequest
-    pure ()
+    H.it "createCategory" $ void $ postCreateCategory
 
-  H.it "createCategory" $ void $ postCreateCategory
-
-  H.it "get category by id" $ do
-    -- get id of category from DB
-    categoryInfo <- head <$> getCategoriesRequest
-    let Uid categoryId = cciId categoryInfo
-    request <- makeRequest
-      (Host $ "http://localhost/category/" <> T.unpack categoryId)
-      (Port 4400)
-      (Method "GET")
-    _ :: (Status, CCategoryFull) <- runRequest request
-    pure ()
-  H.it "delete category by id" $ do
-    categoryInfo <- head <$> getCategoriesRequest
-    Just True    <- deleteCategory (cciId categoryInfo)
-    []           <- getCategoriesRequest
-    pure ()
-  H.it "modify notes of category" $ do
-    categoryId <- postCreateCategory
-    let Uid tCategoryId = categoryId 
-    request <- makeRequest
-      (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/notes")
-      (Port 4400)
-      (Method "PUT")
-    let req = setRequestBodyJSON (makeEditObject "" "string") request
-    Status 200 _ <- runRequestNoBody req
-    Status 409 _ <- runRequestNoBody req
-    void $ deleteCategory categoryId
-    Status 404 _ <- runRequestNoBody req
-    pure ()
-  H.it "modify info of category" $ do
-    categoryId <- postCreateCategory
-    let Uid tCategoryId = categoryId 
-    request <- makeRequest
-      (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/info")
-      (Port 4400)
-      (Method "PUT")
-    let req = setRequestBodyJSON makeEditCategoryInfo request
-    Status 200 _ <- runRequestNoBody req
-    void $ deleteCategory categoryId
-    Status 404 _ <- runRequestNoBody req
-    pure ()
+    H.it "get category by id" $ do
+      -- get id of category from DB
+      categoryInfo <- head <$> getCategoriesRequest
+      let Uid categoryId = cciId categoryInfo
+      request <- makeRequest
+        (Host $ "http://localhost/category/" <> T.unpack categoryId)
+        (Port 4400)
+        (Method "GET")
+      _ :: (Status, CCategoryFull) <- runRequest request
+      pure ()
+    H.it "delete category by id" $ do
+      categoryInfo <- head <$> getCategoriesRequest
+      Just True    <- deleteCategory (cciId categoryInfo)
+      []           <- getCategoriesRequest
+      pure ()
+    H.it "modify notes of category" $ do
+      categoryId <- postCreateCategory
+      let Uid tCategoryId = categoryId 
+      request <- makeRequest
+        (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/notes")
+        (Port 4400)
+        (Method "PUT")
+      let req = setRequestBodyJSON (makeEditObject "" "string") request
+      Status 200 s1 <- runRequestNoBody req
+      print s1
+      Status 409 s2 <- runRequestNoBody req
+      print s2
+      void $ deleteCategory categoryId
+      Status 404 s3 <- runRequestNoBody req
+      print s3
+    H.it "modify info of category" $ do
+      categoryId <- postCreateCategory
+      let Uid tCategoryId = categoryId 
+      request <- makeRequest
+        (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/info")
+        (Port 4400)
+        (Method "PUT")
+      let req = setRequestBodyJSON makeEditCategoryInfo request
+      Status 200 _ <- runRequestNoBody req
+      void $ deleteCategory categoryId
+      Status 404 _ <- runRequestNoBody req
+      pure ()
 
 makeEditCategoryInfo :: Value
 makeEditCategoryInfo = object
