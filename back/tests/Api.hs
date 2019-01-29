@@ -57,7 +57,7 @@ apiTests = H.describe "api" $ do
         (Method "PUT")
       let req = setRequestBodyJSON (makeEditObject "" "string") request
       Status 200 _ <- runRequestNoBody req
-      Status 409 _ <- runRequestNoBody req
+      Status 409 "Merge conflict occurred" <- runRequestNoBody req
       void $ deleteCategory categoryId
       Status 404 _ <- runRequestNoBody req
       pure ()

@@ -54,8 +54,8 @@ getCategory catId = do
 createCategory :: Text -> Text -> Guider (Uid Category)
 createCategory title' group' = do
   debugT $ "createCategory: title = \"" <> title' <> "\", group =\"" <> group' <> "\""
-  when (T.null title') $ throwError err400{errBody = "Title not provided"}
-  when (T.null group') $ throwError err400{errBody = "Group' not provided"}
+  when (T.null title') $ throwError err400{errReasonPhrase = "Title not provided"}
+  when (T.null group') $ throwError err400{errReasonPhrase = "Group' not provided"}
   -- If the category exists already, don't create it
   cats <- view categories <$> dbQuery GetGlobalState
   let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
@@ -120,7 +120,7 @@ createItem :: Uid Category -> Text -> Guider (Uid Item)
 createItem catId name' = do
   debugT $ "createItem in category " +|| catId ||+ "with name" +| name' |+ ""
   _ <- getCategoryOrFail catId
-  when (T.null name') $ throwError err400{errBody = "Name not provided"}
+  when (T.null name') $ throwError err400{errReasonPhrase = "Name not provided"}
   itemId <- randomShortUid
   time <- liftIO getCurrentTime
   addEdit . fst =<< dbUpdate (AddItem catId itemId name' time)
@@ -200,7 +200,7 @@ getTrait itemId traitId = do
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
 createTrait itemId CCreateTrait{..} = do
   debugT $ "createTrait: " +|| itemId ||+ ""
-  when (T.null cctContent) $ throwError err400{errBody = "Trait text not provided"}
+  when (T.null cctContent) $ throwError err400{errReasonPhrase = "Trait text not provided"}
   traitId <- randomShortUid
   addEdit . fst =<< case cctType of
     Con -> dbUpdate (AddCon itemId traitId cctContent)
@@ -284,7 +284,7 @@ getCategoryOrFail :: Uid Category -> Guider Category
 getCategoryOrFail catId = do
   debugT $ "getCategoryOrFail: " +|| catId ||+ ""
   dbQuery (GetCategoryMaybe catId) >>= \case
-    Nothing -> throwError $ err404 {errBody = "Category not found"}
+    Nothing -> throwError $ err404 {errReasonPhrase = "Category not found"}
     Just cat -> pure cat
 
 -- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
@@ -292,7 +292,7 @@ getItemOrFail :: Uid Item -> Guider Item
 getItemOrFail itemId = do
   debugT $ "getItemOrFail: " +|| itemId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError $ err404 {errBody = "Item not found"}
+    Nothing -> throwError $ err404 {errReasonPhrase = "Item not found"}
     Just item -> pure item
 
 -- | Helper. Get a trait from database and throw error 404 when
@@ -301,10 +301,10 @@ getTraitOrFail :: Uid Item -> Uid Trait -> Guider Trait
 getTraitOrFail itemId traitId = do
   debugT $ "getTraitOrFail: " +|| itemId ||+ ", " +|| traitId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
-    Nothing -> throwError $ err404 {errBody = "Item not found"}
+    Nothing -> throwError $ err404 {errReasonPhrase = "Item not found"}
     Just _ -> do
       dbQuery (GetTraitMaybe itemId traitId) >>= \case
-        Nothing -> throwError $ err404 {errBody = "Trait not found"}
+        Nothing -> throwError $ err404 {errReasonPhrase = "Trait not found"}
         Just trait -> pure trait
 
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
@@ -321,4 +321,7 @@ checkConflict CTextEdit{..} serverModified = do
           , cmcServerModified = H serverModified
           , cmcMerged = H merged
           }
-    throwError $ err409 {errBody = encode conflict}
+    throwError $ err409 {
+      errReasonPhrase = "Merge conflict occurred",
+      errBody = encode conflict
+    }
