@@ -388,6 +388,9 @@ data CCategoryInfo = CCategoryInfo
 instance A.ToJSON CCategoryInfo where
   toJSON = A.genericToJSON jsonOptions
 
+instance A.FromJSON CCategoryInfo where
+  parseJSON = A.genericParseJSON jsonOptions
+
 instance ToSchema CCategoryInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 

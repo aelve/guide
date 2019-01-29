@@ -3,12 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE QuasiQuotes#-}
 
 
 module WebSpec (tests) where
 
 
-import BasePrelude hiding (catch, bracket)
+import BasePrelude hiding (catch, bracket, try)
 -- Monads
 import Control.Monad.Loops
 -- Concurrency
@@ -25,17 +26,26 @@ import Control.Monad.Catch
 
 -- Testing
 import Selenium
+import Api
 import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
 import qualified Guide.Main
 import Guide.Logger
 import Guide.Config (Config(..), def)
+import Text.RE.TDFA.String
 
+-- Spec
+import Network.HTTP.Client
+import qualified Test.Hspec as H
+import System.IO
 
 -----------------------------------------------------------------------------
 -- Tests
 -----------------------------------------------------------------------------
+
+logFile :: FilePath
+logFile = "/tmp/test_guide.log"
 
 tests :: IO ()
 tests = run $ do
@@ -43,6 +53,30 @@ tests = run $ do
   categoryTests
   itemTests
   markdownTests
+  apiTests
+  logTest
+
+getLines :: Handle -> IO String
+getLines h = loop h []
+  where
+    loop :: Handle -> [String] -> IO String
+    loop h lines = do
+      eLine <- try $ hGetLine h
+      case eLine of
+        Left (_ :: SomeException) -> pure $ concat $ reverse lines
+        Right line                -> loop h (line:lines)
+
+logTest :: Spec
+logTest = H.describe "test of logger" $ do
+  H.it "spockIsRunned && apiIsRunned && requestInLog" $ do
+    logFileHandle <- openFile logFile ReadWriteMode
+    logs <- getLines logFileHandle
+    hClose logFileHandle
+    writeFile logFile ""
+    let spockIsRunned = matched $ logs ?=~ [re|Debug: Spock is running on port|]
+        apiIsRunned   = matched $ logs ?=~ [re|Debug: API is running on port|]
+        requestInLog  = matched $ logs ?=~ [re|api Debug: getCategories|]
+    (spockIsRunned && apiIsRunned && requestInLog) `H.shouldBe` True
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
@@ -610,7 +644,9 @@ run ts = do
               _portApi       = 4400,
               _portEkg       = 5050,
               _cors          = False,
-              _ekg           = False }
+              _ekg           = False,
+              _logToFile     = Just logFile
+              }
         logHandler <- initLogger config
 
         tid <- Slave.fork $ new logHandler $ \di ->

@@ -22,6 +22,7 @@ extra-deps:
 - servant-swagger-ui-core-0.3.1
 - swagger2-2.3
 - lzma-clib-5.2.2
+- regex-1.0.1.5
 
 # We pin the precise versions of 'highlighting-kate' and 'cmark-highlight'
 # because the frontend has copied a stylesheet from 'highlighting-kate'. If
