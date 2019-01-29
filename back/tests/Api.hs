@@ -24,14 +24,29 @@ getCategoriesRequest = do
     (Host "http://localhost/categories")
     (Port 4400)
     (Method "GET")
-  (_, categories) :: (Status, [CCategoryInfo]) <- runRequest request
-  pure $ categories
+  snd <$> runRequest request
+
+postCreateCategory :: IO (Uid Category)
+postCreateCategory = do
+  request <- makeRequest
+    (Host "http://localhost/category?title=NewCategory&group=Model")
+    (Port 4400)
+    (Method "POST")
+  snd <$> runRequest request
+
+deleteCategory :: Uid Category -> IO (Maybe Bool)
+deleteCategory (Uid categoryId) = do
+  request <- makeRequest
+    (Host $ "http://localhost/category/" <> T.unpack categoryId)
+    (Port 4400)
+    (Method "DELETE")
+  res <- runRequestNoBody request
+  pure $ case res of
+    Status 200 _                    -> Just True
+    Status 404 "Category not found" -> Just False
+    _                               -> Nothing
 
 apiTests = do
-  H.it "api: get categories request" $ do
-    [] <- getCategoriesRequest
-    pure ()
-
   H.it "api: fail request" $ do
     request <- makeRequest
       (Host "http://localhost/fail")
@@ -40,13 +55,11 @@ apiTests = do
     Status 404 "Not Found" <- runFailRequest request
     pure ()
 
-  H.it "api: createCategory" $ do
-    request <- makeRequest
-      (Host "http://localhost/category?title=NewCategory&group=Model")
-      (Port 4400)
-      (Method "POST")
-    _ :: (Status, Uid Category) <- runRequest request
+  H.it "api: get categories request" $ do
+    [] <- getCategoriesRequest
     pure ()
+
+  H.it "api: createCategory" $ void $ postCreateCategory
 
   H.it "api get category by id" $ do
     -- get id of category from DB
@@ -58,11 +71,15 @@ apiTests = do
       (Method "GET")
     _ :: (Status, CCategoryFull) <- runRequest request
     pure ()
+  H.it "api delete category by id" $ do
+    categoryInfo <- head <$> getCategoriesRequest
+    Just True    <- deleteCategory (cciId categoryInfo)
+    []           <- getCategoriesRequest
+    pure ()
 
-
-
-runFailRequest :: Request -> IO Status
-runFailRequest request = getResponseStatus <$> httpNoBody request
+runRequestNoBody, runFailRequest :: Request -> IO Status
+runRequestNoBody request = getResponseStatus <$> httpNoBody request
+runFailRequest           = runRequestNoBody
 
 runRequest :: Yaml.FromJSON a => Request -> IO (Status, a)
 runRequest request = do
