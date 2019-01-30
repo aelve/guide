@@ -5,10 +5,8 @@
       <div v-else v-html="categoryDescription" />
     </div>
 
-    <slot v-if="!editDescriptionShown"/>
-
     <markdown-editor
-      v-else
+      v-if="editDescriptionShown"
       class="mb-2"
       toolbar
       :value="categoryDscMarkdown"
