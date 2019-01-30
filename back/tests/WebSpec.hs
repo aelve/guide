@@ -76,37 +76,47 @@ logTest = H.describe "test of logger" $ do
     pure logs
   H.describe "Logging of init" $ do
     H.it "spock is runned" $
-      [re|Debug: Spock is running on port|] `isIn` logs
+      [re|Spock is running on port|] `isIn` logs
     H.it "api is runned" $
-      [re|Debug: API is running on port|] `isIn` logs
+      [re|API is running on port|] `isIn` logs
   H.describe "Logging of api" $ do
     H.describe "Categories" $ do
       H.it "get categories request" $
-        [re|Debug: getCategories|] `isIn` logs
+        [re|getCategories|] `isIn` logs
       H.it "create ctegory request" $
-        [re|Debug: createCategory: title = "NewCategory", group ="Model"|] `isIn` logs
+        [re|createCategory: title = "NewCategory", group ="Model"|] `isIn` logs
       H.it "get category by id" $
-        [re|Debug: getCategory:|] `isIn` logs
+        [re|getCategory:|] `isIn` logs
       H.it "delete category by id request" $
-        [re|Debug: deleteCategory: Uid {uidToText = |] `isIn` logs
+        [re|deleteCategory: Uid {uidToText = |] `isIn` logs
       H.it "modify notes to category request" $
-        [re|Debug: setCategoryNotes: Uid {uidToText = |] `isIn` logs
+        [re|setCategoryNotes: Uid {uidToText = |] `isIn` logs
       H.it "modify info to category request" $
-        [re|Debug: setCategoryInfo: Uid {uidToText = |] `isIn` logs
+        [re|setCategoryInfo: Uid {uidToText = |] `isIn` logs
     H.describe "Item" $ do
       H.it "create item" $
-        [re|Debug: createItem in category Uid {uidToText =|] `isIn` logs
+        [re|createItem in category Uid {uidToText =|] `isIn` logs
       H.it "delete item by id" $
-        [re|Debug: deleteItem: Uid {uidToText = |] `isIn` logs
+        [re|deleteItem: Uid {uidToText = |] `isIn` logs
       H.it "get item by id" $
-        [re|Debug: getItem: Uid {uidToText =|] `isIn` logs
-    H.describe "Errors" $ do
+        [re|getItem: Uid {uidToText =|] `isIn` logs
+      H.it "set item info" $
+        [re|setItemInfo: Uid {uidToText =|] `isIn` logs
+      H.it "set item summary" $
+        [re|setItemSummary: Uid {uidToText =|] `isIn` logs
+      H.it "set item ecosystem" $
+        [re|setItemEcosystem: Uid {uidToText =|] `isIn` logs
+      H.it "set item notes" $
+        [re|setItemNotes: Uid {uidToText =|] `isIn` logs
+
+    H.describe "Errors (exceptions)" $ do
       H.it "Category not found" $
-        [re|Error: ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
+        [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
       H.it "Merge conflict occurred" $
-        [re|Error: ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred"|] `isIn` logs
+        [re|ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred"|] `isIn` logs
       H.it "Item not found" $
-        [re|Error: ServantErr {errHTTPCode = 404, errReasonPhrase = "Item not found"|] `isIn` logs
+        [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Item not found"|] `isIn` logs
+
 
 
 isIn :: RE -> String -> H.Expectation

@@ -68,7 +68,7 @@ apiTests = H.describe "api" $ do
         request <- makeRequest
           (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/info")
           (Method "PUT")
-        let req = setRequestBodyJSON makeEditCategoryInfo request
+        let req = setRequestBodyJSON editCategoryInfo request
         Status 200 "OK"                 <- runRequestNoBody req
         pure req
       Status 404 "Category not found" <- runRequestNoBody req
@@ -83,25 +83,57 @@ apiTests = H.describe "api" $ do
         pure ()
   
     H.it "get item by id" $ do
-      withCategory $ \categoryId -> do
-        Uid itemId  <- postCreateItem categoryId
+      req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
           (Host $ "http://localhost/item/" <> T.unpack itemId)
           (Method "GET")
         (Status 200 "OK", _ :: CItemFull) <- runRequest request
-        void $ deleteItem (Uid itemId)
-        Status 404 "Item not found" <- runFailRequest request
-        pure ()
+        pure request
+      Status 404 "Item not found" <- runFailRequest req
+      pure ()
+
+    H.it "set item info" $ do
+      req <- withItem $ \(Uid itemId) -> do
+        request     <- makeRequest
+          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/info")
+          (Method "PUT")
+        let req = setRequestBodyJSON itemInfo request
+        Status 200 "OK" <- runRequestNoBody req
+        pure req
+      Status 404 "Item not found" <- runFailRequest req
+      pure ()
+    forM_ ["summary", "ecosystem", "notes"] $ \dataType -> do
+      H.it ("set " <> dataType <> " to item") $ setMergebleDataToItem dataType
+
+setMergebleDataToItem :: String -> IO ()
+setMergebleDataToItem dataType = do
+  req <- withItem $ \(Uid itemId) -> do
+    request     <- makeRequest
+      (Host $ "http://localhost/item/" <> T.unpack itemId <> "/" <> dataType)
+      (Method "PUT")
+    let req = setRequestBodyJSON (makeEditObject "" "text") request
+    Status 200 "OK" <- runRequestNoBody req
+    Status 409 "Merge conflict occurred" <- runRequestNoBody req
+    pure req
+  Status 404 "Item not found" <- runFailRequest req
+  pure ()
+
+withItem :: (Uid Item -> IO a) -> IO a
+withItem f = withCategory $ \categoryId -> do
+  itemId  <- postCreateItem categoryId
+  res     <- f itemId
+  void $ deleteItem itemId
+  pure res
 
 withCategory :: (Uid Category -> IO a) -> IO a
 withCategory f = do
   categoryId  <- postCreateCategory
-  res <- f categoryId
+  res         <- f categoryId
   void $ deleteCategory categoryId
   pure res
 
-makeEditCategoryInfo :: Value
-makeEditCategoryInfo = object
+editCategoryInfo :: Value
+editCategoryInfo = object
   [ "title"    .= ("oldText" :: String)
   , "group"    .= ("Model" :: String)
   , "status"   .= ("CategoryStub" :: String)
@@ -113,6 +145,15 @@ makeEditObject oldText newText = object
   [ "original" .= oldText
   , "modified" .= newText
   ]
+
+itemInfo :: Value
+itemInfo = object
+  [ "name"    .= ("exampleName"    :: String)
+  , "group"   .= ("exampleGroup"   :: String)
+  , "hackage" .= ("string"         :: String)
+  , "link"    .= ("http:/link.exp" :: String)
+  ]
+
 
 getCategoriesRequest :: IO [CCategoryInfo]
 getCategoriesRequest = do
