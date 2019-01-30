@@ -105,6 +105,52 @@ apiTests = H.describe "api" $ do
     forM_ ["summary", "ecosystem", "notes"] $ \dataType -> do
       H.it ("set " <> dataType <> " to item") $ setMergebleDataToItem dataType
 
+-----------------------------------------------------------------------------
+-- Category
+-----------------------------------------------------------------------------
+withCategory :: (Uid Category -> IO a) -> IO a
+withCategory f = do
+  categoryId  <- postCreateCategory
+  res         <- f categoryId
+  void $ deleteCategory categoryId
+  pure res
+
+postCreateCategory :: IO (Uid Category)
+postCreateCategory = do
+  request <- makeRequest
+    (Host "http://localhost/category?title=NewCategory&group=Model")
+    (Method "POST")
+  snd <$> runRequest request
+
+deleteCategory :: Uid Category -> IO (Maybe Bool)
+deleteCategory (Uid categoryId) = do
+  request <- makeRequest
+    (Host $ "http://localhost/category/" <> T.unpack categoryId)
+    (Method "DELETE")
+  res <- runRequestNoBody request
+  pure $ case res of
+    Status 200 "OK"                 -> Just True
+    Status 404 "Category not found" -> Just False
+    _                               -> Nothing
+
+editCategoryInfo :: Value
+editCategoryInfo = object
+  [ "title"    .= ("oldText" :: String)
+  , "group"    .= ("Model" :: String)
+  , "status"   .= ("CategoryStub" :: String)
+  , "sections" .= [("ItemProsConsSection" :: String)]
+  ]
+
+getCategoriesRequest :: IO [CCategoryInfo]
+getCategoriesRequest = do
+  request <- makeRequest
+    (Host "http://localhost/categories")
+    (Method "GET")
+  snd <$> runRequest request
+
+-----------------------------------------------------------------------------
+-- Item
+-----------------------------------------------------------------------------
 setMergebleDataToItem :: String -> IO ()
 setMergebleDataToItem dataType = do
   req <- withItem $ \(Uid itemId) -> do
@@ -125,60 +171,12 @@ withItem f = withCategory $ \categoryId -> do
   void $ deleteItem itemId
   pure res
 
-withCategory :: (Uid Category -> IO a) -> IO a
-withCategory f = do
-  categoryId  <- postCreateCategory
-  res         <- f categoryId
-  void $ deleteCategory categoryId
-  pure res
-
-editCategoryInfo :: Value
-editCategoryInfo = object
-  [ "title"    .= ("oldText" :: String)
-  , "group"    .= ("Model" :: String)
-  , "status"   .= ("CategoryStub" :: String)
-  , "sections" .= [("ItemProsConsSection" :: String)]
-  ]
-
-makeEditObject :: String -> String -> Value
-makeEditObject oldText newText = object
-  [ "original" .= oldText
-  , "modified" .= newText
-  ]
-
-itemInfo :: Value
-itemInfo = object
-  [ "name"    .= ("exampleName"    :: String)
-  , "group"   .= ("exampleGroup"   :: String)
-  , "hackage" .= ("string"         :: String)
-  , "link"    .= ("http:/link.exp" :: String)
-  ]
-
-
-getCategoriesRequest :: IO [CCategoryInfo]
-getCategoriesRequest = do
+postCreateItem :: Uid Category -> IO (Uid Item)
+postCreateItem (Uid categoryId) = do
   request <- makeRequest
-    (Host "http://localhost/categories")
-    (Method "GET")
-  snd <$> runRequest request
-
-postCreateCategory :: IO (Uid Category)
-postCreateCategory = do
-  request <- makeRequest
-    (Host "http://localhost/category?title=NewCategory&group=Model")
+    (Host $ "http://localhost/item/" <> T.unpack categoryId <> "?name=testName")
     (Method "POST")
   snd <$> runRequest request
-
-deleteCategory :: Uid Category -> IO (Maybe Bool)
-deleteCategory (Uid categoryId) = do
-  request <- makeRequest
-    (Host $ "http://localhost/category/" <> T.unpack categoryId)
-    (Method "DELETE")
-  res <- runRequestNoBody request
-  pure $ case res of
-    Status 200 "OK"                 -> Just True
-    Status 404 "Category not found" -> Just False
-    _                               -> Nothing
 
 deleteItem :: Uid Item -> IO (Maybe Bool)
 deleteItem (Uid itemId) = do
@@ -191,12 +189,30 @@ deleteItem (Uid itemId) = do
     Status 404 "Item not found" -> Just False
     _                           -> Nothing
 
-postCreateItem :: Uid Category -> IO (Uid Item)
-postCreateItem (Uid categoryId) = do
-  request <- makeRequest
-    (Host $ "http://localhost/item/" <> T.unpack categoryId <> "?name=testName")
-    (Method "POST")
-  snd <$> runRequest request
+itemInfo :: Value
+itemInfo = object
+  [ "name"    .= ("exampleName"    :: String)
+  , "group"   .= ("exampleGroup"   :: String)
+  , "hackage" .= ("string"         :: String)
+  , "link"    .= ("http:/link.exp" :: String)
+  ]
+-----------------------------------------------------------------------------
+-- Trait
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- Common
+-----------------------------------------------------------------------------
+
+makeEditObject :: String -> String -> Value
+makeEditObject oldText newText = object
+  [ "original" .= oldText
+  , "modified" .= newText
+  ]
+
+-----------------------------------------------------------------------------
+-- Utilities for requests
+-----------------------------------------------------------------------------
 
 runRequestNoBody, runFailRequest :: Request -> IO Status
 runRequestNoBody request = getResponseStatus <$> httpNoBody request
