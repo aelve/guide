@@ -68,15 +68,28 @@ getLines h = loop h []
 
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
-  H.it "spockIsRunned && apiIsRunned && requestInLog" $ do
+  logs <- H.runIO $ do
     logFileHandle <- openFile logFile ReadWriteMode
     logs <- getLines logFileHandle
     hClose logFileHandle
     writeFile logFile ""
-    let spockIsRunned = matched $ logs ?=~ [re|Debug: Spock is running on port|]
-        apiIsRunned   = matched $ logs ?=~ [re|Debug: API is running on port|]
-        requestInLog  = matched $ logs ?=~ [re|api Debug: getCategories|]
-    (spockIsRunned && apiIsRunned && requestInLog) `H.shouldBe` True
+    pure logs
+  H.it "spock is runned" $
+    isTrue $ matched $ logs ?=~ [re|Debug: Spock is running on port|]
+  H.it "api is runned" $
+    isTrue $ matched $ logs ?=~ [re|Debug: API is running on port|]
+  H.it "get categories request is in log" $
+    isTrue $ matched $ logs ?=~ [re|api Debug: getCategories|]
+  H.it "create ctegory request is in log" $
+    isTrue $ matched $ logs ?=~ [re|api Debug: createCategory: title = "NewCategory", group ="Model"|]
+  H.it "get category by id is in log" $
+    isTrue $ matched $ logs ?=~ [re|api Debug: getCategory:|]
+  H.it "delete category by id request is in log" $
+    isTrue $ matched $ logs ?=~ [re|api Debug: deleteCategory: Uid {uidToText = |]
+
+
+isTrue :: Bool -> H.Expectation
+isTrue = (`H.shouldBe` True)
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
