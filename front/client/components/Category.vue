@@ -50,6 +50,7 @@
         color="grey"
         @click="openAddItemDialog"
       >
+        <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
       <add-item-dialog 
@@ -153,22 +154,6 @@ export default class Category extends Vue {
 .category-wrapper {
   max-width: 800px;
   margin: 0 auto;
-}
-
-.category-description {
-  margin: 0 0 40px;
-}
-
-.category-description >>> p {
-  font-size: 16px;
-}
-
-.category-description >>> h1 {
-  margin: 20px 0 5px;
-}
-
-.category-description >>> div:first-child {
-  white-space: pre-wrap;
 }
 
 @media screend and (max-width: 768px) {
