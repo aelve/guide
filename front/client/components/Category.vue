@@ -78,7 +78,6 @@ import category from 'client/store/modules/category'
 })
 export default class Category extends Vue {
   @Prop(String) categoryId!: string
-  @Prop(String) categoryDsc!: string
 
   isDialogOpen: boolean = false
 

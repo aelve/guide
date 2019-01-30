@@ -85,7 +85,6 @@ export default class CategoryDescriptiom extends Vue {
       this.originalDescription = modified
     } catch (err) {
       if (err.response.status === 409) {
-        console.table(err)
         this.serverModified = err.response.data.server_modified
         this.modified = err.response.data.modified
         this.merged = err.response.data.merged

@@ -107,20 +107,6 @@ export default class ConflictDialog extends Vue {
     flex-flow: column;
   }
 
-  .conflict-item >>> textarea {
-    padding: 16px 16px 16px 4px;
-    font-size: 14px;
-    margin: 0 !important;
-  }
-/* Костыль под textarea есть непонятный div - костыль для того чтобы не было разницы в height между блоками */
-  .v-input__slot {
-    padding-bottom: 8px;
-  }
-
-  .conflict-item >>> .v-text-field__details {
-    height: 0!important;
-  }
-
   @media screen and (max-width: 1200px) {
     .conflict-box {
       flex-wrap: wrap;
