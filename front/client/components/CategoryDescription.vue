@@ -99,10 +99,8 @@ export default class CategoryDescriptiom extends Vue {
     this.updateCategoryDescription(this.originalDescription, newValue)
   }
 
-  saveConflictDescription (data: any) {
-    let { original, modified } = data
-
-    this.updateCategoryDescription(original, modified)
+  saveConflictDescription (modified) {
+    this.updateCategoryDescription(this.serverModified, modified)
   }
 }
 </script>

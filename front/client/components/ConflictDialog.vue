@@ -69,17 +69,17 @@ export default class ConflictDialog extends Vue {
   @Prop(String) merged!: string
 
   saveUserVersion () {
-    this.$emit('saveDescription', { original: this.serverModified, modified: this.modified })
+    this.$emit('saveDescription', this.modified )
     this.close()
   }
 
   saveServerVersion () {
-    this.$emit('saveDescription', { original: this.serverModified, modified: this.serverModified })
+    this.$emit('saveDescription', this.serverModified)
     this.close()
   }
 
   saveMerged (newVal: string) {
-    this.$emit('saveDescription', { original: this.serverModified, modified: newVal})
+    this.$emit('saveDescription', this.serverModified)
     this.close()
   }
 
