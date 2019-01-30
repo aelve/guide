@@ -74,22 +74,35 @@ logTest = H.describe "test of logger" $ do
     hClose logFileHandle
     writeFile logFile ""
     pure logs
-  H.it "spock is runned" $
-    isTrue $ matched $ logs ?=~ [re|Debug: Spock is running on port|]
-  H.it "api is runned" $
-    isTrue $ matched $ logs ?=~ [re|Debug: API is running on port|]
-  H.it "get categories request is in log" $
-    isTrue $ matched $ logs ?=~ [re|api Debug: getCategories|]
-  H.it "create ctegory request is in log" $
-    isTrue $ matched $ logs ?=~ [re|api Debug: createCategory: title = "NewCategory", group ="Model"|]
-  H.it "get category by id is in log" $
-    isTrue $ matched $ logs ?=~ [re|api Debug: getCategory:|]
-  H.it "delete category by id request is in log" $
-    isTrue $ matched $ logs ?=~ [re|api Debug: deleteCategory: Uid {uidToText = |]
+  H.describe "Logging of init" $ do
+    H.it "spock is runned" $
+      [re|Debug: Spock is running on port|] `isIn` logs
+    H.it "api is runned" $
+      [re|Debug: API is running on port|] `isIn` logs
+  H.describe "Logging of api" $ do
+    H.describe "Categories" $ do
+      H.it "get categories request" $
+        [re|Debug: getCategories|] `isIn` logs
+      H.it "create ctegory request" $
+        [re|Debug: createCategory: title = "NewCategory", group ="Model"|] `isIn` logs
+      H.it "get category by id" $
+        [re|Debug: getCategory:|] `isIn` logs
+      H.it "delete category by id request" $
+        [re|Debug: deleteCategory: Uid {uidToText = |] `isIn` logs
+      H.it "modify notes to category request" $
+        [re|Debug: setCategoryNotes: Uid {uidToText = |] `isIn` logs
+      H.it "modify info to category request" $
+        [re|Debug: setCategoryInfo: Uid {uidToText = |] `isIn` logs
+    H.describe "Item" $ do
+      H.it "create item" $
+        [re|Debug: createItem in category Uid {uidToText =|] `isIn` logs
+      H.it "delete item by id" $
+        [re|Debug: deleteItem: Uid {uidToText = |] `isIn` logs
+      H.it "get item by id" $
+        [re|Debug: getItem: Uid {uidToText =|] `isIn` logs
 
-
-isTrue :: Bool -> H.Expectation
-isTrue = (`H.shouldBe` True)
+isIn :: RE -> String -> H.Expectation
+isIn  reg text = (`H.shouldBe` True) $ matched $ text ?=~ reg
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do

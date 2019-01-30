@@ -118,7 +118,7 @@ getItem itemId = do
 -- with duplicated names.
 createItem :: Uid Category -> Text -> Guider (Uid Item)
 createItem catId name' = do
-  debugT $ "createItem in category " +|| catId ||+ "with name" +| name' |+ ""
+  debugT $ "createItem in category " +|| catId ||+ " with name" +| name' |+ ""
   _ <- getCategoryOrFail catId
   when (T.null name') $ throwError err400{errReasonPhrase = "Name not provided"}
   itemId <- randomShortUid
