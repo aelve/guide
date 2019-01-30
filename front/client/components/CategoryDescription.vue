@@ -87,8 +87,9 @@ export default class CategoryDescriptiom extends Vue {
         this.modified = err.response.data.modified
         this.merged = err.response.data.merged
         this.isDescriptionConflict = true
+      } else {
+        throw err
       }
-      throw err
     }
 
     this.toggleEditDescription();
