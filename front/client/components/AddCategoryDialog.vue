@@ -19,7 +19,7 @@
           https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
           <v-text-field
             v-if="value"
-            class="mb-2"
+            class="mb-3"
             label="Category name"
             autofocus
             :rules="categoryValidationRules"
@@ -37,18 +37,18 @@
         <v-btn
           flat
           color="primary"
+          @click.native="close"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          flat
+          color="primary"
           class="add-category-submit-btn"
           :disabled="!isValid"
           @click.native="submit"
         >
           Submit
-        </v-btn>
-        <v-btn
-          flat
-          color="primary"
-          @click.native="close"
-        >
-          Cancel
         </v-btn>
       </v-card-actions>
     </v-card>

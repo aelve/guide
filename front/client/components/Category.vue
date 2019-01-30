@@ -2,18 +2,18 @@
   <v-container>
     <div class="category-wrapper">
       <div class="category-top">
-        <i class="fas fa-rss"/>
         <div
           v-if="category"
           class="category-top-data"
         >
+          <p class="category-top-group mr-3"> {{category.group}} </p>
+          <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
           <router-link
             class="category-top-link"
             :to="categoryUrl"
           >
             {{category.title}}
           </router-link>
-          <p class="category-top-group"> {{category.group}} </p>
         </div>
         <v-btn
           class="ma-0 px-1"
@@ -142,16 +142,14 @@ export default class Category extends Vue {
   color: #979797;
   cursor: pointer;
   transition: all ease-in-out 0.25s;
-  margin-right: 30px;
-}
-
-.category-top-group {
-  font-size: 24px;
 }
 
 .category-top-link:hover {
   color: #000;
-  color: #979797;
+}
+
+.category-top-group {
+  font-size: 24px;
 }
 
 .category-wrapper {
