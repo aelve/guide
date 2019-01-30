@@ -100,6 +100,14 @@ logTest = H.describe "test of logger" $ do
         [re|Debug: deleteItem: Uid {uidToText = |] `isIn` logs
       H.it "get item by id" $
         [re|Debug: getItem: Uid {uidToText =|] `isIn` logs
+    H.describe "Errors" $ do
+      H.it "Category not found" $
+        [re|Error: ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
+      H.it "Merge conflict occurred" $
+        [re|Error: ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred"|] `isIn` logs
+      H.it "Item not found" $
+        [re|Error: ServantErr {errHTTPCode = 404, errReasonPhrase = "Item not found"|] `isIn` logs
+
 
 isIn :: RE -> String -> H.Expectation
 isIn  reg text = (`H.shouldBe` True) $ matched $ text ?=~ reg
