@@ -26,7 +26,7 @@ import Control.Monad.Catch
 
 -- Testing
 import Selenium
-import Api
+import qualified Api
 import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
@@ -36,7 +36,6 @@ import Guide.Config (Config(..), def)
 import Text.RE.TDFA.String
 
 -- Spec
-import Network.HTTP.Client
 import qualified Test.Hspec as H
 import System.IO
 
@@ -53,18 +52,18 @@ tests = run $ do
   categoryTests
   itemTests
   markdownTests
-  apiTests
+  Api.tests
   logTest
 
 getLines :: Handle -> IO String
-getLines h = loop h []
+getLines h = loop' []
   where
-    loop :: Handle -> [String] -> IO String
-    loop h lines = do
+    loop' :: [String] -> IO String
+    loop' xs = do
       eLine <- try $ hGetLine h
       case eLine of
-        Left (_ :: SomeException) -> pure $ concat $ reverse lines
-        Right line                -> loop h (line:lines)
+        Left (_ :: SomeException) -> pure $ concat $ reverse xs
+        Right line                -> loop' (line:xs)
 
 logTest :: Spec
 logTest = H.describe "test of logger" $ do

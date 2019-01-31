@@ -15,10 +15,11 @@ import Network.HTTP.Types.Status
 
 import Guide.Api.Types
 import Guide.Types.Core
-import Guide.Utils (Uid (..), Url)
+import Guide.Utils (Uid (..))
 import qualified Test.Hspec as H
 
-apiTests = H.describe "api" $ do
+tests :: H.SpecWith ()
+tests = H.describe "api" $ do
   H.it "fail request" $ do
     request <- makeRequest
       (Host "http://localhost/fail")
@@ -30,7 +31,7 @@ apiTests = H.describe "api" $ do
       [] <- getCategoriesRequest
       pure ()
 
-    H.it "createCategory" $ void $ postCreateCategory
+    H.it "createCategory" $ void $ createCategory
 
     H.it "get category by id" $ do
       -- get id of category from DB
@@ -77,7 +78,7 @@ apiTests = H.describe "api" $ do
   H.describe "Items" $ do
     H.it "create & delete item" $
       withCategory $ \categoryId -> do
-        itemId      <- postCreateItem categoryId
+        itemId      <- createItem categoryId
         Just True   <- deleteItem itemId
         Just False  <- deleteItem itemId
         pure ()
@@ -104,19 +105,25 @@ apiTests = H.describe "api" $ do
       pure ()
     forM_ ["summary", "ecosystem", "notes"] $ \dataType -> do
       H.it ("set " <> dataType <> " to item") $ setMergebleDataToItem dataType
-
+  H.describe "Trait" $ do
+    H.it "create & delete trait" $
+      withItem $ \itemId -> do
+        traitId     <- createTrait itemId
+        Just True   <- deleteTrait itemId traitId
+        Just False  <- deleteTrait itemId traitId
+        pure ()
 -----------------------------------------------------------------------------
 -- Category
 -----------------------------------------------------------------------------
 withCategory :: (Uid Category -> IO a) -> IO a
 withCategory f = do
-  categoryId  <- postCreateCategory
+  categoryId  <- createCategory
   res         <- f categoryId
   void $ deleteCategory categoryId
   pure res
 
-postCreateCategory :: IO (Uid Category)
-postCreateCategory = do
+createCategory :: IO (Uid Category)
+createCategory = do
   request <- makeRequest
     (Host "http://localhost/category?title=NewCategory&group=Model")
     (Method "POST")
@@ -166,13 +173,13 @@ setMergebleDataToItem dataType = do
 
 withItem :: (Uid Item -> IO a) -> IO a
 withItem f = withCategory $ \categoryId -> do
-  itemId  <- postCreateItem categoryId
+  itemId  <- createItem categoryId
   res     <- f itemId
   void $ deleteItem itemId
   pure res
 
-postCreateItem :: Uid Category -> IO (Uid Item)
-postCreateItem (Uid categoryId) = do
+createItem :: Uid Category -> IO (Uid Item)
+createItem (Uid categoryId) = do
   request <- makeRequest
     (Host $ "http://localhost/item/" <> T.unpack categoryId <> "?name=testName")
     (Method "POST")
@@ -199,7 +206,30 @@ itemInfo = object
 -----------------------------------------------------------------------------
 -- Trait
 -----------------------------------------------------------------------------
+createTrait :: Uid Item -> IO (Uid Trait)
+createTrait (Uid itemId) = do
+  request <- makeRequest
+    (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait")
+    (Method "POST")
+  snd <$> (runRequest $ setRequestBodyJSON traitBody request)
 
+deleteTrait :: Uid Item -> Uid Trait -> IO (Maybe Bool)
+deleteTrait (Uid itemId) (Uid traitId) = do
+  request <- makeRequest
+    (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+    (Method "DELETE")
+  res <- runRequestNoBody request
+  pure $ case res of
+    Status 200 "OK"               -> Just True
+    Status 404 "Item not found"   -> Just False
+    Status 404 "Trait not found"  -> Just False
+    _                             -> Nothing
+
+traitBody :: Value
+traitBody = object
+  [ "type"    .= ("Pro" :: String)
+  , "content" .= ("newText" :: String)
+  ]
 -----------------------------------------------------------------------------
 -- Common
 -----------------------------------------------------------------------------

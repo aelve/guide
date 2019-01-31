@@ -68,7 +68,7 @@ instance Default Config where
     _cors          = False,
     _ekg           = False,
     _logToStderr   = False,
-    _logToFile     = Nothing,
+    _logToFile     = Just "/var/log/guide.log",
     _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
      }
 
