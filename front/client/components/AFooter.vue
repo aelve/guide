@@ -22,6 +22,7 @@
         <a-link
           openInNewTab
           url="https://github.com/aelve/guide"
+          class="footer-link"
         >
           source
         </a-link>
@@ -47,3 +48,9 @@ import Component from 'vue-class-component'
 @Component
 export default class AFooter extends Vue { }
 </script>
+
+<style scoped>
+.footer-link {
+  display: inline-block;
+}
+</style>
