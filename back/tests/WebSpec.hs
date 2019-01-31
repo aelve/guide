@@ -68,6 +68,7 @@ getLines h = loop' []
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
   logs <- H.runIO $ do
+    threadDelay 1000000
     logFileHandle <- openFile logFile ReadWriteMode
     logs <- getLines logFileHandle
     hClose logFileHandle
@@ -107,7 +108,13 @@ logTest = H.describe "test of logger" $ do
         [re|setItemEcosystem: Uid {uidToText =|] `isIn` logs
       H.it "set item notes" $
         [re|setItemNotes: Uid {uidToText =|] `isIn` logs
-
+    H.describe "Trait" $ do
+      H.it "create new trait" $  [re|createTrait: |] `isIn` logs
+      H.it "delete trait" $ [re|deleteTrait|] `isIn` logs
+      H.it "get trait" $ [re|getTrait: |] `isIn` logs
+      H.it "modify trait" $ [re|setTrait|] `isIn` logs
+      H.it "move trait" $ [re|moveTrait|] `isIn` logs
+  
     H.describe "Errors (exceptions)" $ do
       H.it "Category not found" $
         [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs

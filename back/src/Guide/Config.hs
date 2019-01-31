@@ -74,35 +74,35 @@ instance Default Config where
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
-    _baseUrl       <- o .:? "base-url"       .!= _baseUrl def
-    _googleToken   <- o .:? "google-token"   .!= _googleToken def
-    _adminPassword <- o .:? "admin-password" .!= _adminPassword def
-    _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
-    _matomoLink    <- o .:? "matomo-link"    .!= _matomoLink def
-    _portMain      <- o .:? "port-main"      .!= _portMain def
-    _portApi       <- o .:? "port-api"       .!= _portApi def
-    _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
-    _cors          <- o .:? "cors"           .!= _cors def
-    _ekg           <- o .:? "ekg"            .!= _ekg def
-    _logToStderr   <- o .:? "log-to-stderr"  .!= _logToStderr def
-    _logToFile     <- o .:? "log-to-file"    .!= _logToFile def
+    _baseUrl       <- o .:? "base-url"        .!= _baseUrl def
+    _googleToken   <- o .:? "google-token"    .!= _googleToken def
+    _adminPassword <- o .:? "admin-password"  .!= _adminPassword def
+    _discussLink   <- o .:? "discuss-link"    .!= _discussLink def
+    _matomoLink    <- o .:? "matomo-link"     .!= _matomoLink def
+    _portMain      <- o .:? "port-main"       .!= _portMain def
+    _portApi       <- o .:? "port-api"        .!= _portApi def
+    _portEkg       <- o .:? "port-ekg"        .!= _portEkg def
+    _cors          <- o .:? "cors"            .!= _cors def
+    _ekg           <- o .:? "ekg"             .!= _ekg def
+    _logToStderr   <- o .:? "log-to-stderr"   .!= _logToStderr def
+    _logToFile     <- o .:? "log-to-file"     .!= _logToFile def
     _logTimeFormat <- o .:? "log-time-format" .!= _logTimeFormat def
     return Config{..}
 
 instance ToJSON Config where
   toJSON Config{..} = object [
-    "base-url"       .= _baseUrl,
-    "google-token"   .= _googleToken,
-    "admin-password" .= _adminPassword,
-    "discuss-link"   .= _discussLink,
-    "matomo-link"    .= _matomoLink,
-    "port-main"      .= _portMain,
-    "port-api"       .= _portApi,
-    "port-ekg"       .= _portEkg,
-    "cors"           .= _cors,
-    "ekg"            .= _ekg,
-    "log-to-stderr"  .= _logToStderr,
-    "log-to-file"    .= _logToFile,
+    "base-url"        .= _baseUrl,
+    "google-token"    .= _googleToken,
+    "admin-password"  .= _adminPassword,
+    "discuss-link"    .= _discussLink,
+    "matomo-link"     .= _matomoLink,
+    "port-main"       .= _portMain,
+    "port-api"        .= _portApi,
+    "port-ekg"        .= _portEkg,
+    "cors"            .= _cors,
+    "ekg"             .= _ekg,
+    "log-to-stderr"   .= _logToStderr,
+    "log-to-file"     .= _logToFile,
     "log-time-format" .= _logTimeFormat
     ]
 

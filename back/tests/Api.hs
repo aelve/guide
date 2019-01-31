@@ -27,11 +27,8 @@ tests = H.describe "api" $ do
     Status 404 "Not Found" <- runFailRequest request
     pure ()
   H.describe "Categories" $ do
-    H.it "get categories request" $ do
-      [] <- getCategoriesRequest
-      pure ()
-
-    H.it "createCategory" $ void $ createCategory
+    H.it "get categories request" $ void $ getCategoriesRequest
+    H.it "createCategory"         $ void $ createCategory
 
     H.it "get category by id" $ do
       -- get id of category from DB
@@ -47,7 +44,6 @@ tests = H.describe "api" $ do
       categoryInfo <- head <$> getCategoriesRequest
       Just True    <- deleteCategory (cciId categoryInfo)
       Just False   <- deleteCategory (cciId categoryInfo)
-      []           <- getCategoriesRequest
       pure ()
 
     H.it "modify notes of category" $ do
@@ -112,6 +108,37 @@ tests = H.describe "api" $ do
         Just True   <- deleteTrait itemId traitId
         Just False  <- deleteTrait itemId traitId
         pure ()
+    H.it "get trair by id" $ do
+          req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
+            request     <- makeRequest
+              (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+              (Method "GET")
+            (Status 200 "OK", _ :: CTrait) <- runRequest request
+            pure request
+          Status 404 "Item not found" <- runFailRequest req
+          pure ()
+    
+    H.it "update trait" $ do
+      req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
+        request     <- makeRequest
+          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+          (Method "PUT")
+        let req = setRequestBodyJSON (makeEditObject "oldText" "newText") request
+        Status 200 "OK"                       <- runRequestNoBody req
+        Status 409 "Merge conflict occurred"  <- runRequestNoBody req
+        pure req
+      Status 404 "Item not found" <- runFailRequest req
+      pure ()
+    H.it "move trait" $ do
+      req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
+        request     <- makeRequest
+          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId <> "/move")
+          (Method "POST")
+        let req = setRequestBodyJSON (object ["direction" .= ("up" :: String)]) request
+        Status 200 "OK" <- runRequestNoBody req
+        pure req
+      Status 404 "Item not found" <- runFailRequest req
+      pure ()
 -----------------------------------------------------------------------------
 -- Category
 -----------------------------------------------------------------------------
@@ -206,6 +233,7 @@ itemInfo = object
 -----------------------------------------------------------------------------
 -- Trait
 -----------------------------------------------------------------------------
+
 createTrait :: Uid Item -> IO (Uid Trait)
 createTrait (Uid itemId) = do
   request <- makeRequest
@@ -225,10 +253,17 @@ deleteTrait (Uid itemId) (Uid traitId) = do
     Status 404 "Trait not found"  -> Just False
     _                             -> Nothing
 
+withTrait :: (Uid Item -> Uid Trait -> IO a) -> IO a
+withTrait f = withItem $ \itemId -> do
+  traitId <- createTrait itemId
+  res     <- f itemId traitId
+  void $ deleteTrait itemId traitId
+  pure res
+
 traitBody :: Value
 traitBody = object
   [ "type"    .= ("Pro" :: String)
-  , "content" .= ("newText" :: String)
+  , "content" .= ("oldText" :: String)
   ]
 -----------------------------------------------------------------------------
 -- Common
