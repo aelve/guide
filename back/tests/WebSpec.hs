@@ -47,13 +47,14 @@ logFile :: FilePath
 logFile = "/tmp/test_guide.log"
 
 tests :: IO ()
-tests = run $ do
-  mainPageTests
-  categoryTests
-  itemTests
-  markdownTests
-  Api.tests
-  logTest
+tests = do
+  run $ do
+    mainPageTests
+    categoryTests
+    itemTests
+    markdownTests
+    Api.tests
+  hspec logTest
 
 getLines :: Handle -> IO String
 getLines h = loop' []
@@ -68,7 +69,6 @@ getLines h = loop' []
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
   logs <- H.runIO $ do
-    threadDelay 1000000
     logFileHandle <- openFile logFile ReadWriteMode
     logs <- getLines logFileHandle
     hClose logFileHandle
