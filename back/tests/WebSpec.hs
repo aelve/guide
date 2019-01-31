@@ -75,43 +75,28 @@ logTest = H.describe "test of logger" $ do
     writeFile logFile ""
     pure logs
   H.describe "Logging of init" $ do
-    H.it "spock is runned" $
-      [re|Spock is running on port|] `isIn` logs
-    H.it "api is runned" $
-      [re|API is running on port|] `isIn` logs
+    H.it "spock is runned" $ [re|Spock is running on port|] `isIn` logs
+    H.it "api is runned" $ [re|API is running on port|] `isIn` logs
   H.describe "Logging of api" $ do
     H.describe "Categories" $ do
-      H.it "get categories request" $
-        [re|getCategories|] `isIn` logs
-      H.it "create ctegory request" $
-        [re|createCategory: title = "NewCategory", group ="Model"|] `isIn` logs
-      H.it "get category by id" $
-        [re|getCategory:|] `isIn` logs
-      H.it "delete category by id request" $
-        [re|deleteCategory: Uid {uidToText = |] `isIn` logs
-      H.it "modify notes to category request" $
-        [re|setCategoryNotes: Uid {uidToText = |] `isIn` logs
-      H.it "modify info to category request" $
-        [re|setCategoryInfo: Uid {uidToText = |] `isIn` logs
+      H.it "get categories request" $ [re|getCategories|] `isIn` logs
+      H.it "create ctegory request" $ [re|createCategory|] `isIn` logs
+      H.it "get category by id" $ [re|getCategory|] `isIn` logs
+      H.it "delete category by id request" $ [re|deleteCategory|] `isIn` logs
+      H.it "modify notes to category request" $ [re|setCategoryNotes|] `isIn` logs
+      H.it "modify info to category request" $ [re|setCategoryInfo|] `isIn` logs
     H.describe "Item" $ do
-      H.it "create item" $
-        [re|createItem in category Uid {uidToText =|] `isIn` logs
-      H.it "delete item by id" $
-        [re|deleteItem: Uid {uidToText = |] `isIn` logs
-      H.it "get item by id" $
-        [re|getItem: Uid {uidToText =|] `isIn` logs
-      H.it "set item info" $
-        [re|setItemInfo: Uid {uidToText =|] `isIn` logs
-      H.it "set item summary" $
-        [re|setItemSummary: Uid {uidToText =|] `isIn` logs
-      H.it "set item ecosystem" $
-        [re|setItemEcosystem: Uid {uidToText =|] `isIn` logs
-      H.it "set item notes" $
-        [re|setItemNotes: Uid {uidToText =|] `isIn` logs
+      H.it "create item" $ [re|createItem|] `isIn` logs
+      H.it "delete item by id" $ [re|deleteItem|] `isIn` logs
+      H.it "get item by id" $ [re|getItem|] `isIn` logs
+      H.it "set item info" $ [re|setItemInfo|] `isIn` logs
+      H.it "set item summary" $ [re|setItemSummary|] `isIn` logs
+      H.it "set item ecosystem" $ [re|setItemEcosystem|] `isIn` logs
+      H.it "set item notes" $ [re|setItemNotes|] `isIn` logs
     H.describe "Trait" $ do
-      H.it "create new trait" $  [re|createTrait: |] `isIn` logs
+      H.it "create new trait" $  [re|createTrait|] `isIn` logs
       H.it "delete trait" $ [re|deleteTrait|] `isIn` logs
-      H.it "get trait" $ [re|getTrait: |] `isIn` logs
+      H.it "get trait" $ [re|getTrait|] `isIn` logs
       H.it "modify trait" $ [re|setTrait|] `isIn` logs
       H.it "move trait" $ [re|moveTrait|] `isIn` logs
   
@@ -486,7 +471,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
       itemName itemB `shouldHaveText` "Blah"
   describe "moving items" $ do
     let getId :: CanSelect a => a -> WD Text
-        getId x = attr x "id" >>= \case
+        getId x = Selenium.attr x "id" >>= \case
           Nothing -> expectationFailure $
                        printf "expected %s to have an id" (show x)
           Just i  -> return i

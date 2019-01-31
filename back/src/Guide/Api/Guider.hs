@@ -22,14 +22,15 @@ import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
 import Guide.State (DB)
 import Guide.Logger
-import Di.Monad as Di
+import Di.Monad (MonadDi, runDiT)
 import Df1
-import qualified Di 
+import qualified Di
+import Di ()
 
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider
   { runGuider :: ReaderT Context DefDiT a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Text Message, Exc.MonadThrow)
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Path Message, Exc.MonadThrow)
 
 -- | Context of Guider
 data Context = Context

@@ -43,8 +43,8 @@ getCategories = do
 
 -- | Get a single category and all of its items.
 getCategory :: Uid Category -> Guider CCategoryFull
-getCategory catId = do
-  debugT $ "getCategory: " +| catId |+ ""
+getCategory catId = push "getCategory" $ attr "catId" (value catId) $ do
+  debugT $ "handler called"
   toCCategoryFull <$> getCategoryOrFail catId
 
 -- | Create a new category, given the title and the grandparent (aka group).

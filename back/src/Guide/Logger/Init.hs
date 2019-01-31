@@ -24,7 +24,7 @@ import qualified Di.Core as DC
 
 deriving instance Read Df1.Level
 
-initLogger :: Config -> IO (Di.Log Df1.Level Text Df1.Message -> IO ())
+initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
   let logLvl  = fromMaybe Df1.Debug (readMaybe =<< logLvlEnv)
@@ -43,9 +43,13 @@ initLogger Config{..} = do
         logLvlMark :: Text
         logLvlMark =
             timeMark <> " " <>
-            (mconcat $ intersperse "/" $ toList path) <> " " <>
+            (mconcat $ intersperse "/" $ unPath <$> toList path) <> " " <>
             T.pack (show lvl)
 
       when _logToStderr   $ sayErr formattedMsg
       whenJust _logToFile $ \fileName -> do
         T.appendFile fileName (formattedMsg <> "\n")
+
+unPath :: Df1.Path -> Text
+unPath (Df1.Push a)   = Df1.unSegment a
+unPath (Df1.Attr k v) = mconcat [Df1.unKey k, "=", toStrict $ Df1.unValue v]

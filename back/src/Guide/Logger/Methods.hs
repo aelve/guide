@@ -4,7 +4,7 @@
 module Guide.Logger.Methods (
   debugT, infoT, noticeT, warningT, errorT, alertT, criticalT, emergencyT,
   debugIO, infoIO, noticeIO, warningIO, errorIO, alertIO, criticalIO, emergencyIO,
-  Di.Monad.push,
+  Di.push, Di.attr, value
   ) where
 
 import Imports
@@ -12,10 +12,14 @@ import Imports
 import qualified Df1
 import qualified Di.Core as DC
 import Di.Monad
-import Di
+import qualified Di
 import Guide.Logger.Types
+import qualified Data.Text.Lazy as L
 
-debugT, infoT, noticeT, warningT, errorT, alertT, criticalT, emergencyT :: MonadDi Level path Message m => Text -> m ()
+value :: Show a => a -> Di.Value
+value = Di.value . L.pack . show
+
+debugT, infoT, noticeT, warningT, errorT, alertT, criticalT, emergencyT :: MonadDi Di.Level path Di.Message m => Text -> m ()
 debugT     msg = Di.debug     . Df1.message $ fromStrict msg
 infoT      msg = Di.info      . Df1.message $ fromStrict msg
 noticeT    msg = Di.notice    . Df1.message $ fromStrict msg
