@@ -23,14 +23,14 @@
           class="mr-2 text-transform-none"
           @click="save"
         >
-          <p>Save</p>
+          Save
         </v-btn>
         <v-btn
           small
           class="text-transform-none"
           @click="cancel"
         >
-          <p>Cancel</p>
+          Cancel
         </v-btn>
       </v-toolbar-items>
       <span class="markdown-editor-save-tip ml-1">

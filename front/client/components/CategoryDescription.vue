@@ -2,7 +2,7 @@
   <div class="category-description">
     <div v-if="!editDescriptionShown">
       <p v-if="!categoryDescription">This category has no description yet, you can contribute to the category by adding description</p>
-      <div v-else v-html="categoryDescription" />
+      <div class="description-content" v-else v-html="categoryDescription" />
     </div>
 
     <markdown-editor
@@ -73,7 +73,7 @@ export default class CategoryDescriptiom extends Vue {
     this.editDescriptionShown = !this.editDescriptionShown
   }
 
-  async updateCategoryDescription (original: any, modified: any) {
+  async updateCategoryDescription (original, modified) {
     try {
       await this.$store.dispatch('categoryItem/updateCategoryDescription', {
         id: this.categoryId,
@@ -118,7 +118,7 @@ export default class CategoryDescriptiom extends Vue {
   margin: 20px 0 5px;
 }
 
-.category-description >>> div:first-child {
+.description-content {
   white-space: pre-wrap;
 }
 </style>
