@@ -37,7 +37,7 @@ import qualified Guide.Search as Search
 
 -- | Get a list of available categories.
 getCategories :: Guider [CCategoryInfo]
-getCategories = push "getCategory" $ do
+getCategories = push "getCategories" $ do
   debugT "handler called"
   dbQuery GetCategories <&> map toCCategoryInfo
 
