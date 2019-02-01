@@ -32,7 +32,7 @@ initLogger Config{..} = do
     when (lvl >= logLvl) $ do
       let
         
-        formattedMsg = logLvlMark <> ": " <> logMsg
+        formattedMsg = logLvlMark <> " " <> logMsg
         
         logMsg :: Text
         logMsg = toStrict $ Df1.unMessage msg
@@ -42,8 +42,8 @@ initLogger Config{..} = do
 
         logLvlMark :: Text
         logLvlMark =
-            timeMark <> " " <>
-            (mconcat $ intersperse "/" $ unPath <$> toList path) <> " " <>
+            timeMark <>
+            (printPath $ toList path) <>
             T.pack (show lvl)
 
       when _logToStderr   $ sayErr formattedMsg
@@ -52,4 +52,17 @@ initLogger Config{..} = do
 
 unPath :: Df1.Path -> Text
 unPath (Df1.Push a)   = Df1.unSegment a
-unPath (Df1.Attr k v) = mconcat [Df1.unKey k, "=", toStrict $ Df1.unValue v]
+unPath (Df1.Attr k v) = mconcat [Df1.unKey k, " = ", toStrict $ Df1.unValue v]
+
+printPath :: Foldable t => t Df1.Path -> Text
+printPath path = " | " <> math (toList path)
+  where
+    math :: [Df1.Path] -> Text
+    math (a : b : xs) = unPath a <> separator a b <> math (b : xs)
+    math (x:_)        = unPath x <> " | "
+    math []           = ""
+
+separator :: Df1.Path -> Df1.Path -> Text
+separator _ (Df1.Push _) = " | "
+separator (Df1.Push _) _ = " "
+separator _ _            = ", "

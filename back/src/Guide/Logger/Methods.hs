@@ -19,6 +19,7 @@ import qualified Data.Text.Lazy as L
 value :: Show a => a -> Di.Value
 value = Di.value . L.pack . show
 
+
 debugT, infoT, noticeT, warningT, errorT, alertT, criticalT, emergencyT :: MonadDi Di.Level path Di.Message m => Text -> m ()
 debugT     msg = Di.debug     . Df1.message $ fromStrict msg
 infoT      msg = Di.info      . Df1.message $ fromStrict msg
