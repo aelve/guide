@@ -22,10 +22,12 @@
       color="lightgrey"
       @click="toggleEditDescription"
     >
-      <v-icon v-if="!categoryDescription" size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
-      <v-icon v-else size="14" class="mr-1" left>$vuetify.icons.pen</v-icon>
-      <p v-if="!categoryDescription">add description</p>
-      <p v-else>edit description</p>
+      <!-- <v-icon v-if="!categoryDescription" size="14" class="mr-1" left>$vuetify.icons.plus</v-icon> -->
+      <!-- <v-icon v-else size="14" class="mr-1" left>$vuetify.icons.pen</v-icon> -->
+      <!-- <p v-if="!categoryDescription">add description</p>
+      <p v-else>edit description</p> -->
+      <v-icon size="14" class="mr-1" left>{{descriptionBtnIcon}}</v-icon>
+      {{descriptionBtnText}}
     </v-btn>
     <conflict-dialog
       v-model="isDescriptionConflict"
@@ -56,6 +58,8 @@ export default class CategoryDescriptiom extends Vue {
   serverModified: string = ''
   modified: string = ''
   merged: string = ''
+  descriptionButtonIcon: any = null
+  descriptionButtonText: string = ''
 
   get categoryDescription () {
     return _get(this, '$store.state.category.category.description.html')
@@ -68,6 +72,17 @@ export default class CategoryDescriptiom extends Vue {
   get categoryId () {
     return this.$store.state.category.category.id
   }
+
+  get descriptionBtnIcon () {
+    const description = _get(this, '$store.state.category.category.description.html')
+    return description ? this.descriptionButtonIcon = this.$vuetify.icons.pen : this.descriptionButtonIcon = this.$vuetify.icons.plus
+  }
+
+  get descriptionBtnText () {
+    const description = _get(this, '$store.state.category.category.description.html')
+    return description ? this.descriptionButtonText = 'edit description' : this.descriptionButtonText = 'add description'
+  }
+  
 
   toggleEditDescription () {
     this.editDescriptionShown = !this.editDescriptionShown
