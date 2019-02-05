@@ -9,11 +9,16 @@
           <p class="category-top-group mr-3"> {{category.group}} </p>
           <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
           <router-link
-            class="category-top-link"
+            class="category-top-link mr-3"
             :to="categoryUrl"
           >
             {{category.title}}
           </router-link>
+          <category-item-btn
+            title="delete category"
+            icon="trash-alt"
+            @click="deleteCategory"
+          />
         </div>
         <v-btn
           class="ma-0 px-1"
@@ -68,13 +73,15 @@ import { Vue, Component, Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
+import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import category from 'client/store/modules/category'
 
 @Component({
   components: {
     CategoryItem,
     AddItemDialog,
-    CategoryDescription
+    CategoryDescription,
+    CategoryItemBtn
   }
 })
 export default class Category extends Vue {
@@ -103,6 +110,13 @@ export default class Category extends Vue {
 
   openAddItemDialog () {
     this.isDialogOpen = true
+  }
+
+  async deleteCategory () {
+    console.log(typeof this.categoryId);
+    
+    await this.$store.dispatch('category/deleteCategory', this.categoryId)
+    this.$router.push('Index')
   }
 }
 </script>
