@@ -113,10 +113,8 @@ export default class Category extends Vue {
   }
 
   async deleteCategory () {
-    console.log(typeof this.categoryId);
-    
     await this.$store.dispatch('category/deleteCategory', this.categoryId)
-    this.$router.push('Index')
+    this.$router.push({name: 'Index'})
   }
 }
 </script>
