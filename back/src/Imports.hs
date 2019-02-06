@@ -10,8 +10,6 @@ module Imports
   module X,
   LByteString,
   LText,
-  TL.toStrict,
-  TL.fromStrict
 )
 where
 

@@ -19,6 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 -- Files
 import System.Directory
+import System.IO.Temp
 -- URLs
 import Network.URI
 -- Exceptions
@@ -43,9 +44,6 @@ import System.IO
 -- Tests
 -----------------------------------------------------------------------------
 
-logFile :: FilePath
-logFile = "/tmp/test_guide.log"
-
 tests :: IO ()
 tests = do
   run $ do
@@ -69,49 +67,27 @@ getLines h = loop' []
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
   logs <- H.runIO $ do
-    logFileHandle <- openFile logFile ReadWriteMode
-    logs <- getLines logFileHandle
-    hClose logFileHandle
-    writeFile logFile ""
-    pure logs
+    withTempFile "/tmp/" "test_guide.log" $ \logFile logFileHandle -> do
+      logs <- getLines logFileHandle
+      writeFile logFile ""
+      pure logs
   H.describe "Logging of init" $ do
-    H.it "spock is runned" $ [re|Spock is running on port|] `isIn` logs
+    H.it "Spock init message is present" $ [re|Spock is running on port|] `isIn` logs
     H.it "api is runned" $ [re|API is running on port|] `isIn` logs
   H.describe "Logging of api" $ do
     H.describe "Categories" $ do
-      H.it "get categories request" $ [re|getCategories|] `isIn` logs
-      H.it "create ctegory request" $ [re|createCategory|] `isIn` logs
-      H.it "get category by id" $ [re|getCategory|] `isIn` logs
-      H.it "delete category by id request" $ [re|deleteCategory|] `isIn` logs
       H.it "modify notes to category request" $ [re|setCategoryNotes|] `isIn` logs
-      H.it "modify info to category request" $ [re|setCategoryInfo|] `isIn` logs
     H.describe "Item" $ do
-      H.it "create item" $ [re|createItem|] `isIn` logs
-      H.it "delete item by id" $ [re|deleteItem|] `isIn` logs
-      H.it "get item by id" $ [re|getItem|] `isIn` logs
       H.it "set item info" $ [re|setItemInfo|] `isIn` logs
-      H.it "set item summary" $ [re|setItemSummary|] `isIn` logs
-      H.it "set item ecosystem" $ [re|setItemEcosystem|] `isIn` logs
-      H.it "set item notes" $ [re|setItemNotes|] `isIn` logs
     H.describe "Trait" $ do
-      H.it "create new trait" $  [re|createTrait|] `isIn` logs
-      H.it "delete trait" $ [re|deleteTrait|] `isIn` logs
-      H.it "get trait" $ [re|getTrait|] `isIn` logs
-      H.it "modify trait" $ [re|setTrait|] `isIn` logs
       H.it "move trait" $ [re|moveTrait|] `isIn` logs
-  
+
     H.describe "Errors (exceptions)" $ do
       H.it "Category not found" $
         [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
-      H.it "Merge conflict occurred" $
-        [re|ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred"|] `isIn` logs
-      H.it "Item not found" $
-        [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Item not found"|] `isIn` logs
 
-
-
-isIn :: RE -> String -> H.Expectation
-isIn  reg text = (`H.shouldBe` True) $ matched $ text ?=~ reg
+isIn :: H.HasCallStack => RE -> String -> H.Expectation
+isIn reg text = H.expectationFailure $ matchSource $ text ?=~ reg
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
@@ -680,7 +656,7 @@ run ts = do
               _portEkg       = 5050,
               _cors          = False,
               _ekg           = False,
-              _logToFile     = Just logFile
+              _logToFile     = Just "/tmp/test_guide.log"
               }
         logHandler <- initLogger config
 

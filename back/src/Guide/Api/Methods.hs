@@ -252,8 +252,8 @@ moveTrait itemId traitId CMove{..} = push "moveTrait" $
 --
 -- Returns at most 100 results.
 search :: Text -> Guider [CSearchResult]
-search searchQuery = do
-  debugT $ "search: " +|| searchQuery ||+ " "
+search searchQuery = push "search" $ attr "searchQuery" (value searchQuery) $ do
+  debugT "handler called"
   gs <- dbQuery GetGlobalState
   pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
@@ -281,8 +281,8 @@ dbQuery x = do
 
 -- Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()
-addEdit edit = do
-  debugT $ "addEdit: " +|| edit ||+ ""
+addEdit edit = push "addEdit" $ attr "edit" (value edit) $ do
+  debugT "handler called"
   unless (isVacuousEdit edit) $ do
     debugT $ "addEdit: it makes sense to edit."
     time <- liftIO getCurrentTime

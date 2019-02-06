@@ -36,8 +36,7 @@ data Matomo = Matomo
 
 -- | Notify Matomo that an edit has been made.
 postMatomo :: Matomo -> Guider ()
-postMatomo Matomo{..} = do
-    debugT "postMatomo"
+postMatomo Matomo{..} = push "postMatomo" $ do
     Context Config{..} _ _ <- ask
     whenJust _matomoLink $ \matomo -> liftIO $ do
       async $ do

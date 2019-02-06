@@ -235,6 +235,7 @@ test-suite tests
                      , slave-thread
                      , tagsoup < 1
                      , text
+                     , temporary
                      , transformers
                      , webdriver >= 0.8.4 && < 0.9
                      , yaml

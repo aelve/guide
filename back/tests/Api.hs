@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
+-- | Tests for new Api methods.
 module Api where
 
 import BasePrelude hiding (Category)
@@ -18,11 +19,12 @@ import Guide.Types.Core
 import Guide.Utils (Uid (..))
 import qualified Test.Hspec as H
 
+
 tests :: H.SpecWith ()
 tests = H.describe "api" $ do
   H.it "fail request" $ do
     request <- makeRequest
-      (Host "http://localhost/fail")
+      (Path "fail")
       (Method "GET")
     Status 404 "Not Found" <- runFailRequest request
     pure ()
@@ -35,7 +37,7 @@ tests = H.describe "api" $ do
       categoryInfo <- head <$> getCategoriesRequest
       let Uid categoryId = cciId categoryInfo
       request <- makeRequest
-        (Host $ "http://localhost/category/" <> T.unpack categoryId)
+        (Path $ "category/" <> T.unpack categoryId)
         (Method "GET")
       (Status 200 "OK", _ :: CCategoryFull) <- runRequest request
       pure ()
@@ -48,9 +50,9 @@ tests = H.describe "api" $ do
 
     H.it "modify notes of category" $ do
       req <- withCategory $ \categoryId -> do
-        let Uid tCategoryId = categoryId 
+        let Uid tCategoryId = categoryId
         request <- makeRequest
-          (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/notes")
+          (Path $ "category/" <> T.unpack tCategoryId <> "/notes")
           (Method "PUT")
         let req = setRequestBodyJSON (makeEditObject "" "string") request
         Status 200 "OK"                      <- runRequestNoBody req
@@ -61,9 +63,9 @@ tests = H.describe "api" $ do
 
     H.it "modify info of category" $ do
       req <- withCategory $ \categoryId -> do
-        let Uid tCategoryId = categoryId 
+        let Uid tCategoryId = categoryId
         request <- makeRequest
-          (Host $ "http://localhost/category/" <> T.unpack tCategoryId <> "/info")
+          (Path $ "category/" <> T.unpack tCategoryId <> "/info")
           (Method "PUT")
         let req = setRequestBodyJSON editCategoryInfo request
         Status 200 "OK"                 <- runRequestNoBody req
@@ -78,11 +80,11 @@ tests = H.describe "api" $ do
         Just True   <- deleteItem itemId
         Just False  <- deleteItem itemId
         pure ()
-  
+
     H.it "get item by id" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
-          (Host $ "http://localhost/item/" <> T.unpack itemId)
+          (Path $ "item/" <> T.unpack itemId)
           (Method "GET")
         (Status 200 "OK", _ :: CItemFull) <- runRequest request
         pure request
@@ -92,7 +94,7 @@ tests = H.describe "api" $ do
     H.it "set item info" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
-          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/info")
+          (Path $ "item/" <> T.unpack itemId <> "/info")
           (Method "PUT")
         let req = setRequestBodyJSON itemInfo request
         Status 200 "OK" <- runRequestNoBody req
@@ -111,17 +113,17 @@ tests = H.describe "api" $ do
     H.it "get trair by id" $ do
           req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
             request     <- makeRequest
-              (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+              (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
               (Method "GET")
             (Status 200 "OK", _ :: CTrait) <- runRequest request
             pure request
           Status 404 "Item not found" <- runFailRequest req
           pure ()
-    
+
     H.it "update trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
-          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+          (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
           (Method "PUT")
         let req = setRequestBodyJSON (makeEditObject "oldText" "newText") request
         Status 200 "OK"                       <- runRequestNoBody req
@@ -132,7 +134,7 @@ tests = H.describe "api" $ do
     H.it "move trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
-          (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId <> "/move")
+          (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId <> "/move")
           (Method "POST")
         let req = setRequestBodyJSON (object ["direction" .= ("up" :: String)]) request
         Status 200 "OK" <- runRequestNoBody req
@@ -152,14 +154,14 @@ withCategory f = do
 createCategory :: IO (Uid Category)
 createCategory = do
   request <- makeRequest
-    (Host "http://localhost/category?title=NewCategory&group=Model")
+    (Path "category?title=NewCategory&group=Model")
     (Method "POST")
   snd <$> runRequest request
 
 deleteCategory :: Uid Category -> IO (Maybe Bool)
 deleteCategory (Uid categoryId) = do
   request <- makeRequest
-    (Host $ "http://localhost/category/" <> T.unpack categoryId)
+    (Path $ "category/" <> T.unpack categoryId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of
@@ -178,7 +180,7 @@ editCategoryInfo = object
 getCategoriesRequest :: IO [CCategoryInfo]
 getCategoriesRequest = do
   request <- makeRequest
-    (Host "http://localhost/categories")
+    (Path "categories")
     (Method "GET")
   snd <$> runRequest request
 
@@ -189,7 +191,7 @@ setMergebleDataToItem :: String -> IO ()
 setMergebleDataToItem dataType = do
   req <- withItem $ \(Uid itemId) -> do
     request     <- makeRequest
-      (Host $ "http://localhost/item/" <> T.unpack itemId <> "/" <> dataType)
+      (Path $ "item/" <> T.unpack itemId <> "/" <> dataType)
       (Method "PUT")
     let req = setRequestBodyJSON (makeEditObject "" "text") request
     Status 200 "OK" <- runRequestNoBody req
@@ -208,14 +210,14 @@ withItem f = withCategory $ \categoryId -> do
 createItem :: Uid Category -> IO (Uid Item)
 createItem (Uid categoryId) = do
   request <- makeRequest
-    (Host $ "http://localhost/item/" <> T.unpack categoryId <> "?name=testName")
+    (Path $ "item/" <> T.unpack categoryId <> "?name=testName")
     (Method "POST")
   snd <$> runRequest request
 
 deleteItem :: Uid Item -> IO (Maybe Bool)
 deleteItem (Uid itemId) = do
   request <- makeRequest
-    (Host $ "http://localhost/item/" <> T.unpack itemId)
+    (Path $ "item/" <> T.unpack itemId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of
@@ -237,14 +239,14 @@ itemInfo = object
 createTrait :: Uid Item -> IO (Uid Trait)
 createTrait (Uid itemId) = do
   request <- makeRequest
-    (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait")
+    (Path $ "item/" <> T.unpack itemId <> "/trait")
     (Method "POST")
   snd <$> (runRequest $ setRequestBodyJSON traitBody request)
 
 deleteTrait :: Uid Item -> Uid Trait -> IO (Maybe Bool)
 deleteTrait (Uid itemId) (Uid traitId) = do
   request <- makeRequest
-    (Host $ "http://localhost/item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+    (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of
@@ -288,13 +290,13 @@ runRequest request = do
   response <- httpJSON request
   pure (getResponseStatus response, getResponseBody response)
 
-newtype Host   = Host String
+newtype Path   = Path String
 newtype Port   = Port Int
 newtype Method = Method S8.ByteString
 
-makeRequest :: MonadThrow m => Host -> Method -> m Request
-makeRequest (Host host) (Method method) = do
-  initReq <- parseRequest host
+makeRequest :: MonadThrow m => Path -> Method -> m Request
+makeRequest (Path path) (Method method) = do
+  initReq <- parseRequest $ "http://localhost/" ++ path
   pure $
     setRequestPort 4400 $
     setRequestMethod method initReq
