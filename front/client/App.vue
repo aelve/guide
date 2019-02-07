@@ -2,7 +2,7 @@
   <v-app>
     <toolbar />
     <v-content>
-      <router-view></router-view>
+      <router-view />
     </v-content>
     <a-footer />
   </v-app>
@@ -12,8 +12,10 @@
 import { Vue, Component, Watch } from 'vue-property-decorator'
 import AFooter from 'client/components/AFooter.vue'
 import Toolbar from 'client/components/Toolbar.vue'
+import * as nprogress from 'nprogress'
+import 'nprogress/nprogress.css'
 
-import Toolbar from './components/Toolbar.vue'
+nprogress.configure({ showSpinner: false })
 
 @Component({
   components: {
@@ -26,6 +28,15 @@ export default class RootComponent extends Vue {
     // This package can only be loaded after mounted (on client only) cause it uses "document"
     // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
     import('easymde')
+  }
+
+  get isPageLoading () {
+    return this.$store.state.isPageLoading
+  }
+
+  @Watch('isPageLoading')
+  toogleLoading (isPageLoading: boolean) {
+    isPageLoading ? nprogress.start() : nprogress.done()
   }
 }
 </script>
