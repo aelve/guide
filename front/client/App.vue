@@ -9,9 +9,9 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Component from 'vue-class-component'
+import { Vue, Component, Watch } from 'vue-property-decorator'
 import AFooter from 'client/components/AFooter.vue'
+import Toolbar from 'client/components/Toolbar.vue'
 
 import Toolbar from './components/Toolbar.vue'
 
