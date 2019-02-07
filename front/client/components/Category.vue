@@ -9,11 +9,16 @@
           <p class="category-top-group mr-3"> {{category.group}} </p>
           <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
           <router-link
-            class="category-top-link"
+            class="category-top-link mr-3"
             :to="categoryUrl"
           >
             {{category.title}}
           </router-link>
+          <category-item-btn
+            title="edit item info"
+            icon="cog"
+            @click="openCategoryInfoDialog"
+          />
         </div>
         <v-btn
           class="ma-0 px-1"
@@ -57,6 +62,7 @@
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
+      <category-info-edit v-model="isCategoryInfoEdit"/>
     </div>
   </v-container>
 </template>
@@ -68,19 +74,24 @@ import { Vue, Component, Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
+import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import category from 'client/store/modules/category'
+import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
 
 @Component({
   components: {
     CategoryItem,
     AddItemDialog,
-    CategoryDescription
+    CategoryDescription,
+    CategoryItemBtn,
+    CategoryInfoEdit
   }
 })
 export default class Category extends Vue {
   @Prop(String) categoryId!: string
 
   isDialogOpen: boolean = false
+  isCategoryInfoEdit: boolean = false
 
   async asyncData () {
     if (!this.categoryId) {
@@ -103,6 +114,10 @@ export default class Category extends Vue {
 
   openAddItemDialog () {
     this.isDialogOpen = true
+  }
+
+  openCategoryInfoDialog () {
+    this.isCategoryInfoEdit = true
   }
 }
 </script>
