@@ -72,14 +72,14 @@ printPath path = " | " <> math (toList path)
 @
 | api | getCategory catId="wseresd" | Debug handler called
 | api | getCategory catId="wseresd" | Debug dbQuery: GetCategoryMaybe "wseresd"
-| api | guider level | Error | ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
+api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
 @
 
 -- Put item summary with wrong original text.
 @
 | api | setItemSummary itemId="og29umre" | Debug dbQuery: GetItemMaybe "og29umre"
 | api | setItemSummary itemId="og29umre" | Debug dbQuery: GetItemMaybe "og29umre"
-| api | guider level | Error | ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred", errBody = "{\"merged\":\"\",\"modified\":\"string\",\"server_modified\":\"\",\"original\":\"string\"}", errHeaders = []}
+| api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred", errBody = "{\"merged\":\"\",\"modified\":\"string\",\"server_modified\":\"\",\"original\":\"string\"}", errHeaders = []}
 @
 -}
 
