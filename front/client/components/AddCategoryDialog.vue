@@ -7,7 +7,7 @@
 
     <slot slot="activator" />
 
-    <v-card>
+    <v-card @keyup.esc.native="close" tabindex="0">
       <v-card-text>
         <v-form
           ref="form"
