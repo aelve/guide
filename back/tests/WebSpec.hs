@@ -64,14 +64,24 @@ getLines h = loop' []
         Left (_ :: SomeException) -> pure $ concat $ reverse xs
         Right line                -> loop' (line:xs)
 
+logFile :: FilePath
+logFile = "/tmp/test_guide.log"
+
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
   logs <- H.runIO $ do
-    withTempFile "/tmp/" "test_guide.log" $ \logFile _ -> do
-      logFileHandle <- openFile logFile ReadWriteMode
-      logs <- getLines logFileHandle
-      writeFile logFile ""
-      pure logs
+    threadDelay 1000000
+    logFileHandle <- openFile logFile ReadWriteMode
+    logs <- getLines logFileHandle
+    hClose logFileHandle
+    writeFile logFile ""
+    pure logs
+  -- logs <- H.runIO $ do
+  --   withTempFile "/tmp/" "test_guide.log" $ \logFile _ -> do
+  --     logFileHandle <- openFile logFile ReadWriteMode
+  --     logs <- getLines logFileHandle
+  --     writeFile logFile ""
+  --     pure logs
   H.describe "Logging of init" $ do
     H.it "Spock init message is present" $ [re|Spock is running on port|] `isIn` logs
     H.it "api is runned" $ [re|API is running on port|] `isIn` logs
