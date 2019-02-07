@@ -308,9 +308,12 @@ sockAddrToIP _                               = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Generic, Eq, Ord, Show, Data,
+  deriving (Generic, Eq, Ord, Data,
             ToHttpApiData, FromHttpApiData,
             Buildable, Hashable)
+
+instance Show (Uid a) where
+  show (Uid a) = show a
 
 instance A.ToJSON (Uid a) where
   toJSON = A.toJSON . uidToText

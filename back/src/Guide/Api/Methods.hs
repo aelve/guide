@@ -294,7 +294,6 @@ addEdit edit = push "addEdit" $ attr "edit" (value edit) $ do
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category
 getCategoryOrFail catId = do
-  debugT $ "getCategoryOrFail: " +|| catId ||+ ""
   dbQuery (GetCategoryMaybe catId) >>= \case
     Nothing -> throwError $ err404 {errReasonPhrase = "Category not found"}
     Just cat -> pure cat
@@ -302,7 +301,6 @@ getCategoryOrFail catId = do
 -- | Helper. Get an item from database and throw error 404 when the item doesn't exist.
 getItemOrFail :: Uid Item -> Guider Item
 getItemOrFail itemId = do
-  debugT $ "getItemOrFail: " +|| itemId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errReasonPhrase = "Item not found"}
     Just item -> pure item
@@ -311,7 +309,6 @@ getItemOrFail itemId = do
 -- either the item or the trait doesn't exist.
 getTraitOrFail :: Uid Item -> Uid Trait -> Guider Trait
 getTraitOrFail itemId traitId = do
-  debugT $ "getTraitOrFail: " +|| itemId ||+ ", " +|| traitId ||+ ""
   dbQuery (GetItemMaybe itemId) >>= \case
     Nothing -> throwError $ err404 {errReasonPhrase = "Item not found"}
     Just _ -> do

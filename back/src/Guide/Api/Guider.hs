@@ -53,9 +53,8 @@ guiderToHandler context di (Guider m) =
   Handler $ ExceptT $ try $ runDiT di $ push "api" $ do
     Exc.catch
       (runReaderT m context)
-      (\(err :: SomeException) -> Di.error (fromString $ show err) >> Exc.throwM err)
-
-
+      (\(err :: SomeException) ->
+        Di.push "guider level" $ Di.error (fromString $ "| " ++ show err) >> Exc.throwM err)
 
 -- | 'GuiderServer' used to create 'Guider' api.
 type GuiderServer = AsServerT Guider
