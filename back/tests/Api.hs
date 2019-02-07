@@ -110,7 +110,7 @@ tests = H.describe "api" $ do
         Just True   <- deleteTrait itemId traitId
         Just False  <- deleteTrait itemId traitId
         pure ()
-    H.it "get trair by id" $ do
+    H.it "get trait by id" $ do
           req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
             request     <- makeRequest
               (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)

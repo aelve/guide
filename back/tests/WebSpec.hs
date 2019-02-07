@@ -67,7 +67,8 @@ getLines h = loop' []
 logTest :: Spec
 logTest = H.describe "test of logger" $ do
   logs <- H.runIO $ do
-    withTempFile "/tmp/" "test_guide.log" $ \logFile logFileHandle -> do
+    withTempFile "/tmp/" "test_guide.log" $ \logFile _ -> do
+      logFileHandle <- openFile logFile ReadWriteMode
       logs <- getLines logFileHandle
       writeFile logFile ""
       pure logs
