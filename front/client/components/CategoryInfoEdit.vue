@@ -91,6 +91,10 @@ export default class CategoryInfoEdit extends Vue {
     (x: string) => !!x || 'Item name can not be empty'
   ]
 
+  beforeMount () {
+    this.$vuetify.icons.checkboxOff = this.$vuetify.icons.square
+  }
+
   @Watch('value')
   onOpen () {
     this.title = ''
