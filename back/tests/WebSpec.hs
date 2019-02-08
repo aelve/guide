@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE MonoLocalBinds #-}
-{-# LANGUAGE QuasiQuotes#-}
+{-# LANGUAGE QuasiQuotes #-}
 
 
 module WebSpec (tests) where
@@ -45,14 +45,15 @@ import System.IO
 -----------------------------------------------------------------------------
 
 tests :: IO ()
-tests = do
-  run $ do
+tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
+  hClose logFileHandle -- It closed for api tests were able to append logs.
+  run logFile $ do
     mainPageTests
     categoryTests
     itemTests
     markdownTests
     Api.tests
-  hspec logTest
+  hspec $ logTest logFile
 
 getLines :: Handle -> IO String
 getLines h = loop' []
@@ -64,27 +65,17 @@ getLines h = loop' []
         Left (_ :: SomeException) -> pure $ concat $ reverse xs
         Right line                -> loop' (line:xs)
 
-logFile :: FilePath
-logFile = "/tmp/test_guide.log"
-
-logTest :: Spec
-logTest = H.describe "test of logger" $ do
+logTest :: FilePath -> Spec
+logTest logFile = H.describe "test of logger" $ do
   logs <- H.runIO $ do
-    threadDelay 1000000
     logFileHandle <- openFile logFile ReadWriteMode
     logs <- getLines logFileHandle
     hClose logFileHandle
-    writeFile logFile ""
     pure logs
-  -- logs <- H.runIO $ do
-  --   withTempFile "/tmp/" "test_guide.log" $ \logFile _ -> do
-  --     logFileHandle <- openFile logFile ReadWriteMode
-  --     logs <- getLines logFileHandle
-  --     writeFile logFile ""
-  --     pure logs
+
   H.describe "Logging of init" $ do
     H.it "Spock init message is present" $ [re|Spock is running on port|] `isIn` logs
-    H.it "api is runned" $ [re|API is running on port|] `isIn` logs
+    H.it "Api init message is present" $ [re|API is running on port|] `isIn` logs
   H.describe "Logging of api" $ do
     H.describe "Categories" $ do
       H.it "modify notes to category request" $ [re|setCategoryNotes|] `isIn` logs
@@ -98,7 +89,9 @@ logTest = H.describe "test of logger" $ do
         [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
 
 isIn :: H.HasCallStack => RE -> String -> H.Expectation
-isIn reg text = H.expectationFailure $ matchSource $ text ?=~ reg
+isIn reg text = case matchedText $ text ?=~ reg of
+  Just _ -> pure ()
+  Nothing -> H.expectationFailure text
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
@@ -646,8 +639,8 @@ getCurrentRelativeURL = do
       maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
       return u
 
-run :: Spec -> IO ()
-run ts = do
+run :: FilePath ->  Spec -> IO ()
+run logFile ts = do
   let prepare = do
         exold <- doesDirectoryExist "state-old"
         when exold $ error "state-old exists"
@@ -667,7 +660,7 @@ run ts = do
               _portEkg       = 5050,
               _cors          = False,
               _ekg           = False,
-              _logToFile     = Just "/tmp/test_guide.log"
+              _logToFile     = Just logFile
               }
         logHandler <- initLogger config
 
@@ -687,7 +680,7 @@ run ts = do
     hspec ts
 
 _site :: IO ()
-_site = run $ do
+_site = run "" $ do
   session "_" $ using [chromeCaps] $ do
     wd "_" $ do
       openGuidePage "/"

@@ -25,7 +25,7 @@ import qualified Di.Core as DC
 deriving instance Read Df1.Level
 
 
--- | Catch and form log.
+-- | Catch exeptions and make a log.
 initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
