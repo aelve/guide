@@ -12,9 +12,8 @@ module Guide.Logger.Init (
 import Imports
 import Say (sayErr)
 import Control.Monad.Extra
-import qualified Data.Text.IO   as T
-import qualified Data.Text      as T
-import Data.Time.Format()
+import qualified Data.Text.IO as T
+import Data.Time.Format ()
 import Data.Time.Clock.System
 
 import Guide.Config (Config (..))
@@ -33,20 +32,20 @@ initLogger Config{..} = do
   pure $ \(Di.Log time lvl path msg) ->
     when (lvl >= logLvl) $ do
       let
-
         formattedMsg = logLvlMark <> " " <> logMsg
 
         logMsg :: Text
         logMsg = toText $ Df1.unMessage msg
 
         timeMark :: Text
-        timeMark = T.pack (formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time))
+        timeMark = toText $
+          formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time)
 
         logLvlMark :: Text
         logLvlMark =
-            timeMark <>
-            (printPath $ toList path) <>
-            T.pack (show lvl)
+          timeMark <>
+          printPath (toList path) <>
+          toText (show lvl)
 
       when _logToStderr   $ sayErr formattedMsg
       whenJust _logToFile $ \fileName -> do

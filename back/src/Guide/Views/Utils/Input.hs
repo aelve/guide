@@ -25,8 +25,6 @@ where
 
 import Imports hiding (for_)
 
-import Control.Monad (forM_, when)
-import Data.Text (Text, pack)
 import Lucid
 import Text.Digestive.View
 
@@ -58,9 +56,9 @@ inputTextArea r c ref view = textarea_
         toHtmlRaw $ fieldInputText ref view
   where
     ref'          = absoluteRef ref view
-    rows' (Just x) = [rows_ $ pack $ show x]
+    rows' (Just x) = [rows_ $ toText $ show x]
     rows' _        = []
-    cols' (Just x) = [cols_ $ pack $ show x]
+    cols' (Just x) = [cols_ $ toText $ show x]
     cols' _        = []
 
 
@@ -156,7 +154,7 @@ form
   => View (HtmlT m ()) -> Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
 form view action attributes = form_ $
     [ method_  "POST"
-    , enctype_ (pack $ show $ viewEncType view)
+    , enctype_ (toText $ show $ viewEncType view)
     , action_  action
     ]
     ++ attributes
