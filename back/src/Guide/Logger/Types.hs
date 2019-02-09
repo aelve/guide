@@ -1,4 +1,9 @@
-module Guide.Logger.Types where
+module Guide.Logger.Types
+(
+  DefDiT,
+  DefDi,
+)
+where
 
 import Imports
 import Di.Core

@@ -3,7 +3,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- | Tests for new Api methods.
-module Api where
+module Api (tests) where
 
 import BasePrelude hiding (Category)
 import Data.Aeson
@@ -141,9 +141,11 @@ tests = H.describe "api" $ do
         pure req
       Status 404 "Item not found" <- runFailRequest req
       pure ()
------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------
 -- Category
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
 withCategory :: (Uid Category -> IO a) -> IO a
 withCategory f = do
   categoryId  <- createCategory
@@ -184,9 +186,10 @@ getCategoriesRequest = do
     (Method "GET")
   snd <$> runRequest request
 
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- Item
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
 setMergebleDataToItem :: String -> IO ()
 setMergebleDataToItem dataType = do
   req <- withItem $ \(Uid itemId) -> do
@@ -232,9 +235,10 @@ itemInfo = object
   , "hackage" .= ("string"         :: String)
   , "link"    .= ("http:/link.exp" :: String)
   ]
------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------
 -- Trait
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 createTrait :: Uid Item -> IO (Uid Trait)
 createTrait (Uid itemId) = do
@@ -267,9 +271,10 @@ traitBody = object
   [ "type"    .= ("Pro" :: String)
   , "content" .= ("oldText" :: String)
   ]
------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------
 -- Common
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 makeEditObject :: String -> String -> Value
 makeEditObject oldText newText = object
@@ -277,9 +282,9 @@ makeEditObject oldText newText = object
   , "modified" .= newText
   ]
 
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- Utilities for requests
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 runRequestNoBody, runFailRequest :: Request -> IO Status
 runRequestNoBody request = getResponseStatus <$> httpNoBody request
@@ -291,7 +296,6 @@ runRequest request = do
   pure (getResponseStatus response, getResponseBody response)
 
 newtype Path   = Path String
-newtype Port   = Port Int
 newtype Method = Method S8.ByteString
 
 makeRequest :: MonadThrow m => Path -> Method -> m Request

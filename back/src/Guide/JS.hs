@@ -4,6 +4,8 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 -- TODO: try to make it more type-safe somehow?
 
 {- |
