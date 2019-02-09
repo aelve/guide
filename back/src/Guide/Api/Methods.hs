@@ -37,25 +37,23 @@ import qualified Guide.Search as Search
 
 -- | Get a list of available categories.
 getCategories :: Guider [CCategoryInfo]
-getCategories = push "getCategories" $ do
-  debugT "handler called"
-  dbQuery GetCategories <&> map toCCategoryInfo
+getCategories =
+  logHandler "getCategories" [] $ do
+    dbQuery GetCategories <&> map toCCategoryInfo
 
 -- | Get a single category and all of its items.
 getCategory :: Uid Category -> Guider CCategoryFull
-getCategory catId = push "getCategory" $ attr "catId" (value catId) $ do
-  debugT "handler called"
-  toCCategoryFull <$> getCategoryOrFail catId
+getCategory catId =
+  logHandler "getCategory" [attr "catId" catId] $ do
+    toCCategoryFull <$> getCategoryOrFail catId
 
 -- | Create a new category, given the title and the grandparent (aka group).
 --
 -- Returns the ID of the created category (or of the existing one if the
 -- category with this title exists already).
 createCategory :: Text -> Text -> Guider (Uid Category)
-createCategory title' group' = push "createCategory" $
-  attr "title" (value title') $
-  attr "group " (value group') $ do
-    debugT "handler called"
+createCategory title' group' =
+  logHandler "createCategory" [attr "title" title', attr "group" group'] $ do
     when (T.null title') $ throwError err400{errReasonPhrase = "Title not provided"}
     when (T.null group') $ throwError err400{errReasonPhrase = "Group' not provided"}
     -- If the category exists already, don't create it
@@ -72,37 +70,37 @@ createCategory title' group' = push "createCategory" $
 
 -- | Edit categoty's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
-setCategoryNotes catId CTextEdit{..} = push "setCategoryNotes" $ attr "catId" (value catId) $ do
-  debugT "handler called"
-  serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
-  checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate (SetCategoryNotes catId $ unH cteModified)
-  pure NoContent
+setCategoryNotes catId CTextEdit{..} =
+  logHandler "setCategoryNotes" [attr "catId" catId] $ do
+    serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
+    checkConflict CTextEdit{..} serverModified
+    addEdit . fst =<< dbUpdate (SetCategoryNotes catId $ unH cteModified)
+    pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: Uid Category -> CCategoryInfoEdit -> Guider NoContent
-setCategoryInfo catId CCategoryInfoEdit{..} = push "setCategoryInfo" $ attr "catId" (value catId) $ do
-  debugT "handler called"
-  category <- getCategoryOrFail catId
-  -- TODO diff and merge
-  (editTitle, _) <- dbUpdate $ SetCategoryTitle catId $ unH ccieTitle
-  (editGroup, _) <- dbUpdate $ SetCategoryGroup catId $ unH ccieGroup
-  (editStatus, _) <- dbUpdate $ SetCategoryStatus catId ccieStatus
-  let oldEnabledSections = category ^. enabledSections
-  let newEnabledSections = unH ccieSections
-  (editSection, _) <- dbUpdate $ ChangeCategoryEnabledSections catId
-      (newEnabledSections S.\\ oldEnabledSections)
-      (oldEnabledSections S.\\ newEnabledSections)
-  mapM_ addEdit [editTitle, editGroup, editStatus, editSection]
-  pure NoContent
+setCategoryInfo catId CCategoryInfoEdit{..} =
+  logHandler "setCategoryInfo" [attr "catId" catId] $ do
+    category <- getCategoryOrFail catId
+    -- TODO diff and merge
+    (editTitle, _) <- dbUpdate $ SetCategoryTitle catId $ unH ccieTitle
+    (editGroup, _) <- dbUpdate $ SetCategoryGroup catId $ unH ccieGroup
+    (editStatus, _) <- dbUpdate $ SetCategoryStatus catId ccieStatus
+    let oldEnabledSections = category ^. enabledSections
+    let newEnabledSections = unH ccieSections
+    (editSection, _) <- dbUpdate $ ChangeCategoryEnabledSections catId
+        (newEnabledSections S.\\ oldEnabledSections)
+        (oldEnabledSections S.\\ newEnabledSections)
+    mapM_ addEdit [editTitle, editGroup, editStatus, editSection]
+    pure NoContent
 
 -- | Delete a category.
 deleteCategory :: Uid Category -> Guider NoContent
-deleteCategory catId = push "deleteCategory" $ attr "catId" (value catId) $ do
-  debugT "handler called"
-  _ <- getCategoryOrFail catId
-  dbUpdate (DeleteCategory catId) >>= mapM_ addEdit
-  pure NoContent
+deleteCategory catId =
+  logHandler "deleteCategory" [attr "catId" catId] $ do
+    _ <- getCategoryOrFail catId
+    dbUpdate (DeleteCategory catId) >>= mapM_ addEdit
+    pure NoContent
 
 ----------------------------------------------------------------------------
 -- Items
@@ -110,19 +108,17 @@ deleteCategory catId = push "deleteCategory" $ attr "catId" (value catId) $ do
 
 -- | Get item by item id
 getItem :: Uid Item -> Guider CItemFull
-getItem itemId = push "getItem" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  toCItemFull <$> getItemOrFail itemId
+getItem itemId =
+  logHandler "getItem" [attr "itemId" itemId] $ do
+    toCItemFull <$> getItemOrFail itemId
 
 -- | Create a new item, given the name.
 --
 -- Returns the ID of the created item. Unlike 'createCategory', allows items
 -- with duplicated names.
 createItem :: Uid Category -> Text -> Guider (Uid Item)
-createItem catId name' = push "createItem" $
-  attr "catId" (value catId) $
-  attr "name" (value name') $ do
-    debugT "handler called"
+createItem catId name' =
+  logHandler "createItem" [attr "catId" catId, attr "name" name'] $ do
     _ <- getCategoryOrFail catId
     when (T.null name') $ throwError err400{errReasonPhrase = "Name not provided"}
     itemId <- randomShortUid
@@ -130,95 +126,90 @@ createItem catId name' = push "createItem" $
     addEdit . fst =<< dbUpdate (AddItem catId itemId name' time)
     pure itemId
 
--- TODO: move an item
-
 -- | Modify item info. Fields that are not present ('Nothing') are not modified.
 setItemInfo :: Uid Item -> CItemInfoEdit -> Guider NoContent
-setItemInfo itemId CItemInfoEdit{..} = push "setItemInfo" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  void $ getItemOrFail itemId
-  -- TODO diff and merge
-  whenJust (unH ciieName) $ \ciieName' ->
-    addEdit . fst =<< dbUpdate (SetItemName itemId ciieName')
-  whenJust (unH ciieGroup) $ \ciieGroup' ->
-    addEdit . fst =<< dbUpdate (SetItemGroup itemId ciieGroup')
-  whenJust (unH ciieHackage) $ \ciieHackage' ->
-    addEdit . fst =<< dbUpdate (SetItemHackage itemId ciieHackage')
-  whenJust (unH ciieLink) $ \ciieLink' -> do
-    addEdit . fst =<< dbUpdate (SetItemLink itemId ciieLink')
-  pure NoContent
+setItemInfo itemId CItemInfoEdit{..} =
+  logHandler "setItemInfo" [attr "itemId" itemId] $ do
+    void $ getItemOrFail itemId
+    -- TODO diff and merge
+    whenJust (unH ciieName) $ \ciieName' ->
+      addEdit . fst =<< dbUpdate (SetItemName itemId ciieName')
+    whenJust (unH ciieGroup) $ \ciieGroup' ->
+      addEdit . fst =<< dbUpdate (SetItemGroup itemId ciieGroup')
+    whenJust (unH ciieHackage) $ \ciieHackage' ->
+      addEdit . fst =<< dbUpdate (SetItemHackage itemId ciieHackage')
+    whenJust (unH ciieLink) $ \ciieLink' -> do
+      addEdit . fst =<< dbUpdate (SetItemLink itemId ciieLink')
+    pure NoContent
 
 -- | Set item's summary.
 setItemSummary :: Uid Item -> CTextEdit -> Guider NoContent
-setItemSummary itemId CTextEdit{..} = push "setItemSummary" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
-  checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate (SetItemSummary itemId $ unH cteModified)
-  pure NoContent
+setItemSummary itemId CTextEdit{..} =
+  logHandler "setItemSummary" [attr "itemId" itemId] $ do
+    serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
+    checkConflict CTextEdit{..} serverModified
+    addEdit . fst =<< dbUpdate (SetItemSummary itemId $ unH cteModified)
+    pure NoContent
 
 -- | Set item's ecosystem.
 setItemEcosystem :: Uid Item -> CTextEdit -> Guider NoContent
-setItemEcosystem itemId CTextEdit{..} = push "setItemEcosystem" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
-  checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate (SetItemEcosystem itemId $ unH cteModified)
-  pure NoContent
+setItemEcosystem itemId CTextEdit{..} =
+  logHandler "setItemEcosystem" [attr "itemId" itemId] $ do
+    serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
+    checkConflict CTextEdit{..} serverModified
+    addEdit . fst =<< dbUpdate (SetItemEcosystem itemId $ unH cteModified)
+    pure NoContent
 
 -- | Set item's notes.
 setItemNotes :: Uid Item -> CTextEdit -> Guider NoContent
-setItemNotes itemId CTextEdit{..} = push "setItemNotes" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
-  checkConflict CTextEdit{..} serverModified
-  addEdit . fst =<< dbUpdate (SetItemNotes itemId $ unH cteModified)
-  pure NoContent
+setItemNotes itemId CTextEdit{..} =
+  logHandler "setItemNotes" [attr "itemId" itemId] $ do
+    serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
+    checkConflict CTextEdit{..} serverModified
+    addEdit . fst =<< dbUpdate (SetItemNotes itemId $ unH cteModified)
+    pure NoContent
 
 -- | Delete an item.
 deleteItem :: Uid Item -> Guider NoContent
-deleteItem itemId = push "deleteItem" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  void $ getItemOrFail itemId
-  dbUpdate (DeleteItem itemId) >>= mapM_ addEdit
-  pure NoContent
+deleteItem itemId =
+  logHandler "deleteItem" [attr "itemId" itemId] $ do
+    void $ getItemOrFail itemId
+    dbUpdate (DeleteItem itemId) >>= mapM_ addEdit
+    pure NoContent
 
 -- | Move item up or down
 moveItem :: Uid Item -> CMove -> Guider NoContent
-moveItem itemId CMove{..} = push "moveItem" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  void $ getItemOrFail itemId
-  addEdit =<< dbUpdate (MoveItem itemId (cmDirection == DirectionUp))
-  pure NoContent
+moveItem itemId CMove{..} =
+  logHandler "moveItem" [attr "itemId" itemId] $ do
+    void $ getItemOrFail itemId
+    addEdit =<< dbUpdate (MoveItem itemId (cmDirection == DirectionUp))
+    pure NoContent
 
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
+
 -- | Get a trait (pro/con)
 getTrait :: Uid Item -> Uid Trait -> Guider CTrait
-getTrait itemId traitId = push "getTrait" $
-  attr "itemId"  (value itemId) $
-  attr "traitId" (value traitId) $ do
-    debugT "handler called"
+getTrait itemId traitId =
+  logHandler "getTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     toCTrait <$> getTraitOrFail itemId traitId
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
-createTrait itemId CCreateTrait{..} = push "createTrait" $ attr "itemId" (value itemId) $ do
-  debugT "handler called"
-  when (T.null cctContent) $ throwError err400{errReasonPhrase = "Trait text not provided"}
-  traitId <- randomShortUid
-  addEdit . fst =<< case cctType of
-    Con -> dbUpdate (AddCon itemId traitId cctContent)
-    Pro -> dbUpdate (AddPro itemId traitId cctContent)
-  pure traitId
+createTrait itemId CCreateTrait{..} =
+  logHandler "createTrait" [attr "itemId" itemId] $ do
+    when (T.null cctContent) $ throwError err400{errReasonPhrase = "Trait text not provided"}
+    traitId <- randomShortUid
+    addEdit . fst =<< case cctType of
+      Con -> dbUpdate (AddCon itemId traitId cctContent)
+      Pro -> dbUpdate (AddPro itemId traitId cctContent)
+    pure traitId
 
 -- | Update the text of a trait (pro/con).
 setTrait :: Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
-setTrait itemId traitId CTextEdit{..} = push "setTrait" $
-  attr "itemId"  (value itemId) $
-  attr "traitId" (value traitId) $ do
-    debugT "handler called"
+setTrait itemId traitId CTextEdit{..} =
+  logHandler "setTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail itemId traitId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId $ unH cteModified)
@@ -226,20 +217,16 @@ setTrait itemId traitId CTextEdit{..} = push "setTrait" $
 
 -- | Delete a trait (pro/con).
 deleteTrait :: Uid Item -> Uid Trait -> Guider NoContent
-deleteTrait itemId traitId = push "deleteTrait" $
-  attr "itemId"  (value itemId) $
-  attr "traitId" (value traitId) $ do
-    debugT "handler called"
+deleteTrait itemId traitId =
+  logHandler "deleteTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     void $ getTraitOrFail itemId traitId
     dbUpdate (DeleteTrait itemId traitId) >>= mapM_ addEdit
     pure NoContent
 
 -- | Move trait up or down
 moveTrait :: Uid Item -> Uid Trait -> CMove -> Guider NoContent
-moveTrait itemId traitId CMove{..} = push "moveTrait" $
-  attr "itemId"  (value itemId) $
-  attr "traitId" (value traitId) $ do
-    debugT "handler called"
+moveTrait itemId traitId CMove{..} =
+  logHandler "moveTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     void $ getTraitOrFail itemId traitId
     addEdit =<< dbUpdate (MoveTrait itemId traitId (cmDirection == DirectionUp))
     pure NoContent
@@ -252,10 +239,10 @@ moveTrait itemId traitId CMove{..} = push "moveTrait" $
 --
 -- Returns at most 100 results.
 search :: Text -> Guider [CSearchResult]
-search searchQuery = push "search" $ attr "searchQuery" (value searchQuery) $ do
-  debugT "handler called"
-  gs <- dbQuery GetGlobalState
-  pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
+search searchQuery =
+  logHandler "search" [attr "searchQuery" searchQuery] $ do
+    gs <- dbQuery GetGlobalState
+    pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
 ----------------------------------------------------------------------------
 -- Utils
@@ -279,10 +266,9 @@ dbQuery x = do
   Context{..} <- ask
   liftIO $ Acid.query cDB x
 
--- Call this whenever any user-made change is applied to the database.
+-- | Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()
-addEdit edit = push "addEdit" $ attr "edit" (value edit) $ do
-  debugT "handler called"
+addEdit edit = push "addEdit" $ attr "edit" edit $ do
   unless (isVacuousEdit edit) $ do
     debugT $ "addEdit: it makes sense to edit."
     time <- liftIO getCurrentTime
@@ -334,3 +320,18 @@ checkConflict CTextEdit{..} serverModified = do
       errReasonPhrase = "Merge conflict occurred",
       errBody = encode conflict
     }
+
+-- | Log invocation of a handler.
+--
+-- This function exists because otherwise it's easy to log that the handler
+-- has been called (at the very beginning of the handler).
+--
+-- TODO: it would be nice to somehow automatically get this logging from
+-- Servant for all handlers.
+logHandler
+  :: Text                    -- ^ Handler name
+  -> [Guider a -> Guider a]  -- ^ Handler arguments, usually created by @attr "key" value@
+  -> Guider a
+  -> Guider a
+logHandler hName args body =
+    foldr ($) (debugT "Handler called" >> body) (push hName : args)
