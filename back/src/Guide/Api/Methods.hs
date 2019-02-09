@@ -55,7 +55,7 @@ createCategory :: Text -> Text -> Guider (Uid Category)
 createCategory title' group' =
   logHandler "createCategory" [attr "title" title', attr "group" group'] $ do
     when (T.null title') $ throwError err400{errReasonPhrase = "Title not provided"}
-    when (T.null group') $ throwError err400{errReasonPhrase = "Group' not provided"}
+    when (T.null group') $ throwError err400{errReasonPhrase = "Group not provided"}
     -- If the category exists already, don't create it
     cats <- view categories <$> dbQuery GetGlobalState
     let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'

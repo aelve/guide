@@ -25,7 +25,7 @@ import qualified Di.Core as DC
 deriving instance Read Df1.Level
 
 
--- | Catch exeptions and make a log.
+-- | Catch exceptions and make a log.
 initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
@@ -57,7 +57,7 @@ unPath :: Df1.Path -> Text
 unPath (Df1.Push a)   = Df1.unSegment a
 unPath (Df1.Attr k v) = mconcat [Df1.unKey k, "=", toText $ Df1.unValue v]
 
--- | Pretty print several pathes.
+-- | Pretty print several paths.
 printPath :: Foldable t => t Df1.Path -> Text
 printPath path = " | " <> math (toList path)
   where
@@ -91,7 +91,7 @@ separator _ _            = ", "
 
 -- * Examples of 'printPath'
 
--- ** Get categoty error. A wrong category id.
+-- ** Get category error. A wrong category id.
 {- |
 @
 | api | getCategory catId = Uid {uidToText = "fgh"} | Debug handler called
