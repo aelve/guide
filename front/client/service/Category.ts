@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ICategoryItem } from './CategoryItem'
+import category from 'client/store/modules/category';
 
 class CategoryService {
   async getCategoryById (id: ICategoryInfo['id']): Promise<ICategoryFull> {
@@ -19,6 +20,17 @@ class CategoryService {
       params: {
         title,
         group
+      }
+    })
+    return data
+  }
+
+  async updateCategoryInfo (categoryId, title, group, status) {
+    const { data } = await axios.post(`api/category/${categoryId}/info`, null, {
+      params: {
+        title,
+        group,
+        status
       }
     })
     return data
