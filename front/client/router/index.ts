@@ -4,9 +4,12 @@ function createRouter () {
   return new Router({
     mode: 'history',
     fallback: false,
-    scrollBehavior: (to) => {
-      // ads an ability for a scroll to anchor
-      if (to.hash) {
+    // TODO update vue-router when scroll issue will be fixed
+    // https://github.com/vuejs/vue-router/issues/2095
+    scrollBehavior: (to, from, savedPosition) => {
+      if (savedPosition) {
+        return savedPosition
+      } else if (to.hash) {
         return { selector: to.hash }
       } else {
         return { x: 0, y: 0 }

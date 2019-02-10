@@ -19,24 +19,38 @@ router.onReady(() => {
 })
 
 function registerBeforeResolve () {
-  router.afterEach(async (to, from) => {
-    Vue.nextTick(() => {
-      for (const matchedRoute of to.matched) {
-        const componentsInstances = Object.values(matchedRoute.instances)
-          .filter(Boolean)
-        const matchedComponentsAndChildren = componentsInstances
-          .reduce((acc, matchedComponent) => {
-            const componentAndItsChildren = getComponentAndItsChildren(matchedComponent)
-            acc = acc.concat(componentAndItsChildren)
-            return acc
-          }, [])
-        matchedComponentsAndChildren.map(component => {
-          if (typeof component.asyncData === 'function') {
-            return component.$nextTick(() => component.asyncData())
-          }
+  router.beforeEach(async (to, from, next) => {
+    store.commit('tooglePageLoading')
+    if (!to.matched.length) {
+      store.commit('tooglePageLoading')
+      next()
+      return
+    }
+    const propsOption = to.matched[0].props.default
+    const props = propsOption
+      ? typeof propsOption === 'function'
+        ? propsOption(to)
+        : typeof propsOption === 'object'
+          ? propsOption
+          : to.params
+      : {}
+    const routeComponent = to.matched[0].components.default
+    const matchedRootComponent = routeComponent.cid // Check if component already imported
+      ? routeComponent
+      : (await routeComponent()).default
+    const matchedComponentsAndChildren = getComponentAndItsChildren(matchedRootComponent)
+    await Promise.all(matchedComponentsAndChildren.map(component => {
+      const asyncData = component.options.methods.asyncData
+      if (typeof asyncData === 'function') {
+        return asyncData.call({
+          $store: store,
+          $router: router,
+          ...props
         })
       }
-    })
+    }))
+    store.commit('tooglePageLoading')
+    next()
   })
 }
 
@@ -47,7 +61,7 @@ function getComponentAndItsChildren (component, result?) {
   if (!result.includes(component)) {
     result.push(component)
   }
-  const children = Object.values(component.$children)
+  const children = Object.values(component.options.components)
     // Parent component is also presents in components object
     .filter(x => x !== component)
   children.forEach(x => getComponentAndItsChildren(x, result))
