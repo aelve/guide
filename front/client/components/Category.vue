@@ -25,12 +25,7 @@
           Add new item
         </v-btn>
       </div>
-      <div
-        v-if="categoryDescription"
-        class="category-description"
-      >
-        <div v-html="categoryDescription" />
-      </div>
+      <category-description />
       <template v-if="category">
         <category-item
           v-for="value in category.items"
@@ -51,14 +46,14 @@
       </template>
       <v-btn
         flat
-        class="ma-0 px-1"
+        class="ml-2"
         color="grey"
         @click="openAddItemDialog"
       >
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog
+      <add-item-dialog 
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
@@ -72,12 +67,14 @@ import _get from 'lodash/get'
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
+import CategoryDescription from 'client/components/CategoryDescription.vue'
 import category from 'client/store/modules/category'
 
 @Component({
   components: {
     CategoryItem,
-    AddItemDialog
+    AddItemDialog,
+    CategoryDescription
   }
 })
 export default class Category extends Vue {
@@ -92,8 +89,8 @@ export default class Category extends Vue {
     await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
-  get categoryDescription () {
-    return _get(this, '$store.state.category.category.description.html')
+  beforeDestroy () {
+    this.$store.commit('category/setCategory', {})
   }
 
   get category () {
@@ -155,18 +152,6 @@ export default class Category extends Vue {
 .category-wrapper {
   max-width: 800px;
   margin: 0 auto;
-}
-
-.category-description {
-  margin: 0 0 40px;
-}
-
-.category-description >>> p {
-  font-size: 16px;
-}
-
-.category-description >>> h1 {
-  margin: 20px 0 5px;
 }
 
 @media screend and (max-width: 768px) {
