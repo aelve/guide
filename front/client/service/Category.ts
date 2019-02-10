@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { ICategoryItem } from './CategoryItem'
-import category from 'client/store/modules/category';
 
 class CategoryService {
   async getCategoryById (id: ICategoryInfo['id']): Promise<ICategoryFull> {
