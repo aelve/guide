@@ -44,6 +44,7 @@ function registerBeforeResolve () {
       if (typeof asyncData === 'function') {
         return asyncData.call({
           $store: store,
+          $router: router,
           ...props
         })
       }
