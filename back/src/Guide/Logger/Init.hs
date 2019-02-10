@@ -65,13 +65,12 @@ printPath path = " | " <> math (toList path)
     math (x:_)        = unPath x <> " | "
     math []           = ""
 
-    -- | Examples of different paths shown by 'printPath'.
-{-
-| Get categoty error. A wrong category id.
+-- | Examples of different paths shown by 'printPath'.
+{- | Get categoty error. A wrong category id.
 @
 | api | getCategory catId="wseresd" | Debug handler called
 | api | getCategory catId="wseresd" | Debug dbQuery: GetCategoryMaybe "wseresd"
-api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
+| api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
 @
 
 -- Put item summary with wrong original text.
