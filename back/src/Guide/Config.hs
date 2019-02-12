@@ -31,24 +31,47 @@ import qualified Data.ByteString.Lazy as BSL
 
 -- | Site config. Stored in @config.json@.
 data Config = Config {
-  _baseUrl       :: Url,          -- ^ URL where the site is deployed. Used
-                                  --    for generating feeds (which require
-                                  --    absolute URLs)
-  _googleToken   :: Text,         -- ^ Google site verification token. Will
-                                  --    be inserted into all pages
-  _adminPassword :: Text,         -- ^ Password for the admin user
-  _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
-                                  --    Will be placed in the header
-  _matomoLink    :: Maybe Url,    -- ^ Link of Matomo to send statistic
-                                  --    of user's action. Format of link shoud be
-                                  --    like <http://localhost:8081/piwik.php>
-  _portMain      :: Int,          -- ^ Port for the main site.
-  _portApi       :: Int,          -- ^ Port for the API.
-  _portEkg       :: Int,          -- ^ Port for EKG stats.
-  _cors          :: Bool,         -- ^ CORS switch on/off
-  _ekg           :: Bool,         -- ^ EKG switch on/off
-  _logToStderr   :: Bool,         -- ^ log to stderr on/off
-  _logToFile     :: Maybe String,  -- ^ log to file
+  -- | URL where the site is deployed. Used for generating feeds (which
+  -- require absolute URLs).
+  _baseUrl :: Url,
+
+  -- | Google site verification token. Will be inserted into all pages.
+  _googleToken :: Text,
+
+  -- | Password for the admin user.
+  _adminPassword :: Text,
+
+  -- | Link to a place to discuss the site. Will be placed in the header
+  _discussLink :: Maybe Url,
+
+  -- | Link to Matomo to gather analytics about user actions. Format of the
+  -- link shoud be like <http://localhost:8081/piwik.php>.
+  _matomoLink :: Maybe Url,
+
+  -- | Port for serving the main site (old backend and frontend).
+  _portMain :: Int,
+
+  -- | Port for serving the API.
+  _portApi :: Int,
+
+  -- | Port for serving EKG stats.
+  _portEkg :: Int,
+
+  -- | CORS switch on/off.
+  _cors :: Bool,
+
+  -- | EKG switch on/off.
+  _ekg :: Bool,
+
+  -- | Whether to log to @stderr@.
+  _logToStderr :: Bool,
+
+  -- | Whether to log to a file. Can be turned on together with
+  -- '_logToStderr'.
+  _logToFile :: Maybe FilePath,
+
+  -- | A formatting string for log timestamps. For the description of
+  -- available formatters, see 'formatTime'.
   _logTimeFormat :: String
   }
   deriving (Eq, Show)
@@ -70,7 +93,7 @@ instance Default Config where
     _logToStderr   = False,
     _logToFile     = Just "/var/log/guide.log",
     _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
-     }
+    }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
