@@ -203,11 +203,12 @@ library
 
 test-suite tests
   main-is:             Main.hs
-  other-modules:       WebSpec
+  other-modules:       Api
+                       LogSpec
                        MarkdownSpec
                        MergeSpec
                        Selenium
-                       Api
+                       WebSpec
   type:                exitcode-stdio-1.0
   build-depends:       QuickCheck < 3
                      , aeson

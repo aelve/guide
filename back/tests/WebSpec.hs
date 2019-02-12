@@ -3,11 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE MonoLocalBinds #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 
 module WebSpec (tests) where
-
 
 import BasePrelude hiding (catch, bracket, try)
 -- Monads
@@ -29,16 +27,13 @@ import Control.Monad.Catch
 import Selenium
 import qualified Api
 import qualified Test.WebDriver.Common.Keys as Key
+import LogSpec (logTest)
 
 -- Site
 import qualified Guide.Main
 import Guide.Logger
 import Guide.Config (Config(..), def)
-import Text.RE.TDFA.String
 
--- Spec
-import qualified Test.Hspec as H
-import System.IO
 
 -----------------------------------------------------------------------------
 -- Tests
@@ -54,44 +49,6 @@ tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
     markdownTests
     Api.tests
   hspec $ logTest logFile
-
-getLines :: Handle -> IO String
-getLines h = loop' []
-  where
-    loop' :: [String] -> IO String
-    loop' xs = do
-      eLine <- try $ hGetLine h
-      case eLine of
-        Left (_ :: SomeException) -> pure $ concat $ reverse xs
-        Right line                -> loop' (line:xs)
-
-logTest :: FilePath -> Spec
-logTest logFile = H.describe "test of logger" $ do
-  logs <- H.runIO $ do
-    logFileHandle <- openFile logFile ReadWriteMode
-    logs <- getLines logFileHandle
-    hClose logFileHandle
-    pure logs
-
-  H.describe "Logging of init" $ do
-    H.it "Spock init message is present" $ [re|Spock is running on port|] `isIn` logs
-    H.it "Api init message is present" $ [re|API is running on port|] `isIn` logs
-  H.describe "Logging of api" $ do
-    H.describe "Categories" $ do
-      H.it "modify notes to category request" $ [re|setCategoryNotes|] `isIn` logs
-    H.describe "Item" $ do
-      H.it "set item info" $ [re|setItemInfo|] `isIn` logs
-    H.describe "Trait" $ do
-      H.it "move trait" $ [re|moveTrait|] `isIn` logs
-
-    H.describe "Errors (exceptions)" $ do
-      H.it "Category not found" $
-        [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
-
-isIn :: H.HasCallStack => RE -> String -> H.Expectation
-isIn reg text = case matchedText $ text ?=~ reg of
-  Just _ -> pure ()
-  Nothing -> H.expectationFailure text
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
