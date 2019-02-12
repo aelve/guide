@@ -90,8 +90,8 @@ instance Default Config where
     _portEkg       = 5050,
     _cors          = False,
     _ekg           = False,
-    _logToStderr   = False,
-    _logToFile     = Just "/var/log/guide.log",
+    _logToStderr   = True,
+    _logToFile     = Nothing,
     _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
     }
 
