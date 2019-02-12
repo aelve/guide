@@ -2,6 +2,7 @@
 {-# LANGUAGE StandaloneDeriving  #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE FlexibleContexts    #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- for "instance Read Df1.Level"
 
 module Guide.Logger.Init
@@ -27,14 +28,22 @@ deriving instance Read Df1.Level
 
 
 -- | Catch exceptions and make a log.
+--
+-- Example of resulting log:
+--
+-- > api | getCategory catId="og29umre" | Debug Handler called
+-- > api | getCategory catId="og29umre" | Debug dbQuery: GetCategoryMaybe "og29umre"
+-- > api | Error ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
 initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
-  let logLvl  = fromMaybe Df1.Debug (readMaybe =<< logLvlEnv)
+  let logLvl = fromMaybe Df1.Debug (readMaybe =<< logLvlEnv)
   pure $ \(Di.Log time lvl path msg) ->
     when (lvl >= logLvl) $ do
       let
-        formattedMsg = logLvlMark <> " " <> logMsg
+        formattedMsg :: Text
+        formattedMsg =
+          format "{} | {} | {} {}" timeMark (showPath path) (show lvl) logMsg
 
         logMsg :: Text
         logMsg = toText $ Df1.unMessage msg
@@ -43,71 +52,27 @@ initLogger Config{..} = do
         timeMark = toText $
           formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time)
 
-        logLvlMark :: Text
-        logLvlMark =
-          timeMark <>
-          printPath (toList path) <>
-          toText (show lvl)
-
       when _logToStderr   $ sayErr formattedMsg
       whenJust _logToFile $ \fileName -> do
         T.appendFile fileName (formattedMsg <> "\n")
 
--- | Pretty path.
-unPath :: Df1.Path -> Text
-unPath (Df1.Push a)   = Df1.unSegment a
-unPath (Df1.Attr k v) = mconcat [Df1.unKey k, "=", toText $ Df1.unValue v]
-
--- | Pretty print several paths.
-printPath :: Foldable t => t Df1.Path -> Text
-printPath path = " | " <> math (toList path)
+-- | Pretty-print a log path.
+--
+-- >>> showPath [Push "api", Push "createItem", Attr "catId" "wseresd", Attr "name" "Foo"]
+-- "api | getCategory catId=\"wseresd\" name=\"Foo\""
+showPath :: Foldable t => t Df1.Path -> Text
+showPath path = go (toList path)
   where
-    math :: [Df1.Path] -> Text
-    math (a : b : xs) = unPath a <> separator a b <> math (b : xs)
-    math (x:_)        = unPath x <> " | "
-    math []           = ""
+    go :: [Df1.Path] -> Text
+    go (a : b : xs) = showPiece a <> separator a b <> go (b : xs)
+    go [a]          = showPiece a
+    go []           = ""
 
--- | Examples of different paths shown by 'printPath'.
-{- | Get categoty error. A wrong category id.
-@
-| api | getCategory catId="wseresd" | Debug handler called
-| api | getCategory catId="wseresd" | Debug dbQuery: GetCategoryMaybe "wseresd"
-| api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
-@
+    showPiece :: Df1.Path -> Text
+    showPiece = \case
+      Df1.Push a -> Df1.unSegment a
+      Df1.Attr k v -> mconcat [Df1.unKey k, "=", toText (Df1.unValue v)]
 
--- Put item summary with wrong original text.
-@
-| api | setItemSummary itemId="og29umre" | Debug dbQuery: GetItemMaybe "og29umre"
-| api | setItemSummary itemId="og29umre" | Debug dbQuery: GetItemMaybe "og29umre"
-| api | Error | (from Guider/Handler) ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred", errBody = "{\"merged\":\"\",\"modified\":\"string\",\"server_modified\":\"\",\"original\":\"string\"}", errHeaders = []}
-@
--}
-
-separator :: Df1.Path -> Df1.Path -> Text
-separator _ (Df1.Push _) = " | "
-separator (Df1.Push _) _ = " "
-separator _ _            = ", "
-
-
--- * Examples of 'printPath'
-
--- ** Get category error. A wrong category id.
-{- |
-@
-| api | getCategory catId = Uid {uidToText = "fgh"} | Debug handler called
-| api | getCategory catId = Uid {uidToText = "fgh"} | Debug getCategoryOrFail: Uid {uidToText = "fgh"}
-| api | getCategory catId = Uid {uidToText = "fgh"} | Debug dbQuery: GetCategoryMaybe (Uid {uidToText = "fgh"})
-| api | Error ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
-@
--}
-
--- ** Put item summary with wrong original text.
-{- |
-@
-| api | setItemSummary itemId = Uid {uidToText = "og29umre"} | Debug handler called
-| api | setItemSummary itemId = Uid {uidToText = "og29umre"} | Debug getItemOrFail: Uid {uidToText = "og29umre"}
-| api | setItemSummary itemId = Uid {uidToText = "og29umre"} | Debug dbQuery: GetItemMaybe (Uid {uidToText = "og29umre"})
-| api | setItemSummary itemId = Uid {uidToText = "og29umre"} | Debug checkConflict
-| api | Error ServantErr {errHTTPCode = 409, errReasonPhrase = "Merge conflict occurred", errBody = "{\"merged\":\"\",\"modified\":\"string\",\"server_modified\":\"\",\"original\":\"d\"}", errHeaders = []}
-@
--}
+    separator :: Df1.Path -> Df1.Path -> Text
+    separator _ (Df1.Push _) = " | "
+    separator _ _ = " "
