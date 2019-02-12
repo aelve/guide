@@ -11,7 +11,11 @@ All views and all rendering logic.
 -}
 module Guide.Views
 (
-  module X,
+  -- * Reexports
+  module Guide.Views.Auth,
+  module Guide.Views.Category,
+  module Guide.Views.Item,
+  module Guide.Views.Page,
 
   -- * Pages
   renderRoot,
@@ -28,12 +32,6 @@ module Guide.Views
 )
 where
 
-
--- Reexporting children modules
-import Guide.Views.Auth as X
-import Guide.Views.Category as X
-import Guide.Views.Item as X
-import Guide.Views.Page as X
 
 import Imports
 
@@ -66,6 +64,12 @@ import qualified CMark as MD
 import qualified Data.Aeson as A
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+
+-- Children modules
+import Guide.Views.Auth
+import Guide.Views.Category
+import Guide.Views.Item
+import Guide.Views.Page
 
 import qualified Guide.Diff as Diff
 import qualified Guide.JS as JS

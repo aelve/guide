@@ -1,9 +1,11 @@
 module Guide.Logger
 (
-  module X,
+  module Guide.Logger.Types,
+  module Guide.Logger.Init,
+  module Guide.Logger.Methods,
 )
 where
 
-import Guide.Logger.Types       as X
-import Guide.Logger.Init        as X
-import Guide.Logger.Methods     as X
+import Guide.Logger.Types
+import Guide.Logger.Init
+import Guide.Logger.Methods
