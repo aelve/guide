@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | Tests for new Api methods.
+-- | Integration tests for new API methods.
 module Api (tests) where
 
 import BasePrelude hiding (Category)
@@ -17,22 +17,23 @@ import Network.HTTP.Types.Status
 import Guide.Api.Types
 import Guide.Types.Core
 import Guide.Utils (Uid (..))
-import qualified Test.Hspec as H
+
+import Test.Hspec
 
 
-tests :: H.SpecWith ()
-tests = H.describe "api" $ do
-  H.it "fail request" $ do
+tests :: Spec
+tests = describe "api" $ do
+  it "fail request" $ do
     request <- makeRequest
       (Path "fail")
       (Method "GET")
     Status 404 "Not Found" <- runFailRequest request
     pure ()
-  H.describe "Categories" $ do
-    H.it "get categories request" $ void $ getCategoriesRequest
-    H.it "createCategory"         $ void $ createCategory
+  describe "Categories" $ do
+    it "get categories request" $ void $ getCategoriesRequest
+    it "createCategory"         $ void $ createCategory
 
-    H.it "get category by id" $ do
+    it "get category by id" $ do
       -- get id of category from DB
       categoryInfo <- head <$> getCategoriesRequest
       let Uid categoryId = cciId categoryInfo
@@ -42,13 +43,13 @@ tests = H.describe "api" $ do
       (Status 200 "OK", _ :: CCategoryFull) <- runRequest request
       pure ()
 
-    H.it "delete category by id" $ do
+    it "delete category by id" $ do
       categoryInfo <- head <$> getCategoriesRequest
       Just True    <- deleteCategory (cciId categoryInfo)
       Just False   <- deleteCategory (cciId categoryInfo)
       pure ()
 
-    H.it "modify notes of category" $ do
+    it "modify notes of category" $ do
       req <- withCategory $ \categoryId -> do
         let Uid tCategoryId = categoryId
         request <- makeRequest
@@ -61,7 +62,7 @@ tests = H.describe "api" $ do
       Status 404 "Category not found"      <- runRequestNoBody req
       pure ()
 
-    H.it "modify info of category" $ do
+    it "modify info of category" $ do
       req <- withCategory $ \categoryId -> do
         let Uid tCategoryId = categoryId
         request <- makeRequest
@@ -73,15 +74,15 @@ tests = H.describe "api" $ do
       Status 404 "Category not found" <- runRequestNoBody req
       pure ()
 
-  H.describe "Items" $ do
-    H.it "create & delete item" $
+  describe "Items" $ do
+    it "create & delete item" $
       withCategory $ \categoryId -> do
         itemId      <- createItem categoryId
         Just True   <- deleteItem itemId
         Just False  <- deleteItem itemId
         pure ()
 
-    H.it "get item by id" $ do
+    it "get item by id" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
           (Path $ "item/" <> T.unpack itemId)
@@ -91,7 +92,7 @@ tests = H.describe "api" $ do
       Status 404 "Item not found" <- runFailRequest req
       pure ()
 
-    H.it "set item info" $ do
+    it "set item info" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
           (Path $ "item/" <> T.unpack itemId <> "/info")
@@ -102,15 +103,15 @@ tests = H.describe "api" $ do
       Status 404 "Item not found" <- runFailRequest req
       pure ()
     forM_ ["summary", "ecosystem", "notes"] $ \dataType -> do
-      H.it ("set " <> dataType <> " to item") $ setMergebleDataToItem dataType
-  H.describe "Trait" $ do
-    H.it "create & delete trait" $
+      it ("set " <> dataType <> " to item") $ setMergebleDataToItem dataType
+  describe "Trait" $ do
+    it "create & delete trait" $
       withItem $ \itemId -> do
         traitId     <- createTrait itemId
         Just True   <- deleteTrait itemId traitId
         Just False  <- deleteTrait itemId traitId
         pure ()
-    H.it "get trait by id" $ do
+    it "get trait by id" $ do
           req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
             request     <- makeRequest
               (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
@@ -120,7 +121,7 @@ tests = H.describe "api" $ do
           Status 404 "Item not found" <- runFailRequest req
           pure ()
 
-    H.it "update trait" $ do
+    it "update trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
           (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
@@ -131,7 +132,7 @@ tests = H.describe "api" $ do
         pure req
       Status 404 "Item not found" <- runFailRequest req
       pure ()
-    H.it "move trait" $ do
+    it "move trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
           (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId <> "/move")
