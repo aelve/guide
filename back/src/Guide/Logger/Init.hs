@@ -4,10 +4,12 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- for "instance Read Df1.Level"
 
-module Guide.Logger.Init (
+module Guide.Logger.Init
+(
   initLogger,
   DC.new,
-  ) where
+)
+where
 
 import Imports
 import Say (sayErr)

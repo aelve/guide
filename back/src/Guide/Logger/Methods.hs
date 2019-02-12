@@ -11,7 +11,8 @@ module Guide.Logger.Methods
 
   -- * Utils
   push, attr, value,
-  ) where
+)
+where
 
 import Imports
 

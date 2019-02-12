@@ -5,9 +5,11 @@
   Matomo docs: <https://developer.matomo.org/api-reference/tracking-api>.
 -}
 module Guide.Matomo
-       ( Matomo(..)
-       , postMatomo
-       ) where
+(
+  Matomo(..),
+  postMatomo,
+)
+where
 
 import Imports
 
@@ -63,4 +65,3 @@ postMatomo Matomo{..} = push "postMatomo" $ do
       . show
     piwik :: Url -> String
     piwik matomo = format "POST {}" matomo
-

@@ -4,12 +4,14 @@
 
 {- | 'Guider' monad with 'Config' to replace servant's 'Handler'. -}
 module Guide.Api.Guider
-       ( Guider (..)
-       , GuiderServer
-       , Context (..)
-       , DefDi
-       , guiderToHandler
-       ) where
+(
+  Guider (..),
+  GuiderServer,
+  Context (..),
+  DefDi,
+  guiderToHandler,
+)
+where
 
 import Imports
 

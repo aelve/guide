@@ -13,14 +13,16 @@
 
 
 module Guide.Api.Utils
-  ( jsonOptions
-  , schemaOptions
-  , type (?)(..)
-  , unH
-  , Primitive
-  , BranchTag
-  , RequestDetails(..)
-  ) where
+(
+  jsonOptions,
+  schemaOptions,
+  type (?)(..),
+  unH,
+  Primitive,
+  BranchTag,
+  RequestDetails(..),
+)
+where
 
 
 import Imports

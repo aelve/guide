@@ -1,6 +1,8 @@
 module Guide.Logger
-    ( module X
-    ) where
+(
+  module X,
+)
+where
 
 import Guide.Logger.Types       as X
 import Guide.Logger.Init        as X
