@@ -6,14 +6,12 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-{- |
-Description : The main module that starts the server.
-
-This module provides two functions that are of interest:
-
-  * Run 'main' to actually start the server.
-  * Run 'mainWith' to run it with a custom config.
--}
+-- | Description : The main module that starts the server.
+--
+-- This module provides two functions that are of interest:
+--
+--   * Run 'main' to actually start the server.
+--   * Run 'mainWith' to run it with a custom config.
 module Guide.Main
 (
   main,
@@ -417,10 +415,9 @@ data Quit = CtrlC | ServiceStop
 
 instance Exception Quit
 
-{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM (i.e.
-service stop) and throw an exception instead of the signal. This lets us
-create a checkpoint and close connections on exit.
--}
+-- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM
+-- (i.e. service stop) and throw an exception instead of the signal. This
+-- lets us create a checkpoint and close connections on exit.
 installTerminationCatcher
   :: ThreadId  -- ^ Thread to kill when the signal comes
   -> IO ()

@@ -5,9 +5,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
-{- |
-Views for user registration.
--}
+-- | Views for user registration.
 module Guide.Views.Auth.Register where
 
 import Imports

@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
-{- |
-Lucid rendering for inputs and form fields.
--}
+-- | Lucid rendering for inputs and form fields.
 module Guide.Views.Utils.Input
 (
   inputText,

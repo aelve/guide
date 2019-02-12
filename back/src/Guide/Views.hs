@@ -6,9 +6,7 @@
 {-# LANGUAGE TypeApplications    #-}
 
 
-{- |
-All views and all rendering logic.
--}
+-- | All views and all rendering logic.
 module Guide.Views
 (
   -- * Reexports

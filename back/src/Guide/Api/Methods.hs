@@ -323,14 +323,13 @@ checkConflict CTextEdit{..} serverModified = do
       errBody = encode conflict
     }
 
-{- | Log invocation of a handler.
-
-This function exists because otherwise it's easy to log that the handler
-has been called (at the very beginning of the handler).
-
-TODO: it would be nice to somehow automatically get this logging from
-Servant for all handlers.
--}
+-- | Log invocation of a handler.
+--
+-- This function exists because otherwise it's easy to log that the handler
+-- has been called (at the very beginning of the handler).
+--
+-- TODO: it would be nice to somehow automatically get this logging from
+-- Servant for all handlers.
 logHandler
   :: Text                    -- ^ Handler name
   -> [Guider a -> Guider a]  -- ^ Handler arguments, usually created by @attr "key" value@

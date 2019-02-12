@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
-{- | 'Guider' monad with 'Config' to replace servant's 'Handler'. -}
+-- | 'Guider' monad with 'Config' to replace servant's 'Handler'.
 module Guide.Api.Guider
 (
   Guider (..),

@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-{- | Functions for interacting with Matomo (<https://matomo.org/>, our web analytics).
-  Matomo docs: <https://developer.matomo.org/api-reference/tracking-api>.
--}
+-- | Functions for interacting with Matomo (<https://matomo.org/>, our web
+-- analytics).
+--
+-- Matomo docs: <https://developer.matomo.org/api-reference/tracking-api>.
 module Guide.Matomo
 (
   Matomo(..),

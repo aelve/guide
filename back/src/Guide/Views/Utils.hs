@@ -1,9 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- |
-Various HTML utils, Mustache utils, etc.
--}
+-- | Various HTML utils, Mustache utils, etc.
 module Guide.Views.Utils
 (
   -- * Script utils

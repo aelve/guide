@@ -4,12 +4,10 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-{- |
-Page rendering.
-
-This module is used for wrapping content into actual pages that can be served
-to the user. (With header, footer, etc.)
--}
+-- | Page rendering.
+--
+-- This module is used for wrapping content into actual pages that can be
+-- served to the user. (With header, footer, etc.)
 module Guide.Views.Page
 (
   Page (..),

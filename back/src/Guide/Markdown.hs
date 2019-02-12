@@ -5,11 +5,9 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 
-{- |
-Everything concerning rendering and processing Markdown.
-
-Currently we use the @cmark@ package as the Markdown parser.
--}
+-- | Everything concerning rendering and processing Markdown.
+--
+-- Currently we use the @cmark@ package as the Markdown parser.
 module Guide.Markdown
 (
   -- * Types

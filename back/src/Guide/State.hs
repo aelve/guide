@@ -8,9 +8,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-{- |
-Site's database, and methods for manipulating it.
--}
+-- | Site's database, and methods for manipulating it.
 module Guide.State
 (
   DB,
