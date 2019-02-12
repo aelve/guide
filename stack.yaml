@@ -10,6 +10,7 @@ extra-deps:
 - Spock-0.13.0.0
 - Spock-core-0.13.0.0
 - Spock-digestive-0.3.0.0
+- di-core-1.0.3
 - digestive-functors-0.8.4.0
 - Spock-lucid-0.4.0.1
 - reroute-0.5.0.0

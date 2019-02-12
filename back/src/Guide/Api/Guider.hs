@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 -- | 'Guider' monad with 'Config' to replace servant's 'Handler'.
 module Guide.Api.Guider
@@ -15,19 +15,21 @@ where
 
 import Imports
 
+import Df1
+import Di.Monad (MonadDi, runDiT, DiT(..))
 import Servant (Handler (..), ServantErr)
 import Servant.Server.Generic
 
-import qualified Control.Monad.Catch as Exc
-
 import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
-import Guide.State (DB)
 import Guide.Logger
-import Di.Monad (MonadDi, runDiT)
-import Df1
+import Guide.State (DB)
+
+import qualified Control.Monad.Catch as Exc
 import qualified Di
-import Di ()
+import qualified Di.Monad as DM
+import qualified Di.Core as DC
+
 
 -- | A type for Guide handlers. Provides access to everything in 'Context'.
 newtype Guider a = Guider
@@ -43,7 +45,7 @@ data Context = Context
 
 instance MonadError ServantErr Guider where
   throwError :: ServantErr -> Guider a
-  throwError = Exc.throwM
+  throwError err = Guider $ ReaderT $ \_ -> DM.diT $ \_ di -> DC.throw di err
 
   catchError :: Guider a -> (ServantErr -> Guider a) -> Guider a
   catchError (Guider m) f = Guider $ ReaderT $ \context ->
