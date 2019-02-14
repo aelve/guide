@@ -76,7 +76,7 @@
           :value="trait.content.text"
           :height="100"
           @cancel="trait.isEdit = false"
-          @save="saveEdit(trait, $event)"
+          @save="saveEdit({trait, original: trait.content.text, modified: $event})"
         />
       </li>
     </ul>
@@ -98,13 +98,17 @@ import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
+import conflictDialogMixin from 'client/mixins/conflictDialogMixin'
+import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
 
 @Component({
   components: {
     CategoryItemSection,
     CategoryItemBtn,
     MarkdownEditor
-  }
+  },
+  mixins: [conflictDialogMixin]
+
 })
 export default class CategoryItemTraits extends Vue {
   // TODO change [any] type
@@ -114,7 +118,7 @@ export default class CategoryItemTraits extends Vue {
 
   isEdit: boolean = false
   isAddTrait: boolean = false
-  traitsModel: any[] = []
+  traitsModel = []
 
   get title () {
     return this.type === 'pro' ? 'Pros' : 'Cons'
@@ -123,7 +127,7 @@ export default class CategoryItemTraits extends Vue {
   @Watch('traits', {
     immediate: true
   })
-  setTraitsModel (traits: any[]) {
+  setTraitsModel (traits) {
     this.traitsModel = _cloneDeep(traits)
     this.traitsModel.forEach(x => this.$set(x, 'isEdit', false))
   }
@@ -132,12 +136,13 @@ export default class CategoryItemTraits extends Vue {
     this.isEdit = !this.isEdit
   }
 
-  async saveEdit (trait: any, modifiedText: string) {
+  @CatchConflictDecorator
+  async saveEdit ({ trait, original, modified }) {
     await this.$store.dispatch('categoryItem/updateItemTrait', {
       itemId: this.itemId,
       traitId: trait.id,
-      original: trait.content.text,
-      modified: modifiedText
+      original,
+      modified
     })
     trait.isEdit = false
     await this.$store.dispatch('category/reloadCategory')

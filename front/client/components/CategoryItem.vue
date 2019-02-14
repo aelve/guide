@@ -14,7 +14,7 @@
       <category-item-section
         title="Summary"
         :editText="summary.text"
-        @save="updateSummary"
+        @save="updateSummary({original: summary.text, modified: $event})"
       >
         <div
           class="mb-2 category-item-summary"
@@ -38,7 +38,7 @@
       <category-item-section
         title="Ecosystem"
         :editText="ecosystem.text"
-        @save="updateEcosystem"
+        @save="updateEcosystem({original: ecosystem.text, modified: $event})"
       >
         <div v-html="ecosystem.html" />
       </category-item-section>
@@ -46,7 +46,7 @@
       <category-item-section
         title="Notes"
         :editText="notes.text"
-        @save="updateNotes"
+        @save="updateNotes({original: notes.text, modified: $event})"
       >
         <v-btn
           small
@@ -98,13 +98,16 @@ import { ICategoryItem } from 'client/service/CategoryItem.ts'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
+import conflictDialogMixin from 'client/mixins/conflictDialogMixin'
+import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
 
 @Component({
   components: {
     CategoryItemToolbar,
     CategoryItemSection,
     CategoryItemTraits
-  }
+  },
+  mixins: [conflictDialogMixin]
 })
 export default class CategoryItem extends Vue {
   // TODO get rid of so many props and pass the item fully
@@ -131,29 +134,32 @@ export default class CategoryItem extends Vue {
     this.isNoteExpanded = false
   }
 
-  async updateSummary (newValue: string): Promise<void> {
+  @CatchConflictDecorator
+  async updateSummary ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemSummary', {
       id: this.itemUid,
-      original: this.summary.text,
-      modified: newValue
+      original,
+      modified
     })
     await this.$store.dispatch('category/reloadCategory')
   }
 
-  async updateEcosystem (newValue: string): Promise<void> {
+  @CatchConflictDecorator
+  async updateEcosystem ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemEcosystem', {
       id: this.itemUid,
-      original: this.ecosystem.text,
-      modified: newValue
+      original,
+      modified
     })
     await this.$store.dispatch('category/reloadCategory')
   }
 
-  async updateNotes (newValue: string): Promise<void> {
+  @CatchConflictDecorator
+  async updateNotes ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemNotes', {
       id: this.itemUid,
-      original: this.notes.text,
-      modified: newValue
+      original,
+      modified
     })
     await this.$store.dispatch('category/reloadCategory')
   }

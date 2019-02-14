@@ -11,7 +11,7 @@
       toolbar
       :value="categoryDscMarkdown"
       @cancel="toggleEditDescription"
-      @save="saveDescription"
+      @save="updateDescription({original: originalDescription, modified: $event})"
     />
 
     <v-btn
@@ -25,13 +25,6 @@
       <v-icon size="14" class="mr-1" left>{{descriptionBtnIcon}}</v-icon>
       {{descriptionBtnText}}
     </v-btn>
-    <conflict-dialog
-      v-model="isDescriptionConflict"
-      :serverModified="serverModified"
-      :modified="modified"
-      :merged="merged"
-      @saveDescription="saveConflictDescription"
-    />
   </div>
 </template>
 
@@ -39,13 +32,14 @@
 import { Vue, Component, Prop } from 'vue-property-decorator'
 import _get from 'lodash/get'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
-import ConflictDialog from 'client/components/ConflictDialog.vue'
+import conflictDialogMixin from 'client/mixins/conflictDialogMixin'
+import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
 
 @Component({
   components: {
-    MarkdownEditor,
-    ConflictDialog
-  }
+    MarkdownEditor
+  },
+  mixins: [conflictDialogMixin]
 })
 export default class CategoryDescriptiom extends Vue {
   editDescriptionShown: boolean = false
@@ -78,40 +72,20 @@ export default class CategoryDescriptiom extends Vue {
     const description = _get(this, '$store.state.category.category.description.html')
     return description ? this.descriptionButtonText = 'edit description' : this.descriptionButtonText = 'add description'
   }
-  
 
   toggleEditDescription () {
     this.editDescriptionShown = !this.editDescriptionShown
   }
 
-  async updateCategoryDescription (original, modified) {
-    try {
-      await this.$store.dispatch('categoryItem/updateCategoryDescription', {
-        id: this.categoryId,
-        original: original,
-        modified: modified
-      })
-      this.originalDescription = modified
-    } catch (err) {
-      if (err.response.status === 409) {
-        this.serverModified = err.response.data.server_modified
-        this.modified = err.response.data.modified
-        this.merged = err.response.data.merged
-        this.isDescriptionConflict = true
-      } else {
-        throw err
-      }
-    }
-
-    this.toggleEditDescription();
-  }
-
-  saveDescription(newValue: string) {
-    this.updateCategoryDescription(this.originalDescription, newValue)
-  }
-
-  saveConflictDescription (modified) {
-    this.updateCategoryDescription(this.serverModified, modified)
+  @CatchConflictDecorator
+  async updateDescription ({ original, modified }) {
+    await this.$store.dispatch('categoryItem/updateCategoryDescription', {
+      id: this.categoryId,
+      original,
+      modified
+    })
+    this.originalDescription = modified
+    this.toggleEditDescription()
   }
 }
 </script>
