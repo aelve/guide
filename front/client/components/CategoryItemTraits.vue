@@ -121,7 +121,7 @@ export default class CategoryItemTraits extends Vue {
   traitsModel = []
 
   get title () {
-    return this.type === 'pro' ? 'Pros' : 'Cons'
+    return this.type + 's'
   }
 
   @Watch('traits', {
@@ -165,7 +165,7 @@ export default class CategoryItemTraits extends Vue {
     await this.$store.dispatch('categoryItem/createItemTrait', {
       itemId: this.itemId,
       type: this.type,
-      text: traitText
+      content: traitText
     })
     this.toggleAddTrait()
     await this.$store.dispatch('category/reloadCategory')

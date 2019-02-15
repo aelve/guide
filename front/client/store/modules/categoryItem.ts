@@ -108,14 +108,14 @@ const actions: ActionTree<ICategoryItemState, any> = {
     context: ActionContext<ICategoryItemState, any>,
     { itemId,
       type,
-      text
+      content
     }: {
       itemId: ICategoryItem['id'],
       type: string,
-      text: string,
+      content: string,
     }
   ): Promise<void> {
-    await CategoryItemService.createItemTrait(itemId, type, text)
+    await CategoryItemService.createItemTrait(itemId, type, content)
   },
   async updateCategoryDescription (
     { dispatch }: ActionContext<ICategoryItemState, any>,

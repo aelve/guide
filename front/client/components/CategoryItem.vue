@@ -24,12 +24,12 @@
 
       <div class="category-item-traits">
         <category-item-traits
-          type="pro"
+          type="Pro"
           :itemId="itemUid"
           :traits="pros"
         />
         <category-item-traits
-          type="con"
+          type="Con"
           :itemId="itemUid"
           :traits="cons"
         />
