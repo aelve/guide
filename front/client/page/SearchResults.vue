@@ -81,7 +81,7 @@ export default class SearchResults extends Vue {
     this.$store.commit('wiki/setSearchInput', this.query)
   }
 
-  async asyncData () {
+  async serverPrefetch () {
     await this.$store.dispatch('wiki/search', this.query)
   }
 

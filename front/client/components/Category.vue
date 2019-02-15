@@ -82,7 +82,7 @@ export default class Category extends Vue {
 
   isDialogOpen: boolean = false
 
-  async asyncData () {
+  async serverPrefetch () {
     if (!this.categoryId) {
       return
     }
