@@ -20,6 +20,12 @@ router.onReady(() => {
 
 function registerBeforeResolve () {
   router.beforeEach(async (to, from, next) => {
+    // This case handles navigation to anchors on same page
+    if (to.path === from.path) {
+      next()
+      return
+    }
+
     store.commit('tooglePageLoading')
     if (!to.matched.length) {
       store.commit('tooglePageLoading')

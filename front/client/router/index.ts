@@ -6,11 +6,12 @@ function createRouter () {
     fallback: false,
     // TODO update vue-router when scroll issue will be fixed
     // https://github.com/vuejs/vue-router/issues/2095
-    scrollBehavior: (to, from, savedPosition) => {
+    // https://github.com/vuejs/vue-router/issues/1668
+    scrollBehavior (to, from, savedPosition) {
       if (savedPosition) {
         return savedPosition
       } else if (to.hash) {
-        return { selector: to.hash }
+        return { selector: to.hash, offset: { y: 96, x: 0 } }
       } else {
         return { x: 0, y: 0 }
       }

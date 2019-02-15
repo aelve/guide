@@ -13,13 +13,19 @@
         @click.stop=""
       >
         <v-toolbar-title class="headline">
+          <!-- TODO change markup formatting after resolving issue with extra spaces
+           (if closing tag on another line vue-template-compiler adds extra space) -->
+          <router-link
+            :to="{path: $route.path, hash:`item-${itemUid}`}"
+            :id="`item-${itemUid}`"
+            class="category-item-anchor"
+          >#</router-link>
           <a-link
             v-if="itemLink"
             :url="itemLink"
             openInNewTab
           >
-            {{ itemName }}
-          </a-link>
+            {{ itemName }}</a-link>
           <span v-else> {{ itemName }} </span>
         </v-toolbar-title>
         <v-spacer></v-spacer>
@@ -162,6 +168,9 @@ export default class CategoryItemToolbar extends Vue {
 </script>
 
 <style scoped>
+.category-item-anchor {
+  color: rgb(151, 151, 151);
+}
 .edit-item-info-changed-icon {
   position: absolute;
   bottom: 0;
