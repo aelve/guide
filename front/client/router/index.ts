@@ -6,6 +6,7 @@ function createRouter () {
     fallback: false,
     // TODO update vue-router when scroll issue will be fixed
     // https://github.com/vuejs/vue-router/issues/2095
+    // Router doesnt support navigation to same anchor yet
     // https://github.com/vuejs/vue-router/issues/1668
     scrollBehavior (to, from, savedPosition) {
       if (savedPosition) {
