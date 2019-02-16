@@ -2,6 +2,7 @@
   <v-dialog
     :value="value"
     @input="close"
+    @keyup.esc.native="close"
     max-width="500px"
   >
     <slot slot="activator" />
@@ -49,7 +50,7 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
 @Component
 export default class AddItemDialog extends Vue {
@@ -58,7 +59,7 @@ export default class AddItemDialog extends Vue {
 
   itemName: string = ''
 
-  itemValidationRules: Function[] = [
+  itemValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || 'Item name can not be empty'
   ]
 
