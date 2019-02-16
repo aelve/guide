@@ -55,7 +55,7 @@ code.sourceCode {
   padding: 8px;
 }
 .sourceCode:not(:last-child) code.sourceCode {
-  margin: 0 0 15px;
+  margin: 0 0 5px;
 }
 a {
   text-decoration-line: none;
