@@ -1,5 +1,8 @@
 <template>
-  <div class="category-item">
+  <div
+    class="category-item"
+    :id="`item-${itemUid}`"
+  >
 
     <category-item-toolbar
       :itemUid="itemUid"

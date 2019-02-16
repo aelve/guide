@@ -26,7 +26,6 @@ const actions: ActionTree<ICategoryItemState, any> = {
       category,
       name
     })
-    dispatch('category/reloadCategory', null, { root: true })
     return createdId
   },
   async deleteItemById (context, id: ICategoryItem['id']) {

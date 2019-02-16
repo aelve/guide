@@ -75,11 +75,16 @@ export default class AddItemDialog extends Vue {
   }
 
   async submit () {
-    await this.$store.dispatch('categoryItem/createItem', {
+    const createdId = await this.$store.dispatch('categoryItem/createItem', {
       category: this.categoryId,
       name: this.itemName
     })
+    await this.$store.dispatch('category/reloadCategory')
     this.close()
+    // nextTick to wait for item rendered in dom so router can find it and scroll to it
+    this.$nextTick(() => {
+      this.$router.push({ hash: `item-${createdId}` })
+    })
   }
 }
 </script>
