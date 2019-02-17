@@ -15,7 +15,6 @@ import Imports
 
 import Data.Swagger.Lens hiding (format)
 import Network.Wai (Middleware, Request)
-import Network.Wai.Handler.Warp (runSettings, defaultSettings, setPort, setOnException)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
@@ -32,6 +31,10 @@ import Guide.State
 
 import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
+
+import qualified Di.Core as DC
+import qualified Df1
+import qualified Network.Wai.Handler.Warp as Warp
 
 
 guiderServer :: Site GuiderServer
@@ -57,7 +60,7 @@ guiderServer = Site
       :: ItemSite GuiderServer)
 
   , _traitSite = toServant (TraitSite
-      { _getTrait    = getTrait    
+      { _getTrait    = getTrait
       , _createTrait = createTrait
       , _setTrait    = setTrait
       , _deleteTrait = deleteTrait
@@ -89,17 +92,22 @@ api db di config = do
   hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails) di)
       (const $ toServant guiderServer)
 
-emptyOnException :: Maybe Request -> SomeException -> IO ()
-emptyOnException _ _ = pure ()
+logException :: DefDi -> Maybe Request -> SomeException -> IO ()
+logException di mbReq ex =
+  when (Warp.defaultShouldDisplayException ex) $
+    errorIO di ("uncaught exception: "+||ex||+"; request info = "+||mbReq||+"")
 
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: DefDi -> Config -> AcidState GlobalState -> IO ()
-runApiServer di Config{..} db = do
+runApiServer (DC.push (Df1.Push "api") -> di) Config{..} db = do
   debugIO di $ format "API is running on port {}" _portApi
-  let guideSettings = setOnException emptyOnException $ setPort _portApi defaultSettings
-  runSettings guideSettings $ corsPolicy $ serve (Proxy @FullApi) (fullServer db di Config{..})
+  let guideSettings = Warp.defaultSettings
+        & Warp.setOnException (logException di)
+        & Warp.setPort _portApi
+  Warp.runSettings guideSettings $ corsPolicy $
+    serve (Proxy @FullApi) (fullServer db di Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =

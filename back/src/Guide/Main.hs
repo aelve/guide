@@ -136,7 +136,8 @@ main = do
   config <- readConfig
   logHandler <- initLogger config
   new logHandler $ \di -> do
-    mainWith di config
+    mainWith di config `catch` \(e :: SomeException) ->
+      errorIO di ("uncaught exception: "+||e||+"")
 
 -- | Start the site with a specific 'Config'.
 mainWith :: DefDi -> Config -> IO ()

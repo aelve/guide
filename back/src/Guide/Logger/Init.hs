@@ -15,6 +15,7 @@ where
 import Imports
 import Say (sayErr)
 import Control.Monad.Extra
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Time.Format ()
 import Data.Time.Clock.System
@@ -31,8 +32,8 @@ deriving instance Read Df1.Level
 --
 -- Example of resulting log:
 --
--- > api | getCategory catId="og29umre" | Debug Handler called
--- > api | getCategory catId="og29umre" | Debug dbQuery: GetCategoryMaybe "og29umre"
+-- > api | getCategory catId="og29umre" | [Debug] Handler called
+-- > api | getCategory catId="og29umre" | [Debug] dbQuery: GetCategoryMaybe "og29umre"
 -- > api | Error ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
 initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
@@ -42,8 +43,11 @@ initLogger Config{..} = do
     when (lvl >= logLvl) $ do
       let
         formattedMsg :: Text
-        formattedMsg =
-          format "{} | {} | {} {}" timeMark (showPath path) (show lvl) logMsg
+        formattedMsg = format "{} | {} | [{}] {}"
+          timeMark
+          (case showPath path of "" -> "<root>"; s -> s)
+          (show lvl)
+          (T.replace "\n" ";" logMsg)
 
         logMsg :: Text
         logMsg = toText $ Df1.unMessage msg
@@ -70,8 +74,8 @@ showPath path = go (toList path)
 
     showPiece :: Df1.Path -> Text
     showPiece = \case
-      Df1.Push a -> Df1.unSegment a
-      Df1.Attr k v -> mconcat [Df1.unKey k, "=", toText (Df1.unValue v)]
+      Df1.Push a -> toText (Df1.unSegment a)
+      Df1.Attr k v -> toText $ mconcat [Df1.unKey k, "=", Df1.unValue v]
 
     separator :: Df1.Path -> Df1.Path -> Text
     separator _ (Df1.Push _) = " | "

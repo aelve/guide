@@ -10,7 +10,6 @@ extra-deps:
 - Spock-0.13.0.0
 - Spock-core-0.13.0.0
 - Spock-digestive-0.3.0.0
-- di-core-1.0.3
 - digestive-functors-0.8.4.0
 - Spock-lucid-0.4.0.1
 - reroute-0.5.0.0
@@ -31,6 +30,12 @@ extra-deps:
 # frontend. (See App.vue, or just grep for things like "span.st".)
 - highlighting-kate-0.6.4
 - cmark-highlight-0.2.0.0
+
+# The new version of 'di' has a better 'throw'
+- di-1.2
+- di-monad-1.3
+- di-core-1.0.3
+- df1-0.3
 
 - git: https://github.com/aelve/stache-plus
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782

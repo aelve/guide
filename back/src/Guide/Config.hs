@@ -90,7 +90,7 @@ instance Default Config where
     _ekg           = False,
     _logToStderr   = True,
     _logToFile     = Nothing,
-    _logTimeFormat = "%a %b %e %H:%M:%S:%q %Z %Y"
+    _logTimeFormat = "%F %T UTC"
     }
 
 instance FromJSON Config where
