@@ -13,12 +13,12 @@ module Guide.Logger.Init
 where
 
 import Imports
-import Say (sayErr)
+import Say (sayErr, hSay)
 import Control.Monad.Extra
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import Data.Time.Format ()
 import Data.Time.Clock.System
+import System.IO
 
 import Guide.Config (Config (..))
 import qualified Df1
@@ -32,38 +32,34 @@ deriving instance Read Df1.Level
 --
 -- Example of resulting log:
 --
--- > api | getCategory catId="og29umre" | [Debug] Handler called
--- > api | getCategory catId="og29umre" | [Debug] dbQuery: GetCategoryMaybe "og29umre"
+-- > api > getCategory catId="og29umre" | [Debug] Handler called
+-- > api > getCategory catId="og29umre" | [Debug] dbQuery: GetCategoryMaybe "og29umre"
 -- > api | Error ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found", errBody = "", errHeaders = []}
 initLogger :: Config -> IO (Di.Log Df1.Level Df1.Path Df1.Message -> IO ())
 initLogger Config{..} = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
   let logLvl = fromMaybe Df1.Debug (readMaybe =<< logLvlEnv)
+  mbLogHandle <- forM _logToFile $ \fp -> openFile fp AppendMode
   pure $ \(Di.Log time lvl path msg) ->
     when (lvl >= logLvl) $ do
-      let
-        formattedMsg :: Text
-        formattedMsg = format "{} | {} | [{}] {}"
-          timeMark
-          (case showPath path of "" -> "<root>"; s -> s)
-          (show lvl)
-          (T.replace "\n" ";" logMsg)
+      let timestamp :: String
+          timestamp =
+            formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time)
 
-        logMsg :: Text
-        logMsg = toText $ Df1.unMessage msg
+      let formattedMsg :: Text
+          formattedMsg = format "[{}] {}: {} | {}"
+            timestamp
+            (T.toUpper (toText (show lvl)))
+            (case showPath path of "" -> "<root>"; s -> s)
+            (T.replace "\n" ";" (toText (Df1.unMessage msg)))
 
-        timeMark :: Text
-        timeMark = toText $
-          formatTime defaultTimeLocale _logTimeFormat (systemToUTCTime time)
-
-      when _logToStderr   $ sayErr formattedMsg
-      whenJust _logToFile $ \fileName -> do
-        T.appendFile fileName (formattedMsg <> "\n")
+      when _logToStderr $ sayErr formattedMsg
+      whenJust mbLogHandle $ \h -> hSay h formattedMsg
 
 -- | Pretty-print a log path.
 --
 -- >>> showPath [Push "api", Push "createItem", Attr "catId" "wseresd", Attr "name" "Foo"]
--- "api | getCategory catId=\"wseresd\" name=\"Foo\""
+-- "api > getCategory catId=\"wseresd\" name=\"Foo\""
 showPath :: Foldable t => t Df1.Path -> Text
 showPath path = go (toList path)
   where
@@ -78,5 +74,5 @@ showPath path = go (toList path)
       Df1.Attr k v -> toText $ mconcat [Df1.unKey k, "=", Df1.unValue v]
 
     separator :: Df1.Path -> Df1.Path -> Text
-    separator _ (Df1.Push _) = " | "
+    separator _ (Df1.Push _) = " > "
     separator _ _ = " "
