@@ -26,8 +26,8 @@ import Control.Monad.Catch
 -- Testing
 import Selenium
 import qualified ApiSpec
+import qualified LogSpec
 import qualified Test.WebDriver.Common.Keys as Key
-import LogSpec (logTest)
 
 -- Site
 import qualified Guide.Main
@@ -51,7 +51,10 @@ tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
   -- TODO: get rid of the 'threadDelay' by using 'withAsync' instead of
   -- 'Slave.fork'
   threadDelay 1000000
-  hspec $ logTest logFile
+  hspec $
+    LogSpec.tests logFile
+  -- TODO: ApiSpec, LogSpec, and WebSpec should be independent of each
+  -- other. Currently it's a mess.
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do

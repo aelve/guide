@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 -- | Tests for logging of errors.
-module LogSpec (logTest) where
+module LogSpec (tests) where
 
 import BasePrelude
 import System.IO
@@ -21,8 +21,8 @@ getLines h = loop' []
         Left (_ :: SomeException) -> pure $ concat $ reverse xs
         Right line                -> loop' (line:xs)
 
-logTest :: FilePath -> Spec
-logTest logFile = describe "test of logger" $ do
+tests :: FilePath -> Spec
+tests logFile = describe "test of logger" $ do
   logs <- runIO $ do
     logFileHandle <- openFile logFile ReadWriteMode
     logs <- getLines logFileHandle
