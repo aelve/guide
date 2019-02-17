@@ -3,7 +3,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- | Integration tests for new API methods.
-module Api (tests) where
+module ApiSpec (tests) where
 
 import BasePrelude hiding (Category)
 import Data.Aeson

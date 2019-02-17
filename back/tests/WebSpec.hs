@@ -25,7 +25,7 @@ import Control.Monad.Catch
 
 -- Testing
 import Selenium
-import qualified Api
+import qualified ApiSpec
 import qualified Test.WebDriver.Common.Keys as Key
 import LogSpec (logTest)
 
@@ -47,7 +47,7 @@ tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
     categoryTests
     itemTests
     markdownTests
-    Api.tests
+    ApiSpec.tests
   -- TODO: get rid of the 'threadDelay' by using 'withAsync' instead of
   -- 'Slave.fork'
   threadDelay 1000000
