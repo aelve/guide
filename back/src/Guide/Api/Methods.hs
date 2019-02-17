@@ -63,7 +63,11 @@ createCategory title' group' =
     let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
           && T.toCaseFold (cat^.group_) == T.toCaseFold group'
     case find isDuplicate cats of
-      Just c  -> return (c^.uid)
+      Just c -> do
+        logDebug $ format
+          "Found a category with the same title and group (id {}), \
+          \will not create a new one" (c^.uid)
+        return (c^.uid)
       Nothing -> do
         catId <- randomShortUid
         time <- liftIO getCurrentTime
@@ -271,13 +275,15 @@ dbQuery x = do
 -- | Call this whenever any user-made change is applied to the database.
 addEdit :: Edit -> Guider ()
 addEdit edit = push "addEdit" $ attr "edit" edit $ do
-  unless (isVacuousEdit edit) $ do
-    logDebug $ "addEdit: it makes sense to edit."
-    time <- liftIO getCurrentTime
-    Context Config{..} _ RequestDetails{..} <- ask
-    dbUpdate $ RegisterEdit edit rdIp time
-    dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
-    postMatomo $ Matomo rdIp rdUserAgent rdReferer edit
+  if isVacuousEdit edit
+      then logDebug "Vacuous edit, ignoring"
+      else do
+        logDebug "Going to register the edit"
+        time <- liftIO getCurrentTime
+        Context Config{..} _ RequestDetails{..} <- ask
+        dbUpdate $ RegisterEdit edit rdIp time
+        dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
+        postMatomo $ Matomo rdIp rdUserAgent rdReferer edit
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.
 getCategoryOrFail :: Uid Category -> Guider Category
@@ -307,7 +313,6 @@ getTraitOrFail itemId traitId = do
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Guider ()
 checkConflict CTextEdit{..} serverModified = do
-  logDebug $ "checkConflict"
   let original = unH cteOriginal
   let modified = unH cteModified
   when (original /= serverModified) $ do

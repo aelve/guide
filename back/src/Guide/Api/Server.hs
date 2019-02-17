@@ -7,7 +7,7 @@
 
 module Guide.Api.Server
 (
-  runApiServer
+  runApiServer,
 )
 where
 
@@ -82,22 +82,13 @@ fullServer db di config =
             & info.title   .~ "Aelve Guide API"
             & info.version .~ "alpha"
 
--- | 'hoistServer' brings custom type server to 'Handler' type server. Custom types not consumed by servant.
 api :: DB -> Logger -> Config -> Server Api
 api db di config = do
   requestDetails <- ask
   hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails) di)
       (const $ toServant guiderServer)
 
-logException :: Logger -> Maybe Request -> SomeException -> IO ()
-logException logger mbReq ex =
-  when (Warp.defaultShouldDisplayException ex) $
-    logErrorIO logger $
-      format "uncaught exception: {}; request info = {}" (show ex) (show mbReq)
-
 -- | Serve the API on port 4400.
---
--- You can test this API by doing @withDB mempty runApiServer@.
 runApiServer :: Logger -> Config -> Acid.AcidState GlobalState -> IO ()
 runApiServer logger Config{..} db = do
   logDebugIO logger $ format "API is running on port {}" _portApi
@@ -120,3 +111,12 @@ runApiServer logger Config{..} db = do
             , BSC.pack $ format "http://localhost:{}" portApi  -- The /api endpoint
             ], True)
         }
+
+-- | An override for the default Warp exception handler.
+--
+-- Logs exceptions to the given 'Logger'.
+logException :: Logger -> Maybe Request -> SomeException -> IO ()
+logException logger mbReq ex =
+  when (Warp.defaultShouldDisplayException ex) $
+    logErrorIO logger $
+      format "uncaught exception: {}; request info = {}" (show ex) (show mbReq)
