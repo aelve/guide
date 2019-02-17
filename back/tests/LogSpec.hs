@@ -42,7 +42,7 @@ tests logFile = describe "test of logger" $ do
 
     describe "Errors (exceptions)" $ do
       it "Category not found" $
-        [re|ServantErr {errHTTPCode = 404, errReasonPhrase = "Category not found"|] `isIn` logs
+        [re|response code 404: Category not found|] `isIn` logs
 
 isIn :: HasCallStack => RE -> String -> Expectation
 isIn reg text = case matchedText $ text ?=~ reg of
