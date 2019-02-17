@@ -33,7 +33,14 @@ import qualified Di
 --
 -- * Logging via 'DefDiT'
 -- * Access to 'Context'
+--
+-- Note that it's not simply a wrapper over 'Handler' -- we throws
+-- 'ServantErr's as synchronous exceptions and then catch them in
+-- 'guiderToHandler'. It makes our lives easier because now there is exactly
+-- one way to throw errors, instead of two.
 newtype Guider a = Guider
+  -- NB: we don't want to move 'Di' to the 'Context' because 'DiT' also
+  -- contains some STM weirdness (even though it's still a reader monad).
   { runGuider :: ReaderT Context DefDiT a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Path Message, Exc.MonadThrow)
 
@@ -58,8 +65,7 @@ instance MonadError ServantErr Guider where
   catchError (Guider m) f = Guider $ ReaderT $ \context ->
     runReaderT m context `Exc.catch` (\err -> runReaderT (runGuider (f err)) context)
 
--- | The custom type won't be accepted by servant server without this
--- conventor used with 'hoistServer'.
+-- | Run a 'Guider' to get the 'Handler' type that Servant expects.
 guiderToHandler :: Context -> DefDi -> Guider a -> Handler a
 guiderToHandler context di (Guider m) =
   Handler $ ExceptT $ try $ runDiT di $ runReaderT m context
