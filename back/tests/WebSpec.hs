@@ -70,21 +70,6 @@ mainPageTests = session "main page" $ using [chromeCaps] $ do
   --     fs <- fontSize sub; fs `shouldBeInRange` (15,17)
   --   wd "has a discuss link" $ do
   --     checkPresent ".subtitle a[href='http://discuss.link']"
-  describe "footer" $ do
-    wd "is present" $ do
-      checkPresent "#footer"
-    wd "isn't overflowing" $ do
-      setWindowSize (900, 500)  -- the footer is about 800px wide
-      footer <- select "#footer"
-      (width, height) <- elemSize footer
-      width `shouldBeInRange` (750, 850)
-      height `shouldBeInRange` (30, 70)
-    wd "overflows when shrunk" $ do
-      -- and now it shall be overflowing
-      setWindowSize (400, 500)
-      footer <- select "#footer"
-      (_, height) <- elemSize footer
-      height `shouldBeInRange` (71, 140)
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using [chromeCaps] $ do
