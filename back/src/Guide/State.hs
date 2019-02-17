@@ -151,15 +151,6 @@ Types.hs
      field, move it to the “* Overloaded things” heading).
 
 
-Cache.hs
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  1. If the field is non-trivial (e.g. “notes”) and it makes sense to cache
-     it, add it to 'CacheKey'.
-
-  2. Update 'cacheDepends'.
-
-
 JS.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -180,11 +171,9 @@ View.hs
 Guide.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  1. Add a case to 'invalidateCacheForEdit'.
+  1. Add a case to 'undoEdit'.
 
-  2. Add a case to 'undoEdit'.
-
-  3. If the field is user-editable, add a method for changing it to
+  2. If the field is user-editable, add a method for changing it to
      'setMethods'.
 
 -}

@@ -10,7 +10,7 @@
 module Guide.ServerStuff
 (
   ServerState(..),
-    getConfig,
+  getConfig,
   dbUpdate,
   dbQuery,
 
@@ -54,8 +54,7 @@ getConfig :: (Monad m, HasSpock m, SpockState m ~ ServerState)
           => m Config
 getConfig = _config <$> Spock.getState
 
--- | Update something in the database. Don't forget to 'invalidateCache' or
--- use 'uncache' when you update something that is cached.
+-- | Update something in the database.
 --
 -- Example: @dbUpdate (DeleteCategory catId)@
 --
@@ -97,14 +96,7 @@ addEdit ed = do
     dbUpdate (RegisterAction (Action'Edit ed)
                 mbIP time baseUrl mbReferrer mbUA)
 
--- | Do an action that would undo an edit.
---
--- 'Left' signifies failure.
---
--- This doesn't do cache invalidation (you have to do it at the call site
--- using 'invalidateCacheForEdit').
---
--- TODO: make this do cache invalidation.
+-- | Do an action that would undo an edit. 'Left' signifies failure.
 --
 -- TODO: many of these don't work when the changed category, item, etc has
 -- been deleted; this should change.

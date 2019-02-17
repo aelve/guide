@@ -88,9 +88,6 @@ acid-state. Acid-state works as follows:
     'dbUpdate'/'dbQuery' and types (GetItem, SetItemName, etc) from the
     Types.hs module.
 
-  * When doing a 'dbUpdate', don't forget to 'invalidateCache'! Though in
-    most cases you'll likely want to use 'uncache' instead.
-
   * The data is kept in-memory, but all changes are logged to the disk (which
     lets us recover the state in case of a crash by reapplying the changes)
     and you can't access the state directly. When the application exits, it
@@ -137,8 +134,6 @@ main = mainWith =<< readConfig
 -- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
 mainWith config@Config{..} = withLogger config $ \logger -> do
-  -- 'main' can be started many times and if the cache isn't cleared changes
-  -- won't be visible
   args <- getArgs
   let option = headDef "" args
   when (option == "--dry-run") $ do

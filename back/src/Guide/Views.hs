@@ -690,11 +690,6 @@ renderSearch mbSearchQuery =
 
 -- | Render list of categories on the main page (the one with category groups
 -- and categories in it).
---
--- If the presentation of the category list ever changes (e.g. to include
--- lists of items in categories, or their counts, or something), you might
--- have to start invalidating 'CacheCategoryList' in more things in
--- 'Cache.invalidateCache'.
 renderCategoryList :: forall m. MonadIO m => [Category] -> HtmlT m ()
 renderCategoryList allCats =
   div_ [id_ "categories"] $
@@ -784,6 +779,8 @@ rerendered whenever prosConsEnabled/ecosystemEnabled is changed. So, instead
 we do a somewhat inelegant thing: we wrap traits/ecosystem/notes into yet
 another <div>, and set “display:none” on it. 'JS.submitCategoryInfo' operates
 on those <div>s.
+
+Also note: we don't do caching anymore.
 -}
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be

@@ -39,7 +39,6 @@ import Guide.Views.Utils
 -- import Guide.State
 -- import Guide.Types
 -- import Guide.Markdown
--- import Guide.Cache
 
 import qualified Data.Text as T
 
