@@ -70,7 +70,7 @@ createCategory title' group' =
         addEdit . fst =<< dbUpdate (AddCategory catId title' group' time)
         return catId
 
--- | Edit categoty's note.
+-- | Edit category's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
 setCategoryNotes catId CTextEdit{..} =
   logHandler "setCategoryNotes" [attr "catId" catId] $ do
