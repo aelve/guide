@@ -57,9 +57,9 @@ library
       Guide.Api.Utils
       Guide.Api.Guider
     Guide.Logger
-      Guide.Logger.Init
-      Guide.Logger.Methods
       Guide.Logger.Types
+      Guide.Logger.Functions
+      Guide.Logger.Run
     Guide.Main
     Guide.ServerStuff
     Guide.Session

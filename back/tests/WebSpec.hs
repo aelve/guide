@@ -621,8 +621,8 @@ run logFile ts = do
               }
         logHandler <- initLogger config
 
-        tid <- Slave.fork $ new logHandler $ \di ->
-          Guide.Main.mainWith di config
+        tid <- Slave.fork $ new logHandler $ \logger ->
+          Guide.Main.mainWith logger config
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
         threadDelay 100000

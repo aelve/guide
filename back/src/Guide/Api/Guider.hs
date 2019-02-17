@@ -8,14 +8,12 @@ module Guide.Api.Guider
   Guider (..),
   GuiderServer,
   Context (..),
-  DefDi,
   guiderToHandler,
 )
 where
 
 import Imports
 
-import Df1
 import Di.Monad (MonadDi, runDiT)
 import Servant (Handler (..), ServantErr (..))
 import Servant.Server.Generic
@@ -31,7 +29,7 @@ import qualified Di
 
 -- | A type for Guide handlers. Provides:
 --
--- * Logging via 'DefDiT'
+-- * Logging via 'LoggerT'
 -- * Access to 'Context'
 --
 -- Note that it's not simply a wrapper over 'Handler' -- we throws
@@ -39,10 +37,11 @@ import qualified Di
 -- 'guiderToHandler'. It makes our lives easier because now there is exactly
 -- one way to throw errors, instead of two.
 newtype Guider a = Guider
-  -- NB: we don't want to move 'Di' to the 'Context' because 'DiT' also
-  -- contains some STM weirdness (even though it's still a reader monad).
-  { runGuider :: ReaderT Context DefDiT a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, MonadDi Level Path Message, Exc.MonadThrow)
+  -- NB: we don't want to move 'Logger' to the 'Context' because 'LoggerT'
+  -- also contains some STM weirdness (even though it's still a reader
+  -- monad).
+  { runGuider :: ReaderT Context (LoggerT IO) a
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader Context, HasLogger, Exc.MonadThrow)
 
 -- | Context available to each request.
 data Context = Context
@@ -57,8 +56,8 @@ instance MonadError ServantErr Guider where
   throwError err = do
     let code = errHTTPCode err
         reason = errReasonPhrase err
-    if | code >= 500 -> errorT ("error: "+||err||+"")
-       | otherwise -> debugT ("response code "+|code|+": "+|reason|+"")
+    if | code >= 500 -> logError ("error: "+||err||+"")
+       | otherwise -> logDebug ("response code "+|code|+": "+|reason|+"")
     Exc.throwM err
 
   catchError :: Guider a -> (ServantErr -> Guider a) -> Guider a
@@ -66,9 +65,9 @@ instance MonadError ServantErr Guider where
     runReaderT m context `Exc.catch` (\err -> runReaderT (runGuider (f err)) context)
 
 -- | Run a 'Guider' to get the 'Handler' type that Servant expects.
-guiderToHandler :: Context -> DefDi -> Guider a -> Handler a
-guiderToHandler context di (Guider m) =
-  Handler $ ExceptT $ try $ runDiT di $ runReaderT m context
+guiderToHandler :: Context -> Logger -> Guider a -> Handler a
+guiderToHandler context logger (Guider m) =
+  Handler $ ExceptT $ try $ runDiT logger $ runReaderT m context
 
 -- | 'GuiderServer' used to create 'Guider' api.
 type GuiderServer = AsServerT Guider

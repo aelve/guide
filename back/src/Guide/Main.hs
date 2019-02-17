@@ -132,39 +132,34 @@ lucidWithConfig x = do
 
 -- | Start the site.
 main :: IO ()
-main = do
-  config <- readConfig
-  logHandler <- initLogger config
-  new logHandler $ \di -> do
-    mainWith di config `catch` \(e :: SomeException) ->
-      errorIO di ("uncaught exception: "+||e||+"")
+main = mainWith =<< readConfig
 
 -- | Start the site with a specific 'Config'.
-mainWith :: DefDi -> Config -> IO ()
-mainWith di config@Config{..} = do
+mainWith :: Config -> IO ()
+mainWith config@Config{..} = withLogger config $ \logger -> do
   -- 'main' can be started many times and if the cache isn't cleared changes
   -- won't be visible
-  do args <- getArgs
-     let option = headDef "" args
-     when (option == "--dry-run") $ do
-       db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       debugIO di "loaded the database successfully"
-       closeAcidState db
-       exitSuccess
-     -- USAGE: --load-public <filename>
-     -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
-     when (option == "--load-public") $ do
-       let path = fromMaybe
-             (error "you haven't provided public DB file name")
-             (args ^? ix 1)
-       (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
-         Left err -> error err
-         Right publicDB -> do
-           db <- openLocalStateFrom "state/" emptyState
-           Acid.update db (ImportPublicDB publicDB)
-           createCheckpointAndClose' db
-           debugIO di "PublicDB imported to GlobalState"
-           exitSuccess
+  args <- getArgs
+  let option = headDef "" args
+  when (option == "--dry-run") $ do
+    db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+    logDebugIO logger "loaded the database successfully"
+    closeAcidState db
+    exitSuccess
+  -- USAGE: --load-public <filename>
+  -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
+  when (option == "--load-public") $ do
+    let path = fromMaybe
+          (error "you haven't provided public DB file name")
+          (args ^? ix 1)
+    (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+      Left err -> error err
+      Right publicDB -> do
+        db <- openLocalStateFrom "state/" emptyState
+        Acid.update db (ImportPublicDB publicDB)
+        createCheckpointAndClose' db
+        logDebugIO logger "PublicDB imported to GlobalState"
+        exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
@@ -175,7 +170,7 @@ mainWith di config@Config{..} = do
         when _ekg $ do
           -- Killing EKG has to be done last, because of
           -- <https://github.com/tibbe/ekg/issues/62>
-          debugIO di "Killing EKG"
+          logDebugIO logger "Killing EKG"
           mapM_ killThread =<< readIORef ekgId
         putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
@@ -190,7 +185,7 @@ mainWith di config@Config{..} = do
     mWaiMetrics <- if _ekg
         then do
           ekg <- do
-            debugIO di $ format "EKG is running on port {}" _portEkg
+            logDebugIO logger $ format "EKG is running on port {}" _portEkg
             EKG.forkServer "localhost" _portEkg
           writeIORef ekgId (Just (EKG.serverThreadId ekg))
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
@@ -206,7 +201,7 @@ mainWith di config@Config{..} = do
           pure (Just waiMetrics)
         else pure Nothing
     -- Run the API
-    _ <- Slave.fork $ runApiServer di config db
+    _ <- Slave.fork $ runApiServer (pushLogger "api" logger) config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -228,7 +223,7 @@ mainWith di config@Config{..} = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
-    debugIO di $ format "Spock is running on port {}" _portMain
+    logDebugIO logger $ format "Spock is running on port {}" _portMain
     runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
     `finally` (killThread workThread >> takeMVar workFinished)

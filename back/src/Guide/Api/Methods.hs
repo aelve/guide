@@ -254,7 +254,7 @@ search searchQuery =
 dbUpdate :: (EventState event ~ GlobalState, UpdateEvent event, Show event)
          => event -> Guider (EventResult event)
 dbUpdate x = do
-  debugT $ "dbUpdate: " +|| x ||+ ""
+  logDebug $ "dbUpdate: " +|| x ||+ ""
   Context{..} <- ask
   liftIO $ do
     Acid.update cDB SetDirty
@@ -264,7 +264,7 @@ dbUpdate x = do
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
         => event -> Guider (EventResult event)
 dbQuery x = do
-  debugT $ "dbQuery: " +|| x ||+ ""
+  logDebug $ "dbQuery: " +|| x ||+ ""
   Context{..} <- ask
   liftIO $ Acid.query cDB x
 
@@ -272,7 +272,7 @@ dbQuery x = do
 addEdit :: Edit -> Guider ()
 addEdit edit = push "addEdit" $ attr "edit" edit $ do
   unless (isVacuousEdit edit) $ do
-    debugT $ "addEdit: it makes sense to edit."
+    logDebug $ "addEdit: it makes sense to edit."
     time <- liftIO getCurrentTime
     Context Config{..} _ RequestDetails{..} <- ask
     dbUpdate $ RegisterEdit edit rdIp time
@@ -307,7 +307,7 @@ getTraitOrFail itemId traitId = do
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Guider ()
 checkConflict CTextEdit{..} serverModified = do
-  debugT $ "checkConflict"
+  logDebug $ "checkConflict"
   let original = unH cteOriginal
   let modified = unH cteModified
   when (original /= serverModified) $ do
@@ -336,4 +336,4 @@ logHandler
   -> Guider a
   -> Guider a
 logHandler hName args body =
-    foldr ($) (debugT "Handler called" >> body) (push hName : args)
+    foldr ($) (logDebug "Handler called" >> body) (push hName : args)

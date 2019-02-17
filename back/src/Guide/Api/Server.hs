@@ -6,10 +6,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Guide.Api.Server
-  ( runApiServer
-  )
-  where
-
+(
+  runApiServer
+)
+where
 
 import Imports
 
@@ -22,19 +22,16 @@ import Servant.API.Generic
 import Servant.Swagger
 import Servant.Swagger.UI
 
-import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler, DefDi)
+import Guide.Api.Guider (Context (..), GuiderServer, guiderToHandler)
 import Guide.Api.Methods
 import Guide.Api.Types
 import Guide.Logger
 import Guide.Config (Config (..))
 import Guide.State
 
-import Data.Acid as Acid
 import qualified Data.ByteString.Char8 as BSC
-
-import qualified Di.Core as DC
-import qualified Df1
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Data.Acid as Acid
 
 
 guiderServer :: Site GuiderServer
@@ -76,7 +73,7 @@ type FullApi =
   Api :<|>
   SwaggerSchemaUI "api" "swagger.json"
 
-fullServer :: DB -> DefDi -> Config -> Server FullApi
+fullServer :: DB -> Logger -> Config -> Server FullApi
 fullServer db di config =
   api db di config :<|>
   swaggerSchemaUIServer doc
@@ -86,28 +83,29 @@ fullServer db di config =
             & info.version .~ "alpha"
 
 -- | 'hoistServer' brings custom type server to 'Handler' type server. Custom types not consumed by servant.
-api :: DB -> DefDi -> Config -> Server Api
+api :: DB -> Logger -> Config -> Server Api
 api db di config = do
   requestDetails <- ask
   hoistServer (Proxy @Api) (guiderToHandler (Context config db requestDetails) di)
       (const $ toServant guiderServer)
 
-logException :: DefDi -> Maybe Request -> SomeException -> IO ()
-logException di mbReq ex =
+logException :: Logger -> Maybe Request -> SomeException -> IO ()
+logException logger mbReq ex =
   when (Warp.defaultShouldDisplayException ex) $
-    errorIO di ("uncaught exception: "+||ex||+"; request info = "+||mbReq||+"")
+    logErrorIO logger $
+      format "uncaught exception: {}; request info = {}" (show ex) (show mbReq)
 
 -- | Serve the API on port 4400.
 --
 -- You can test this API by doing @withDB mempty runApiServer@.
-runApiServer :: DefDi -> Config -> AcidState GlobalState -> IO ()
-runApiServer (DC.push (Df1.Push "api") -> di) Config{..} db = do
-  debugIO di $ format "API is running on port {}" _portApi
+runApiServer :: Logger -> Config -> Acid.AcidState GlobalState -> IO ()
+runApiServer logger Config{..} db = do
+  logDebugIO logger $ format "API is running on port {}" _portApi
   let guideSettings = Warp.defaultSettings
-        & Warp.setOnException (logException di)
+        & Warp.setOnException (logException logger)
         & Warp.setPort _portApi
   Warp.runSettings guideSettings $ corsPolicy $
-    serve (Proxy @FullApi) (fullServer db di Config{..})
+    serve (Proxy @FullApi) (fullServer db logger Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =
