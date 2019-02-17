@@ -242,7 +242,7 @@ moveTrait itemId traitId CMove{..} =
 -- Returns at most 100 results.
 search :: Text -> Guider [CSearchResult]
 search searchQuery =
-  logHandler "search" [attr "searchQuery" searchQuery] $ do
+  logHandler "search" [attr "query" searchQuery] $ do
     gs <- dbQuery GetGlobalState
     pure $ map toCSearchResult $ take 100 $ Search.search searchQuery gs
 
