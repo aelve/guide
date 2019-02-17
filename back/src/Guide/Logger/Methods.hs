@@ -33,7 +33,7 @@ infoIO      di msg = DC.log di Df1.Info      . Df1.message $ toLText msg
 warningIO   di msg = DC.log di Df1.Warning   . Df1.message $ toLText msg
 errorIO     di msg = DC.log di Df1.Error     . Df1.message $ toLText msg
 
--- | Push method name to the log path.
+-- | Push context (method name, component name, etc) to the log path.
 push :: Di.MonadDf1 m => Text -> m a -> m a
 push key = Di.push (Di.segment key)
 
