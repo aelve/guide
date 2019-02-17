@@ -31,8 +31,7 @@ import LogSpec (logTest)
 
 -- Site
 import qualified Guide.Main
-import Guide.Logger
-import Guide.Config (Config(..), def)
+import Guide.Config (def, Config(..))
 
 
 -----------------------------------------------------------------------------
@@ -41,13 +40,17 @@ import Guide.Config (Config(..), def)
 
 tests :: IO ()
 tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
-  hClose logFileHandle -- It closed for api tests were able to append logs.
+  -- Close the log file because otherwise 'run' won't be able to open it
+  hClose logFileHandle
   run logFile $ do
     mainPageTests
     categoryTests
     itemTests
     markdownTests
     Api.tests
+  -- TODO: get rid of the 'threadDelay' by using 'withAsync' instead of
+  -- 'Slave.fork'
+  threadDelay 1000000
   hspec $ logTest logFile
 
 mainPageTests :: Spec
@@ -596,7 +599,7 @@ getCurrentRelativeURL = do
       maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
       return u
 
-run :: FilePath ->  Spec -> IO ()
+run :: FilePath -> Spec -> IO ()
 run logFile ts = do
   let prepare = do
         exold <- doesDirectoryExist "state-old"
@@ -605,24 +608,20 @@ run logFile ts = do
         when ex $ renameDirectory "state" "state-old"
         -- Start the server
         --
-        -- Using 'Slave.fork' in 'Guide.mainWith' ensures that threads started
-        -- inside of 'mainWith' will be killed too when the thread dies.
+        -- Using 'Slave.fork' with 'Guide.mainWith' ensures that threads
+        -- started inside of 'mainWith' will be killed too when the thread
+        -- dies.
         let config = def {
               _baseUrl       = "/",
               _googleToken   = "some-google-token",
               _adminPassword = "123",
               _discussLink   = Just "http://discuss.link",
-              _portMain      = 8080,
-              _portApi       = 4400,
-              _portEkg       = 5050,
               _cors          = False,
-              _ekg           = False,
+              _logToStderr   = False,
               _logToFile     = Just logFile
               }
-        logHandler <- initLogger config
 
-        tid <- Slave.fork $ new logHandler $ \logger ->
-          Guide.Main.mainWith logger config
+        tid <- Slave.fork $ Guide.Main.mainWith config
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
         threadDelay 100000
