@@ -6,7 +6,6 @@
 module Guide.Api.Guider
 (
   Guider (..),
-  GuiderServer,
   Context (..),
   guiderToHandler,
 )
@@ -14,9 +13,7 @@ where
 
 import Imports
 
-import Di.Monad (MonadDi, runDiT)
 import Servant (Handler (..), ServantErr (..))
-import Servant.Server.Generic
 
 import Guide.Api.Utils (RequestDetails)
 import Guide.Config (Config)
@@ -24,7 +21,6 @@ import Guide.Logger
 import Guide.State (DB)
 
 import qualified Control.Monad.Catch as Exc
-import qualified Di
 
 
 -- | A type for Guide handlers. Provides:
@@ -67,7 +63,4 @@ instance MonadError ServantErr Guider where
 -- | Run a 'Guider' to get the 'Handler' type that Servant expects.
 guiderToHandler :: Context -> Logger -> Guider a -> Handler a
 guiderToHandler context logger (Guider m) =
-  Handler $ ExceptT $ try $ runDiT logger $ runReaderT m context
-
--- | 'GuiderServer' used to create 'Guider' api.
-type GuiderServer = AsServerT Guider
+  Handler $ ExceptT $ try $ runLoggerT logger $ runReaderT m context
