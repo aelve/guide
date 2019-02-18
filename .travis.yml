@@ -54,9 +54,9 @@ jobs:
         - set -x
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > notHaddockedAfter
-        - awk '{ print "notHaddockedBefore: 250" }'
-        - awk '{ print "notHaddockedAfter: " $1 }' notHaddockedAfter
-        - bash -c 'if [[ 250 < `cat notHaddockedAfter` ]]; then >&2 echo "FAIL: notHaddockedBefore is less notHaddockedAfter"; exit 1; else echo "OK: notHaddockedBefore is more notHaddockedAfter"; fi'
+        - echo "notHaddockedBefore = 250"
+        - awk '{ print "notHaddockedAfter " $1 }' notHaddockedAfter
+        - bash -c 'if [[ 250 < `cat notHaddockedAfter` ]]; then >&2 echo "FAIL notHaddockedBefore is less notHaddockedAfter"; exit 1; else echo "OK notHaddockedBefore is more notHaddockedAfter"; fi'
 
     - stage: "Test the backend"
       before_script:
