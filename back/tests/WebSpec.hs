@@ -406,7 +406,7 @@ itemTests = session "items" $ using [chromeCaps] $ do
     wd "up" $ do
       ids <- mapM getId =<< selectAll ".item"
       click (ById (ids !! 1) :// ".move-item-up")
-      waitWhile 0.05 (return ()) `onTimeout` return ()
+      waitWhile 0.10 (return ()) `onTimeout` return ()
       ids2 <- mapM getId =<< selectAll ".item"
       ids2 `shouldBe` (ids !! 1 : ids !! 0 : drop 2 ids)
     -- TODO: select should only select visible elements
