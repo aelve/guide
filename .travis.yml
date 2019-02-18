@@ -49,6 +49,15 @@ jobs:
         - docker push "quay.io/aelve/guide:$BRANCH--back"
       if: type = push
 
+    - stage: Test haddocked <= 250
+      script:
+        - set -x
+        - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
+        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > notHaddockedAfter
+        - awk '{ print "notHaddockedBefore: 250" }'
+        - awk '{ print "notHaddockedAfter: " $1 }' notHaddockedAfter
+        - bash -c 'if [[ 250 < `cat notHaddockedAfter` ]]; then >&2 echo "FAIL: notHaddockedBefore is less notHaddockedAfter"; exit 1; else echo "OK: notHaddockedBefore is more notHaddockedAfter"; fi'
+
     - stage: "Test the backend"
       before_script:
         - curl -sSL https://get.haskellstack.org/ | sh
@@ -68,15 +77,6 @@ jobs:
       script:
         - stack --no-terminal test
         - make back/test-db
-
-    - stage: Test haddocked <= 250
-      script:
-        - set -x
-        - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
-        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > notHaddockedAfter
-        - awk '{ print "notHaddockedBefore: 250" }'
-        - awk '{ print "notHaddockedAfter: " $1 }' notHaddockedAfter
-        - bash -c 'if [[ 250 < `cat notHaddockedAfter` ]]; then >&2 echo "FAIL: notHaddockedBefore is less notHaddockedAfter"; exit 1; else echo "OK: notHaddockedBefore is more notHaddockedAfter"; fi'
 
     # - stage: "Build and test the frontend"
     #   before_script:
