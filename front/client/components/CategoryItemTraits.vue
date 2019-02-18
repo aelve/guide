@@ -196,6 +196,8 @@ export default class CategoryItemTraits extends Vue {
 }
 .category-item-trait {
   padding-right: 24px;
+}
+.category-item-trait:not(:last-child) {
   margin-bottom: 2px;
 }
 .category-item-edit-trait-menu {
