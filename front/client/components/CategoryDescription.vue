@@ -100,7 +100,7 @@ export default class CategoryDescriptiom extends Vue {
 }
 
 .category-description >>> h1 {
-  margin: 20px 0 5px;
+  margin-top: 10px;
 }
 
 .description-content {
