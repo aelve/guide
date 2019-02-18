@@ -49,7 +49,7 @@ jobs:
         - docker push "quay.io/aelve/guide:$BRANCH--back"
       if: type = push
 
-    - stage: Test haddocked <= 250
+    - stage: "Test haddocked <= 250"
       script:
         - set -x
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
