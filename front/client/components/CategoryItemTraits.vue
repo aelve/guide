@@ -92,7 +92,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator'
 import _cloneDeep from 'lodash/cloneDeep'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'

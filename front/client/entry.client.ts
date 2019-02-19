@@ -1,6 +1,5 @@
-import Vue from 'vue'
 import 'reflect-metadata'
-import 'babel-polyfill'
+import '@babel/polyfill'
 import _get from 'lodash/get'
 
 import { createApp } from './app'
@@ -46,9 +45,9 @@ function registerBeforeResolve () {
       : (await routeComponent()).default
     const matchedComponentsAndChildren = getComponentAndItsChildren(matchedRootComponent)
     await Promise.all(matchedComponentsAndChildren.map(component => {
-      const asyncData = component.options.methods.asyncData
-      if (typeof asyncData === 'function') {
-        return asyncData.call({
+      const serverPrefetch = component.options.serverPrefetch && component.options.serverPrefetch[0]
+      if (typeof serverPrefetch === 'function') {
+        return serverPrefetch.call({
           $store: store,
           $router: router,
           ...props

@@ -29,7 +29,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import _get from 'lodash/get'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import conflictDialogMixin from 'client/mixins/conflictDialogMixin'

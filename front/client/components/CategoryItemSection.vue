@@ -25,7 +25,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 

@@ -87,7 +87,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator'
 import normalizeUrl from 'normalize-url'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
