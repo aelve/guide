@@ -213,6 +213,7 @@ test-suite tests
   type:                exitcode-stdio-1.0
   build-depends:       QuickCheck < 3
                      , aeson
+                     , async
                      , base < 5
                      , bytestring
                      , base-prelude

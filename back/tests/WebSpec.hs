@@ -11,7 +11,8 @@ import BasePrelude hiding (catch, bracket, try)
 -- Monads
 import Control.Monad.Loops
 -- Concurrency
-import qualified SlaveThread as Slave
+-- import qualified SlaveThread as Slave
+import Control.Concurrent.Async (withAsync, cancel)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -50,7 +51,7 @@ tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
     ApiSpec.tests
   -- TODO: get rid of the 'threadDelay' by using 'withAsync' instead of
   -- 'Slave.fork'
-  threadDelay 1000000
+  -- threadDelay 1000000
   hspec $
     LogSpec.tests logFile
   -- TODO: ApiSpec, LogSpec, and WebSpec should be independent of each
@@ -589,7 +590,7 @@ getCurrentRelativeURL = do
 
 run :: FilePath -> Spec -> IO ()
 run logFile ts = do
-  let prepare = do
+  -- let prepare = do
         exold <- doesDirectoryExist "state-old"
         when exold $ error "state-old exists"
         ex <- doesDirectoryExist "state"
@@ -609,19 +610,21 @@ run logFile ts = do
               _logToFile     = Just logFile
               }
 
-        tid <- Slave.fork $ Guide.Main.mainWith config
+        withAsync (Guide.Main.mainWith config) $ \_ ->
+          hspec ts
+        -- tid <- Slave.fork $ Guide.Main.mainWith config
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
-        threadDelay 1000000
-        return tid
-  let finalise tid = do
-        killThread tid
-        ex <- doesDirectoryExist "state"
-        when ex $ removeDirectoryRecursive "state"
-        exold <- doesDirectoryExist "state-old"
-        when exold $ renameDirectory "state-old" "state"
-  bracket prepare finalise $ \_ -> do
-    hspec ts
+        -- threadDelay 1000000
+        -- return tid
+  -- let finalise tid = do
+        -- cancel tid
+        ex' <- doesDirectoryExist "state"
+        when ex' $ removeDirectoryRecursive "state"
+        exold' <- doesDirectoryExist "state-old"
+        when exold' $ renameDirectory "state-old" "state"
+  -- bracket prepare finalise $ \_ -> do
+    -- hspec ts
 
 _site :: IO ()
 _site = run "" $ do
