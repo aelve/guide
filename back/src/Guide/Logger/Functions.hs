@@ -4,7 +4,7 @@
 module Guide.Logger.Functions
 (
   -- * Loggers in 'MonadDi'
-  logDebug, logInfo, logWarning, logError, logError2,
+  logDebug, logInfo, logWarning, logError,
   push, attr,
 
   -- * Raw loggers
@@ -24,12 +24,11 @@ import Guide.Logger.Types
 -- NB: 'Df1' provides more severity types, but they are too finely-grained
 -- for us
 
-logDebug, logInfo, logWarning, logError, logError2 :: HasLogger m => Text -> m ()
+logDebug, logInfo, logWarning, logError :: HasLogger m => Text -> m ()
 logDebug   = Di.debug   . Df1.message
 logInfo    = Di.info    . Df1.message
 logWarning = Di.warning . Df1.message
 logError   = Di.error   . Df1.message
-logError2   = Di.error   . Df1.message
 
 logDebugIO, logInfoIO, logWarningIO, logErrorIO :: Logger -> Text -> IO ()
 logDebugIO   di = Di.Core.log di Debug   . Df1.message
