@@ -7,12 +7,11 @@
 
 module WebSpec (tests) where
 
-import BasePrelude hiding (catch, bracket, try)
+import BasePrelude hiding (catch, try)
 -- Monads
 import Control.Monad.Loops
 -- Concurrency
--- import qualified SlaveThread as Slave
-import Control.Concurrent.Async (withAsync, cancel)
+import Control.Concurrent.Async (withAsync)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -21,8 +20,6 @@ import System.Directory
 import System.IO.Temp
 -- URLs
 import Network.URI
--- Exceptions
-import Control.Monad.Catch
 
 -- Testing
 import Selenium
@@ -49,9 +46,6 @@ tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
     itemTests
     markdownTests
     ApiSpec.tests
-  -- TODO: get rid of the 'threadDelay' by using 'withAsync' instead of
-  -- 'Slave.fork'
-  -- threadDelay 1000000
   hspec $
     LogSpec.tests logFile
   -- TODO: ApiSpec, LogSpec, and WebSpec should be independent of each
@@ -590,41 +584,28 @@ getCurrentRelativeURL = do
 
 run :: FilePath -> Spec -> IO ()
 run logFile ts = do
-  -- let prepare = do
-        exold <- doesDirectoryExist "state-old"
-        when exold $ error "state-old exists"
-        ex <- doesDirectoryExist "state"
-        when ex $ renameDirectory "state" "state-old"
-        -- Start the server
-        --
-        -- Using 'Slave.fork' with 'Guide.mainWith' ensures that threads
-        -- started inside of 'mainWith' will be killed too when the thread
-        -- dies.
-        let config = def {
-              _baseUrl       = "/",
-              _googleToken   = "some-google-token",
-              _adminPassword = "123",
-              _discussLink   = Just "http://discuss.link",
-              _cors          = False,
-              _logToStderr   = False,
-              _logToFile     = Just logFile
-              }
-
-        withAsync (Guide.Main.mainWith config) $ \_ ->
-          hspec ts
-        -- tid <- Slave.fork $ Guide.Main.mainWith config
-        -- Using a delay so that “Spock is running on port 8080” would be
-        -- printed before the first test.
-        -- threadDelay 1000000
-        -- return tid
-  -- let finalise tid = do
-        -- cancel tid
-        ex' <- doesDirectoryExist "state"
-        when ex' $ removeDirectoryRecursive "state"
-        exold' <- doesDirectoryExist "state-old"
-        when exold' $ renameDirectory "state-old" "state"
-  -- bracket prepare finalise $ \_ -> do
-    -- hspec ts
+  -- Prepere resources.
+  exold <- doesDirectoryExist "state-old"
+  when exold $ error "state-old exists"
+  ex <- doesDirectoryExist "state"
+  when ex $ renameDirectory "state" "state-old"
+  -- Start the server.
+  let config = def {
+        _baseUrl       = "/",
+        _googleToken   = "some-google-token",
+        _adminPassword = "123",
+        _discussLink   = Just "http://discuss.link",
+        _cors          = False,
+        _logToStderr   = False,
+        _logToFile     = Just logFile
+        }
+  -- 'withAsync' stops thread with 'Guide.mainWith' after tests finished.
+  withAsync (Guide.Main.mainWith config) $ \_ -> hspec ts
+  -- Release resources.
+  ex' <- doesDirectoryExist "state"
+  when ex' $ removeDirectoryRecursive "state"
+  exold' <- doesDirectoryExist "state-old"
+  when exold' $ renameDirectory "state-old" "state"
 
 _site :: IO ()
 _site = run "" $ do
