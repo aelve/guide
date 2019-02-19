@@ -9,7 +9,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Watch } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Watch } from 'vue-property-decorator'
 import AFooter from 'client/components/AFooter.vue'
 import Toolbar from 'client/components/Toolbar.vue'
 import * as nprogress from 'nprogress'
@@ -52,7 +54,7 @@ p {
 }
 code {
   color: #000;
-  font-weight: 500; 
+  font-weight: 500;
   box-shadow: none;
 }
 pre code {

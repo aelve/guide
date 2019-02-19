@@ -96,7 +96,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import { ICategoryItem } from 'client/service/CategoryItem.ts'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'

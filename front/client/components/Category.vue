@@ -77,7 +77,9 @@
 <script lang="ts">
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'

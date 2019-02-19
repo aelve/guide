@@ -45,7 +45,7 @@ function registerBeforeResolve () {
       : (await routeComponent()).default
     const matchedComponentsAndChildren = getComponentAndItsChildren(matchedRootComponent)
     await Promise.all(matchedComponentsAndChildren.map(component => {
-      const serverPrefetch = component.options.methods.serverPrefetch
+      const serverPrefetch = component.options.serverPrefetch && component.options.serverPrefetch[0]
       if (typeof serverPrefetch === 'function') {
         return serverPrefetch.call({
           $store: store,
