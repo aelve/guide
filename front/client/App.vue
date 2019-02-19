@@ -50,12 +50,24 @@ export default class RootComponent extends Vue {
 p {
   margin: 0;
 }
+code {
+  color: #000;
+  font-weight: 500; 
+  box-shadow: none;
+}
+pre code {
+  background-color: #f5f5f5;
+  color: #bd4147;
+  font-weight: 900;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+}
 code.sourceCode {
   min-width: 100%;
   padding: 8px;
 }
 .sourceCode:not(:last-child) code.sourceCode {
-  margin: 0 0 15px;
+  margin: 0 0 5px;
 }
 a {
   text-decoration-line: none;

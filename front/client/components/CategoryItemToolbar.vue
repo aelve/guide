@@ -16,8 +16,7 @@
           <!-- TODO change markup formatting after resolving issue with extra spaces
            (if closing tag on another line vue-template-compiler adds extra space) -->
           <router-link
-            :to="{path: $route.path, hash:`item-${itemUid}`}"
-            :id="`item-${itemUid}`"
+            :to="{hash:`item-${itemUid}`}"
             class="category-item-anchor"
           >#</router-link>
           <a-link

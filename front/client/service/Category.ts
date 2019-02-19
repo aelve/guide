@@ -23,6 +23,10 @@ class CategoryService {
     })
     return data
   }
+
+  async deleteCategory (id: ICategoryInfo['id']): Promise<void> {
+    await axios.delete(`api/category/${id}`)
+  }
 }
 
 export enum CategoryStatus {
