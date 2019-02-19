@@ -597,7 +597,7 @@ instance A.ToJSON CMarkdown where
 
 instance A.FromJSON CMarkdown where
   parseJSON = A.genericParseJSON jsonOptions
-  
+
 instance ToSchema CMarkdown where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 

@@ -612,7 +612,7 @@ run logFile ts = do
         tid <- Slave.fork $ Guide.Main.mainWith config
         -- Using a delay so that “Spock is running on port 8080” would be
         -- printed before the first test.
-        threadDelay 100000
+        threadDelay 1000000
         return tid
   let finalise tid = do
         killThread tid
