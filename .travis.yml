@@ -50,8 +50,9 @@ jobs:
       if: type = push
 
     - stage: "Test haddocked <= 250"
+      before_script:
+        - curl -sSL https://get.haskellstack.org/ | sh
       script:
-        - set -x
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > notHaddockedAfter
         - echo "notHaddockedBefore = 250"
