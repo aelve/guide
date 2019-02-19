@@ -30,7 +30,7 @@
     "nprogress": "^0.2.0",
     "reflect-metadata": "^0.1.12",
     "vue": "^2.6.6",
-    "vue-class-component": "^6.3.2",
+    "vue-class-component": "^7.0.1",
     "vue-mixin-decorator": "^1.0.0",
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
