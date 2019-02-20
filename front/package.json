@@ -68,7 +68,7 @@
     "postcss-loader": "^2.1.5",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
-    "testcafe": "^15.1.317922",
+    "testcafe": "^1.0.1",
     "testcafe-vue-selectors": "^3.0.0",
     "ts-loader": "^4.4.2",
     "tslint": "^5.11.0",
