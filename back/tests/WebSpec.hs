@@ -584,12 +584,7 @@ getCurrentRelativeURL = do
 
 run :: FilePath -> Spec -> IO ()
 run logFile ts = do
-  -- Prepere resources.
-  exold <- doesDirectoryExist "state-old"
-  when exold $ error "state-old exists"
-  ex <- doesDirectoryExist "state"
-  when ex $ renameDirectory "state" "state-old"
-  -- Start the server.
+  -- Config to run spock server.
   let config = def {
         _baseUrl       = "/",
         _googleToken   = "some-google-token",
@@ -599,13 +594,22 @@ run logFile ts = do
         _logToStderr   = False,
         _logToFile     = Just logFile
         }
-  -- 'withAsync' stops thread with 'Guide.mainWith' after tests finished.
-  withAsync (Guide.Main.mainWith config) $ \_ -> hspec ts
+  -- Prepere resources.
+  let prepare = do
+        exold <- doesDirectoryExist "state-old"
+        when exold $ error "state-old exists"
+        ex <- doesDirectoryExist "state"
+        when ex $ renameDirectory "state" "state-old"
+
   -- Release resources.
-  ex' <- doesDirectoryExist "state"
-  when ex' $ removeDirectoryRecursive "state"
-  exold' <- doesDirectoryExist "state-old"
-  when exold' $ renameDirectory "state-old" "state"
+  let finish _ = do
+        ex' <- doesDirectoryExist "state"
+        when ex' $ removeDirectoryRecursive "state"
+        exold' <- doesDirectoryExist "state-old"
+        when exold' $ renameDirectory "state-old" "state"
+
+  bracket prepare finish $ \_ -> do
+    withAsync (Guide.Main.mainWith config) $ \_ -> hspec ts
 
 _site :: IO ()
 _site = run "" $ do
