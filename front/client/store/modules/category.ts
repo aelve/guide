@@ -44,9 +44,9 @@ const actions: ActionTree<ICategoryState, any> = {
     dispatch('loadCategoryList')
     return createdId
   },
-  async updateCategoryInfo (categoryId, title, group, status) {
-    const data = await CategoryService.updateCategoryInfo(categoryId, title, group, status)
-  })
+  async updateCategoryInfo ({id, title, group, status, sections}) {
+    const data = await CategoryService.updateCategoryInfo(id, title, group, status, sections)
+  }
 }
 
 const mutations: MutationTree<ICategoryState> = {

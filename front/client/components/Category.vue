@@ -62,7 +62,10 @@
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
-      <category-info-edit v-model="isCategoryInfoEdit"/>
+      <category-info-edit 
+        v-model="isCategoryInfoEdit"
+        :categoryId="categoryId"
+      />
     </div>
   </v-container>
 </template>
