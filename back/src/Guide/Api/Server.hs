@@ -76,9 +76,11 @@ logException logger mbReq ex =
 -- Servant servers
 ----------------------------------------------------------------------------
 
+-- Collect API and Swagger server to united 'FullApi'. First takes precedence in case of overlap.
 fullServer :: DB -> Logger -> Config -> Server FullApi
 fullServer db di config = apiServer db di config :<|> docServer
 
+-- Collect api out of guiders and convert them to handlers. Type 'type Server api = ServerT api Handler' needed it.
 apiServer :: DB -> Logger -> Config -> Server Api
 apiServer db di config = do
   requestDetails <- ask

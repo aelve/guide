@@ -582,6 +582,8 @@ getCurrentRelativeURL = do
       maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
       return u
 
+-- 'Run' prepares directories and config to launch site server for spec tests
+-- and closes them all after test finished.
 run :: FilePath -> Spec -> IO ()
 run logFile ts = do
   -- Config to run spock server.
