@@ -1,18 +1,16 @@
 {-# LANGUAGE TypeFamilies #-}
 
 
-{- |
-Types for analytics.
-
-  * We collect information about 'Action's that users perform. An action can
-    be a page visit, a search, or an edit.
-
-  * Some actions have referrers. For instance, when a user goes from Reddit
-    to our site, Reddit is the referrer.
-
-  * We also collect additional information about users performing actions,
-    such as date and time when the action was performed.
--}
+-- | Types for analytics.
+--
+--  * We collect information about 'Action's that users perform. An action
+--    can be a page visit, a search, or an edit.
+--
+--  * Some actions have referrers. For instance, when a user goes from
+--    Reddit to our site, Reddit is the referrer.
+--
+--  * We also collect additional information about users performing actions,
+--    such as date and time when the action was performed.
 module Guide.Types.Action
 (
   Action(..),

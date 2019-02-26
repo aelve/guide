@@ -3,14 +3,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TypeFamilies      #-}
-
+{-# LANGUAGE StandaloneDeriving#-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-{- |
-Site's database, and methods for manipulating it.
--}
+-- | Site's database, and methods for manipulating it.
 module Guide.State
 (
   DB,
@@ -153,15 +151,6 @@ Types.hs
      field, move it to the “* Overloaded things” heading).
 
 
-Cache.hs
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  1. If the field is non-trivial (e.g. “notes”) and it makes sense to cache
-     it, add it to 'CacheKey'.
-
-  2. Update 'cacheDepends'.
-
-
 JS.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -182,11 +171,9 @@ View.hs
 Guide.hs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  1. Add a case to 'invalidateCacheForEdit'.
+  1. Add a case to 'undoEdit'.
 
-  2. Add a case to 'undoEdit'.
-
-  3. If the field is user-editable, add a method for changing it to
+  2. If the field is user-editable, add a method for changing it to
      'setMethods'.
 
 -}
@@ -929,6 +916,41 @@ makeAcidic ''GlobalState [
   'importPublicDB,
   'exportPublicDB
   ]
+
+-- global state
+deriving instance Show GetGlobalState
+-- category
+deriving instance Show GetCategories
+deriving instance Show GetCategoryMaybe
+deriving instance Show AddCategory
+deriving instance Show DeleteCategory
+deriving instance Show SetCategoryGroup
+deriving instance Show SetCategoryTitle
+deriving instance Show SetCategoryNotes
+deriving instance Show SetCategoryStatus
+deriving instance Show ChangeCategoryEnabledSections
+-- items
+deriving instance Show GetItemMaybe
+deriving instance Show MoveItem
+deriving instance Show DeleteItem
+deriving instance Show AddItem
+deriving instance Show SetItemName
+deriving instance Show SetItemNotes
+deriving instance Show SetItemLink
+deriving instance Show SetItemGroup
+deriving instance Show SetItemEcosystem
+deriving instance Show SetItemHackage
+deriving instance Show SetItemSummary
+-- trait
+deriving instance Show MoveTrait
+deriving instance Show DeleteTrait
+deriving instance Show GetTraitMaybe
+deriving instance Show SetTraitContent
+deriving instance Show AddPro
+deriving instance Show AddCon
+-- action
+deriving instance Show RegisterAction
+deriving instance Show RegisterEdit
 
 ----------------------------------------------------------------------------
 -- DB helpers (have to be at the end of the file)

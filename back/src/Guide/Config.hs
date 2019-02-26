@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{- |
-Server config. For instance, the admin password is stored here, as well as
-the base url (for correct link generation in feeds).
--}
+-- | Server config. For instance, the admin password is stored here, as well
+-- as the base url (for correct link generation in feeds).
 module Guide.Config
 (
   Config(..),
@@ -31,22 +29,48 @@ import qualified Data.ByteString.Lazy as BSL
 
 -- | Site config. Stored in @config.json@.
 data Config = Config {
-  _baseUrl       :: Url,          -- ^ URL where the site is deployed. Used
-                                  --    for generating feeds (which require
-                                  --    absolute URLs)
-  _googleToken   :: Text,         -- ^ Google site verification token. Will
-                                  --    be inserted into all pages
-  _adminPassword :: Text,         -- ^ Password for the admin user
-  _discussLink   :: Maybe Url,    -- ^ Link to a place to discuss the site.
-                                  --    Will be placed in the header
-  _matomoLink    :: Maybe Url,    -- ^ Link of Matomo to send statistic
-                                  --    of user's action. Format of link shoud be
-                                  --    like <http://localhost:8081/piwik.php>
-  _portMain      :: Int,          -- ^ Port for the main site.
-  _portApi       :: Int,          -- ^ Port for the API.
-  _portEkg       :: Int,          -- ^ Port for EKG stats.
-  _cors          :: Bool,         -- ^ CORS switch on/off
-  _ekg           :: Bool          -- ^ EKG switch on/off
+  -- | URL where the site is deployed. Used for generating feeds (which
+  -- require absolute URLs).
+  _baseUrl :: Url,
+
+  -- | Google site verification token. Will be inserted into all pages.
+  _googleToken :: Text,
+
+  -- | Password for the admin user.
+  _adminPassword :: Text,
+
+  -- | Link to a place to discuss the site. Will be placed in the header
+  _discussLink :: Maybe Url,
+
+  -- | Link to Matomo to gather analytics about user actions. Format of the
+  -- link shoud be like <http://localhost:8081/piwik.php>.
+  _matomoLink :: Maybe Url,
+
+  -- | Port for serving the main site (old backend and frontend).
+  _portMain :: Int,
+
+  -- | Port for serving the API.
+  _portApi :: Int,
+
+  -- | Port for serving EKG stats.
+  _portEkg :: Int,
+
+  -- | CORS switch on/off.
+  _cors :: Bool,
+
+  -- | EKG switch on/off.
+  _ekg :: Bool,
+
+  -- | Whether to log to @stderr@.
+  _logToStderr :: Bool,
+
+  -- | Whether to log to a file. Can be turned on together with
+  -- '_logToStderr'.
+  _logToFile :: Maybe FilePath,
+
+  -- | A formatting string for log timestamps. For the description of
+  -- available formatters, see 'formatTime'.
+  _logTimeFormat :: String
   }
   deriving (Eq, Show)
 
@@ -63,35 +87,45 @@ instance Default Config where
     _portApi       = 4400,
     _portEkg       = 5050,
     _cors          = False,
-    _ekg           = False
-     }
+    _ekg           = False,
+    _logToStderr   = True,
+    _logToFile     = Nothing,
+    _logTimeFormat = "%F %T UTC"
+    }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
-    _baseUrl       <- o .:? "base-url"       .!= _baseUrl def
-    _googleToken   <- o .:? "google-token"   .!= _googleToken def
-    _adminPassword <- o .:? "admin-password" .!= _adminPassword def
-    _discussLink   <- o .:? "discuss-link"   .!= _discussLink def
-    _matomoLink    <- o .:? "matomo-link"    .!= _matomoLink def
-    _portMain      <- o .:? "port-main"      .!= _portMain def
-    _portApi       <- o .:? "port-api"       .!= _portApi def
-    _portEkg       <- o .:? "port-ekg"       .!= _portEkg def
-    _cors          <- o .:? "cors"           .!= _cors def
-    _ekg           <- o .:? "ekg"            .!= _ekg def
+    _baseUrl       <- o .:? "base-url"        .!= _baseUrl def
+    _googleToken   <- o .:? "google-token"    .!= _googleToken def
+    _adminPassword <- o .:? "admin-password"  .!= _adminPassword def
+    _discussLink   <- o .:? "discuss-link"    .!= _discussLink def
+    _matomoLink    <- o .:? "matomo-link"     .!= _matomoLink def
+    _portMain      <- o .:? "port-main"       .!= _portMain def
+    _portApi       <- o .:? "port-api"        .!= _portApi def
+    _portEkg       <- o .:? "port-ekg"        .!= _portEkg def
+    _cors          <- o .:? "cors"            .!= _cors def
+    _ekg           <- o .:? "ekg"             .!= _ekg def
+    _logToStderr   <- o .:? "log-to-stderr"   .!= _logToStderr def
+    _logToFile     <- o .:? "log-to-file"     .!= _logToFile def
+    _logTimeFormat <- o .:? "log-time-format" .!= _logTimeFormat def
     return Config{..}
 
 instance ToJSON Config where
   toJSON Config{..} = object [
-    "base-url"       .= _baseUrl,
-    "google-token"   .= _googleToken,
-    "admin-password" .= _adminPassword,
-    "discuss-link"   .= _discussLink,
-    "matomo-link"    .= _matomoLink,
-    "port-main"      .= _portMain,
-    "port-api"       .= _portApi,
-    "port-ekg"       .= _portEkg,
-    "cors"           .= _cors,
-    "ekg"            .= _ekg ]
+    "base-url"        .= _baseUrl,
+    "google-token"    .= _googleToken,
+    "admin-password"  .= _adminPassword,
+    "discuss-link"    .= _discussLink,
+    "matomo-link"     .= _matomoLink,
+    "port-main"       .= _portMain,
+    "port-api"        .= _portApi,
+    "port-ekg"        .= _portEkg,
+    "cors"            .= _cors,
+    "ekg"             .= _ekg,
+    "log-to-stderr"   .= _logToStderr,
+    "log-to-file"     .= _logToFile,
+    "log-time-format" .= _logTimeFormat
+    ]
 
 -- | Read config from @config.json@ (creating a default config if the file
 -- doesn't exist).

@@ -2,14 +2,15 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 
-module To
-  ( toText
-  , toLText
-  , toByteString
-  , toLByteString
-  , toString
-  , toBuilder
-  ) where
+module To (
+  toText,
+  toLText,
+  toByteString,
+  toLByteString,
+  toString,
+  toBuilder,
+)
+where
 
 
 import Prelude

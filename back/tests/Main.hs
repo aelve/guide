@@ -18,14 +18,17 @@ main = do
   hspec $ do
     MarkdownSpec.tests
     MergeSpec.tests
-  -- TODO: it'd be nice if we could us WebSpec.tests in hspec as well,
-  -- but I don't know how to achieve the following:
-  --   * before WebSpec tests, the server is started
-  --   * after those tests, the server is killed
-  --   * if you Ctrl-C during the tests, the server is killed as well
   WebSpec.tests
 
-{- TODO
+-- TODO: it'd be nice if we could do server-starting tests in hspec as well,
+-- but I don't know how to achieve the following flow:
+--
+--   * before the tests, the server is started
+--   * after the tests, the server is killed
+--   * if you Ctrl-C during the tests, the server is killed as well
+
+{- Tests left to write:
+~~~~~~~~~~~~~~
   * noscript tests
   * test on mobile
   * test that there are no repetitive searches on the admin page
@@ -34,8 +37,6 @@ main = do
     execution of tests
   * changes to item description must not persist when doing Cancel and
     then Edit again
-  * test that pages are indeed cached
-  * test that changing some pages doesn't invalidate the entire cache
   * Markdown tests (e.g. Markdown doesn't work in category names)
   * test that nothing is messed up by things starting and ending with newlines
     (the %js bug, see description of 'mustache')

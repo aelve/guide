@@ -4,10 +4,8 @@
 {-# LANGUAGE TypeFamilies       #-}
 
 
-{- |
-Items can have different colors; this module provides type 'Hue' and a
-palette for turning hues into actual colors.
--}
+-- | Items can have different colors; this module provides type 'Hue' and a
+-- palette for turning hues into actual colors.
 module Guide.Types.Hue
 (
   Hue(..),

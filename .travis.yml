@@ -49,6 +49,18 @@ jobs:
         - docker push "quay.io/aelve/guide:$BRANCH--back"
       if: type = push
 
+    # Our goal is full documented code with ZERO undocumented functions.
+    # The next guard warns if a commit increased undocumented limit out 251.
+    - stage: "Assert test undocumented no more then 251"
+      before_script:
+        - curl -sSL https://get.haskellstack.org/ | sh
+      script:
+        - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
+        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > notHaddockedAfter
+        - echo "notHaddockedBefore = 251"
+        - awk '{ print "notHaddockedAfter " $1 }' notHaddockedAfter
+        - bash -c 'if [[ 251 < `cat notHaddockedAfter` ]]; then >&2 echo "FAIL. The current limit is 251 undocumented top-level definitions, but $notHaddockedAfter were found and it is out of limit. Please, add comment to top-level undocumented definitions!"; exit 1; else echo "OK. 251 is more notHaddockedAfter. Yes, it is convenience to have documented code!"; fi'
+
     - stage: "Test the backend"
       before_script:
         - curl -sSL https://get.haskellstack.org/ | sh
