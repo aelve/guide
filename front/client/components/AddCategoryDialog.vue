@@ -89,7 +89,7 @@ export default class AddCategoryDialog extends Vue {
       title: this.categoryName,
       group: this.groupNameInternal
     })
-    window.open(`http://aelve.com:4801/haskell/${createdId}`, '_blank')
+    window.open(`http://guide.aelve.com:4801/haskell/${createdId}`, '_blank')
     this.close()
   }
 }

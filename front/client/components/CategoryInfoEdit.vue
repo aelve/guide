@@ -121,6 +121,7 @@ export default class CategoryInfoEdit extends Vue {
     this.title = category.title
     this.group = category.group
     this.categoryStatus = this.transformCategoryStatus(category.status)
+    this.categoryStatusRaw = category.status
   }
 
   @Watch('prosCons')
@@ -141,13 +142,23 @@ export default class CategoryInfoEdit extends Vue {
     this.onCheckboxChange(this.notes, 'ItemNotesSection')
   }
 
-  transformCategoryStatus(status: string) {
+  transformCategoryStatus (status: string) {
     if (status === 'CategoryStub') {
       return 'Stub'
     } else if (status === 'CategoryWIP') {
       return 'Work in progress'
     } else if (status === 'CategoryFinished') {
       return 'Complete'
+    }
+  }
+
+  setCategoryStatusRaw () {
+    if (this.categoryStatus === 'Stub') {
+      return 'CategoryStub'
+    } else if (this.categoryStatus === 'Work in progress') {
+      return 'CategoryWIP'
+    } else if (this.categoryStatus === 'Complete') {
+      return 'CategoryFinished'
     }
   }
 
@@ -160,7 +171,7 @@ export default class CategoryInfoEdit extends Vue {
       id: this.categoryId,
       title: this.title,
       group: this.group,
-      status: this.categoryStatus,
+      status: this.setCategoryStatusRaw(),
       sections: this.sections
     })
     this.close()
