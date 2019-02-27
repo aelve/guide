@@ -121,7 +121,6 @@ export default class CategoryInfoEdit extends Vue {
     this.title = category.title
     this.group = category.group
     this.categoryStatus = this.transformCategoryStatus(category.status)
-    this.categoryStatusRaw = category.status
   }
 
   @Watch('prosCons')
@@ -174,6 +173,8 @@ export default class CategoryInfoEdit extends Vue {
       status: this.setCategoryStatusRaw(),
       sections: this.sections
     })
+
+    await this.$store.dispatch('category/reloadCategory')
     this.close()
   }
 }
