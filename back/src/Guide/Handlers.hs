@@ -3,9 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 
-{- |
-All rest API handlers.
--}
+-- | All rest API handlers.
 module Guide.Handlers
 (
   methods,

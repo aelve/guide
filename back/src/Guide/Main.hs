@@ -6,14 +6,12 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-{- |
-Description : The main module that starts the server.
-
-This module provides two functions that are of interest:
-
-  * Run 'main' to actually start the server.
-  * Run 'mainWith' to run it with a custom config.
--}
+-- | Description : The main module that starts the server.
+--
+-- This module provides two functions that are of interest:
+--
+--   * Run 'main' to actually start the server.
+--   * Run 'mainWith' to run it with a custom config.
 module Guide.Main
 (
   main,
@@ -48,8 +46,7 @@ import Data.Serialize.Get as Cereal
 import System.IO
 -- Catching Ctrl-C and termination
 import System.Signal
--- putStrLn that works well with concurrency
-import Say (say)
+
 -- HVect
 import Data.HVect hiding (length)
 
@@ -57,6 +54,7 @@ import Guide.Api (runApiServer)
 import Guide.App
 import Guide.Config
 import Guide.Handlers
+import Guide.Logger
 import Guide.JS (JS (..), allJSFunctions)
 import Guide.Routes (authRoute, haskellRoute)
 import Guide.ServerStuff
@@ -89,9 +87,6 @@ acid-state. Acid-state works as follows:
   * All changes to the state (and all queries) have to be done by using
     'dbUpdate'/'dbQuery' and types (GetItem, SetItemName, etc) from the
     Types.hs module.
-
-  * When doing a 'dbUpdate', don't forget to 'invalidateCache'! Though in
-    most cases you'll likely want to use 'uncache' instead.
 
   * The data is kept in-memory, but all changes are logged to the disk (which
     lets us recover the state in case of a crash by reapplying the changes)
@@ -134,36 +129,32 @@ lucidWithConfig x = do
 
 -- | Start the site.
 main :: IO ()
-main = do
-  config <- readConfig
-  mainWith config
+main = mainWith =<< readConfig
 
 -- | Start the site with a specific 'Config'.
 mainWith :: Config -> IO ()
-mainWith config@Config{..} = do
-  -- 'main' can be started many times and if the cache isn't cleared changes
-  -- won't be visible
-  do args <- getArgs
-     let option = headDef "" args
-     when (option == "--dry-run") $ do
-       db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-       say "loaded the database successfully"
-       closeAcidState db
-       exitSuccess
-     -- USAGE: --load-public <filename>
-     -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
-     when (option == "--load-public") $ do
-       let path = fromMaybe
-             (error "you haven't provided public DB file name")
-             (args ^? ix 1)
-       (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
-         Left err -> error err
-         Right publicDB -> do
-           db <- openLocalStateFrom "state/" emptyState
-           Acid.update db (ImportPublicDB publicDB)
-           createCheckpointAndClose' db
-           say "PublicDB imported to GlobalState"
-           exitSuccess
+mainWith config@Config{..} = withLogger config $ \logger -> do
+  args <- getArgs
+  let option = headDef "" args
+  when (option == "--dry-run") $ do
+    db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+    logDebugIO logger "loaded the database successfully"
+    closeAcidState db
+    exitSuccess
+  -- USAGE: --load-public <filename>
+  -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
+  when (option == "--load-public") $ do
+    let path = fromMaybe
+          (error "you haven't provided public DB file name")
+          (args ^? ix 1)
+    (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+      Left err -> error err
+      Right publicDB -> do
+        db <- openLocalStateFrom "state/" emptyState
+        Acid.update db (ImportPublicDB publicDB)
+        createCheckpointAndClose' db
+        logDebugIO logger "PublicDB imported to GlobalState"
+        exitSuccess
   -- When we run in GHCi and we exit the main thread, the EKG thread (that
   -- runs the localhost:5050 server which provides statistics) may keep
   -- running. This makes running this in GHCi annoying, because you have to
@@ -174,7 +165,7 @@ mainWith config@Config{..} = do
         when _ekg $ do
           -- Killing EKG has to be done last, because of
           -- <https://github.com/tibbe/ekg/issues/62>
-          say "Killing EKG"
+          logDebugIO logger "Killing EKG"
           mapM_ killThread =<< readIORef ekgId
         putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
@@ -189,7 +180,7 @@ mainWith config@Config{..} = do
     mWaiMetrics <- if _ekg
         then do
           ekg <- do
-            say $ format "EKG is running on port {}" _portEkg
+            logDebugIO logger $ format "EKG is running on port {}" _portEkg
             EKG.forkServer "localhost" _portEkg
           writeIORef ekgId (Just (EKG.serverThreadId ekg))
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
@@ -205,7 +196,7 @@ mainWith config@Config{..} = do
           pure (Just waiMetrics)
         else pure Nothing
     -- Run the API
-    _ <- Slave.fork $ runApiServer config db
+    _ <- Slave.fork $ runApiServer (pushLogger "api" logger) config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -227,7 +218,7 @@ mainWith config@Config{..} = do
         spc_maxRequestSize = Just (1024*1024),
         spc_csrfProtection = True,
         spc_sessionCfg = sessionCfg }
-    say $ format "Spock is running on port {}" _portMain
+    logDebugIO logger $ format "Spock is running on port {}" _portMain
     runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
     `finally` (killThread workThread >> takeMVar workFinished)
@@ -415,10 +406,9 @@ data Quit = CtrlC | ServiceStop
 
 instance Exception Quit
 
-{- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM (i.e.
-service stop) and throw an exception instead of the signal. This lets us
-create a checkpoint and close connections on exit.
--}
+-- | Set up a handler that would catch SIGINT (i.e. Ctrl-C) and SIGTERM
+-- (i.e. service stop) and throw an exception instead of the signal. This
+-- lets us create a checkpoint and close connections on exit.
 installTerminationCatcher
   :: ThreadId  -- ^ Thread to kill when the signal comes
   -> IO ()

@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-{- | Diff- and merge-related things.
--}
+-- | Diff- and merge-related things.
 module Guide.Diff
 (
   -- * Diffing

@@ -81,12 +81,11 @@ class CategoryItemService {
   async createItemTrait (
     itemId: ICategoryItem['id'],
     type: string,
-    text: string,
+    content: string,
   ): Promise<void> {
-    await axios.post(`api/item/${itemId}/trait/${type}`, JSON.stringify(text), {
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      }
+    await axios.post(`api/item/${itemId}/trait/`, {
+      type,
+      content
     })
   }
   // add here category description add/edit

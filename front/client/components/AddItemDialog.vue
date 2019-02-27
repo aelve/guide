@@ -2,6 +2,7 @@
   <v-dialog
     :value="value"
     @input="close"
+    @keyup.esc.native="close"
     max-width="500px"
   >
     <slot slot="activator" />
@@ -49,7 +50,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator'
 
 @Component
 export default class AddItemDialog extends Vue {
@@ -58,7 +61,7 @@ export default class AddItemDialog extends Vue {
 
   itemName: string = ''
 
-  itemValidationRules: Function[] = [
+  itemValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || 'Item name can not be empty'
   ]
 
@@ -74,11 +77,16 @@ export default class AddItemDialog extends Vue {
   }
 
   async submit () {
-    await this.$store.dispatch('categoryItem/createItem', {
+    const createdId = await this.$store.dispatch('categoryItem/createItem', {
       category: this.categoryId,
       name: this.itemName
     })
+    await this.$store.dispatch('category/reloadCategory')
     this.close()
+    // nextTick to wait for item rendered in dom so router can find it and scroll to it
+    this.$nextTick(() => {
+      this.$router.push({ hash: `item-${createdId}` })
+    })
   }
 }
 </script>

@@ -1,7 +1,7 @@
 <template>
   <v-dialog
     :value="value"
-    @input="close"
+    persistent
     max-width="99vw"
   >
     <slot slot="activator" />
@@ -18,7 +18,7 @@
         <v-btn 
           depressed 
           small
-          @click="saveUserVersion"
+          @click="save(modified)"
         >
           Submit this version, disregard changes on server
         </v-btn>
@@ -34,7 +34,7 @@
         <v-btn 
           depressed 
           small
-          @click="saveServerVersion"
+          @click="save(serverModified)"
         >
           Accept this version, disregard my changes
         </v-btn>
@@ -45,8 +45,7 @@
           class="mb-2"
           toolbar
           :value="merged"
-          @save="saveMerged"
-          @cancel="close"
+          @save="save"
         />
       </div>
     </div>
@@ -68,67 +67,53 @@ export default class ConflictDialog extends Vue {
   @Prop(String) modified!: string
   @Prop(String) merged!: string
 
-  saveUserVersion () {
-    this.$emit('saveDescription', this.modified )
-    this.close()
+  save (newValue: string) {
+    this.$emit('save', newValue)
   }
 
-  saveServerVersion () {
-    this.$emit('saveDescription', this.serverModified)
-    this.close()
-  }
-
-  saveMerged (newVal: string) {
-    this.$emit('saveDescription', this.serverModified)
-    this.close()
-  }
-
-  close ():void {
-    this.$emit('input', false)
-  }
 }
 </script>
 
 <style scoped>
+.conflict-box {
+  display: flex;
+  background: #fff;
+  padding: 20px;
+  justify-content: space-between;
+}
+.conflict-content {
+  flex: 1;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+.conflict-item {
+  width: 32%;
+  display: flex;
+  flex-flow: column;
+}
+
+@media screen and (max-width: 1200px) {
   .conflict-box {
-    display: flex;
-    background: #fff;
-    padding: 20px;
-    justify-content: space-between;
+    flex-wrap: wrap;
   }
-  .conflict-content {
-    flex: 1;
-    margin-bottom: 16px;
-    white-space: pre-wrap;
-  }
+
   .conflict-item {
-    width: 32%;
-    display: flex;
+    width: 49%;
+  }
+
+  .conflict-item:nth-last-child(1) {
+    width: 98%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .conflict-box {
     flex-flow: column;
   }
 
-  @media screen and (max-width: 1200px) {
-    .conflict-box {
-      flex-wrap: wrap;
-    }
-
-    .conflict-item {
-      width: 49%;
-    }
-
-    .conflict-item:nth-last-child(1) {
-      width: 98%;
-    }
+  .conflict-item {
+    width: 100%;
   }
-
-  @media screen and (max-width: 768px) {
-    .conflict-box {
-      flex-flow: column;
-    }
-
-    .conflict-item {
-      width: 100%;
-    }
-  }
+}
 </style>
 

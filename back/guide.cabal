@@ -41,7 +41,7 @@ executable guide
   main-is:             Main.hs
   build-depends:       base
                      , guide
-  ghc-options:         -Wall -fno-warn-unused-do-bind
+  ghc-options:         -Wall -Wno-unused-do-bind -Wmissing-export-lists
                        -threaded "-with-rtsopts=-T -N"
   hs-source-dirs:      src/site
   default-language:    Haskell2010
@@ -56,6 +56,10 @@ library
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
+    Guide.Logger
+      Guide.Logger.Types
+      Guide.Logger.Functions
+      Guide.Logger.Run
     Guide.Main
     Guide.ServerStuff
     Guide.Session
@@ -110,6 +114,10 @@ library
                      , deepseq >= 1.2.0.0
                      , digestive-functors
                      , directory >= 1.2
+                     , di
+                     , di-monad
+                     , di-core
+                     , df1
                      , ekg
                      , ekg-core
                      , exceptions
@@ -172,7 +180,7 @@ library
                      , xml-conduit
                      , xml-types
                      , xss-sanitize
-  ghc-options:         -Wall -fno-warn-unused-do-bind
+  ghc-options:         -Wall -Wno-unused-do-bind -Wmissing-export-lists
   hs-source-dirs:      src
   default-language:    Haskell2010
   default-extensions:  MultiWayIf
@@ -195,13 +203,19 @@ library
 
 test-suite tests
   main-is:             Main.hs
-  other-modules:       WebSpec
-                       MarkdownSpec
-                       MergeSpec
-                       Selenium
+  other-modules:
+    ApiSpec
+    LogSpec
+    MarkdownSpec
+    MergeSpec
+    Selenium
+    WebSpec
   type:                exitcode-stdio-1.0
   build-depends:       QuickCheck < 3
+                     , aeson
+                     , async
                      , base < 5
+                     , bytestring
                      , base-prelude
                      , cmark
                      , cmark-sections
@@ -212,19 +226,25 @@ test-suite tests
                      , hspec < 3
                      , hspec-expectations
                      , hspec-webdriver < 1.3
+                     , http-client
+                     , http-conduit
+                     , http-types
                      , lucid < 3
                      , microlens-platform < 0.4
                      , monad-loops < 0.5
                      , network-uri
                      , quickcheck-text < 0.2
+                     , regex
                      , slave-thread
                      , tagsoup < 1
                      , text
+                     , temporary
                      , transformers
                      , webdriver >= 0.8.4 && < 0.9
+                     , yaml
   hs-source-dirs:      tests
   default-language:    Haskell2010
-  ghc-options:         -Wall -fno-warn-unused-do-bind
+  ghc-options:         -Wall -Wno-unused-do-bind -Wmissing-export-lists
   default-extensions:  MultiWayIf
                      , ViewPatterns
                      , RecordWildCards

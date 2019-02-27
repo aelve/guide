@@ -4,14 +4,14 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 -- TODO: try to make it more type-safe somehow?
 
-{- |
-Javascript methods used for the site.
-
-Some Javascript can also be found in .widget files. Hopefully, in the future
-this whole module would be removed.
--}
+-- | Javascript methods used for the site.
+--
+-- Some Javascript can also be found in .widget files. Hopefully, in the
+-- future this whole module would be removed.
 module Guide.JS where
 
 
@@ -97,21 +97,19 @@ instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e) => JSParams (a,b,c,d,e) where
 instance (ToJS a,ToJS b,ToJS c,ToJS d,ToJS e,ToJS f) => JSParams (a,b,c,d,e,f) where
   jsParams (a,b,c,d,e,f) = [toJS a, toJS b, toJS c, toJS d, toJS e, toJS f]
 
-{- |
-This hacky class lets you construct and use Javascript functions; you give
-'makeJSFunction' function name, function parameters, and function body, and
-you get a polymorphic value of type @JSFunction a => a@, which you can use
-either as a complete function definition (if you set @a@ to be @JS@), or as a
-function that you can give some parameters and it would return a Javascript
-call:
-
-> plus = makeJSFunction "plus" ["a", "b"] "return a+b;"
-
->>> plus :: JS
-JS "function plus(a,b) {\nreturn a+b;}\n"
->>> plus (3, 5) :: JS
-JS "plus(3,5);"
--}
+-- | This hacky class lets you construct and use Javascript functions; you
+-- give 'makeJSFunction' function name, function parameters, and function
+-- body, and you get a polymorphic value of type @JSFunction a => a@, which
+-- you can use either as a complete function definition (if you set @a@ to
+-- be @JS@), or as a function that you can give some parameters and it would
+-- return a Javascript call:
+--
+-- > plus = makeJSFunction "plus" ["a", "b"] "return a+b;"
+--
+-- >>> plus :: JS
+-- JS "function plus(a,b) {\nreturn a+b;}\n"
+-- >>> plus (3, 5) :: JS
+-- JS "plus(3,5);"
 class JSFunction a where
   makeJSFunction
     :: Text          -- ^ Name
@@ -119,7 +117,7 @@ class JSFunction a where
     -> Text          -- ^ Definition
     -> a
 
--- This generates function definition
+-- | Generates a function definition
 instance JSFunction JS where
   makeJSFunction fName fParams fDef =
     let paramList = T.intercalate "," fParams
@@ -127,23 +125,23 @@ instance JSFunction JS where
                 +|indentF 2 (build fDef)|+
             "}\n"
 
--- This generates a function that takes arguments and produces a Javascript
+-- | Generates a function that takes arguments and produces a Javascript
 -- function call
 instance JSParams a => JSFunction (a -> JS) where
   makeJSFunction fName _fParams _fDef = \args ->
     let paramList = T.intercalate "," (map fromJS (jsParams args))
     in  JS $ format "{}({});" fName paramList
 
--- This also produces a Javascript function call, but prefixes the function
--- with "this."; this is needed for event handlers in Vue for some reason
+-- | Also produces a Javascript function call, but prefixes the function
+-- with @this.@; this is needed for event handlers in Vue for some reason
 newtype WithThis a = WithThis { withThis :: a }
 
 instance JSFunction a => JSFunction (WithThis a) where
   makeJSFunction fName fParams fDef = WithThis $
     makeJSFunction ("this." <> fName) fParams fDef
 
--- This isn't a standalone function and so it doesn't have to be listed in
--- 'allJSFunctions'.
+-- | NB: this isn't a standalone function and so it doesn't have to be
+-- listed in 'allJSFunctions'.
 assign :: ToJS x => JS -> x -> JS
 assign v x = JS $ format "{} = {};" v (toJS x)
 

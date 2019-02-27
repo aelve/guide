@@ -2,7 +2,7 @@
   <v-app>
     <toolbar />
     <v-content>
-      <router-view></router-view>
+      <router-view />
     </v-content>
     <a-footer />
   </v-app>
@@ -11,9 +11,13 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
+import { Watch } from 'vue-property-decorator'
 import AFooter from 'client/components/AFooter.vue'
+import Toolbar from 'client/components/Toolbar.vue'
+import * as nprogress from 'nprogress'
+import 'nprogress/nprogress.css'
 
-import Toolbar from './components/Toolbar.vue'
+nprogress.configure({ showSpinner: false })
 
 @Component({
   components: {
@@ -27,6 +31,15 @@ export default class RootComponent extends Vue {
     // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
     import('easymde')
   }
+
+  get isPageLoading () {
+    return this.$store.state.isPageLoading
+  }
+
+  @Watch('isPageLoading')
+  toogleLoading (isPageLoading: boolean) {
+    isPageLoading ? nprogress.start() : nprogress.done()
+  }
 }
 </script>
 
@@ -39,12 +52,24 @@ export default class RootComponent extends Vue {
 p {
   margin: 0;
 }
+code {
+  color: #000;
+  font-weight: 500;
+  box-shadow: none;
+}
+pre code {
+  background-color: #f5f5f5;
+  color: #bd4147;
+  font-weight: 900;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+}
 code.sourceCode {
   min-width: 100%;
   padding: 8px;
 }
 .sourceCode:not(:last-child) code.sourceCode {
-  margin: 0 0 15px;
+  margin: 0 0 5px;
 }
 a {
   text-decoration-line: none;

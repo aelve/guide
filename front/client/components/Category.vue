@@ -24,8 +24,20 @@
           <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
           Add new item
         </v-btn>
+        <v-btn
+          icon
+          flat
+          class="ma-0 pa-0"
+          color="grey"
+          title="Delete category"
+          @click="deleteCategory"
+        >
+          <v-icon size="14">$vuetify.icons.trash-alt</v-icon>
+        </v-btn>
       </div>
+
       <category-description />
+
       <template v-if="category">
         <category-item
           v-for="value in category.items"
@@ -44,6 +56,7 @@
           :kind="value.kind"
         />
       </template>
+
       <v-btn
         flat
         class="ml-2"
@@ -53,7 +66,7 @@
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog 
+      <add-item-dialog
         v-model="isDialogOpen"
         :categoryId="categoryId"
       />
@@ -64,11 +77,14 @@
 <script lang="ts">
 import _toKebabCase from 'lodash/kebabCase'
 import _get from 'lodash/get'
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
 import category from 'client/store/modules/category'
+import Confirm from 'client/helpers/ConfirmDecorator'
 
 @Component({
   components: {
@@ -82,17 +98,6 @@ export default class Category extends Vue {
 
   isDialogOpen: boolean = false
 
-  async asyncData () {
-    if (!this.categoryId) {
-      return
-    }
-    await this.$store.dispatch('category/loadCategory', this.categoryId)
-  }
-
-  beforeDestroy () {
-    this.$store.commit('category/setCategory', {})
-  }
-
   get category () {
     return this.$store.state.category.category
   }
@@ -101,8 +106,30 @@ export default class Category extends Vue {
     return this.category && `${_toKebabCase(this.category.title)}-${this.category.id}`
   }
 
+  // TODO handle case when category was deleted. Go back in that case
+  async serverPrefetch () {
+    if (!this.categoryId) {
+      return
+    }
+    await this.$store.dispatch('category/loadCategory', this.categoryId)
+  }
+
+  beforeDestroy () {
+    this.$store.commit('category/setCategory', null)
+  }
+
   openAddItemDialog () {
     this.isDialogOpen = true
+  }
+
+  @Confirm({ text: 'delete this category' })
+  async deleteCategory () {
+    if (!this.category) {
+      return
+    }
+
+    await this.$store.dispatch('category/deleteCategory', this.categoryId)
+    this.$router.back()
   }
 }
 </script>

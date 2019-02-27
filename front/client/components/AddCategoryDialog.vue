@@ -56,7 +56,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator'
 import { CategoryService } from 'client/service/Category'
 
 @Component
@@ -89,8 +91,7 @@ export default class AddCategoryDialog extends Vue {
       title: this.categoryName,
       group: this.groupNameInternal
     })
-    window.open(`http://aelve.com:4801/haskell/${createdId}`, '_blank')
-    this.close()
+    this.$router.push(`haskell/${createdId}`)
   }
 }
 </script>

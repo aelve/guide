@@ -27,13 +27,12 @@ data SearchResult
   | SRItemEcosystem Category Item
   deriving (Show, Generic)
 
-{- | Find things matching a simple text query, and return results ranked by
-importance. Categories are considered more important than items.
-
-Currently 'search' doesn't do any fuzzy search whatsoever – only direct word
-matches are considered. See 'match' for the description of the matching
-algorithm.
--}
+-- | Find things matching a simple text query, and return results ranked by
+-- importance. Categories are considered more important than items.
+--
+-- Currently 'search' doesn't do any fuzzy search whatsoever – only direct
+-- word matches are considered. See 'match' for the description of the
+-- matching algorithm.
 search :: Text -> GlobalState -> [SearchResult]
 search query gs =
     -- category titles
@@ -57,11 +56,10 @@ search query gs =
     sortByRank :: [(a, Int)] -> [a]
     sortByRank = map fst . sortOn (Down . snd)
 
-{- | How many words in two strings match?
-
-Words are defined as sequences of letters, digits and characters like “-”;
-separators are everything else. Comparisons are case-insensitive.
--}
+-- | How many words in two strings match?
+--
+-- Words are defined as sequences of letters, digits and characters like
+-- “-”; separators are everything else. Comparisons are case-insensitive.
 match :: Text -> Text -> Int
 match a b = common (getWords a) (getWords b)
   where

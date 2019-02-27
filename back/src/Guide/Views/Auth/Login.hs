@@ -2,10 +2,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
-{- |
-Views for login.
--}
+-- | Views for login.
 module Guide.Views.Auth.Login where
 
 import Imports
