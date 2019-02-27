@@ -112,8 +112,6 @@ export default class CategoryInfoEdit extends Vue {
 
   @Watch('value')
   onOpen () {
-    // console.log(this.categoryId);
-    
     const category = this.$store.state.category.category
     this.onCheckboxChange(this.prosCons, 'ItemProsConsSection')
     this.onCheckboxChange(this.ecosystem, 'ItemEcosystemSection')
@@ -125,19 +123,16 @@ export default class CategoryInfoEdit extends Vue {
 
   @Watch('prosCons')
   onProsConsChange () {
-    console.log(this.prosCons)
     this.onCheckboxChange(this.prosCons, 'ItemProsConsSection')
   }
 
   @Watch('ecosystem')
   onEcosysemChange () {
-    console.log(this.ecosystem)
     this.onCheckboxChange(this.ecosystem, 'ItemEcosystemSection')
   }
 
   @Watch('notes')
   onNotesChange () {
-    console.log(this.notes)
     this.onCheckboxChange(this.notes, 'ItemNotesSection')
   }
 

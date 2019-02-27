@@ -25,7 +25,6 @@ class CategoryService {
   }
 
   async updateCategoryInfo ({id, title, group, status, sections}) {
-    // console.log(id)
     const { data } = await axios.put(`api/category/${id}/info`, {
         title,
         group,
