@@ -7,29 +7,29 @@
 
 module WebSpec (tests) where
 
-
-import BasePrelude hiding (catch, bracket)
+import BasePrelude hiding (catch, try)
 -- Monads
 import Control.Monad.Loops
 -- Concurrency
-import qualified SlaveThread as Slave
+import Control.Concurrent.Async (withAsync)
 -- Text
 import Data.Text (Text)
 import qualified Data.Text as T
 -- Files
 import System.Directory
+import System.IO.Temp
 -- URLs
 import Network.URI
--- Exceptions
-import Control.Monad.Catch
 
 -- Testing
 import Selenium
+import qualified ApiSpec
+import qualified LogSpec
 import qualified Test.WebDriver.Common.Keys as Key
 
 -- Site
 import qualified Guide.Main
-import Guide.Config (Config(..))
+import Guide.Config (def, Config(..))
 
 
 -----------------------------------------------------------------------------
@@ -37,11 +37,19 @@ import Guide.Config (Config(..))
 -----------------------------------------------------------------------------
 
 tests :: IO ()
-tests = run $ do
-  mainPageTests
-  categoryTests
-  itemTests
-  markdownTests
+tests = withSystemTempFile "test_guide.log" $ \logFile logFileHandle -> do
+  -- Close the log file because otherwise 'run' won't be able to open it
+  hClose logFileHandle
+  run logFile $ do
+    mainPageTests
+    categoryTests
+    itemTests
+    markdownTests
+    ApiSpec.tests
+  hspec $
+    LogSpec.tests logFile
+  -- TODO: ApiSpec, LogSpec, and WebSpec should be independent of each
+  -- other. Currently it's a mess.
 
 mainPageTests :: Spec
 mainPageTests = session "main page" $ using [chromeCaps] $ do
@@ -60,21 +68,6 @@ mainPageTests = session "main page" $ using [chromeCaps] $ do
   --     fs <- fontSize sub; fs `shouldBeInRange` (15,17)
   --   wd "has a discuss link" $ do
   --     checkPresent ".subtitle a[href='http://discuss.link']"
-  describe "footer" $ do
-    wd "is present" $ do
-      checkPresent "#footer"
-    wd "isn't overflowing" $ do
-      setWindowSize (900, 500)  -- the footer is about 800px wide
-      footer <- select "#footer"
-      (width, height) <- elemSize footer
-      width `shouldBeInRange` (750, 850)
-      height `shouldBeInRange` (30, 70)
-    wd "overflows when shrunk" $ do
-      -- and now it shall be overflowing
-      setWindowSize (400, 500)
-      footer <- select "#footer"
-      (_, height) <- elemSize footer
-      height `shouldBeInRange` (71, 140)
 
 categoryTests :: Spec
 categoryTests = session "categories" $ using [chromeCaps] $ do
@@ -401,14 +394,14 @@ itemTests = session "items" $ using [chromeCaps] $ do
       itemName itemB `shouldHaveText` "Blah"
   describe "moving items" $ do
     let getId :: CanSelect a => a -> WD Text
-        getId x = attr x "id" >>= \case
+        getId x = Selenium.attr x "id" >>= \case
           Nothing -> expectationFailure $
                        printf "expected %s to have an id" (show x)
           Just i  -> return i
     wd "up" $ do
       ids <- mapM getId =<< selectAll ".item"
       click (ById (ids !! 1) :// ".move-item-up")
-      waitWhile 0.05 (return ()) `onTimeout` return ()
+      waitWhile 0.10 (return ()) `onTimeout` return ()
       ids2 <- mapM getId =<< selectAll ".item"
       ids2 `shouldBe` (ids !! 1 : ids !! 0 : drop 2 ids)
     -- TODO: select should only select visible elements
@@ -589,42 +582,39 @@ getCurrentRelativeURL = do
       maybe "" uriRegName (uriAuthority u) `shouldBe` "localhost"
       return u
 
-run :: Spec -> IO ()
-run ts = do
+-- 'Run' prepares directories and config to launch site server for spec tests
+-- and closes them all after test finished.
+run :: FilePath -> Spec -> IO ()
+run logFile ts = do
+  -- Config to run spock server.
+  let config = def {
+        _baseUrl       = "/",
+        _googleToken   = "some-google-token",
+        _adminPassword = "123",
+        _discussLink   = Just "http://discuss.link",
+        _cors          = False,
+        _logToStderr   = False,
+        _logToFile     = Just logFile
+        }
+  -- Prepere resources.
   let prepare = do
         exold <- doesDirectoryExist "state-old"
         when exold $ error "state-old exists"
         ex <- doesDirectoryExist "state"
         when ex $ renameDirectory "state" "state-old"
-        -- Start the server
-        --
-        -- Using 'Slave.fork' in 'Guide.mainWith' ensures that threads started
-        -- inside of 'mainWith' will be killed too when the thread dies.
-        tid <- Slave.fork $ Guide.Main.mainWith Config {
-          _baseUrl       = "/",
-          _googleToken   = "some-google-token",
-          _adminPassword = "123",
-          _discussLink   = Just "http://discuss.link",
-          _portMain      = 8080,
-          _portApi       = 4400,
-          _portEkg       = 5050,
-          _cors          = False,
-          _ekg           = False }
-        -- Using a delay so that “Spock is running on port 8080” would be
-        -- printed before the first test.
-        threadDelay 100000
-        return tid
-  let finalise tid = do
-        killThread tid
-        ex <- doesDirectoryExist "state"
-        when ex $ removeDirectoryRecursive "state"
-        exold <- doesDirectoryExist "state-old"
-        when exold $ renameDirectory "state-old" "state"
-  bracket prepare finalise $ \_ -> do
-    hspec ts
+
+  -- Release resources.
+  let finish _ = do
+        ex' <- doesDirectoryExist "state"
+        when ex' $ removeDirectoryRecursive "state"
+        exold' <- doesDirectoryExist "state-old"
+        when exold' $ renameDirectory "state-old" "state"
+
+  bracket prepare finish $ \_ -> do
+    withAsync (Guide.Main.mainWith config) $ \_ -> hspec ts
 
 _site :: IO ()
-_site = run $ do
+_site = run "" $ do
   session "_" $ using [chromeCaps] $ do
     wd "_" $ do
       openGuidePage "/"

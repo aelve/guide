@@ -1,12 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-{- |
-Item rendering.
-
-The main functions this module provides are 'renderItem' and
-'renderItemForFeed'.
--}
+-- | Item rendering.
+--
+-- The main functions this module provides are 'renderItem' and
+-- 'renderItemForFeed'.
 module Guide.Views.Item
 (
   -- * Main functions

@@ -111,7 +111,7 @@ export default class Categories extends Vue {
   addCategoryGroupName: string = ''
   isAddGroupDialogOpen: boolean = false
 
-  async asyncData () {
+  async serverPrefetch () {
     return this.$store.dispatch('category/loadCategoryList')
   }
   get categories () {

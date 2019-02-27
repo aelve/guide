@@ -1,6 +1,5 @@
-{- | An algorithm for merging users' edits. Specifically, there's just one
-function – 'merge' – and it simply does a three-way diff.
--}
+-- | An algorithm for merging users' edits. Specifically, there's just one
+-- function – 'merge' – and it simply does a three-way diff.
 module Guide.Diff.Merge
 (
   merge,

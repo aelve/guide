@@ -1,9 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- |
-Various HTML utils, Mustache utils, etc.
--}
+-- | Various HTML utils, Mustache utils, etc.
 module Guide.Views.Utils
 (
   -- * Script utils
@@ -89,7 +87,6 @@ import Guide.Types
 import Guide.Utils
 -- import Guide.Config
 -- import Guide.State
--- import Guide.Cache
 
 import Guide.Views.Utils.Input
 

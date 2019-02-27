@@ -1,13 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-{- | Functions for interacting with Matomo (<https://matomo.org/>, our web analytics).
-  Matomo docs: <https://developer.matomo.org/api-reference/tracking-api>.
--}
+-- | Functions for interacting with Matomo (<https://matomo.org/>, our web
+-- analytics).
+--
+-- Matomo docs: <https://developer.matomo.org/api-reference/tracking-api>.
 module Guide.Matomo
-       ( Matomo(..)
-       , postMatomo
-       ) where
+(
+  Matomo(..),
+  postMatomo,
+)
+where
 
 import Imports
 
@@ -21,6 +24,7 @@ import Guide.Api.Guider (Context (..), Guider)
 import Guide.Config (Config (..))
 import Guide.Types.Edit (Edit (..))
 import Guide.Utils (Url)
+import Guide.Logger
 
 import qualified Data.ByteString as BS
 
@@ -35,7 +39,7 @@ data Matomo = Matomo
 
 -- | Notify Matomo that an edit has been made.
 postMatomo :: Matomo -> Guider ()
-postMatomo Matomo{..} = do
+postMatomo Matomo{..} = push "postMatomo" $ do
     Context Config{..} _ _ <- ask
     whenJust _matomoLink $ \matomo -> liftIO $ do
       async $ do
@@ -62,4 +66,3 @@ postMatomo Matomo{..} = do
       . show
     piwik :: Url -> String
     piwik matomo = format "POST {}" matomo
-

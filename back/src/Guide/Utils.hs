@@ -11,9 +11,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
-{- |
-All utility functions and types go here.
--}
+-- | All utility functions and types go here.
 module Guide.Utils
 (
   -- * Lists
@@ -194,20 +192,18 @@ makeSlug =
   T.toLower .
   T.map (\x -> if x == '_' || x == '/' then '-' else x)
 
-{- |
-Add a path element to an URL:
-
->>> "https://guide.aelve.com" // "haskell"
-"https://guide.aelve.com/haskell"
-
-If slashes are already present, it strips them:
-
->>> "https://guide.aelve.com/" // "/haskell"
-"https://guide.aelve.com/haskell"
-
-Note that ('</>') from "System.FilePath" shouldn't be used, as on Windows it
-appends backslashes (@\@) and not slashes (@/@).
--}
+-- | Add a path element to an URL:
+--
+-- >>> "https://guide.aelve.com" // "haskell"
+-- "https://guide.aelve.com/haskell"
+--
+-- If slashes are already present, it strips them:
+--
+-- >>> "https://guide.aelve.com/" // "/haskell"
+-- "https://guide.aelve.com/haskell"
+--
+-- Note that ('</>') from "System.FilePath" shouldn't be used, as on Windows
+-- it appends backslashes (@\@) and not slashes (@/@).
 (//) :: Url -> Text -> Url
 (//) x y = fromMaybe x (T.stripSuffix "/" x) <> "/" <>
            fromMaybe y (T.stripPrefix "/" y)
@@ -308,9 +304,12 @@ sockAddrToIP _                               = Nothing
 
 -- | Unique id, used for many things – categories, items, and anchor ids.
 newtype Uid a = Uid {uidToText :: Text}
-  deriving (Generic, Eq, Ord, Show, Data,
+  deriving (Generic, Eq, Ord, Data,
             ToHttpApiData, FromHttpApiData,
             Buildable, Hashable)
+
+instance Show (Uid a) where
+  show (Uid a) = show a
 
 instance A.ToJSON (Uid a) where
   toJSON = A.toJSON . uidToText

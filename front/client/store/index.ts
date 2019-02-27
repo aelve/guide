@@ -6,9 +6,15 @@ import wiki from 'client/store/modules/wiki'
 function createStore () {
   // TODO loggins mutations in dev
   return new Vuex.Store({
-    state: {},
+    state: {
+      isPageLoading: false
+    },
     actions: {},
-    mutations: {},
+    mutations: {
+      tooglePageLoading (state) {
+        state.isPageLoading = !state.isPageLoading
+      }
+    },
     modules: {
       category,
       categoryItem,

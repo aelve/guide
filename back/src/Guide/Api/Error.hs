@@ -7,8 +7,10 @@
 
 
 module Guide.Api.Error
-  ( ErrorResponse
-  ) where
+(
+  ErrorResponse,
+)
+where
 
 
 import Imports

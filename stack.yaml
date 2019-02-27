@@ -22,6 +22,7 @@ extra-deps:
 - servant-swagger-ui-core-0.3.1
 - swagger2-2.3
 - lzma-clib-5.2.2
+- regex-1.0.1.5
 
 # We pin the precise versions of 'highlighting-kate' and 'cmark-highlight'
 # because the frontend has copied a stylesheet from 'highlighting-kate'. If
@@ -29,6 +30,13 @@ extra-deps:
 # frontend. (See App.vue, or just grep for things like "span.st".)
 - highlighting-kate-0.6.4
 - cmark-highlight-0.2.0.0
+
+# The new version of 'di' has different 'throw' semantics; we don't use it
+# yet but let's not create technical debt for ourselves.
+- di-1.2
+- di-monad-1.3
+- di-core-1.0.3
+- df1-0.3
 
 - git: https://github.com/aelve/stache-plus
   commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782

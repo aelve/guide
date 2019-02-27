@@ -19,7 +19,7 @@ const actions: ActionTree<ICategoryState, any> = {
     if (!category) {
       return
     }
-    dispatch('loadCategory', category.id)
+    await dispatch('loadCategory', category.id)
   },
   async loadCategory (
     { commit }: ActionContext<ICategoryState, any>,
@@ -46,6 +46,12 @@ const actions: ActionTree<ICategoryState, any> = {
   },
   async updateCategoryInfo (context: ActionContext<ICategoryState, any>, {id, title, group, status, sections}) {
     await CategoryService.updateCategoryInfo({id, title, group, status, sections})
+  },
+  async deleteCategory (
+    { dispatch }: ActionContext<ICategoryState, any>,
+    id: ICategoryInfo['id']
+  ): Promise<void> {
+    await CategoryService.deleteCategory(id)
   }
 }
 
