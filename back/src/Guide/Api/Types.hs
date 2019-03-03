@@ -408,11 +408,12 @@ toCCategoryInfo Category{..} = CCategoryInfo
 -- information about a category
 data CCategoryFull = CCategoryFull
   { ccfId          :: Uid Category
-  , ccfTitle       :: Text           ? "Category title"
-  , ccfGroup       :: Text           ? "Category group ('grandcategory')"
+  , ccfTitle       :: Text            ? "Category title"
+  , ccfGroup       :: Text            ? "Category group ('grandcategory')"
   , ccfStatus      :: CategoryStatus
   , ccfDescription :: CMarkdown
-  , ccfItems       :: [CItemFull]    ? "All items in the category"
+  , ccfSections    :: Set ItemSection ? "Enabled item sections"
+  , ccfItems       :: [CItemFull]     ? "All items in the category"
   }
   deriving (Show, Generic)
 
@@ -431,9 +432,10 @@ toCCategoryFull Category{..} = CCategoryFull
   { ccfId          = _categoryUid
   , ccfTitle       = H _categoryTitle
   , ccfGroup       = H _categoryGroup_
-  , ccfDescription = toCMarkdown _categoryNotes
-  , ccfItems       = H $ fmap toCItemFull _categoryItems
   , ccfStatus      = _categoryStatus
+  , ccfDescription = toCMarkdown _categoryNotes
+  , ccfSections    = H $ _categoryEnabledSections
+  , ccfItems       = H $ fmap toCItemFull _categoryItems
   }
 
 -- | Client type to edit meta category information.
