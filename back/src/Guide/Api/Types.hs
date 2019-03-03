@@ -434,7 +434,7 @@ toCCategoryFull Category{..} = CCategoryFull
   , ccfGroup       = H _categoryGroup_
   , ccfStatus      = _categoryStatus
   , ccfDescription = toCMarkdown _categoryNotes
-  , ccfSections    = H $ _categoryEnabledSections
+  , ccfSections    = H _categoryEnabledSections
   , ccfItems       = H $ fmap toCItemFull _categoryItems
   }
 
