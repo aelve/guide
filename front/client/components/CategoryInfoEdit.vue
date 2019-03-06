@@ -36,16 +36,19 @@
           <v-checkbox
             v-model="checkboxSections"
             label="Pros/cons enabled"
+            value="ItemProsConsSection"
             class="mb-2"
           />
           <v-checkbox 
             v-model="checkboxSections"
             label="Ecosystem field enabled"
+            value="ItemEcosystemSection"
             class="mb-2"
           />
           <v-checkbox 
             v-model="checkboxSections"
             label="Notes field enabled"
+            value="ItemNotesSection"
             class="mb-2"
           />
         </v-form>
@@ -87,7 +90,7 @@ export default class CategoryInfoEdit extends Vue {
   title: string = ''
   group: string = ''
   categoryStatus: string = ''
-  checkboxSections: any[] = []
+  checkboxSections: any[] = ['ItemProsConsSection', 'ItemEcosystemSection', 'ItemNotesSection']
   isValid: boolean = false
 
   items = ['Complete', 'Work in progress', 'Stub']
