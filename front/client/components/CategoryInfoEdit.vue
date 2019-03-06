@@ -34,17 +34,17 @@
             class="mb-2"
           />
           <v-checkbox
-            v-model="prosCons"
+            v-model="checkboxSections"
             label="Pros/cons enabled"
             class="mb-2"
           />
           <v-checkbox 
-            v-model="ecosystem"
+            v-model="checkboxSections"
             label="Ecosystem field enabled"
             class="mb-2"
           />
           <v-checkbox 
-            v-model="notes"
+            v-model="checkboxSections"
             label="Notes field enabled"
             class="mb-2"
           />
@@ -71,7 +71,7 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-</template> -->
+</template>
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
@@ -87,10 +87,7 @@ export default class CategoryInfoEdit extends Vue {
   title: string = ''
   group: string = ''
   categoryStatus: string = ''
-  prosCons: boolean = true
-  ecosystem: boolean = true
-  notes: boolean = true
-  sections: any[] = []
+  checkboxSections: any[] = []
   isValid: boolean = false
 
   items = ['Complete', 'Work in progress', 'Stub']
@@ -103,38 +100,12 @@ export default class CategoryInfoEdit extends Vue {
     this.$vuetify.icons.checkboxOff = this.$vuetify.icons.square
   }
 
-  onCheckboxChange(checkboxType: boolean, checkboxName: string) {
-    if (checkboxType === true && !_includes(this.sections, checkboxName)) {
-      this.sections.push(checkboxName)
-    } else {
-      this.sections = _remove(this.sections, el => el !== checkboxName)
-    }
-  }
-
   @Watch('value')
   onOpen () {
     const category = this.$store.state.category.category
-    this.onCheckboxChange(this.prosCons, 'ItemProsConsSection')
-    this.onCheckboxChange(this.ecosystem, 'ItemEcosystemSection')
-    this.onCheckboxChange(this.notes, 'ItemNotesSection')
     this.title = category.title
     this.group = category.group
     this.categoryStatus = this.transformCategoryStatus(category.status)
-  }
-
-  @Watch('prosCons')
-  onProsConsChange () {
-    this.onCheckboxChange(this.prosCons, 'ItemProsConsSection')
-  }
-
-  @Watch('ecosystem')
-  onEcosysemChange () {
-    this.onCheckboxChange(this.ecosystem, 'ItemEcosystemSection')
-  }
-
-  @Watch('notes')
-  onNotesChange () {
-    this.onCheckboxChange(this.notes, 'ItemNotesSection')
   }
 
   transformCategoryStatus (status: string) {
@@ -168,7 +139,7 @@ export default class CategoryInfoEdit extends Vue {
       title: this.title,
       group: this.group,
       status: this.сategoryStatusRaw(),
-      sections: this.sections
+      sections: this.checkboxSections
     })
 
     await this.$store.dispatch('category/reloadCategory')
