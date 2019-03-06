@@ -75,6 +75,7 @@
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import { CategoryStatus } from 'client/service/Category'
 import _remove from 'lodash/remove'
 import _includes from 'lodash/includes'
 
@@ -146,13 +147,14 @@ export default class CategoryInfoEdit extends Vue {
     }
   }
 
-  setCategoryStatusRaw () {
-    if (this.categoryStatus === 'Stub') {
-      return 'CategoryStub'
-    } else if (this.categoryStatus === 'Work in progress') {
-      return 'CategoryWIP'
-    } else if (this.categoryStatus === 'Complete') {
-      return 'CategoryFinished'
+  сategoryStatusRaw () {
+    switch(this.categoryStatus) {
+      case 'Work in progress':
+        return CategoryStatus.inProgress
+      case 'Complete':
+        return CategoryStatus.finished
+      default:
+        return CategoryStatus.toBeWritten
     }
   }
 
@@ -165,7 +167,7 @@ export default class CategoryInfoEdit extends Vue {
       id: this.categoryId,
       title: this.title,
       group: this.group,
-      status: this.setCategoryStatusRaw(),
+      status: this.сategoryStatusRaw(),
       sections: this.sections
     })
 
