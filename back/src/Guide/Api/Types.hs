@@ -48,7 +48,7 @@ module Guide.Api.Types
 
 import Imports
 
-import Data.Tree (Forest, Tree)
+import Data.Tree (Tree(..))
 import Lucid (renderText, toHtml)
 
 import Servant
@@ -524,7 +524,7 @@ data CItemFull = CItemFull
   , cifEcosystem   :: CMarkdown
   , cifNotes       :: CMarkdown
   , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
-  , cifToc         :: Forest CHeading          ? "Table of contents"
+  , cifToc         :: CForest CHeading         ? "Table of contents"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -561,10 +561,8 @@ toCItemFull Item{..} = CItemFull
   , cifEcosystem   = toCMarkdown _itemEcosystem
   , cifNotes       = toCMarkdown _itemNotes
   , cifLink        = H _itemLink
-  , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
+  , cifToc         = H $ map toCTree (markdownTreeMdTOC _itemNotes)
   }
-  where
-    treeToCMD = fmap toCHeading
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -642,6 +640,42 @@ toCHeading :: Heading -> CHeading
 toCHeading h = CHeading
   { chContent = toCMarkdown $ headingMd h
   , chSlug    = H $ headingSlug h
+  }
+
+-- | Custom 'CForest' is the same as 'Forest'.
+-- | It needed to customize JSON instances for TOC to be list of object, not list of lists.
+type CForest a = [CTree a]
+
+-- | Custom 'CTree' is the same as 'Tree'.
+-- | It needed to customize JSON instances for TOC to be list of object, not list of lists.
+data CTree a = CNode
+  { cRootLabel :: a
+  , cSubForest :: CForest a
+  } deriving (Show, Generic)
+
+instance A.ToJSON (CTree CHeading) where
+  toJSON (CNode CHeading{..} cSubForest) = A.object
+    [ "content" A..= chContent
+    , "slug"    A..= chSlug
+    , "forest"  A..= cSubForest
+    ]
+
+instance A.FromJSON (CTree CHeading) where
+  parseJSON = A.withObject "CTree" $ \o -> do
+    chContent  <- o A..: "content"
+    chSlug     <- o A..: "slug"
+    cSubForest <- o A..: "forest"
+    let cRootLabel = CHeading{..}
+    pure CNode{..}
+
+instance ToSchema a => ToSchema (CTree a) where
+  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | 'toCTree' used to make type with customizable JSON instances.
+toCTree :: Tree Heading -> CTree CHeading
+toCTree Node{..} = CNode
+  { cRootLabel = toCHeading rootLabel
+  , cSubForest = map toCTree subForest
   }
 
 -- | Frontend sends this type to edit notes or descriptions.
