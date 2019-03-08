@@ -48,7 +48,7 @@ module Guide.Api.Types
 
 import Imports
 
-import Data.Tree (Forest, Tree)
+import Data.Tree (Tree(..))
 import Lucid (renderText, toHtml)
 
 import Servant
@@ -524,7 +524,7 @@ data CItemFull = CItemFull
   , cifEcosystem   :: CMarkdown
   , cifNotes       :: CMarkdown
   , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
-  , cifToc         :: Forest CHeading          ? "Table of contents"
+  , cifToc         :: [CTocHeading]            ? "Table of contents"
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -561,10 +561,8 @@ toCItemFull Item{..} = CItemFull
   , cifEcosystem   = toCMarkdown _itemEcosystem
   , cifNotes       = toCMarkdown _itemNotes
   , cifLink        = H _itemLink
-  , cifToc         = H $ map treeToCMD (markdownTreeMdTOC _itemNotes)
+  , cifToc         = H $ map toCTocHeading (markdownTreeMdTOC _itemNotes)
   }
-  where
-    treeToCMD = fmap toCHeading
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -624,24 +622,28 @@ instance ToCMarkdown MarkdownTree where
     , cmdHtml = H $ toText . renderText $ toHtml md
     }
 
-data CHeading = CHeading
-  { chContent :: CMarkdown
-  , chSlug    :: Text         ? "In-page anchor for linking"
+-- | Frontend's table of content type used in items' stuff.
+data CTocHeading = CTocHeading
+  { cthContent     :: CMarkdown
+  , cthSlug        :: Text           ? "In-page anchor for linking"
+  , cthSubheadings :: [CTocHeading]
   } deriving (Show, Generic)
 
-instance A.ToJSON CHeading where
+instance A.ToJSON CTocHeading where
   toJSON = A.genericToJSON jsonOptions
 
-instance A.FromJSON CHeading where
+instance A.FromJSON CTocHeading where
   parseJSON = A.genericParseJSON jsonOptions
 
-instance ToSchema CHeading where
+instance ToSchema CTocHeading where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
-toCHeading :: Heading -> CHeading
-toCHeading h = CHeading
-  { chContent = toCMarkdown $ headingMd h
-  , chSlug    = H $ headingSlug h
+-- | 'toCTocHeading' converts a table of contents into the format expected by the frontend.
+toCTocHeading :: Tree Heading -> CTocHeading
+toCTocHeading Node{..} = CTocHeading
+  { cthContent     = toCMarkdown $ headingMd rootLabel
+  , cthSlug        = H $ headingSlug rootLabel
+  , cthSubheadings = map toCTocHeading subForest
   }
 
 -- | Frontend sends this type to edit notes or descriptions.
