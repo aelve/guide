@@ -17,14 +17,14 @@
             autofocus
             class="mb-2"
             label="Title"
-            :rules="itemValidationRules"
+            :rules="inputValidationRules"
             v-model="title"
           />
           <v-text-field
             autofocus
             class="mb-2"
             label="Group"
-            :rules="itemValidationRules"
+            :rules="inputValidationRules"
             v-model="group"
           />
           <v-select 
@@ -95,8 +95,8 @@ export default class CategoryInfoEdit extends Vue {
 
   items = ['Complete', 'Work in progress', 'Stub']
 
-  itemValidationRules: Function[] = [
-    (x: string) => !!x || 'Item name can not be empty'
+  inputValidationRules: Function[] = [
+    (x: string) => !!x || 'Input can not be empty'
   ]
 
   beforeMount () {
