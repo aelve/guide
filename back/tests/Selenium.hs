@@ -1,9 +1,9 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE IncoherentInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE StandaloneDeriving  #-}
 
 module Selenium
 (
@@ -54,25 +54,23 @@ module Selenium
 )
 where
 
-import BasePrelude hiding (catch, bracket, (:|))
--- Lenses
-import Lens.Micro.Platform
+import Imports hiding ((:|), catch)
+
 -- Monads
 import Control.Monad.Loops
 -- Containers
 import qualified Data.Set as Set
 -- Text
-import Data.Text (Text)
 import qualified Data.Text as T
 -- Testing
-import Test.Hspec.WebDriver hiding
-  (getText, shouldHaveAttr, shouldHaveText, click, cssProp, attr,
-   sendKeys, clearInput)
-import qualified Test.Hspec.WebDriver as WD
+import Test.Hspec.WebDriver hiding (attr, clearInput, click, cssProp, getText, sendKeys,
+                             shouldHaveAttr, shouldHaveText)
 import Test.WebDriver.Commands.Wait
 import Test.WebDriver.Exceptions
-import qualified Test.WebDriver.Common.Keys as Key
+
 import qualified Test.Hspec.Expectations as Hspec
+import qualified Test.Hspec.WebDriver as WD
+import qualified Test.WebDriver.Common.Keys as Key
 -- Exceptions
 import Control.Monad.Catch
 
@@ -88,7 +86,7 @@ getLink s = do
   linkElems <- selectAll ((e :& "a") :| (e :// "a"))
   links <- nub . catMaybes <$> mapM (flip attr "href") linkElems
   case links of
-    [x] -> return (T.unpack x)
+    [x] -> return (toString x)
     []  -> expectationFailure $
              printf "expected %s to contain a link" (show s)
     _   -> expectationFailure $
@@ -349,7 +347,7 @@ fontSize s = do
   case mbProp of
     Nothing -> expectationFailure $
                  printf "expected %s to have font-size" (show s)
-    Just fs -> case reads (T.unpack fs) of
+    Just fs -> case reads (toString fs) of
       [(d, "px")] -> return d
       _ -> expectationFailure $
              printf "couldn't parse font-size of %s: %s" (show s) (show fs)

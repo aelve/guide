@@ -5,9 +5,9 @@
 -- | Integration tests for new API methods.
 module ApiSpec (tests) where
 
-import BasePrelude hiding (Category)
+import Imports hiding ((.=))
+
 import Data.Aeson
-import qualified Data.Text             as T
 import qualified Data.ByteString.Char8 as S8
 import qualified Data.Yaml             as Yaml
 import Network.HTTP.Simple
@@ -38,7 +38,7 @@ tests = describe "api" $ do
       categoryInfo <- head <$> getCategoriesRequest
       let Uid categoryId = cciId categoryInfo
       request <- makeRequest
-        (Path $ "category/" <> T.unpack categoryId)
+        (Path $ "category/" <> toString categoryId)
         (Method "GET")
       (Status 200 "OK", _ :: CCategoryFull) <- runRequest request
       pure ()
@@ -53,7 +53,7 @@ tests = describe "api" $ do
       req <- withCategory $ \categoryId -> do
         let Uid tCategoryId = categoryId
         request <- makeRequest
-          (Path $ "category/" <> T.unpack tCategoryId <> "/notes")
+          (Path $ "category/" <> toString tCategoryId <> "/notes")
           (Method "PUT")
         let req = setRequestBodyJSON (makeEditObject "" "string") request
         Status 200 "OK"                      <- runRequestNoBody req
@@ -66,7 +66,7 @@ tests = describe "api" $ do
       req <- withCategory $ \categoryId -> do
         let Uid tCategoryId = categoryId
         request <- makeRequest
-          (Path $ "category/" <> T.unpack tCategoryId <> "/info")
+          (Path $ "category/" <> toString tCategoryId <> "/info")
           (Method "PUT")
         let req = setRequestBodyJSON editCategoryInfo request
         Status 200 "OK"                 <- runRequestNoBody req
@@ -85,7 +85,7 @@ tests = describe "api" $ do
     it "get item by id" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
-          (Path $ "item/" <> T.unpack itemId)
+          (Path $ "item/" <> toString itemId)
           (Method "GET")
         (Status 200 "OK", _ :: CItemFull) <- runRequest request
         pure request
@@ -95,7 +95,7 @@ tests = describe "api" $ do
     it "set item info" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
-          (Path $ "item/" <> T.unpack itemId <> "/info")
+          (Path $ "item/" <> toString itemId <> "/info")
           (Method "PUT")
         let req = setRequestBodyJSON itemInfo request
         Status 200 "OK" <- runRequestNoBody req
@@ -114,7 +114,7 @@ tests = describe "api" $ do
     it "get trait by id" $ do
           req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
             request     <- makeRequest
-              (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+              (Path $ "item/" <> toString itemId <> "/trait/" <> toString traitId)
               (Method "GET")
             (Status 200 "OK", _ :: CTrait) <- runRequest request
             pure request
@@ -124,7 +124,7 @@ tests = describe "api" $ do
     it "update trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
-          (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+          (Path $ "item/" <> toString itemId <> "/trait/" <> toString traitId)
           (Method "PUT")
         let req = setRequestBodyJSON (makeEditObject "oldText" "newText") request
         Status 200 "OK"                       <- runRequestNoBody req
@@ -135,7 +135,7 @@ tests = describe "api" $ do
     it "move trait" $ do
       req <- withTrait $ \(Uid itemId) (Uid traitId) -> do
         request     <- makeRequest
-          (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId <> "/move")
+          (Path $ "item/" <> toString itemId <> "/trait/" <> toString traitId <> "/move")
           (Method "POST")
         let req = setRequestBodyJSON (object ["direction" .= ("up" :: String)]) request
         Status 200 "OK" <- runRequestNoBody req
@@ -164,7 +164,7 @@ createCategory = do
 deleteCategory :: Uid Category -> IO (Maybe Bool)
 deleteCategory (Uid categoryId) = do
   request <- makeRequest
-    (Path $ "category/" <> T.unpack categoryId)
+    (Path $ "category/" <> toString categoryId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of
@@ -195,7 +195,7 @@ setMergebleDataToItem :: String -> IO ()
 setMergebleDataToItem dataType = do
   req <- withItem $ \(Uid itemId) -> do
     request     <- makeRequest
-      (Path $ "item/" <> T.unpack itemId <> "/" <> dataType)
+      (Path $ "item/" <> toString itemId <> "/" <> dataType)
       (Method "PUT")
     let req = setRequestBodyJSON (makeEditObject "" "text") request
     Status 200 "OK" <- runRequestNoBody req
@@ -214,14 +214,14 @@ withItem f = withCategory $ \categoryId -> do
 createItem :: Uid Category -> IO (Uid Item)
 createItem (Uid categoryId) = do
   request <- makeRequest
-    (Path $ "item/" <> T.unpack categoryId <> "?name=testName")
+    (Path $ "item/" <> toString categoryId <> "?name=testName")
     (Method "POST")
   snd <$> runRequest request
 
 deleteItem :: Uid Item -> IO (Maybe Bool)
 deleteItem (Uid itemId) = do
   request <- makeRequest
-    (Path $ "item/" <> T.unpack itemId)
+    (Path $ "item/" <> toString itemId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of
@@ -244,14 +244,14 @@ itemInfo = object
 createTrait :: Uid Item -> IO (Uid Trait)
 createTrait (Uid itemId) = do
   request <- makeRequest
-    (Path $ "item/" <> T.unpack itemId <> "/trait")
+    (Path $ "item/" <> toString itemId <> "/trait")
     (Method "POST")
   snd <$> (runRequest $ setRequestBodyJSON traitBody request)
 
 deleteTrait :: Uid Item -> Uid Trait -> IO (Maybe Bool)
 deleteTrait (Uid itemId) (Uid traitId) = do
   request <- makeRequest
-    (Path $ "item/" <> T.unpack itemId <> "/trait/" <> T.unpack traitId)
+    (Path $ "item/" <> toString itemId <> "/trait/" <> toString traitId)
     (Method "DELETE")
   res <- runRequestNoBody request
   pure $ case res of

@@ -4,11 +4,9 @@
 
 module MergeSpec (tests) where
 
-
-import BasePrelude
+import Imports
 -- Text
 import qualified Data.Text as T
-import Data.Text (Text)
 -- Testing
 import Test.Hspec
 import Test.Hspec.QuickCheck

@@ -118,6 +118,9 @@ instance ToByteString Builder where
 instance (a ~ Char) => ToByteString [a] where
     toByteString = UTF8.fromString
     {-# INLINE toByteString #-}
+instance ToByteString BSL.ByteString where
+    toByteString = BSL.toStrict
+    {-# INLINE toByteString #-}
 
 class ToLByteString t where
     toLByteString :: t -> BSL.ByteString
@@ -132,4 +135,7 @@ instance ToLByteString Builder where
     {-# INLINE toLByteString #-}
 instance (a ~ Char) => ToLByteString [a] where
     toLByteString = UTF8L.fromString
+    {-# INLINE toLByteString #-}
+instance ToLByteString BS.ByteString where
+    toLByteString = BSL.fromStrict
     {-# INLINE toLByteString #-}

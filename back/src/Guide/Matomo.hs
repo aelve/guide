@@ -42,7 +42,7 @@ postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = push "postMatomo" $ do
     Context Config{..} _ _ <- ask
     whenJust _matomoLink $ \matomo -> liftIO $ do
-      async $ do
+      void $ async $ do
         manager <- getGlobalManager
         req <- setQueryString
           [ ("idsite", Just "1")  -- The ID of the website we're tracking a visit/action for.
