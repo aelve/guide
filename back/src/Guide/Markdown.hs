@@ -36,9 +36,8 @@ module Guide.Markdown
 )
 where
 
-
+-- Shared imports
 import Imports hiding (some)
-
 -- Parsing
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char

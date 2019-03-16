@@ -54,8 +54,8 @@ module Selenium
 )
 where
 
+-- Shared Imports
 import Imports hiding ((:|), catch)
-
 -- Monads
 import Control.Monad.Loops
 -- Containers
@@ -63,14 +63,13 @@ import qualified Data.Set as Set
 -- Text
 import qualified Data.Text as T
 -- Testing
+import qualified Test.Hspec.Expectations as Hspec
 import Test.Hspec.WebDriver hiding (attr, clearInput, click, cssProp, getText, sendKeys,
                              shouldHaveAttr, shouldHaveText)
-import Test.WebDriver.Commands.Wait
-import Test.WebDriver.Exceptions
-
-import qualified Test.Hspec.Expectations as Hspec
 import qualified Test.Hspec.WebDriver as WD
+import Test.WebDriver.Commands.Wait
 import qualified Test.WebDriver.Common.Keys as Key
+import Test.WebDriver.Exceptions
 -- Exceptions
 import Control.Monad.Catch
 

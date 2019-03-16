@@ -7,6 +7,7 @@
 
 module WebSpec (tests) where
 
+-- Shared imports
 import Imports
 -- Monads
 import Control.Monad.Loops
@@ -18,12 +19,10 @@ import qualified Data.Text as T
 import System.IO.Temp
 -- URLs
 import Network.URI
-
 -- Testing
-import Selenium
-
 import qualified ApiSpec
 import qualified LogSpec
+import Selenium
 import qualified Test.WebDriver.Common.Keys as Key
 -- Site
 import Guide.Config (Config (..), def)

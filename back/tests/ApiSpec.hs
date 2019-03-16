@@ -5,6 +5,7 @@
 -- | Integration tests for new API methods.
 module ApiSpec (tests) where
 
+-- Shared imports
 import Imports hiding ((.=))
 
 import Data.Aeson
@@ -13,11 +14,11 @@ import qualified Data.Yaml             as Yaml
 import Network.HTTP.Simple
 import Control.Monad.Catch
 import Network.HTTP.Types.Status
-
+-- Site
 import Guide.Api.Types
 import Guide.Types.Core
 import Guide.Utils (Uid (..))
-
+-- Tests
 import Test.Hspec
 
 

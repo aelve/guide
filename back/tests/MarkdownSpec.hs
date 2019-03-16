@@ -4,8 +4,8 @@
 
 module MarkdownSpec (tests) where
 
+-- Shared imports
 import Imports
-
 -- Text
 import qualified Data.Text as T
 -- HTML

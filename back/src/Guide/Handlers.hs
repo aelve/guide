@@ -12,14 +12,13 @@ module Guide.Handlers
 )
 where
 
-
+-- Shared imports
 import Imports
-
 -- Web
 import Lucid hiding (for_)
 import Web.Spock hiding (get, head, renderRoute, text)
 import Web.Spock.Lucid
-
+-- Site
 import Guide.App
 import Guide.Config
 import Guide.Diff (merge)

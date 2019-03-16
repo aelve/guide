@@ -4,7 +4,7 @@
 -- | Tests for logging of errors.
 module LogSpec (tests) where
 
-import BasePrelude
+import Imports
 import System.IO
 import Text.RE.TDFA.String
 
