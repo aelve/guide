@@ -57,9 +57,9 @@ jobs:
       script:
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > unDocumentedAfter
-        - echo "unDocumentedBefore = 251"
-        - awk '{ print "unDocumentedAfter " $1 }' unDocumentedAfter
-        - bash -c 'if [[ 251 < `cat unDocumentedAfter` ]]; then >&2 echo "FAIL. The current limit is 251 of undocumented top-level definitions, but $(cat unDocumentedAfter) ones were found and it is out of limit. Please, add comment to top-level undocumented definitions!"; exit 1; else echo "It's OK. unDocumentedBefore (251) >= unDocumentedAfter ($(cat unDocumentedAfter)). Yes, it is convenience to have documented code!"; fi'
+        - echo "unDocumentedBefore == 251"
+        - awk '{ print "unDocumentedAfter == " $1 }' unDocumentedAfter
+        - bash -c 'if [[ 251 < `cat unDocumentedAfter` ]]; then >&2 echo "FAIL. The current limit is 251 of undocumented top-level definitions, but unDocumentedAfter $(`cat unDocumentedAfter`) is out of limit. Please, add comment to top-level undocumented definitions!"; exit 1; else echo "OK. unDocumentedBefore >= unDocumentedAfter $(`cat unDocumentedAfter`). Yes, it is convenience to have documented code!"; fi'
 
     - stage: "Test the backend"
       before_script:
