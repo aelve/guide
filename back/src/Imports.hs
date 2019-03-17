@@ -44,6 +44,7 @@ import qualified Data.Text.Lazy as TL
 -- Formatting
 import Fmt as X
 
-
+-- | Short type for lazy ByteString
 type LByteString = BSL.ByteString
+-- | Short type for lazy Text
 type LText = TL.Text

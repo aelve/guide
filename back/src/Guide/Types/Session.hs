@@ -24,13 +24,11 @@ import Imports
 
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
-import Data.Time.Clock (UTCTime (..))
 import Web.Spock.Internal.SessionManager (SessionId)
 
 import Guide.Types.User
 import Guide.Utils
 
-import qualified Data.Text as T
 import qualified Web.Spock.Internal.SessionManager as Spock
 
 
@@ -52,7 +50,7 @@ emptyGuideData = GuideData {
 
 data GuideSession = GuideSession {
   _sess_id         :: !SessionId,
-  _sess_csrfToken  :: !T.Text,
+  _sess_csrfToken  :: !Text,
   _sess_validUntil :: !UTCTime,
   _sess_data       :: !GuideData }
   deriving (Show, Eq)

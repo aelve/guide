@@ -36,9 +36,8 @@ module Guide.Markdown
 )
 where
 
-
+-- Shared imports
 import Imports hiding (some)
-
 -- Parsing
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char
@@ -61,7 +60,6 @@ import Guide.Utils
 import qualified CMark as MD
 import qualified Data.Aeson as A
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Set as S
 import qualified Data.Text as T
 
@@ -343,7 +341,7 @@ instance ToHtml MarkdownTree where
       renderDoc Document{..} = BS.concat $
         prefaceAnn :
         map renderSection (concatMap flatten sections)
-      renderSection Section{..} = BSL.toStrict . renderBS $ do
+      renderSection Section{..} = toByteString . renderBS $ do
         mkH $ do
           span_ [id_ headingAnn] ""
           toHtmlRaw (renderMD (stripSource heading))

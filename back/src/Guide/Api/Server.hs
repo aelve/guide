@@ -30,7 +30,6 @@ import Guide.Logger
 import Guide.Config
 import Guide.State
 
-import qualified Data.ByteString.Char8 as BSC
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Data.Acid as Acid
 
@@ -57,10 +56,10 @@ runApiServer logger Config{..} db = do
     policy portApi = simpleCorsResourcePolicy
         -- TODO: Add Guide's frontend address (and maybe others resources)
         -- to list of `corsOrigins` to allow CORS requests
-        { corsOrigins = Just ([
-              "http://localhost:3333" -- Guide's frontend running on localhost
-            , BSC.pack $ format "http://localhost:{}" portApi  -- The /api endpoint
-            ], True)
+        { corsOrigins = Just (
+          [ "http://localhost:3333" -- Guide's frontend running on localhost
+          , toByteString (format "http://localhost:{}" portApi :: Text) -- The /api endpoint
+          ], True)
         }
 
 -- | An override for the default Warp exception handler.

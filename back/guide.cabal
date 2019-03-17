@@ -92,7 +92,6 @@ library
       Guide.Views.Utils
         Guide.Views.Utils.Input
     Guide.Routes
-  other-modules:
     Imports
     To
   build-depends:       Spock
