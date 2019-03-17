@@ -28,7 +28,9 @@
             v-model="group"
           />
           <v-select 
-            :items="items"
+            :items="categoryStatuses"
+            item-text="name"
+            item-value="value"
             v-model="categoryStatus"
             label="Status"
             class="mb-2"
@@ -89,11 +91,15 @@ export default class CategoryInfoEdit extends Vue {
 
   title: string = ''
   group: string = ''
-  categoryStatus: string = ''
+  categoryStatus: object = {}
   checkboxSections: any[] = ['ItemProsConsSection', 'ItemEcosystemSection', 'ItemNotesSection']
   isValid: boolean = false
 
-  items = ['Complete', 'Work in progress', 'Stub']
+  categoryStatuses = [
+    { name: 'Complete', value: 'CategoryFinished' }, 
+    { name: 'Work in progress', value: 'CategoryWIP' }, 
+    { name: 'Stub', value: 'CategoryStub' }
+  ]
 
   inputValidationRules: Function[] = [
     (x: string) => !!x || 'Input can not be empty'
@@ -108,27 +114,17 @@ export default class CategoryInfoEdit extends Vue {
     const category = this.$store.state.category.category
     this.title = category.title
     this.group = category.group
-    this.categoryStatus = this.transformCategoryStatus(category.status)
+    this.categoryStatus = { name: this.transformCategoryStatus(category.status), value: category.status }
   }
 
   transformCategoryStatus (status: string) {
-    if (status === 'CategoryStub') {
-      return 'Stub'
-    } else if (status === 'CategoryWIP') {
-      return 'Work in progress'
-    } else if (status === 'CategoryFinished') {
-      return 'Complete'
-    }
-  }
-
-  сategoryStatusRaw () {
-    switch(this.categoryStatus) {
-      case 'Work in progress':
-        return CategoryStatus.inProgress
-      case 'Complete':
-        return CategoryStatus.finished
+    switch(status) {
+      case CategoryStatus.finished:
+        return 'Complete'
+      case CategoryStatus.inProgress:
+        return 'Work in progress'
       default:
-        return CategoryStatus.toBeWritten
+        return 'Stub'
     }
   }
 
@@ -141,7 +137,7 @@ export default class CategoryInfoEdit extends Vue {
       id: this.categoryId,
       title: this.title,
       group: this.group,
-      status: this.сategoryStatusRaw(),
+      status: this.categoryStatus,
       sections: this.checkboxSections
     })
 
