@@ -92,7 +92,7 @@ export default class CategoryInfoEdit extends Vue {
   title: string = ''
   group: string = ''
   categoryStatus: object = {}
-  checkboxSections: any[] = ['ItemProsConsSection', 'ItemEcosystemSection', 'ItemNotesSection']
+  checkboxSections: any[] = []
   isValid: boolean = false
 
   categoryStatuses = [
@@ -114,6 +114,7 @@ export default class CategoryInfoEdit extends Vue {
     const category = this.$store.state.category.category
     this.title = category.title
     this.group = category.group
+    this.checkboxSections = category.sections
     this.categoryStatus = { name: this.transformCategoryStatus(category.status), value: category.status }
   }
 
