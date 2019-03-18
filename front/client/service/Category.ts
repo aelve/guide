@@ -24,6 +24,16 @@ class CategoryService {
     return data
   }
 
+  async updateCategoryInfo ({id, title, group, status, sections}) {
+    const { data } = await axios.put(`api/category/${id}/info`, {
+        title,
+        group,
+        status,
+        sections
+    })
+    return data
+  }
+
   async deleteCategory (id: ICategoryInfo['id']): Promise<void> {
     await axios.delete(`api/category/${id}`)
   }

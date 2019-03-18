@@ -44,6 +44,9 @@ const actions: ActionTree<ICategoryState, any> = {
     dispatch('loadCategoryList')
     return createdId
   },
+  async updateCategoryInfo (context: ActionContext<ICategoryState, any>, {id, title, group, status, sections}) {
+    await CategoryService.updateCategoryInfo({id, title, group, status, sections})
+  },
   async deleteCategory (
     { dispatch }: ActionContext<ICategoryState, any>,
     id: ICategoryInfo['id']

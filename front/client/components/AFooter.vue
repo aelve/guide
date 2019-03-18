@@ -32,7 +32,7 @@
         licensed under
         <a-link
           openInNewTab
-          url="http://aelve.com:4801/license"
+          url="http://guide.aelve.com:4801/license"
         >
           CC+ BY-SA 4.0
         </a-link>
