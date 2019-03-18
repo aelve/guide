@@ -22,6 +22,8 @@ where
 
 import Imports
 
+-- Concurrent
+import Control.Concurrent.Async
 -- Lists
 import Safe (headDef)
 -- Monads and monad transformers
@@ -69,7 +71,6 @@ import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.Wai.Metrics as EKG
-import qualified SlaveThread as Slave
 import qualified System.Metrics.Gauge as EKG.Gauge
 import qualified System.Remote.Monitoring as EKG
 import qualified Web.Spock as Spock
@@ -169,11 +170,11 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
           mapM_ killThread =<< readIORef ekgId
         putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
-  workThread <- Slave.fork $ withDB finishWork $ \db -> do
+  workAsync <- async $ withDB finishWork $ \db -> do
     hSetBuffering stdout NoBuffering
     -- Create a checkpoint every six hours. Note: if nothing was changed, the
     -- checkpoint won't be created, which saves us some space.
-    _ <- Slave.fork $ forever $ do
+    void $ async $ forever $ do
       createCheckpoint' db
       threadDelay (1000000 * 3600 * 6)
     -- EKG metrics
@@ -186,7 +187,7 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
           waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
           categoryGauge <- EKG.getGauge "db.categories" ekg
           itemGauge <- EKG.getGauge "db.items" ekg
-          _ <- Slave.fork $ forever $ do
+          void $ async $ forever $ do
             globalState <- Acid.query db GetGlobalState
             let allCategories = globalState^.categories
             let allItems = allCategories^..each.items.each
@@ -196,7 +197,7 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
           pure (Just waiMetrics)
         else pure Nothing
     -- Run the API
-    _ <- Slave.fork $ runApiServer (pushLogger "api" logger) config db
+    void $ async $ runApiServer (pushLogger "api" logger) config db
     -- Run the server
     let serverState = ServerState {
           _config = config,
@@ -221,7 +222,7 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
     logDebugIO logger $ format "Spock is running on port {}" _portMain
     runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
   forever (threadDelay (1000000 * 60))
-    `finally` (killThread workThread >> takeMVar workFinished)
+    `finally` (cancel workAsync >> takeMVar workFinished)
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: Maybe EKG.WaiMetrics -> GuideApp ()
