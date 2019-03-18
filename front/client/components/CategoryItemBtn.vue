@@ -26,7 +26,7 @@ export default class CategoryItemBtn extends Vue {
   @Prop(String) icon: string
   @Prop(Boolean) small: boolean
   @Prop(String) size: string
-  @Prop(Number) iconSize: number
+  @Prop(String) iconSize: string
 
   get style () {
     // Size prop overlaps small prop

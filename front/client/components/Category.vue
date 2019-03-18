@@ -6,6 +6,12 @@
           v-if="category"
           class="category-top-data"
         >
+          <a-link
+            openInNewTab
+            :url="`/haskell/feed/category/${categoryId}`"
+          >
+            <v-icon size="14" class="mr-3" left>$vuetify.icons.rss</v-icon>
+          </a-link>
           <p class="category-top-group mr-3"> {{category.group}} </p>
           <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
           <router-link
@@ -17,6 +23,7 @@
           <category-item-btn
             title="edit item info"
             icon="cog"
+            iconSize="18"
             @click="openCategoryInfoDialog"
           />
         </div>
@@ -96,6 +103,7 @@ import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import category from 'client/store/modules/category'
 import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
+import ALink from 'client/components/ALink.vue'
 
 @Component({
   components: {
@@ -103,7 +111,8 @@ import Confirm from 'client/helpers/ConfirmDecorator'
     AddItemDialog,
     CategoryDescription,
     CategoryItemBtn,
-    CategoryInfoEdit
+    CategoryInfoEdit,
+    ALink
   }
 })
 export default class Category extends Vue {
