@@ -96,7 +96,6 @@ import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.Aeson.Internal as A
 import qualified Data.Aeson.Text as A
 import qualified Data.Aeson.Types as A
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.XML.Types as XML
@@ -401,8 +400,8 @@ class AsJson s where
 
 instance AsJson ByteString where
   fromJson = A.eitherDecodeStrict
-  toJson = BSL.toStrict . A.encode
-  toJsonPretty = BSL.toStrict . A.encodePretty
+  toJson = toByteString . A.encode
+  toJsonPretty = toByteString . A.encodePretty
 
 instance AsJson LByteString where
   fromJson = A.eitherDecode

@@ -4,14 +4,10 @@
 
 module MarkdownSpec (tests) where
 
-
-import BasePrelude
--- Lenses
-import Lens.Micro.Platform
+-- Shared imports
+import Imports
 -- Text
-import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
 -- HTML
 import Lucid (ToHtml, renderText, toHtml)
 import Text.HTML.TagSoup hiding (sections)
@@ -144,7 +140,7 @@ getTags :: Text -> [Text]
 getTags html = nub [t | TagOpen t _ <- parseTags html]
 
 htmlToText :: ToHtml a => a -> Text
-htmlToText = TL.toStrict . renderText . toHtml
+htmlToText = toText . renderText . toHtml
 
 allMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 allMarkdowns f = do

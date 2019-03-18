@@ -17,9 +17,8 @@ module Guide.Diff
 )
 where
 
-
+-- shared imports
 import Imports
-
 -- Vector
 import Data.Vector (Vector)
 

@@ -41,8 +41,8 @@ data Matomo = Matomo
 postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = push "postMatomo" $ do
     Context Config{..} _ _ <- ask
-    whenJust _matomoLink $ \matomo -> liftIO $ do
-      async $ do
+    whenJust _matomoLink $ \matomo -> liftIO $
+      void $ async $ do
         manager <- getGlobalManager
         req <- setQueryString
           [ ("idsite", Just "1")  -- The ID of the website we're tracking a visit/action for.
@@ -54,7 +54,6 @@ postMatomo Matomo{..} = push "postMatomo" $ do
           ] <$> parseRequest (piwik matomo)
         -- TODO: log if the request to Matomo has failed
         httpLbs req manager
-      pure ()
     pure ()
   where
     action_name :: Maybe ByteString

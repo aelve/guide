@@ -1,35 +1,32 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE IncoherentInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE MonoLocalBinds      #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module WebSpec (tests) where
 
-import BasePrelude hiding (catch, try)
+-- Shared imports
+import Imports
 -- Monads
 import Control.Monad.Loops
 -- Concurrency
 import Control.Concurrent.Async (withAsync)
 -- Text
-import Data.Text (Text)
 import qualified Data.Text as T
 -- Files
-import System.Directory
 import System.IO.Temp
 -- URLs
 import Network.URI
-
 -- Testing
-import Selenium
 import qualified ApiSpec
 import qualified LogSpec
+import Selenium
 import qualified Test.WebDriver.Common.Keys as Key
-
 -- Site
+import Guide.Config (Config (..), def)
 import qualified Guide.Main
-import Guide.Config (def, Config(..))
 
 
 -----------------------------------------------------------------------------
@@ -454,14 +451,14 @@ markdownTests = session "markdown" $ using [chromeCaps] $ do
 
 parseCategoryURL :: String -> WD (String, String)
 parseCategoryURL url = do
-  case T.stripPrefix "/haskell/" (T.pack url) of
+  case T.stripPrefix "/haskell/" (toText url) of
     Nothing -> expectationFailure $
                  printf "%s doesn't start with /haskell/" (show url)
     Just u -> do
       let (slug, catId) = T.breakOnEnd "-" u
       slug `shouldSatisfy` ("not null", not . T.null)
       T.last slug `shouldBe` '-'
-      return (T.unpack (T.init slug), T.unpack catId)
+      return (toString (T.init slug), toString catId)
 
 openGuide :: String -> SpecWith (WdTestSession ())
 openGuide s = wd ("load " ++ s) (openGuidePage s)
@@ -488,9 +485,9 @@ createItem t = do
   waitUntil wait_delay (expect . (\xs -> length xs > length items) =<< selectItems)
   items2 <- selectItems
   case items2 \\ items of
-    [] -> expectationFailure "an item wasn't created"
+    []  -> expectationFailure "an item wasn't created"
     [x] -> return x
-    _ -> expectationFailure "more than one item was created"
+    _   -> expectationFailure "more than one item was created"
 
 itemName :: CanSelect s => s -> ComplexSelector
 itemName item = item :// ".item-name"

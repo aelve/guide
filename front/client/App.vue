@@ -110,4 +110,7 @@ td.lineNumbers {
 td.sourceCode {
   padding-left: 5px;
 }
+.v-input--has-state.error--text .v-label {
+  animation: none;
+}
 </style>

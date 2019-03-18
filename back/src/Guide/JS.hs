@@ -14,7 +14,7 @@
 -- future this whole module would be removed.
 module Guide.JS where
 
-
+-- Shared imports
 import Imports
 
 import NeatInterpolation
