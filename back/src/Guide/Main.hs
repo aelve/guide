@@ -172,19 +172,22 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
   installTerminationCatcher =<< myThreadId
   workAsync <- async $ withDB finishWork $ \db -> do
     hSetBuffering stdout NoBuffering
-    -- Run checkpoints creator, new server, ekg metrics and old server concurrently.
+    -- Run EKG metrics
+    mWaiMetrics <- ekgMetrics logger config db ekgId
+    -- Run checkpoints creator, new and old server concurrently.
     mapConcurrently_ id
-      [ checkpoint db
+      [ monitorDB db
       , runNewApi logger config db
-      , ekgAndOldServer logger config db ekgId]
+      , runOldServer logger config db mWaiMetrics
+      ]
   -- Hold procceses running and finish when exit or exaption.
   forever (threadDelay (1000000 * 60))
     `finally` (cancel workAsync >> takeMVar workFinished)
 
 -- Create a checkpoint every six hours. Note: if nothing was changed, the
 -- checkpoint won't be created, which saves us some space.
-checkpoint :: DB -> IO b
-checkpoint db = forever $ do
+monitorDB :: DB -> IO b
+monitorDB db = forever $ do
   createCheckpoint' db
   threadDelay (1000000 * 3600 * 6)
 
@@ -192,14 +195,14 @@ checkpoint db = forever $ do
 runNewApi :: Logger -> Config -> AcidState GlobalState -> IO ()
 runNewApi logger = runApiServer (pushLogger "api" logger)
 
--- Run EKG metrics and then further, run Spock (old server).
-ekgAndOldServer
+-- Run EKG metrics.
+ekgMetrics
   :: Logger
   -> Config
   -> DB
   -> IORef (Maybe ThreadId)
-  -> IO ()
-ekgAndOldServer logger config@Config{..} db ekgId = withAsync (
+  -> IO (Maybe EKG.WaiMetrics)
+ekgMetrics logger Config{..} db ekgId =
   if _ekg
     then do
       ekg <- do
@@ -217,32 +220,33 @@ ekgAndOldServer logger config@Config{..} db ekgId = withAsync (
         EKG.Gauge.set itemGauge (fromIntegral (length allItems))
         threadDelay (1000000 * 60)
       pure (Just waiMetrics)
-    else pure Nothing)
-  (\asyncWaiMetrics -> do
-    mWaiMetrics <- wait asyncWaiMetrics
-    -- Run the Spock (old server).
-    let serverState = ServerState {
-          _config = config,
-          _db     = db }
-    spockConfig <- do
-      cfg <- defaultSpockCfg () PCNoDatabase serverState
-      store <- newAcidSessionStore db
-      let sessionCfg = SessionCfg {
-            sc_cookieName = "spockcookie",
-            sc_sessionTTL = 3600,
-            sc_sessionIdEntropy = 64,
-            sc_sessionExpandTTL = True,
-            sc_emptySession = emptyGuideData,
-            sc_store = store,
-            sc_housekeepingInterval = 60 * 10,
-            sc_hooks = defaultSessionHooks
-          }
-      return cfg {
-        spc_maxRequestSize = Just (1024*1024),
-        spc_csrfProtection = True,
-        spc_sessionCfg = sessionCfg }
-    logDebugIO logger $ format "Spock is running on port {}" _portMain
-    runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics)
+    else pure Nothing
+
+-- Run the Spock (old server).
+runOldServer :: Logger -> Config -> DB -> Maybe EKG.WaiMetrics -> IO ()
+runOldServer logger config@Config{..} db mWaiMetrics = do
+  let serverState = ServerState {
+        _config = config,
+        _db     = db }
+  spockConfig <- do
+    cfg <- defaultSpockCfg () PCNoDatabase serverState
+    store <- newAcidSessionStore db
+    let sessionCfg = SessionCfg {
+          sc_cookieName = "spockcookie",
+          sc_sessionTTL = 3600,
+          sc_sessionIdEntropy = 64,
+          sc_sessionExpandTTL = True,
+          sc_emptySession = emptyGuideData,
+          sc_store = store,
+          sc_housekeepingInterval = 60 * 10,
+          sc_hooks = defaultSessionHooks
+        }
+    return cfg {
+      spc_maxRequestSize = Just (1024*1024),
+      spc_csrfProtection = True,
+      spc_sessionCfg = sessionCfg }
+  logDebugIO logger $ format "Spock is running on port {}" _portMain
+  runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: Maybe EKG.WaiMetrics -> GuideApp ()
