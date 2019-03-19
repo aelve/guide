@@ -81,8 +81,6 @@
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 import { CategoryStatus } from 'client/service/Category'
-import _remove from 'lodash/remove'
-import _includes from 'lodash/includes'
 
 @Component
 export default class CategoryInfoEdit extends Vue {
