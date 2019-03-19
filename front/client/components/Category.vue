@@ -9,8 +9,14 @@
           <a-link
             openInNewTab
             :url="`/haskell/feed/category/${categoryId}`"
-          >
-            <v-icon size="14" class="mr-3" left>$vuetify.icons.rss</v-icon>
+          > 
+            <!-- <v-icon size="14" class="mr-3" left>$vuetify.icons.rss</v-icon> -->
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-icon size="14" class="mr-3" left v-on="on">$vuetify.icons.rss</v-icon>
+              </template>
+              <span>{{`RSS feed of ${category.title} category`}}</span>
+            </v-tooltip>
           </a-link>
           <p class="category-top-group mr-3"> {{category.group}} </p>
           <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
