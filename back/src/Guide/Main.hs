@@ -176,18 +176,18 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
     mWaiMetrics <- ekgMetrics logger config db ekgId
     -- Run checkpoints creator, new and old server concurrently.
     mapConcurrently_ id
-      [ monitorDB db
+      [ checkPoint db
       , runNewApi logger config db
       , runOldServer logger config db mWaiMetrics
       ]
-  -- Hold procceses running and finish when exit or exaption.
+  -- Hold processes running and finish when exit or exception.
   forever (threadDelay (1000000 * 60))
     `finally` (cancel workAsync >> takeMVar workFinished)
 
 -- Create a checkpoint every six hours. Note: if nothing was changed, the
 -- checkpoint won't be created, which saves us some space.
-monitorDB :: DB -> IO b
-monitorDB db = forever $ do
+checkPoint :: DB -> IO b
+checkPoint db = forever $ do
   createCheckpoint' db
   threadDelay (1000000 * 3600 * 6)
 
