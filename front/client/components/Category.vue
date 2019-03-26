@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div class="category-wrapper">
-      <div class="category-top">
+      <!-- <div class="category-top">
         <div
           v-if="category"
           class="category-top-data"
@@ -9,8 +9,7 @@
           <a-link
             openInNewTab
             :url="`/haskell/feed/category/${categoryId}`"
-          > 
-            <!-- <v-icon size="14" class="mr-3" left>$vuetify.icons.rss</v-icon> -->
+          >
             <v-tooltip bottom>
               <template v-slot:activator="{ on }">
                 <v-icon size="14" class="mr-3" left v-on="on">$vuetify.icons.rss</v-icon>
@@ -52,7 +51,15 @@
         >
           <v-icon size="14">$vuetify.icons.trash-alt</v-icon>
         </v-btn>
-      </div>
+      </div> -->
+
+      <template v-if="category">
+        <category-info 
+          :catgoryTitle="category.title"
+          :categoryGroup="category.group"
+          :categoryUrl="categoryUrl"
+        />
+      </template>
 
       <category-description />
 
@@ -84,14 +91,6 @@
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
-      <add-item-dialog
-        v-model="isDialogOpen"
-        :categoryId="categoryId"
-      />
-      <category-info-edit 
-        v-model="isCategoryInfoEdit"
-        :categoryId="categoryId"
-      />
     </div>
   </v-container>
 </template>
@@ -103,29 +102,22 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
-import AddItemDialog from 'client/components/AddItemDialog.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import category from 'client/store/modules/category'
-import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
-import ALink from 'client/components/ALink.vue'
+import CategoryInfo from 'client/components/CategoryInfo.vue'
 
 @Component({
   components: {
     CategoryItem,
-    AddItemDialog,
     CategoryDescription,
     CategoryItemBtn,
-    CategoryInfoEdit,
-    ALink
+    CategoryInfo,
   }
 })
 export default class Category extends Vue {
   @Prop(String) categoryId!: string
-
-  isDialogOpen: boolean = false
-  isCategoryInfoEdit: boolean = false
 
   get category () {
     return this.$store.state.category.category
@@ -147,10 +139,6 @@ export default class Category extends Vue {
     this.$store.commit('category/setCategory', null)
   }
 
-  openAddItemDialog () {
-    this.isDialogOpen = true
-  }
-
   @Confirm({ text: 'delete this category' })
   async deleteCategory () {
     if (!this.category) {
@@ -159,10 +147,6 @@ export default class Category extends Vue {
 
     await this.$store.dispatch('category/deleteCategory', this.categoryId)
     this.$router.back()
-  }
-
-  openCategoryInfoDialog () {
-    this.isCategoryInfoEdit = true
   }
 }
 </script>
