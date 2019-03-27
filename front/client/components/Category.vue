@@ -1,63 +1,13 @@
 <template>
   <v-container>
     <div class="category-wrapper">
-      <!-- <div class="category-top">
-        <div
-          v-if="category"
-          class="category-top-data"
-        >
-          <a-link
-            openInNewTab
-            :url="`/haskell/feed/category/${categoryId}`"
-          >
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
-                <v-icon size="14" class="mr-3" left v-on="on">$vuetify.icons.rss</v-icon>
-              </template>
-              <span>{{`RSS feed of ${category.title} category`}}</span>
-            </v-tooltip>
-          </a-link>
-          <p class="category-top-group mr-3"> {{category.group}} </p>
-          <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
-          <router-link
-            class="category-top-link mr-3"
-            :to="categoryUrl"
-          >
-            {{category.title}}
-          </router-link>
-          <category-item-btn
-            title="edit item info"
-            icon="cog"
-            iconSize="18"
-            @click="openCategoryInfoDialog"
-          />
-        </div>
-        <v-btn
-          class="ma-0 px-1"
-          flat
-          color="grey"
-          @click="openAddItemDialog"
-        >
-          <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
-          Add new item
-        </v-btn>
-        <v-btn
-          icon
-          flat
-          class="ma-0 pa-0"
-          color="grey"
-          title="Delete category"
-          @click="deleteCategory"
-        >
-          <v-icon size="14">$vuetify.icons.trash-alt</v-icon>
-        </v-btn>
-      </div> -->
-
       <template v-if="category">
-        <category-info 
-          :catgoryTitle="category.title"
+        <category-info
+          :category="category" 
+          :categoryTitle="category.title"
           :categoryGroup="category.group"
           :categoryUrl="categoryUrl"
+          @openDialog="openAddItemDialog"
         />
       </template>
 
@@ -81,7 +31,6 @@
           :kind="value.kind"
         />
       </template>
-
       <v-btn
         flat
         class="ml-2"
@@ -91,6 +40,10 @@
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
+      <add-item-dialog
+        v-model="isAddItemDialogOpen"
+        :categoryId="categoryId"
+      />
     </div>
   </v-container>
 </template>
@@ -103,21 +56,22 @@ import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
-import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import category from 'client/store/modules/category'
-import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryInfo from 'client/components/CategoryInfo.vue'
+import AddItemDialog from 'client/components/AddItemDialog.vue'
 
 @Component({
   components: {
     CategoryItem,
     CategoryDescription,
-    CategoryItemBtn,
     CategoryInfo,
+    AddItemDialog,
   }
 })
 export default class Category extends Vue {
   @Prop(String) categoryId!: string
+
+  isAddItemDialogOpen: boolean = false
 
   get category () {
     return this.$store.state.category.category
@@ -139,60 +93,13 @@ export default class Category extends Vue {
     this.$store.commit('category/setCategory', null)
   }
 
-  @Confirm({ text: 'delete this category' })
-  async deleteCategory () {
-    if (!this.category) {
-      return
-    }
-
-    await this.$store.dispatch('category/deleteCategory', this.categoryId)
-    this.$router.back()
+  openAddItemDialog () {
+    this.isAddItemDialogOpen = true
   }
 }
 </script>
 
 <style scoped>
-.category-top {
-  display: flex;
-  align-items: center;
-  margin: 0 0 5px;
-}
-
-.category-top-data {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-.category-top >>> i {
-  margin-right: 15px;
-  font-size: 18px;
-  color: #979797;
-  cursor: pointer;
-  transition: all ease-in-out 0.25s;
-}
-
-.category-top >>> i:hover {
-  color: #000;
-}
-
-.category-top-link {
-  font-size: 24px;
-  font-weight: 600;
-  text-decoration: none;
-  color: #979797;
-  cursor: pointer;
-  transition: all ease-in-out 0.25s;
-}
-
-.category-top-link:hover {
-  color: #000;
-}
-
-.category-top-group {
-  font-size: 24px;
-}
-
 .category-wrapper {
   max-width: 800px;
   margin: 0 auto;
