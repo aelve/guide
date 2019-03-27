@@ -4,6 +4,7 @@
       <template v-if="category">
         <category-info
           :category="category" 
+          :categoryId="categoryId"
           :categoryTitle="category.title"
           :categoryGroup="category.group"
           :categoryUrl="categoryUrl"

@@ -5,7 +5,7 @@
     >
       <a-link
         openInNewTab
-        :url="`/haskell/feed/category/${categoryId}`"
+        :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
       >
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
