@@ -28,10 +28,10 @@
             v-model="group"
           />
           <v-select 
-            :items="categoryStatuses"
+            :items="categoryStageList"
             item-text="name"
             item-value="value"
-            v-model="categoryStatus"
+            v-model="categoryStage"
             label="Status"
             class="mb-2"
           />
@@ -40,6 +40,7 @@
             label="Pros/cons enabled"
             value="ItemProsConsSection"
             class="mb-2"
+            append-icon=""
           />
           <v-checkbox 
             v-model="checkboxSections"
@@ -91,11 +92,11 @@ export default class CategoryInfoEdit extends Vue {
 
   title: string = ''
   group: string = ''
-  categoryStatus: object = {}
+  categoryStage: object = {}
   checkboxSections: any[] = []
   isValid: boolean = false
 
-  categoryStatuses = [
+  categoryStageList = [
     { name: 'Complete', value: 'CategoryFinished' }, 
     { name: 'Work in progress', value: 'CategoryWIP' }, 
     { name: 'Stub', value: 'CategoryStub' }
@@ -106,6 +107,7 @@ export default class CategoryInfoEdit extends Vue {
   ]
 
   beforeMount () {
+    // TODO change to normal icon import
     this.$vuetify.icons.checkboxOff = this.$vuetify.icons.square
   }
 
@@ -115,7 +117,7 @@ export default class CategoryInfoEdit extends Vue {
     this.title = category.title
     this.group = category.group
     this.checkboxSections = category.sections
-    this.categoryStatus = { name: this.transformCategoryStatus(category.status), value: category.status }
+    this.categoryStage = { name: this.transformCategoryStatus(category.status), value: category.status }
   }
 
   transformCategoryStatus (status: string) {
@@ -138,7 +140,7 @@ export default class CategoryInfoEdit extends Vue {
       id: this.categoryId,
       title: this.title,
       group: this.group,
-      status: this.categoryStatus,
+      status: this.categoryStage,
       sections: this.checkboxSections
     })
 
