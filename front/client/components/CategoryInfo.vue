@@ -86,7 +86,7 @@ export default class CategoryInfo extends Vue {
   }
 
   openDialog () {
-    this.$emit('openDialog');
+    this.$emit('openAddItemDialog');
   }
 
   @Confirm({ text: 'delete this category' })

@@ -8,7 +8,7 @@
           :categoryTitle="category.title"
           :categoryGroup="category.group"
           :categoryUrl="categoryUrl"
-          @openDialog="openAddItemDialog"
+          @openAddItemDialog="openAddItemDialog"
         />
       </template>
 
