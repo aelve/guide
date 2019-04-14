@@ -17,10 +17,9 @@ import 'client/assets/code-highlight.css'
 import AppComponent from './App.vue'
 import { createRouter } from './router'
 import { createStore } from './store'
+import config from '../config'
 
-// webpack DefinePlugin constant, see build/webpack.base.conf.js for
-declare var BASE_URL: string
-axios.defaults.baseURL = BASE_URL
+axios.defaults.baseURL = `http://localhost:${config.port}`
 
 const icons = {}
 // TODO import and add only used icons for production
