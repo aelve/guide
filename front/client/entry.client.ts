@@ -1,5 +1,3 @@
-import 'reflect-metadata'
-import '@babel/polyfill'
 import _get from 'lodash/get'
 
 import { createApp } from './app'
