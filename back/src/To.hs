@@ -33,6 +33,7 @@ import qualified Data.ByteString.UTF8 as UTF8
 
 
 class ToText t where
+    -- | Transforming to strict Text
     toText :: t -> Text
 instance (a ~ Char) => ToText [a] where
     toText = pack
@@ -51,6 +52,7 @@ instance ToText BSL.ByteString where
     {-# INLINE toText #-}
 
 class ToLText t where
+    -- | Transforming to lazy Text
     toLText :: t -> TL.Text
 instance (a ~ Char) => ToLText [a] where
     toLText = TL.pack
@@ -69,6 +71,7 @@ instance ToLText BSL.ByteString where
     {-# INLINE toLText #-}
 
 class ToBuilder t where
+    -- | Transforming to Builder.
     toBuilder :: t -> Builder
 instance (a ~ Char) => ToBuilder [a] where
     toBuilder = B.fromString
@@ -87,6 +90,7 @@ instance ToBuilder BSL.ByteString where
     {-# INLINE toBuilder #-}
 
 class ToString t where
+    -- | Transforming to String
     toString :: t -> String
 instance ToString Text where
     toString = unpack
@@ -105,6 +109,7 @@ instance ToString BSL.ByteString where
     {-# INLINE toString #-}
 
 class ToByteString t where
+    -- | Transforming to strict ByteString
     toByteString :: t -> BS.ByteString
 instance ToByteString Text where
     toByteString = encodeUtf8
@@ -118,8 +123,12 @@ instance ToByteString Builder where
 instance (a ~ Char) => ToByteString [a] where
     toByteString = UTF8.fromString
     {-# INLINE toByteString #-}
+instance ToByteString BSL.ByteString where
+    toByteString = BSL.toStrict
+    {-# INLINE toByteString #-}
 
 class ToLByteString t where
+    -- | Transforming to lazy ByteString
     toLByteString :: t -> BSL.ByteString
 instance ToLByteString Text where
     toLByteString = TL.encodeUtf8 . TL.fromStrict
@@ -132,4 +141,7 @@ instance ToLByteString Builder where
     {-# INLINE toLByteString #-}
 instance (a ~ Char) => ToLByteString [a] where
     toLByteString = UTF8L.fromString
+    {-# INLINE toLByteString #-}
+instance ToLByteString BS.ByteString where
+    toLByteString = BSL.fromStrict
     {-# INLINE toLByteString #-}

@@ -28,7 +28,7 @@
           <category-item-btn
             slot="activator"
             size="22px"
-            :iconSize="14"
+            iconSize="14"
             icon="ellipsis-v"
           />
           <v-list dense>

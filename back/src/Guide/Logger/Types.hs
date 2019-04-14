@@ -19,6 +19,7 @@ module Guide.Logger.Types
 )
 where
 
+-- Shared imports
 import Imports
 
 import Di.Core

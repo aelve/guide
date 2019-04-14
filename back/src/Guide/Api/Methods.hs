@@ -14,7 +14,6 @@ import Imports
 import Control.Monad.Extra (whenJust)
 import Data.Acid as Acid
 import Data.Aeson (encode)
-import Data.Text (Text)
 import Servant
 
 import Guide.Logger

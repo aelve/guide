@@ -136,7 +136,7 @@ readConfig = do
   unless exists $ do
     putStrLn "config.json doesn't exist, creating it"
     BSL.writeFile filename (Aeson.encodePretty (def :: Config))
-  contents <- BSL.fromStrict <$> BS.readFile filename
+  contents <- toLByteString <$> BS.readFile filename
   case Aeson.eitherDecode' contents of
     Left err  -> error ("error when reading config: " ++ err)
     Right cfg -> do

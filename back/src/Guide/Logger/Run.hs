@@ -8,10 +8,11 @@ module Guide.Logger.Run
 )
 where
 
+-- Shared imports
 import Imports
+
 import Say (sayErr, hSay)
 import Control.Monad.Extra
-import Data.Time.Format ()
 import Data.Time.Clock.System
 import System.IO
 

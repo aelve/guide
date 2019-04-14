@@ -3,10 +3,10 @@
 
 module Main (main) where
 
-import BasePrelude
+-- Shared imports
+import Imports
 -- Testing
 import Test.Hspec
-
 -- Tests
 import qualified WebSpec
 import qualified MarkdownSpec

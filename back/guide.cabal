@@ -92,7 +92,6 @@ library
       Guide.Views.Utils
         Guide.Views.Utils.Input
     Guide.Routes
-  other-modules:
     Imports
     To
   build-depends:       Spock
@@ -159,7 +158,6 @@ library
                      , servant-swagger-ui
                      , swagger2
                      , shortcut-links >= 0.4.2
-                     , slave-thread
                      , split
                      , stache-plus == 0.1.*
                      , stm
@@ -235,7 +233,6 @@ test-suite tests
                      , network-uri
                      , quickcheck-text < 0.2
                      , regex
-                     , slave-thread
                      , tagsoup < 1
                      , text
                      , temporary
