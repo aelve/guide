@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { Mixin } from 'vue-mixin-decorator'
 import ConflictDialog from 'client/components/ConflictDialog.vue'
-import DeferredPromise from 'client/helpers/DeferredPromise'
+import DeferredPromise from 'utils/DeferredPromise'
 
 const ComponentClass = Vue.extend(ConflictDialog)
 

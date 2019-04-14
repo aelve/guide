@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { Mixin } from 'vue-mixin-decorator'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
-import DeferredPromise from 'client/helpers/DeferredPromise'
+import DeferredPromise from 'utils/DeferredPromise'
 
 const ComponentClass = Vue.extend(ConfirmDialog)
 
