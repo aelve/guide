@@ -9,7 +9,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 async function start () {
   const app = new Koa()
 
-  // TODO replace proxy lib or write own middleware
+  // TODO replace proxy lib or write own middleware for log and flexibility
   app.use(proxy({
     requestOptions: {
       strictSSL: false
