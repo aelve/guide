@@ -1,3 +1,5 @@
+// TODO configurate
+
 const autoprefixer = require('autoprefixer')
 
 const plugins = [

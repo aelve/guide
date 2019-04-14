@@ -7,7 +7,7 @@
   "rules": {
     "arrow-parens": false,
     "comment-format": [true, "check-space"],
-    "max-classes-per-file": [false],
+    "max-classes-per-file": false,
     "member-access": false,
     "member-ordering": false,
     "no-console": false,

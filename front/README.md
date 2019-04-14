@@ -1,9 +1,16 @@
 ## Commands
 
- - `client:dev` - Start developing environment of client content.
- - `client:build` - Build client content.
- - `server:dev` - Start developing environment of ssr server. 
- - `server:build` - Build ssr content.
- - `build-all` - Run `client:build` and `server:build` at same time. Please run this command for deployment.
- - `start:dev` - Run `client:dev` and `server:dev` at same time. Please run this command for development.
- - `start:prod` - Start ssr server in production environment. You should run `build-all` first to make it works. 
+ - `dev` - Start developing environment (starts both server and setup client middleware for server).
+ - `build` - Builds to /dist folder. Compiles (from ts to js) server right in dist folder, client files compiled in /dist/src.
+
+## Deploy process
+  Node version >= 11, because used fs async methods which experimental now
+
+ - `git pull`
+ - `npm i`
+ - `npm run build`
+ - `set NODE_ENV=production`, also you can specify port by `set PORT=%port_number%`
+ - `cd dist`
+ - `npm i`
+ - `node run server`
+ 
