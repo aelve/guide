@@ -1,4 +1,4 @@
-// TODO configurate
+// TODO configure
 
 const autoprefixer = require('autoprefixer')
 
