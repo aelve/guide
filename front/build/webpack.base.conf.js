@@ -1,68 +1,156 @@
-const webpack = require('webpack')
 const path = require('path')
+const { DefinePlugin } = require('webpack')
 const { VueLoaderPlugin } = require('vue-loader')
-const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
-const TSLintPlugin = require('tslint-webpack-plugin')
-const { cssLoader, stylusLoader } = require('./style-loader.conf')
+const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin')
 
-const { clientPort, ssrPort } = require('./build-config')
-const isDev = process.env.NODE_ENV === 'development'
+const isProduction = process.env.NODE_ENV === 'production'
 
-module.exports = {
-  mode: isDev ? 'development' : 'production',
-
+const config = {
+  mode: isProduction ? 'production' : 'development',
+  devtool: isProduction ? false : 'cheap-module-source-map',
   output: {
-    publicPath: isDev
-      ? `//localhost:${clientPort}/`  // Please bind this hostname to 127.0.0.1 when developing.
-      : '/'
+    path: path.resolve(__dirname, '../dist/src'),
+    publicPath: '/src/',
+    // filename: '[name].[hash].js'
+    filename: '[name].js'
   },
-
-  optimization: {},
-
   resolve: {
-    extensions: ['.js', '.ts'],
+    extensions: [
+      '.mjs',
+      '.js',
+      '.jsx',
+      '.ts',
+      '.tsx'
+    ],
     alias: {
-      client: path.resolve(__dirname, '../client/')
-    }
+      client: path.resolve(__dirname, '../client/'),
+      utils: path.resolve(__dirname, '../utils/')
+    },
+    modules: ['node_modules']
   },
-
+  stats: {
+    modules: false
+  },
   module: {
     rules: [
-      cssLoader, 
-      stylusLoader,
+      {
+        test: /\.vue$/,
+        use: [
+          {
+            loader: 'vue-loader',
+            options: {
+              compilerOptions: {
+                preserveWhitespace: false
+              }
+            }
+          }
+        ]
+      },
       {
         test: /\.js$/,
-        exclude: /node_modules/,
         use: {
           loader: 'babel-loader'
         }
       },
       {
-        test: /\.tsx?$/,
+        test: /\.ts$/,
         use: [
-          'babel-loader',
+          {
+            loader: 'babel-loader'
+          },
           {
             loader: 'ts-loader',
             options: {
-              happyPackMode: true,
+              transpileOnly: true,
               appendTsSuffixTo: [/\.vue$/]
             }
           }
-        ],
-        exclude: /node_modules/
+        ]
       },
       {
-        test: /\.vue$/,
-        loader: 'vue-loader'
+        test: /\.tsx$/,
+        use: [
+          {
+            loader: 'babel-loader'
+          },
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+              appendTsxSuffixTo: [/\.vue$/]
+            }
+          }
+        ]
       },
       {
-        test: /\.(png|jpg|gif|svg|woff|woff2|eot|ttf)$/,
+        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
         use: [
           {
             loader: 'url-loader',
             options: {
-              limit: 8192,
-              name: 'img/[name].[hash:7].[ext]'
+              limit: 4096,
+              fallback: {
+                loader: 'file-loader',
+                options: {
+                  name: 'img/[name].[hash:8].[ext]'
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: 'vue-style-loader',
+            options: {
+              sourceMap: false,
+              shadowMode: false
+            }
+          },
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: false,
+              importLoaders: 2
+            }
+          },
+          {
+            loader: 'postcss-loader',
+            options: {
+              sourceMap: false
+            }
+          }
+        ]
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          {
+            loader: 'vue-style-loader',
+            options: {
+              sourceMap: false,
+              shadowMode: false
+            }
+          },
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: false,
+              importLoaders: 2
+            }
+          },
+          {
+            loader: 'postcss-loader',
+            options: {
+              sourceMap: false
+            }
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sourceMap: false
             }
           }
         ]
@@ -71,23 +159,12 @@ module.exports = {
   },
 
   plugins: [
-    new webpack.ContextReplacementPlugin(
-      /moment[\/\\]locale$/,
-      /ru-RU/
-    ),
-    new webpack.DefinePlugin({
-      BASE_URL: JSON.stringify(`http://localhost:${ssrPort}`)
-    }),
-    new FriendlyErrorsPlugin(),
     new VueLoaderPlugin(),
-
-    new TSLintPlugin({
-      files: [
-        './client/**/*.ts',
-        './server/**/*.ts',
-        './client/**/*.tsx',
-        './server/**/*.tsx'
-      ]
+    new FriendlyErrorsWebpackPlugin(),
+    new DefinePlugin({
+      NODE_ENV: isProduction ? "'production'" : "'development'"
     })
   ]
 }
+
+module.exports = config

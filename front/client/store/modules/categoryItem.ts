@@ -11,9 +11,9 @@ interface ICategoryItemState {
   categoryItemList: ICategoryItem[]
 }
 
-const state: ICategoryItemState = {
+const state = (): ICategoryItemState => ({
   categoryItemList: []
-}
+})
 
 const getters: GetterTree<ICategoryItemState, any> = {}
 
@@ -118,7 +118,7 @@ const actions: ActionTree<ICategoryItemState, any> = {
   },
   async updateCategoryDescription (
     { dispatch }: ActionContext<ICategoryItemState, any>,
-    { id, original, modified }: {id: string, original: string, modified: string}
+    { id, original, modified }: { id: string, original: string, modified: string }
   ) {
     const createdDescription = await CategoryItemService.updateCategoryDescription({
       id,

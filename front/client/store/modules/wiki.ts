@@ -6,10 +6,10 @@ interface IWikiState {
   searchInput: string
 }
 
-const state: IWikiState = {
+const state = (): IWikiState => ({
   searchResults: [],
   searchInput: ''
-}
+})
 
 const getters: GetterTree<IWikiState, any> = {}
 

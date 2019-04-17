@@ -1,4 +1,3 @@
-import 'reflect-metadata'
 import _get from 'lodash/get'
 import { createApp } from './app'
 
@@ -10,6 +9,7 @@ export default async context => {
     router.onReady(() => {
       const matchedComponents = router.getMatchedComponents()
 
+      // TODO not reject, create fallback to 404 component
       if (!matchedComponents.length) {
         return reject({
           code: 404,

@@ -6,10 +6,10 @@ interface ICategoryState {
   category: ICategoryFull
 }
 
-const state: ICategoryState = {
+const state = (): ICategoryState => ({
   categoryList: [],
   category: null
-}
+})
 
 const getters: GetterTree<ICategoryState, any> = {}
 
