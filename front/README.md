@@ -9,8 +9,7 @@
  - `git pull`
  - `npm i`
  - `npm run build`
- - `set NODE_ENV=production`, also you can specify port by `set PORT=%port_number%`
+ - `set NODE_ENV=production`, also you can specify port by `set PORT=%port_number%` and `API_URL=%api_url%`
  - `cd dist`
  - `npm i`
  - `node server`
- 
