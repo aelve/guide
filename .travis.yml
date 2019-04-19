@@ -36,6 +36,7 @@ jobs:
         - npm run build
       allow-failures:
         - node
+        - npm
 
     - stage: "Make and upload a Docker image for the front"
       script:
