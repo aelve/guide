@@ -29,7 +29,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.8.1",
     "@fortawesome/vue-fontawesome": "^0.1.6",
     "axios": "^0.18.0",
-    "easymde": "^2.5.1",
+    "easymde": "^2.6.0",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-mount": "^4.0.0",
@@ -51,6 +51,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/plugin-transform-runtime": "^7.4.3",
+    "@babel/preset-env": "^7.4.3",
     "@vue/preload-webpack-plugin": "^1.1.0",
     "autoprefixer": "^9.5.1",
     "babel-loader": "^8.0.5",
