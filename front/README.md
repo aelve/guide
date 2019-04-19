@@ -12,5 +12,5 @@
  - `set NODE_ENV=production`, also you can specify port by `set PORT=%port_number%`
  - `cd dist`
  - `npm i`
- - `node run server`
+ - `node server`
  
