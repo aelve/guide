@@ -30,10 +30,12 @@ cache:
 jobs:
   include:
     - stage: "Build front"
-      before_script:
+      script:
         - cd front
         - npm install
         - npm run build
+      allow-failures:
+        - node
 
     - stage: "Make and upload a Docker image for the front"
       script:

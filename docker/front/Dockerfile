@@ -13,8 +13,10 @@ RUN apt update
 
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
 
+RUN vm install v11.14.0
+
 WORKDIR /opt/front
 
 COPY files ./
 
-CMD node ./server.js
+CMD node ./dist/server.js
