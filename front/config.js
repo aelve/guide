@@ -1,4 +1,6 @@
+const { API_URL, PORT } = process.env
+
 export default {
-  apiUrl: 'https://staging.guide.aelve.com:4400/',
-  port: process.env.PORT || 5000
+  apiUrl: API_URL || 'https://staging.guide.aelve.com:4400/',
+  port: PORT || 5000
 }
