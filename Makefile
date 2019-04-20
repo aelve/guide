@@ -51,10 +51,10 @@ back/travis-docker:
 .PHONY: front/travis-docker
 front/travis-docker:
 	rm -rf docker/front/files && mkdir docker/front/files
-	ls
+	ls front/
 	cp -R front/dist/ docker/front/files/
-	ls
+	ls front/
 	cd ./docker/front/files/dist/ && export NODE_ENV=production && npm install
-	ls
+	ls front/
 	docker build docker/front -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/front/files
