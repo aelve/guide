@@ -3,7 +3,6 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import Vuetify from 'vuetify'
 import { sync } from 'vuex-router-sync'
-import axios from 'axios'
 import ALink from 'client/components/ALink.vue'
 import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
 import 'vuetify/dist/vuetify.css'
@@ -17,9 +16,7 @@ import 'client/assets/code-highlight.css'
 import AppComponent from './App.vue'
 import { createRouter } from './router'
 import { createStore } from './store'
-import config from '../config'
 
-axios.defaults.baseURL = `http://localhost:${config.port}`
 
 const icons = {}
 // TODO import and add only used icons for production
