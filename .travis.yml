@@ -34,7 +34,7 @@ jobs:
         - cd front
         - npm install
         - npm run build
-        - cd
+        - cd -
         - ls
       script:
         - ls
