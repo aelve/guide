@@ -5,15 +5,9 @@ ENV LC_ALL=C.UTF-8
 
 ENV NODE_ENV=production
 
-# ARG PORT_ARG=5000
-# ENV PORT=$PORT_ARG
-
 # ENV PORT=5000
 
-# ARG API_URL_ARG=https://staging.guide.aelve.com:4400/
-# ENV API_URL=$API_URL_ARG
-
-# ENV API_URL=https://staging.guide.aelve.com:4400/
+ENV API_URL=localhost
 
 # Install NodeJS via nvm
 
