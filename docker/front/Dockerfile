@@ -47,4 +47,4 @@ WORKDIR /opt/front
 
 COPY files ./
 
-CMD node ./dist/server.js
+CMD node ./dist/server
