@@ -3,11 +3,8 @@ FROM ubuntu:bionic
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
+# NODE_ENV used to run front server on production
 ENV NODE_ENV=production
-
-# ENV PORT=5000
-
-ENV API_URL=localhost
 
 # Install NodeJS via nvm
 
@@ -42,9 +39,9 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN node -v
 RUN npm -v
 
-# Copy dist folder to docker container
 WORKDIR /opt/front
 
+# Copy front server to docker container
 COPY files ./
 
 CMD node ./dist/server
