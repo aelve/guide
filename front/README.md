@@ -13,4 +13,3 @@
  - `cd dist`
  - `npm i`
  - `node server`
- 
