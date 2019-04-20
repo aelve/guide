@@ -35,10 +35,7 @@ jobs:
         - npm install
         - npm run build
         - cd -
-        - ls
       script:
-        - ls
-        - ls front/
         - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
         - make front/travis-docker "tag=$BRANCH--front"
         - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
