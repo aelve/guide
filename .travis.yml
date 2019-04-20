@@ -29,7 +29,7 @@ cache:
 
 jobs:
   include:
-    - stage: "Build front"
+    - stage: "Build front and upload docker image"
       before_script:
         - cd front
         - npm install
@@ -40,7 +40,7 @@ jobs:
         - make front/travis-docker "tag=$BRANCH--front"
         - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
         - docker push "quay.io/aelve/guide:$BRANCH--front"
-      # if: type = push
+      if: type = push
 
     - stage: "Build backend dependencies"
       before_script:
@@ -93,20 +93,6 @@ jobs:
       script:
         - stack --no-terminal test
         - make back/test-db
-
-    # - stage: "Build front"
-    #   before_script:
-    #     - cd front
-    #     - npm install
-    #     - npm run build
-
-    # - stage: "Make and upload a Docker image for the front"
-    #   script:
-    #     - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-    #     - make front/travis-docker "tag=$BRANCH--front"
-    #     - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-    #     - docker push "quay.io/aelve/guide:$BRANCH--front"
-    #   if: type = push
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
