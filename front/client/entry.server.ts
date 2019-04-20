@@ -1,5 +1,10 @@
 import _get from 'lodash/get'
+import axios from 'axios'
 import { createApp } from './app'
+
+import config from '../config'
+
+axios.defaults.baseURL = `http://localhost:${config.port}`
 
 export default async context => {
   return new Promise((resolve, reject) => {
