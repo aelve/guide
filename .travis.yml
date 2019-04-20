@@ -41,7 +41,7 @@ jobs:
         - make front/travis-docker "tag=$BRANCH--front"
         - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
         - docker push "quay.io/aelve/guide:$BRANCH--front"
-      if: type = push
+      # if: type = push
 
     - stage: "Build backend dependencies"
       before_script:
