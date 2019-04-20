@@ -33,7 +33,7 @@ jobs:
       script:
         - cd front
         - npm install
-        - npm run build || True
+        - npm run build || true
 
     - stage: "Make and upload a Docker image for the front"
       script:
