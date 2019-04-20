@@ -2,8 +2,11 @@
 import path from 'path'
 import fs from 'fs'
 import { createBundleRenderer } from 'vue-server-renderer'
-// TODO move prefix to config
+// TODO move 'src' prefix to config
+// TODO find a way to get rid of ts ignore and still build without errors
+// @ts-ignore
 import bundle from '../src/vue-ssr-server-bundle.json'
+// @ts-ignore
 import clientManifest from '../src/vue-ssr-client-manifest.json'
 import serve from 'koa-static'
 import koaMount from 'koa-mount'
