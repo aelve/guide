@@ -3,6 +3,8 @@ FROM ubuntu:bionic
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
+ENV NODE_ENV=production
+
 ARG PORT_ARG=5000
 ENV PORT=$PORT_ARG
 
@@ -47,4 +49,4 @@ WORKDIR /opt/front
 
 COPY files ./
 
-CMD node ./dist/server
+CMD node dist/server
