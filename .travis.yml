@@ -30,12 +30,11 @@ cache:
 jobs:
   include:
     - stage: "Build front"
-      script:
+      before_script:
         - cd front
         - npm install
         - npm run build
-
-    - stage: "Make and upload a Docker image for the front"
+        - cd
       script:
         - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
         - make front/travis-docker "tag=$BRANCH--front"

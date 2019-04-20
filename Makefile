@@ -52,7 +52,7 @@ back/travis-docker:
 front/travis-docker:
 	rm -rf docker/front/files && mkdir docker/front/files
 	ls front/
-	cp -R front/dist/ docker/front/files/
+	cp -R front/dist docker/front/files/
 	ls front/
 	cd ./docker/front/files/dist/ && export NODE_ENV=production && npm install
 	ls front/
