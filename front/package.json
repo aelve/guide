@@ -4,7 +4,7 @@
   "description": "Aelve Guide",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --watch",
+    "dev": "cross-env NODE_ENV=development nodemon",
     "build": "cross-env NODE_ENV=production rimraf dist && npm run build:src && copyfiles index.html package.json dist/src && copyfiles package.json dist && tsc -p ./prod.tsconfig.json --outDir dist",
     "build:src": "concurrently \"npm run build:client\" \"npm run build:server\"",
     "build:client": "cross-env NODE_ENV=production webpack --config build/webpack.client.conf.js --hide-modules",
@@ -20,6 +20,9 @@
       "config.js"
     ],
     "ignore": [
+      "src",
+      "src/**/*.ts",
+      "src/**/*.js",
       "src/**/*.spec.ts",
       "src/**/*.d.ts"
     ]
