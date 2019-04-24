@@ -78,7 +78,7 @@ jobs:
       before_script:
         - curl -sSL https://get.haskellstack.org/ | sh
         # Install chromedriver
-        - wget http://chromedriver.storage.googleapis.com/2.45/chromedriver_linux64.zip
+        - wget https://chromedriver.storage.googleapis.com/2.46/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
         - chmod +x chromedriver
         - sudo mv -f chromedriver /usr/local/share/chromedriver
