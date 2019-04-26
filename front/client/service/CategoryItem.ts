@@ -2,9 +2,9 @@ import axios from 'axios'
 import { ICategoryFull } from './Category'
 
 class CategoryItemService {
-  // TODO replace all axios api request to axios instance to remove duplication of 'api/*'
+  // TODO replace all axios /api request to axios instance to remove duplication of '/api/*'
   async createItem ({ category, name }: ICreateCategoryItem) {
-    const { data } = await axios.post(`api/item/${category}`, null, {
+    const { data } = await axios.post(`/api/item/${category}`, null, {
       params: {
         name
       }
@@ -12,13 +12,13 @@ class CategoryItemService {
     return data
   }
   async deleteItemById (id: ICategoryItem['id']): Promise<void> {
-    await axios.delete(`api/item/${id}`)
+    await axios.delete(`/api/item/${id}`)
   }
   async  updateItemInfo (id: ICategoryItem['id'], body: ICategoryItemInfo): Promise<void> {
-    await axios.put(`api/item/${id}/info`, body)
+    await axios.put(`/api/item/${id}/info`, body)
   }
   async moveItem (id: ICategoryItem['id'], direction: string): Promise<void> {
-    await axios.post(`api/item/${id}/move`, {
+    await axios.post(`/api/item/${id}/move`, {
       direction
     })
   }
@@ -27,7 +27,7 @@ class CategoryItemService {
     original: ICategoryItem['summary'],
     modified: ICategoryItem['summary']
   ): Promise<void> {
-    await axios.put(`api/item/${id}/summary`, {
+    await axios.put(`/api/item/${id}/summary`, {
       original,
       modified
     })
@@ -37,7 +37,7 @@ class CategoryItemService {
     original: ICategoryItem['ecosystem'],
     modified: ICategoryItem['ecosystem']
   ): Promise<void> {
-    await axios.put(`api/item/${id}/ecosystem`, {
+    await axios.put(`/api/item/${id}/ecosystem`, {
       original,
       modified
     })
@@ -47,7 +47,7 @@ class CategoryItemService {
     original: ICategoryItem['notes'],
     modified: ICategoryItem['notes']
   ): Promise<void> {
-    await axios.put(`api/item/${id}/notes`, {
+    await axios.put(`/api/item/${id}/notes`, {
       original,
       modified
     })
@@ -58,7 +58,7 @@ class CategoryItemService {
     original: string,
     modified: string
   ): Promise<void> {
-    await axios.put(`api/item/${itemId}/trait/${traitId}`, {
+    await axios.put(`/api/item/${itemId}/trait/${traitId}`, {
       original,
       modified
     })
@@ -68,7 +68,7 @@ class CategoryItemService {
     traitId: ITrait['id'],
     direction: string
   ): Promise<void> {
-    await axios.post(`api/item/${itemId}/trait/${traitId}/move`, {
+    await axios.post(`/api/item/${itemId}/trait/${traitId}/move`, {
       direction
     })
   }
@@ -76,21 +76,21 @@ class CategoryItemService {
     itemId: ICategoryItem['id'],
     traitId: ITrait['id'],
   ): Promise<void> {
-    await axios.delete(`api/item/${itemId}/trait/${traitId}`)
+    await axios.delete(`/api/item/${itemId}/trait/${traitId}`)
   }
   async createItemTrait (
     itemId: ICategoryItem['id'],
     type: string,
     content: string,
   ): Promise<void> {
-    await axios.post(`api/item/${itemId}/trait/`, {
+    await axios.post(`/api/item/${itemId}/trait/`, {
       type,
       content
     })
   }
   // add here category description add/edit
   async updateCategoryDescription ({ id, original, modified }: {id: string, original: string, modified: string}): Promise<any> {
-    const { data } = await axios.put(`api/category/${id}/notes`, {
+    const { data } = await axios.put(`/api/category/${id}/notes`, {
       original,
       modified
     })

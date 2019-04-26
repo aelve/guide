@@ -1,7 +1,7 @@
 import axios from 'axios'
 class WikiService {
   async search (searchString: string) {
-    const { data } = await axios.get('api/search', {
+    const { data } = await axios.get('/api/search', {
       params: {
         query: searchString
       }
