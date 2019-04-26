@@ -6,8 +6,8 @@ ENV LC_ALL=C.UTF-8
 # NODE_ENV used to run front server on production
 ENV NODE_ENV=production
 
-# These variables are for independent from front/config.js
-ENV API_URL=https://staging.guide.aelve.com:4400/
+# Overrides for variables in front/config.js
+ENV API_URL=https://staging.guide.aelve.com:4400
 ENV PORT=5000
 
 # Install NodeJS via nvm

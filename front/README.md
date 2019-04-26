@@ -9,10 +9,7 @@
 1. `git pull`
 2. `npm i`
 
-3. Now you have a choice how to set PORT and API_URL.
-   First, set them in front/config.js once.
-   OR
-   Second, use export (set) PORT=%port_number% API_URL=%api_url% with build and dev commands.
+3. Now you have a choice how to set PORT and API_URL. Either set them in front/config.js, or use export (set) PORT=%port_number% API_URL=%api_url% (for example "http://localhost:4400" quotes matter) with dev commands.
 
 4. `npm run build`
 5. `cd dist`
