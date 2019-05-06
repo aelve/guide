@@ -44,8 +44,11 @@ CSS
 .item-info {
   padding-bottom: 12px;
   padding: 10px 15px;
+  border: 1px solid rgba(140, 152, 164, 0.2);
+  border-bottom: none;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
+  background-clip: border-box;
 }
 
 .item-info .section.normal {
@@ -195,7 +198,7 @@ HTML: item-info-edit-form
       <option value="{{name}}" {{%selectIf selected}}>{{caption}}</option>
     {{/possible_kinds}}
   </select>
- 
+
   <label for="hackage-name">
     Name on Hackage
   </label>
@@ -207,7 +210,7 @@ HTML: item-info-edit-form
   </label>
   <input id="site" name="link" value="{{item.link}}"
           type="text" autocomplete="off">
-  
+
 <div class="form-group">
   <label for="group">
     Group
@@ -222,7 +225,7 @@ HTML: item-info-edit-form
     {{/ category_groups }}
     <option value="">New group...</option>
     </select>
-  
+
   <input hidden class="custom-group-input" name="custom-group"
          type="text" autocomplete="off">
   </div>

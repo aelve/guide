@@ -231,7 +231,10 @@ body {
 }
 
 .item {
-  margin-top: 20px;
+  margin-top: 50px;
+  margin-bottom: 50px;
+  border-radius: 5px;
+  box-shadow: 0 0 20px rgba(140, 152, 164, 0.2);
 }
 
 .category-info .controls {
@@ -251,9 +254,12 @@ body {
 }
 
 .item-body {
-  padding-top: 5px;
+  padding-top: 15px;
+  border: 1px solid rgba(140, 152, 164, 0.2);
+  border-top: none;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
+  background-clip: border-box;
 }
 
 .item-traits,
