@@ -72,12 +72,12 @@
 
         <ul>
           <li
-            v-for="(value, index) in toc"
+            v-for="(tocItem, index) in toc"
             :key="index"
           >
             <a
-              :href="`#${value[0].slug}`"
-              v-html="value[0].content.html"
+              :href="`#${tocItem.slug}`"
+              v-html="tocItem.content.html"
               @click="expandNotes"
             />
           </li>
@@ -115,7 +115,7 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
   mixins: [conflictDialogMixin]
 })
 export default class CategoryItem extends Vue {
-  // TODO get rid of so many props and pass the item fully
+  // TODO get rid of so many props get data from Vuex
   @Prop(String) name!: string
   @Prop(String) group!: string
   @Prop(Object) summary!: { text: string, html: string }
