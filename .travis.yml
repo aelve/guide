@@ -29,50 +29,49 @@ cache:
 
 jobs:
   include:
-    - stage: "Build front and upload docker image"
-      before_script:
+    - stage: "Build the frontend and upload a Docker image"
+      script:
         - cd front
         - npm install
         - npm run build
         - cd -
-      script:
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - make front/travis-docker "tag=$BRANCH--front"
-        - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        - docker push "quay.io/aelve/guide:$BRANCH--front"
-      if: type = push
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+            make front/travis-docker "tag=$BRANCH--front"
+            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            docker push "quay.io/aelve/guide:$BRANCH--front"
+          fi
 
-    - stage: "Build backend dependencies"
+    - stage: "Build the backend and upload a Docker image"
       before_script:
         - curl -sSL https://get.haskellstack.org/ | sh
       script:
         - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
-
-    - stage: "Build the backend"
-      before_script:
-        - curl -sSL https://get.haskellstack.org/ | sh
-      script:
         - stack --no-terminal build
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+            make back/travis-docker "tag=$BRANCH--back"
+            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            docker push "quay.io/aelve/guide:$BRANCH--back"
+          fi
 
-    - stage: "Upload a Docker image for the backend"
-      script:
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - make back/travis-docker "tag=$BRANCH--back"
-        - docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        - docker push "quay.io/aelve/guide:$BRANCH--back"
-      if: type = push
-
-    # Our goal is full documented code with ZERO undocumented functions.
-    # The next guard warns if a commit increased undocumented limit out 251.
-    - stage: "Assert test undocumented no more then 251"
+    # Our goal is full documented code with ZERO undocumented definitions.
+    # This check warns if a commit increases the amount of undocumented
+    # definitions (currently 251).
+    - stage: "Check that no new undocumented definitions are introduced in backend code"
       before_script:
         - curl -sSL https://get.haskellstack.org/ | sh
       script:
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
-        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > unDocumentedAfter
-        - echo "unDocumentedBefore == 251"
-        - awk '{ print "unDocumentedAfter == " $1 }' unDocumentedAfter
-        - bash -c 'if [[ 251 < `cat unDocumentedAfter` ]]; then >&2 echo "FAIL. The current limit is 251 of undocumented top-level definitions, but unDocumentedAfter is out of the limit. Please, add comment to top-level undocumented definitions!"; exit 1; else echo "OK. unDocumentedBefore >= unDocumentedAfter. Yes, it is convenience to have documented code!"; fi'
+        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > undocumented
+        - awk '{ print "undocumented == " $1 }' undocumented
+        - |
+          if [[ `cat undocumented` -gt 251 ]]; then
+            >&2 echo "FAIL: found $(cat undocumented) top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
+            exit 1
+          fi
 
     - stage: "Test the backend"
       before_script:
