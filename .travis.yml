@@ -97,7 +97,8 @@ jobs:
         - stack --no-terminal test
         - make back/test-db
       before_cache:
-        - rm -rf $HOME/.stack/programs
+        - rm -rf $HOME/.stack/programs  # GHC might be faster to install than to cache
+        - rm back/.stack-work/dist/*/*/stack-test-success  # this file spoils the cache
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
