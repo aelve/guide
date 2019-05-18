@@ -40,6 +40,7 @@
             label="Pros/cons enabled"
             value="ItemProsConsSection"
             class="mb-2"
+            append-icon=""
           />
           <v-checkbox 
             v-model="checkboxSections"
@@ -79,7 +80,9 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator';
 import { CategoryStatus } from 'client/service/Category'
 
 @Component
@@ -104,6 +107,7 @@ export default class CategoryInfoEdit extends Vue {
   ]
 
   beforeMount () {
+    // TODO change to normal icon import
     this.$vuetify.icons.checkboxOff = this.$vuetify.icons.square
   }
 
