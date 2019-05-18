@@ -45,8 +45,8 @@ jobs:
         - stack setup
       script:
         # Build
-        - stack --no-terminal build --test --no-run-tests --haddock --dependencies-only
-        - stack --no-terminal build --test --no-run-tests --haddock
+        - stack --no-terminal build --test --no-run-tests --dependencies-only
+        - stack --no-terminal build --test --no-run-tests
         # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
@@ -59,7 +59,12 @@ jobs:
         # goal is full documented code with ZERO undocumented definitions.
         # This check warns if a commit increases the amount of undocumented
         # definitions (currently 251).
-        - stack haddock --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
+        #
+        # First we unregister the package so that Haddocks would be rebuilt
+        # from scratch, then we build haddocks and count the lines for
+        # "missing documentation".
+        - stack --no-terminal exec -- ghc-pkg unregister guide
+        - stack --no-terminal build --test --no-run-tests --haddock --no-haddock-deps --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > undocumented
         - awk '{ print "undocumented == " $1 }' undocumented
         - |
