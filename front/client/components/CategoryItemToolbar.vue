@@ -13,18 +13,18 @@
         @click.stop=""
       >
         <v-toolbar-title class="headline">
-          <!-- TODO change markup formatting after resolving issue with extra spaces
-           (if closing tag on another line vue-template-compiler adds extra space) -->
           <router-link
             :to="{hash:`item-${itemUid}`}"
             class="category-item-anchor"
           >#</router-link>
+          &nbsp;
           <a-link
             v-if="itemLink"
             :url="itemLink"
             openInNewTab
           >
-            {{ itemName }}</a-link>
+            {{ itemName }}
+          </a-link>
           <span v-else> {{ itemName }} </span>
         </v-toolbar-title>
         <v-spacer></v-spacer>
