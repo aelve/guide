@@ -28,10 +28,10 @@
             v-model="group"
           />
           <v-select 
-            :items="categoryStageList"
+            :items="categoryStatuses"
             item-text="name"
             item-value="value"
-            v-model="categoryStage"
+            v-model="categoryStatus"
             label="Status"
             class="mb-2"
           />
@@ -92,11 +92,11 @@ export default class CategoryInfoEdit extends Vue {
 
   title: string = ''
   group: string = ''
-  categoryStage: object = {}
+  categoryStatus: object = {}
   checkboxSections: any[] = []
   isValid: boolean = false
 
-  categoryStageList = [
+  categoryStatuses = [
     { name: 'Complete', value: 'CategoryFinished' }, 
     { name: 'Work in progress', value: 'CategoryWIP' }, 
     { name: 'Stub', value: 'CategoryStub' }
@@ -117,7 +117,7 @@ export default class CategoryInfoEdit extends Vue {
     this.title = category.title
     this.group = category.group
     this.checkboxSections = category.sections
-    this.categoryStage = { name: this.transformCategoryStatus(category.status), value: category.status }
+    this.categoryStatus = { name: this.transformCategoryStatus(category.status), value: category.status }
   }
 
   transformCategoryStatus (status: string) {
@@ -140,7 +140,7 @@ export default class CategoryInfoEdit extends Vue {
       id: this.categoryId,
       title: this.title,
       group: this.group,
-      status: this.categoryStage,
+      status: this.categoryStatus,
       sections: this.checkboxSections
     })
 
