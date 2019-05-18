@@ -12,12 +12,15 @@ before_install:
 
 cache:
   directories:
+    # Note: we don't cache back/.stack-work because the cache changes
+    # between the "build backend" and "test backend" stages for whatever
+    # reason.
     - $HOME/.stack
     - .stack-work
-    - back/.stack-work
-    - back/static/js     # Needed so that bundle.js would persist to the
-                         # "Push Docker image" stage and beyond - without it
-                         # the backend doesn't work and the tests don't run.
+    # Caching back/static/js is needed so that bundle.js would persist to
+    # the "test backend" stage – without it the backend doesn't work and the
+    # tests don't run.
+    - back/static/js
   timeout: 1000
 
 jobs:
@@ -98,7 +101,6 @@ jobs:
         - make back/test-db
       before_cache:
         - rm -rf $HOME/.stack/programs  # GHC might be faster to install than to cache
-        - rm back/.stack-work/dist/*/*/stack-test-success  # this file spoils the cache
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
