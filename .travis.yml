@@ -4,9 +4,6 @@ dist: trusty
 language: generic
 
 addons:
-  apt:
-    sources:
-    - hvr-ghc
   chrome: stable
 
 before_install:
@@ -27,10 +24,12 @@ jobs:
   include:
     - stage: "Build the frontend and upload a Docker image"
       script:
+        # Build
         - cd front
         - npm install
         - npm run build
         - cd -
+        # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
             export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
@@ -41,13 +40,14 @@ jobs:
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
-        - sudo apt-get update
-        - sudo apt-get install -y ghc-8.4.3 libgmp-dev
+        - sudo apt-get install -y libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
-        - stack config set system-ghc --global true
+        - stack setup
       script:
+        # Build
         - stack --no-terminal test --no-run-tests --dependencies-only
         - stack --no-terminal build
+        # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
             export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
@@ -55,16 +55,10 @@ jobs:
             docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
             docker push "quay.io/aelve/guide:$BRANCH--back"
           fi
-
-    # Our goal is full documented code with ZERO undocumented definitions.
-    # This check warns if a commit increases the amount of undocumented
-    # definitions (currently 251).
-    - stage: "Check that no new undocumented definitions are introduced in backend code"
-      before_script:
-        - sudo apt-get update
-        - sudo apt-get install -y ghc-8.4.3 libgmp-dev
-        - curl -sSL https://get.haskellstack.org/ | sh
-      script:
+        # Check that no new undocumented definitions are introduced. Our
+        # goal is full documented code with ZERO undocumented definitions.
+        # This check warns if a commit increases the amount of undocumented
+        # definitions (currently 251).
         - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > undocumented
         - awk '{ print "undocumented == " $1 }' undocumented
@@ -73,12 +67,14 @@ jobs:
             >&2 echo "FAIL: found $(cat undocumented) top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
             exit 1
           fi
+      before_cache:
+        - rm -rf $HOME/.stack/programs
 
     - stage: "Test the backend"
       before_script:
-        - sudo apt-get update
-        - sudo apt-get install -y ghc-8.4.3 libgmp-dev xvfb fluxbox
+        - sudo apt-get install -y libgmp-dev xvfb fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
+        - stack setup
         # Install chromedriver
         - wget https://chromedriver.storage.googleapis.com/2.46/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
@@ -95,6 +91,8 @@ jobs:
       script:
         - stack --no-terminal test
         - make back/test-db
+      before_cache:
+        - rm -rf $HOME/.stack/programs
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
