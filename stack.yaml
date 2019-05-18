@@ -1,4 +1,4 @@
-resolver: lts-12.4
+resolver: lts-12.4  # Don't forget to update .travis.yml when bumping 'resolver'
 
 packages:
 - back/
