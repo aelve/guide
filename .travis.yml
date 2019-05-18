@@ -41,6 +41,7 @@ jobs:
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
+        - sudo apt-get update
         - sudo apt-get install -y ghc-8.4.3 libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
         - stack config set system-ghc --global true
@@ -60,6 +61,7 @@ jobs:
     # definitions (currently 251).
     - stage: "Check that no new undocumented definitions are introduced in backend code"
       before_script:
+        - sudo apt-get update
         - sudo apt-get install -y ghc-8.4.3 libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
       script:
@@ -74,6 +76,7 @@ jobs:
 
     - stage: "Test the backend"
       before_script:
+        - sudo apt-get update
         - sudo apt-get install -y ghc-8.4.3 libgmp-dev xvfb fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
         # Install chromedriver
