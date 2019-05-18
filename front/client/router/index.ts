@@ -35,6 +35,11 @@ function createRouter () {
         component: () => import('../page/SearchResults.vue'),
         props: (route) => ({ query: route.query.query })
       },
+      {
+        path: '*',
+        name: 'Page404',
+        component: () => import('../page/Page404.vue')
+      }
     ]
   })
 }
