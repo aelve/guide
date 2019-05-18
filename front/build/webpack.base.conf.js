@@ -40,7 +40,7 @@ const config = {
             loader: 'vue-loader',
             options: {
               compilerOptions: {
-                preserveWhitespace: false
+                whitespace: 'condense'
               }
             }
           }

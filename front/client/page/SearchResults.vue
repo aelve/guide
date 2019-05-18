@@ -40,7 +40,6 @@
               openInNewTab
               :url="`http://guide.aelve.com:4801/haskell/${result.contents.category.id}#item-${result.contents.info.id}`"
             >
-            <!-- Do not format next line to separate lines cause it adds extra space after </a-link>. -->
             {{ result.contents.info.name }}</a-link>'s ecosystem
           </span>
         </span>
