@@ -4,15 +4,8 @@ dist: trusty
 language: generic
 
 addons:
-  apt:
-    packages:
-    # GHC
-    - libgmp-dev
-    # Selenium
-    - xvfb
-    # Testcafe
-    - fluxbox
   chrome: stable
+
 before_install:
   - # start your web application and listen on `localhost`
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=5000 http://localhost &
@@ -31,10 +24,12 @@ jobs:
   include:
     - stage: "Build the frontend and upload a Docker image"
       script:
+        # Build
         - cd front
         - npm install
         - npm run build
         - cd -
+        # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
             export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
@@ -45,10 +40,14 @@ jobs:
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
+        - sudo apt-get install -y libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
+        - stack setup
       script:
-        - stack --no-terminal --install-ghc test --no-run-tests --dependencies-only
-        - stack --no-terminal build
+        # Build
+        - stack --no-terminal build --test --no-run-tests --dependencies-only
+        - stack --no-terminal build --test --no-run-tests
+        # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
             export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
@@ -56,15 +55,16 @@ jobs:
             docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
             docker push "quay.io/aelve/guide:$BRANCH--back"
           fi
-
-    # Our goal is full documented code with ZERO undocumented definitions.
-    # This check warns if a commit increases the amount of undocumented
-    # definitions (currently 251).
-    - stage: "Check that no new undocumented definitions are introduced in backend code"
-      before_script:
-        - curl -sSL https://get.haskellstack.org/ | sh
-      script:
-        - stack haddock --fast --no-haddock-deps --no-terminal --haddock-arguments='--no-warnings' 2> haddock.log
+        # Check that no new undocumented definitions are introduced. Our
+        # goal is full documented code with ZERO undocumented definitions.
+        # This check warns if a commit increases the amount of undocumented
+        # definitions (currently 251).
+        #
+        # First we unregister the package so that Haddocks would be rebuilt
+        # from scratch, then we build haddocks and count the lines for
+        # "missing documentation".
+        - stack --no-terminal exec -- ghc-pkg unregister guide
+        - stack --no-terminal build --test --no-run-tests --haddock --no-haddock-deps --haddock-arguments='--no-warnings' 2> haddock.log
         - awk '/\(src\//' haddock.log | awk 'END { print NR }' > undocumented
         - awk '{ print "undocumented == " $1 }' undocumented
         - |
@@ -72,10 +72,14 @@ jobs:
             >&2 echo "FAIL: found $(cat undocumented) top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
             exit 1
           fi
+      before_cache:
+        - rm -rf $HOME/.stack/programs  #  GHC is faster to install than to cache
 
     - stage: "Test the backend"
       before_script:
+        - sudo apt-get install -y libgmp-dev xvfb fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
+        - stack setup
         # Install chromedriver
         - wget https://chromedriver.storage.googleapis.com/2.46/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
@@ -92,6 +96,8 @@ jobs:
       script:
         - stack --no-terminal test
         - make back/test-db
+      before_cache:
+        - rm -rf $HOME/.stack/programs  # GHC is faster to install than to cache
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
