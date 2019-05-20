@@ -72,6 +72,8 @@ jobs:
             >&2 echo "FAIL: found $(cat undocumented) top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
             exit 1
           fi
+      before_cache:
+        - rm -rf $HOME/.stack/programs  #  GHC is faster to install than to cache
 
     - stage: "Test the backend"
       before_script:
@@ -94,6 +96,8 @@ jobs:
       script:
         - stack --no-terminal test
         - make back/test-db
+      before_cache:
+        - rm -rf $HOME/.stack/programs  # GHC is faster to install than to cache
 
     # - stage: "Test the frontend"
     #     - "export DISPLAY=:99.0"
