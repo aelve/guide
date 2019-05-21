@@ -144,8 +144,8 @@ export default class CategoryItemToolbar extends Vue {
     this.toggleEditItemInfoMenu()
   }
 
-  async getLinkForSave () {
-    const trimmed = this.itemLinkEdit.trim()
+  getLinkForSave () {
+    const trimmed = this.itemLinkEdit && this.itemLinkEdit.trim()
     if (!trimmed) {
       return null
     }

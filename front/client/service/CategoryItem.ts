@@ -15,6 +15,7 @@ class CategoryItemService {
     await axios.delete(`/api/item/${id}`)
   }
   async  updateItemInfo (id: ICategoryItem['id'], body: ICategoryItemInfo): Promise<void> {
+    console.log('updateItemInfo body', body)
     await axios.put(`/api/item/${id}/info`, body)
   }
   async moveItem (id: ICategoryItem['id'], direction: string): Promise<void> {
