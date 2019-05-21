@@ -16,16 +16,12 @@
           <router-link
             :to="{hash:`item-${itemUid}`}"
             class="category-item-anchor"
-          >#</router-link>
-          &nbsp;
-          <a-link
+          >#</router-link>&nbsp;<a-link
             v-if="itemLink"
             :url="itemLink"
             openInNewTab
-          >
-            {{ itemName }}
-          </a-link>
-          <span v-else> {{ itemName }} </span>
+          >{{ itemName }}</a-link>
+          <span v-else>{{ itemName }}</span>
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="category-item-toolbar-btns">
