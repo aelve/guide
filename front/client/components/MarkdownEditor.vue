@@ -108,8 +108,6 @@ export default class MarkdownEditor extends Vue {
           'image',
           'horizontal-rule',
           '|',
-          'clean-block',
-          '|',
           'preview',
           'side-by-side',
           'fullscreen',
@@ -120,9 +118,15 @@ export default class MarkdownEditor extends Vue {
             },
             className: 'fa fa-question-circle',
             title: 'Markdown Guide',
-          }
+          },
         ]
-        : false
+        : false,
+      renderingConfig: {
+        markedOptions: {
+          gfm: false
+        }
+      },
+      indentWithTabs: false
     })
     this.editor.codemirror.on('change', () => {
       this.$emit('input', this.editor.value())

@@ -57,6 +57,10 @@ code {
   font-weight: 500;
   box-shadow: none;
 }
+code:after,
+code:before {
+  content: "";
+}
 pre code {
   background-color: #f5f5f5;
   color: #bd4147;
@@ -112,5 +116,13 @@ td.sourceCode {
 }
 .v-input--has-state.error--text .v-label {
   animation: none;
+}
+blockquote {
+  background: rgba(10, 10, 10, 0.075);
+  border-left: 5px solid rgba(10, 10, 10, 0.15);
+  padding: 1px 1em;
+  margin-left: 0;
+  margin-right: 0;
+  border-radius: 5px;
 }
 </style>

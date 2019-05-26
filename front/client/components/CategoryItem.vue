@@ -178,7 +178,6 @@ export default class CategoryItem extends Vue {
 
 .category-item-body >>> p {
   font-size: 16px;
-  margin: 0 0 10px;
 }
 
 .category-item-body >>> li {
