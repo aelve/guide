@@ -57,9 +57,13 @@ code {
   font-weight: 500;
   box-shadow: none;
 }
+/* Vuetify css adds unwanted space to start and end of code and kbd tag */
 code:after,
-code:before {
+kbd:after,
+code:before,
+kbd:before {
   content: "";
+  letter-spacing: initial;
 }
 pre code {
   background-color: #f5f5f5;
