@@ -9,7 +9,8 @@ import 'vuetify/dist/vuetify.css'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { fas } from '@fortawesome/free-solid-svg-icons'
-library.add(fas)
+import { faSquare } from '@fortawesome/free-regular-svg-icons'
+library.add(fas, faSquare)
 
 import 'client/assets/code-highlight.css'
 
@@ -19,11 +20,11 @@ import { createStore } from './store'
 
 const icons = {}
 // TODO import and add only used icons for production
-Object.values(fas).forEach(({ iconName }) => {
+Object.values({ ...fas, faSquare }).forEach(({ prefix, iconName }) => {
   icons[iconName] = {
     component: 'font-awesome-icon',
     props: {
-      icon: iconName
+      icon: [prefix, iconName]
     }
   }
 })

@@ -106,11 +106,6 @@ export default class CategoryInfoEdit extends Vue {
     (x: string) => !!x || 'Input can not be empty'
   ]
 
-  beforeMount () {
-    // TODO change to normal icon import
-    this.$vuetify.icons.checkboxOff = this.$vuetify.icons.square
-  }
-
   @Watch('value')
   onOpen () {
     const category = this.$store.state.category.category
@@ -148,5 +143,4 @@ export default class CategoryInfoEdit extends Vue {
     this.close()
   }
 }
-
 </script>
