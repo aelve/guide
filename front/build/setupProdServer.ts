@@ -1,4 +1,3 @@
-// TODO move imports here and make no dynamic
 import path from 'path'
 import fs from 'fs'
 import { createBundleRenderer } from 'vue-server-renderer'

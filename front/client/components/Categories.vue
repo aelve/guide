@@ -114,26 +114,30 @@ export default class Categories extends Vue {
   async serverPrefetch () {
     return this.$store.dispatch('category/loadCategoryList')
   }
+
   get categories () {
     return this.$store.state.category.categoryList
   }
-  // TODO refactor
+
   get groups () {
     const groupedByGroupName = _groupBy(this.categories, 'group')
     const groupedEntries = Object.entries(groupedByGroupName)
-    const groupedAlsoByStatus = groupedEntries.map(([key, value]: [string, ICategoryInfo[]]) => {
-      const grouppedCategoriesByStatus = _groupBy(value, 'status')
-      return [key, grouppedCategoriesByStatus]
-    })
-    // Key is groupName, so we sort by groupNames
-    const entriesKeyIndex = 0
-    const sortedAlphabetically = _sortBy(groupedAlsoByStatus, entriesKeyIndex)
+    const groupedAlsoByStatus = groupedEntries.map(
+      ([groupName, groupCategories]: [string, ICategoryInfo[]]) => {
+        const groupedCategoriesByStatus = _groupBy(groupCategories, 'status')
+        return [groupName, groupedCategoriesByStatus]
+      })
+    // Key 0 is groupName, we sort by groupNames
+    const entriesGroupNameIndex = 0
+    const sortedAlphabetically = _sortBy(groupedAlsoByStatus, entriesGroupNameIndex)
     return _fromPairs(sortedAlphabetically)
   }
+
   openAddCategoryDialog (groupName: string) {
     this.addCategoryGroupName = groupName
     this.isAddGroupDialogOpen = true
   }
+
   getCategoryUrl (category: ICategoryInfo): string {
     return `${_toKebabCase(category.title)}-${category.id}`
   }

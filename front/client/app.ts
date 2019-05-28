@@ -17,7 +17,6 @@ import AppComponent from './App.vue'
 import { createRouter } from './router'
 import { createStore } from './store'
 
-
 const icons = {}
 // TODO import and add only used icons for production
 Object.values(fas).forEach(({ iconName }) => {
