@@ -16,6 +16,7 @@ back/db:
 	rm -rf back/state
 	git clone --depth 1 https://github.com/aelve/guide-database.git
 	mv guide-database back/state
+	(cd back/state && gzip -d *.gz)
 
 # Test that the official database can be loaded
 .PHONY: back/test-db
@@ -23,6 +24,7 @@ back/test-db: back
 	if [ -d back/state ]; then mv back/state back/state-old; fi
 	git clone --depth 1 https://github.com/aelve/guide-database.git
 	mv guide-database back/state
+	(cd back/state && gzip -d *.gz)
 	(cd back/state && git branch -v && git status && ls)
 	stack exec --cwd back -- guide --dry-run
 	rm -rf back/state
@@ -41,6 +43,7 @@ back/travis-docker:
 	rm -rf docker/back/files && mkdir docker/back/files
 	git clone --depth 1 https://github.com/aelve/guide-database.git \
 		docker/back/files/state
+	(cd docker/back/files/state && gzip -d *.gz)
 	rm -rf docker/back/files/state/.git
 	cp .stack-work/install/*/*/*/bin/guide docker/back/files/
 	cp -R back/{static,templates} docker/back/files/
