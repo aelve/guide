@@ -4,7 +4,7 @@ The `state/` directory contains the database. You can download the current datab
 
     $ git clone https://github.com/aelve/guide-database
     $ mv guide-database state
-    $ (cd state; zstd -d *.zst)
+    $ (cd state; gzip -d *.gz)
 
 The `config.json` file contains the config (it will be created at the 1st start). There are 5 settings so far:
 
@@ -111,8 +111,8 @@ Next, create `upload.sh`:
 
 ~~~
 cd /root/guide/state
-rm -f *.zst
-zstd -f *.log
+rm -f *.gz
+gzip -k -f *.log
 git add -A
 GIT_COMMITTER_NAME='auto' GIT_COMMITTER_EMAIL='' git commit --author="auto <>" -m "`date`"
 git push
