@@ -101,6 +101,7 @@ Create `.gitignore` in the `state/` folder:
 Archive/
 events*
 *.lock
+*.log
 ~~~
 
 Create a repository locally and remotely. If you're using Github, you can avoid having to enter passwords by generate an access token and using it as username when adding a remote:
@@ -120,7 +121,7 @@ git push
 
     $ chmod +x upload.sh
 
-Finally, make a cron job that would try to upload new data every 10m (tho the actual checkpoints are only created once per six hours):
+Finally, make a cron job that would try to upload new data every 10m (though the actual checkpoints are only created once per six hours):
 
     $ crontab -e
 
