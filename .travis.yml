@@ -9,6 +9,8 @@ addons:
     - libgmp-dev
     # Selenium
     - xvfb
+    # Backups
+    - zstd
   chrome: stable
 
 cache:

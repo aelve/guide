@@ -4,6 +4,7 @@ The `state/` directory contains the database. You can download the current datab
 
     $ git clone https://github.com/aelve/guide-database
     $ mv guide-database state
+    $ (cd state; zstd -d *.zst)
 
 The `config.json` file contains the config (it will be created at the 1st start). There are 5 settings so far:
 
@@ -99,6 +100,7 @@ Create `.gitignore` in the `state/` folder:
 Archive/
 events*
 *.lock
+*.log
 ~~~
 
 Create a repository locally and remotely. If you're using Github, you can avoid having to enter passwords by generate an access token and using it as username when adding a remote:
@@ -109,6 +111,8 @@ Next, create `upload.sh`:
 
 ~~~
 cd /root/guide/state
+rm -f *.zst
+zstd -f *.log
 git add -A
 GIT_COMMITTER_NAME='auto' GIT_COMMITTER_EMAIL='' git commit --author="auto <>" -m "`date`"
 git push
@@ -116,7 +120,7 @@ git push
 
     $ chmod +x upload.sh
 
-Finally, make a cron job that would try to upload new data every 10m (tho the actual checkpoints are only created once per six hours):
+Finally, make a cron job that would try to upload new data every 10m (though the actual checkpoints are only created once per six hours):
 
     $ crontab -e
 
