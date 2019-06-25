@@ -44,6 +44,8 @@ jobs:
         - curl -sSL https://get.haskellstack.org/ | sh
         - stack setup
       script:
+        # Remove old binaries
+        - rm -rf .stack-work/install/*/*/*/bin/guide
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
         - stack --no-terminal build --test --no-run-tests
