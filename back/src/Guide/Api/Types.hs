@@ -104,9 +104,7 @@ data CategorySite route = CategorySite
 
   , _createCategory :: route :-
       Summary "Create a new category"
-      :> Description "Returns the ID of the created category.\n\n\
-                     \If a category with the same title already exists \
-                     \in the group, returns its ID instead."
+      :> Description "Returns the ID of the created category."
       :> ErrorResponse 400 "'title' not provided"
       :> ErrorResponse 400 "'group' not provided"
       :> "category"

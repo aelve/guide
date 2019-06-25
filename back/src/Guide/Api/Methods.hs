@@ -50,28 +50,16 @@ getCategory catId =
 
 -- | Create a new category, given the title and the grandparent (aka group).
 --
--- Returns the ID of the created category (or of the existing one if the
--- category with this title exists already).
+-- Returns the ID of the created category.
 createCategory :: Text -> Text -> Guider (Uid Category)
 createCategory title' group' =
   logHandler "createCategory" [attr "title" title', attr "group" group'] $ do
     when (T.null title') $ throwError err400{errReasonPhrase = "Title not provided"}
     when (T.null group') $ throwError err400{errReasonPhrase = "Group not provided"}
-    -- If the category exists already, don't create it
-    cats <- view categories <$> dbQuery GetGlobalState
-    let isDuplicate cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-          && T.toCaseFold (cat^.group_) == T.toCaseFold group'
-    case find isDuplicate cats of
-      Just c -> do
-        logDebug $ format
-          "Found a category with the same title and group (id {}), \
-          \will not create a new one" (c^.uid)
-        return (c^.uid)
-      Nothing -> do
-        catId <- randomShortUid
-        time <- liftIO getCurrentTime
-        addEdit . fst =<< dbUpdate (AddCategory catId title' group' time)
-        return catId
+    catId <- randomShortUid
+    time <- liftIO getCurrentTime
+    addEdit . fst =<< dbUpdate (AddCategory catId title' group' time)
+    return catId
 
 -- | Edit category's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
@@ -111,7 +99,7 @@ deleteCategory catId =
 -- Items
 ----------------------------------------------------------------------------
 
--- | Get item by item id
+-- | Get item by item ID.
 getItem :: Uid Item -> Guider CItemFull
 getItem itemId =
   logHandler "getItem" [attr "itemId" itemId] $ do
@@ -119,8 +107,7 @@ getItem itemId =
 
 -- | Create a new item, given the name.
 --
--- Returns the ID of the created item. Unlike 'createCategory', allows items
--- with duplicated names.
+-- Returns the ID of the created item.
 createItem :: Uid Category -> Text -> Guider (Uid Item)
 createItem catId name' =
   logHandler "createItem" [attr "catId" catId, attr "name" name'] $ do
