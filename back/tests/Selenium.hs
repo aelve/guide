@@ -457,4 +457,6 @@ wait_delay = 10
 ----------------------------------------------------------------------------
 
 instance Fail.MonadFail WD where
+  -- Don't get confused!
+  -- This line means "MonadFail.fail = Monad.fail"
   fail = fail
