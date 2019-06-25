@@ -36,7 +36,7 @@ back/run:
 	stack exec --cwd back -- guide
 
 # Create a Docker image for the backend; will only work on Travis because
-# the binary has to have been compiled on Ubuntu Trusty (the OS used in the
+# the binary has to have been compiled on Ubuntu Xenial (the OS used in the
 # Docker file)
 .PHONY: back/travis-docker
 back/travis-docker:
