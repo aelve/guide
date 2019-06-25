@@ -37,7 +37,9 @@ back/run:
 
 # Create a Docker image for the backend; will only work on Travis because
 # the binary has to have been compiled on Ubuntu Xenial (the OS used in the
-# Docker file)
+# Docker file).
+#
+# Assumes Guide has been built with Stack.
 .PHONY: back/travis-docker
 back/travis-docker:
 	rm -rf docker/back/files && mkdir docker/back/files
@@ -45,7 +47,7 @@ back/travis-docker:
 		docker/back/files/state
 	(cd docker/back/files/state && gzip -d *.gz)
 	rm -rf docker/back/files/state/.git
-	cp .stack-work/install/*/*/*/bin/guide docker/back/files/
+	cp "${stack path --local-install-root}/bin/guide" docker/back/files/
 	cp -R back/{static,templates} docker/back/files/
 	docker build docker/back -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/back/files
