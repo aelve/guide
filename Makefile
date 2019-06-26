@@ -47,7 +47,7 @@ back/travis-docker:
 		docker/back/files/state
 	(cd docker/back/files/state && gzip -d *.gz)
 	rm -rf docker/back/files/state/.git
-	cp "${stack path --local-install-root}/bin/guide" docker/back/files/
+	cp "$(stack path --local-install-root)/bin/guide" docker/back/files/
 	cp -R back/{static,templates} docker/back/files/
 	docker build docker/back -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/back/files
