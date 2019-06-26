@@ -1,14 +1,17 @@
 interface IConfirmDialogProps {
-  text: string,
-  confirmBtnText?: string,
+  fullText: string
+  text: string
+  confirmBtnText?: string
   cancelBtnText?: string
 }
+// TODO looks like documentation isn't working
 /**
  * Use only for vue components methods.
  * Executes '_confirm' function (see confirmDialogMixin.ts) with provided options before executing following method.
  * If not confirmed method is not executed.
  * @param {Object} options - options passed to _confirm function
  * @param {String} options.text
+ * @param {String} options.fullText
  * @param {String} options.confirmBtnText
  * @param {String} options.cancelBtnText
  */

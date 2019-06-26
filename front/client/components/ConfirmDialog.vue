@@ -2,14 +2,18 @@
 <template>
   <v-dialog
     :value="value"
-    @input="close"
+    :attach="attach"
     max-width="500px"
+    @input="close"
   >
     <slot slot="activator" />
 
     <v-card>
-      <v-card-text>
-        Are you sure you want to {{ text }} ?
+      <v-card-text v-if="$slots.default">
+        <slot />
+      </v-card-text>
+      <v-card-text v-else>
+        {{ fullText || `Are you sure you want to ${text} ?` }}
       </v-card-text>
       <v-divider />
       <v-card-actions>
@@ -17,17 +21,16 @@
         <v-btn
           flat
           color="primary"
-          class="confirm-btn"
-          @click.native="confirm"
+          @click.native="cancel"
         >
-          {{ confirmBtnText }}
+          {{ cancelBtnText }}
         </v-btn>
         <v-btn
           flat
           color="primary"
-          @click.native="cancel"
+          @click.native="confirm"
         >
-          {{ cancelBtnText }}
+          {{ confirmBtnText }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -42,12 +45,15 @@ import { Prop } from 'vue-property-decorator'
 @Component
 export default class ConfirmDialog extends Vue {
   @Prop(String) text!: string
+  @Prop(String) fullText!: string
   @Prop(Boolean) value!: boolean
+  @Prop(String) attach!: string
   @Prop({ default: 'Continue' }) confirmBtnText!: string
   @Prop({ default: 'Cancel' }) cancelBtnText!: string
 
   close () {
     this.$emit('input', false)
+    this.$emit('canceled')
   }
   confirm () {
     this.$emit('confirmed')

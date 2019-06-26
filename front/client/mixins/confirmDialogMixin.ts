@@ -6,18 +6,20 @@ import DeferredPromise from 'utils/DeferredPromise'
 const ComponentClass = Vue.extend(ConfirmDialog)
 
 interface IConfirmDialogProps {
-  text: string,
-  confirmBtnText?: string,
+  fullText: string
+  text: string
+  confirmBtnText?: string
   cancelBtnText?: string
 }
 
 @Mixin
 export default class ConfirmDialogMixin extends Vue {
-  async _confirm ({ text, confirmBtnText, cancelBtnText }: IConfirmDialogProps): Promise<boolean> {
+  async _confirm ({ text, fullText, confirmBtnText, cancelBtnText }: IConfirmDialogProps): Promise<boolean> {
     const instance = new ComponentClass({
       propsData: {
         value: true,
         text,
+        fullText,
         confirmBtnText,
         cancelBtnText
       }
