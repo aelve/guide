@@ -1,4 +1,4 @@
-resolver: lts-12.4
+resolver: lts-13.26
 
 packages:
 - back/
@@ -17,12 +17,21 @@ extra-deps:
 - fmt-0.6
 - cmark-sections-0.3.0.1
 - acid-state-0.14.3
-- servant-swagger-ui-0.3.0.3.13.2
-- servant-0.14.1
-- servant-swagger-ui-core-0.3.1
-- swagger2-2.3
+- stm-containers-0.2.16
 - lzma-clib-5.2.2
 - regex-1.0.1.5
+
+# Old versions from LTS 12+ (can and should be upgraded)
+- megaparsec-6.5.0
+- wai-middleware-metrics-0.2.4
+- servant-0.15
+- servant-server-0.15
+
+# Older version due to megaparsec
+- neat-interpolation-0.3.2.2
+
+# Older version due to stm-containers
+- focus-0.1.5.2
 
 # We pin the precise versions of 'highlighting-kate' and 'cmark-highlight'
 # because the frontend has copied a stylesheet from 'highlighting-kate'. If
@@ -36,17 +45,19 @@ extra-deps:
 - di-1.2
 - di-monad-1.3
 - di-core-1.0.3
-- df1-0.3
+- df1-0.3.1
+- di-df1-1.0.2
+- di-handle-1.0.1
 
 - git: https://github.com/aelve/stache-plus
-  commit: c8097fb33df6ba738fc7b7c8d09aaebdb02a9782
+  commit: 4c40c1297873cd5bb24a4aeb7c59b7a7f67ca671
 
 - git: https://github.com/aelve/safecopy-migrate
   commit: 3971922c75ce2ca751b3da1653fefa109b746e21
 
 # Fork of 'servant-swagger' with some changes (see its README)
 - git: https://github.com/aelve/servant-swagger
-  commit: 09e124d03606ec54d50e3029ea86d096575d545c
+  commit: ea54349ffbe474c70601b6d1f7f71535b77c73ae
 
 # Fork of 'hspec-webdriver' that builds
 - git: https://github.com/neongreen/webdriver-utils

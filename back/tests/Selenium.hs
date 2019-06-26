@@ -5,6 +5,8 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE StandaloneDeriving  #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}  -- for "instance MonadFail WD"
+
 module Selenium
 (
   module Test.Hspec.WebDriver,
@@ -58,6 +60,7 @@ where
 import Imports hiding ((:|), catch)
 -- Monads
 import Control.Monad.Loops
+import qualified Control.Monad.Fail as Fail
 -- Containers
 import qualified Data.Set as Set
 -- Text
@@ -448,3 +451,12 @@ shouldBeHidden s = do
 
 wait_delay :: Double
 wait_delay = 10
+
+----------------------------------------------------------------------------
+-- Orphan instances
+----------------------------------------------------------------------------
+
+instance Fail.MonadFail WD where
+  -- Don't get confused!
+  -- This line means "MonadFail.fail = Monad.fail"
+  fail = fail
