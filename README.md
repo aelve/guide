@@ -1,6 +1,5 @@
 # Aelve Guide
 
-[![Build status](https://secure.travis-ci.org/aelve/guide.svg)](https://travis-ci.org/aelve/guide)
 [![BSD3 license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/aelve/guide/blob/master/LICENSE)
 
 The beta version is running at [guide.aelve.com](https://guide.aelve.com). The most complete section yet is [the one about lenses](https://guide.aelve.com/haskell/lenses-sth6l9jl).
@@ -22,7 +21,7 @@ If you want to contribute but don't know where to start, grep the source for
 [ideas]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22not-fleshed-out+idea%22
 [design]: https://github.com/aelve/guide/issues?q=is%3Aissue+is%3Aopen+label%3A%22design%22
 
-## Testing 
+## Testing
 
 You need `chromedriver` and `selenium-server-standalone` installed (those are the package names on Arch Linux). Then you can do
 
