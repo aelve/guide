@@ -242,19 +242,12 @@ addMethods = do
   -- New category
   Spock.post (addRoute <//> "category") $ do
     title' <- param' "content"
-    -- If the category exists already, don't create it
-    cats <- view categories <$> dbQuery GetGlobalState
-    let hasSameTitle cat = T.toCaseFold (cat^.title) == T.toCaseFold title'
-    category <- case find hasSameTitle cats of
-      Just c  -> return c
-      Nothing -> do
-        catId <- randomShortUid
-        time <- liftIO getCurrentTime
-        (edit, newCategory) <- dbUpdate (AddCategory catId title' "Miscellaneous" time)
-        addEdit edit
-        return newCategory
-    -- And now send the URL of the new (or old) category
-    Spock.text ("/haskell/" <> categorySlug category)
+    catId <- randomShortUid
+    time <- liftIO getCurrentTime
+    (edit, newCategory) <- dbUpdate (AddCategory catId title' "Miscellaneous" time)
+    addEdit edit
+    -- Return the URL of the new category
+    Spock.text ("/haskell/" <> categorySlug newCategory)
 
   -- New item in a category
   Spock.post (addRoute <//> categoryVar <//> "item") $ \catId -> do
