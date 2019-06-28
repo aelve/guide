@@ -11,11 +11,15 @@
 --
 --  * We also collect additional information about users performing actions,
 --    such as date and time when the action was performed.
-module Guide.Types.Action
+module Guide.Types.Analytics
 (
-  Action(..),
+  Action(..),            -- TODO: this is only needed for a 'GlobalState'
+                         -- migration, and should be removed after the
+                         -- migration is done.
   Referrer(..),
-  ActionDetails(..),
+  ActionDetails(..),     -- TODO: this is only needed for a 'GlobalState'
+                         -- migration, and should be removed after the
+                         -- migration is done.
 )
 where
 

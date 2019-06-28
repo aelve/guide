@@ -20,7 +20,6 @@ module Guide.State
   GlobalState(..),
     categories,
     categoriesDeleted,
-    actions,
     pendingEdits,
     editIdCounter,
     findCategoryByItem,
@@ -70,9 +69,6 @@ module Guide.State
   RegisterEdit(..),
   RemovePendingEdit(..), RemovePendingEdits(..),
 
-  -- ** actions
-  RegisterAction(..),
-
   -- ** other
   MoveItem(..),
   MoveTrait(..),
@@ -113,7 +109,7 @@ import Data.SafeCopy.Migrate
 import Web.Spock.Internal.SessionManager (SessionId)
 
 import Guide.Markdown
-import Guide.Types.Action
+import Guide.Types.Analytics
 import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Session
@@ -122,7 +118,6 @@ import Guide.Utils
 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Data.Text as T
 
 
 {- Note [extending types]
@@ -187,7 +182,6 @@ emptyState :: GlobalState
 emptyState = GlobalState {
   _categories = [],
   _categoriesDeleted = [],
-  _actions = [],
   _pendingEdits = [],
   _editIdCounter = 0,
   _sessionStore = M.empty,
@@ -197,7 +191,6 @@ emptyState = GlobalState {
 data GlobalState = GlobalState {
   _categories        :: [Category],
   _categoriesDeleted :: [Category],
-  _actions           :: [(Action, ActionDetails)],
   -- | Pending edits, newest first
   _pendingEdits      :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
@@ -210,10 +203,17 @@ data GlobalState = GlobalState {
   _dirty             :: Bool }
   deriving (Show)
 
-deriveSafeCopySorted 8 'extension ''GlobalState
+deriveSafeCopySorted 9 'extension ''GlobalState
 makeLenses ''GlobalState
 
-changelog ''GlobalState (Current 8, Past 7) [
+changelog ''GlobalState (Current 9, Past 8) [
+  -- TODO: it's silly that we have to reference 'Action' and keep it in the
+  -- codebase even though we have no use for 'Action' anymore
+  Removed "_actions" [t|[(Action, ActionDetails)]|]
+  ]
+deriveSafeCopySorted 8 'extension ''GlobalState_v8
+
+changelog ''GlobalState (Past 8, Past 7) [
   Added "_sessionStore" [hs|M.empty|],
   Added "_users" [hs|M.empty|]
   ]
@@ -271,7 +271,6 @@ findCategoryByItem itemId s =
 data PublicDB = PublicDB {
   publicCategories        :: [Category],
   publicCategoriesDeleted :: [Category],
-  publicActions           :: [(Action, ActionDetails)],
   publicPendingEdits      :: [(Edit, EditDetails)],
   publicEditIdCounter     :: Int,
   publicUsers             :: Map (Uid User) PublicUser}
@@ -281,7 +280,7 @@ data PublicDB = PublicDB {
 -- need to increase the version when the type changes, so that old clients
 -- wouldn't get cryptic error messages like “not enough bytes” when trying
 -- to deserialize a new version of 'PublicDB' that they can't handle.
-deriveSafeCopySorted 0 'base ''PublicDB
+deriveSafeCopySorted 1 'base ''PublicDB
 
 -- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
 toPublicDB :: GlobalState -> PublicDB
@@ -289,7 +288,6 @@ toPublicDB GlobalState{..} =
   PublicDB {
     publicCategories        = _categories,
     publicCategoriesDeleted = _categoriesDeleted,
-    publicActions           = _actions,
     publicPendingEdits      = _pendingEdits,
     publicEditIdCounter     = _editIdCounter,
     publicUsers             = fmap userToPublic _users
@@ -302,7 +300,6 @@ fromPublicDB PublicDB{..} =
   GlobalState {
     _categories        = publicCategories,
     _categoriesDeleted = publicCategoriesDeleted,
-    _actions           = publicActions,
     _pendingEdits      = publicPendingEdits,
     _editIdCounter     = publicEditIdCounter,
     _sessionStore      = M.empty,
@@ -758,25 +755,6 @@ removePendingEdits
 removePendingEdits m n = do
   pendingEdits %= filter (\(_, d) -> editId d < n || m < editId d)
 
-registerAction
-  :: Action
-  -> Maybe IP
-  -> UTCTime
-  -> Url                          -- ^ Base URL
-  -> Maybe Url                    -- ^ Referrer
-  -> Maybe Text                   -- ^ User-agent
-  -> Acid.Update GlobalState ()
-registerAction act ip date baseUrl ref ua = do
-  let details = ActionDetails {
-        actionIP        = ip,
-        actionDate      = date,
-        actionReferrer  = case T.stripPrefix baseUrl <$> ref of
-                            Nothing       -> Nothing
-                            Just Nothing  -> ExternalReferrer <$> ref
-                            Just (Just s) -> Just (InternalReferrer s),
-        actionUserAgent = ua }
-  actions %= ((act, details) :)
-
 setDirty :: Acid.Update GlobalState ()
 setDirty = dirty .= True
 
@@ -896,8 +874,6 @@ makeAcidic ''GlobalState [
   'getEdit, 'getEdits,
   'registerEdit,
   'removePendingEdit, 'removePendingEdits,
-  -- actions
-  'registerAction,
   -- other
   'moveItem, 'moveTrait,
   'restoreCategory, 'restoreItem, 'restoreTrait,
@@ -948,8 +924,7 @@ deriving instance Show GetTraitMaybe
 deriving instance Show SetTraitContent
 deriving instance Show AddPro
 deriving instance Show AddCon
--- action
-deriving instance Show RegisterAction
+-- edit
 deriving instance Show RegisterEdit
 
 ----------------------------------------------------------------------------

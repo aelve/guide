@@ -5,13 +5,13 @@ module Guide.Types
   module Guide.Types.Hue,
   module Guide.Types.Core,
   module Guide.Types.Edit,
-  module Guide.Types.Action,
+  module Guide.Types.Analytics,
   module Guide.Types.User,
   module Guide.Types.Session,
 )
 where
 
-import Guide.Types.Action
+import Guide.Types.Analytics
 import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Types.Hue
