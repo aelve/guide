@@ -69,7 +69,7 @@ library
       Guide.Types.Hue
       Guide.Types.Core
       Guide.Types.Edit
-      Guide.Types.Action
+      Guide.Types.Analytics
       Guide.Types.User
       Guide.Types.Session
     Guide.Handlers

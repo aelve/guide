@@ -89,12 +89,9 @@ addEdit :: (MonadIO m, HasSpock (ActionCtxT ctx m),
             SpockState (ActionCtxT ctx m) ~ ServerState)
         => Edit -> ActionCtxT ctx m ()
 addEdit ed = do
-  (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
+  (time, mbIP, _mbReferrer, _mbUA) <- getRequestDetails
   unless (isVacuousEdit ed) $ do
     dbUpdate (RegisterEdit ed mbIP time)
-    baseUrl <- _baseUrl <$> getConfig
-    dbUpdate (RegisterAction (Action'Edit ed)
-                mbIP time baseUrl mbReferrer mbUA)
 
 -- | Do an action that would undo an edit. 'Left' signifies failure.
 --

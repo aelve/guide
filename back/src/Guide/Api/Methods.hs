@@ -268,7 +268,6 @@ addEdit edit = push "addEdit" $ attr "edit" edit $ do
         time <- liftIO getCurrentTime
         Context Config{..} _ RequestDetails{..} <- ask
         dbUpdate $ RegisterEdit edit rdIp time
-        dbUpdate $ RegisterAction (Action'Edit edit) rdIp time _baseUrl rdReferer rdUserAgent
         postMatomo $ Matomo rdIp rdUserAgent rdReferer edit
 
 -- | Helper. Get a category from database and throw error 404 when it doesn't exist.

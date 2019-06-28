@@ -37,7 +37,6 @@ import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
 -- Network
-import Data.IP
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Network.HTTP.Types.Status (Status (..))
@@ -212,110 +211,8 @@ renderAdmin globalState = do
     buttonUid <- randomLongUid
     button "Create checkpoint" [uid_ buttonUid] $
       JS.createCheckpoint [JS.selectUid buttonUid]
-    div_ [id_ "stats"] $
-      renderStats globalState (globalState ^. actions)
     div_ [id_ "edits"] $
       renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
-
--- | Render statistics on the admin page.
-renderStats
-  :: (MonadIO m)
-  => GlobalState
-  -> [(Action, ActionDetails)]
-  -> HtmlT m ()
-renderStats globalState acts = do
-  h1_ "Statistics"
-  p_ "All information is for last 31 days."
-  now <- liftIO getCurrentTime
-  let thisMonth (_, d) = diffUTCTime now (actionDate d) <= 31*86400
-      acts' = takeWhile thisMonth acts
-  p_ $ do
-    "Main page visits: "
-    strong_ $ toHtml $ show $ length [() | (Action'MainPageVisit, _) <- acts']
-    ". "
-    "Edits: "
-    strong_ $ toHtml $ show $ length [() | (Action'Edit _, _) <- acts']
-    ". "
-    "Unique visitors: "
-    strong_ $ toHtml $ show $ length $ ordNub $ map (actionIP.snd) acts'
-    "."
-  let allCategories = globalState^.categories ++
-                      globalState^.categoriesDeleted
-  -- TODO: move this somewhere else (it's also used in renderEdit)
-  let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
-        where
-          err = error ("renderStats: couldn't find category with uid = " ++
-                       toString (uidToText catId))
-  table_ [class_ "sortable"] $ do
-    thead_ $ tr_ $ do
-      th_ [class_ "sorttable_nosort"] "Category"
-      th_ "Visits"
-      th_ "Unique visitors"
-    tbody_ $ do
-      let rawVisits :: [(Uid Category, Maybe IP)]
-          rawVisits = [(catId, actionIP d) |
-                       (Action'CategoryVisit catId, d) <- acts']
-      let visits :: [(Uid Category, (Int, Int))]
-          visits = map (over _2 (length &&& length.ordNub) .
-                        (fst.head &&& map snd)) .
-                   groupWith fst
-                     $ rawVisits
-      for_ (reverse $ sortWith (fst.snd) visits) $ \(catId, (n, u)) -> do
-        tr_ $ do
-          td_ (toHtml (findCategory catId ^. title))
-          td_ (toHtml (show n))
-          td_ (toHtml (show u))
-  table_ [class_ "sortable"] $ do
-    thead_ $ tr_ $ do
-      th_ [class_ "sorttable_nosort"] "Search"
-      th_ "Repetitions"
-    tbody_ $ do
-      let searches = map (head &&& length) . group $
-            [s | (Action'Search s, _) <- acts']
-      for_ (reverse $ sortWith snd searches) $ \(s, n) -> do
-        tr_ $ do
-          td_ (toHtml s)
-          td_ (toHtml (show n))
-  table_ [class_ "sortable"] $ do
-    thead_ $ tr_ $ do
-      th_ [class_ "sorttable_nosort"] "Referrer"
-      th_ "Visitors"
-      th_ "Unique visitors"
-    tbody_ $ do
-      let rawVisits :: [(Url, Maybe IP)]
-          rawVisits = [(r, actionIP d)
-                         | d <- map snd acts'
-                         , Just (ExternalReferrer r) <- [actionReferrer d]]
-      let sortRefs :: [(Url, Maybe IP)] -> [(ReferrerView, [Maybe IP])]
-          sortRefs = map (fst.head &&& map snd)
-                   . groupWith fst
-                   . map (over _1 toReferrerView)
-      let visits :: [(ReferrerView, (Int, Int))]
-          visits = map (over _2 (length &&& length.ordNub))
-                       (sortRefs rawVisits)
-      for_ (reverse $ sortWith (fst.snd) visits) $ \(r, (n, u)) -> do
-        tr_ $ do
-          td_ (toHtml (show r))  -- referrer
-          td_ (toHtml (show n))  -- visitors
-          td_ (toHtml (show u))  -- unique visitors
-  table_ $ do
-    thead_ $ tr_ $ do
-      th_ "Action"
-      th_ "Date"
-      th_ "IP"
-    tbody_ $ do
-      -- acts, not acts' (what if there were less than 10 actions in the last
-      -- month?)
-      for_ (take 10 acts) $ \(a, d) -> tr_ $ do
-        td_ $ case a of
-          Action'Edit _          -> "Edit"
-          Action'MainPageVisit   -> "Main page visit"
-          Action'CategoryVisit _ -> "Category visit"
-          Action'Search _        -> "Search"
-        td_ $ toHtml =<< liftIO (humanReadableTime (actionDate d))
-        td_ $ case actionIP d of
-          Nothing -> "<unknown IP>"
-          Just ip -> toHtml (show ip)
 
 -- | Group edits by IP and render them.
 renderEdits

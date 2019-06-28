@@ -304,12 +304,6 @@ guideApp waiMetrics = do
       Spock.get (haskellRoute <//> root) $ do
         s <- dbQuery GetGlobalState
         q <- param "q"
-        (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-        let act = case q of
-              Nothing -> Action'MainPageVisit
-              Just x  -> Action'Search x
-        baseUrl <- _baseUrl <$> getConfig
-        dbUpdate (RegisterAction act mbIP time baseUrl mbReferrer mbUA)
         lucidWithConfig $ renderHaskellRoot s q
       -- Category pages
       Spock.get (haskellRoute <//> var) $ \path -> do
@@ -322,10 +316,6 @@ guideApp waiMetrics = do
         case mbCategory of
           Nothing -> Spock.jumpNext
           Just category -> do
-            (time, mbIP, mbReferrer, mbUA) <- getRequestDetails
-            baseUrl <- _baseUrl <$> getConfig
-            dbUpdate $ RegisterAction (Action'CategoryVisit (Uid catId))
-                         mbIP time baseUrl mbReferrer mbUA
             -- If the slug in the url is old (i.e. if it doesn't match the
             -- one we would've generated now), let's do a redirect
             when (categorySlug category /= path) $
