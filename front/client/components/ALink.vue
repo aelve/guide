@@ -4,6 +4,7 @@
     :target="openInNewTab ? '_blank': ''"
     :rel="openInNewTab ? 'noopener noreferrer': ''"
     :href="url"
+    v-on="$listeners"
   >
     <slot />
   </a>
