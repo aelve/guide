@@ -67,7 +67,7 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
     CategoryItem,
     CategoryDescription,
     CategoryInfo,
-    AddItemDialog,
+    AddItemDialog
   }
 })
 export default class Category extends Vue {
@@ -81,18 +81,6 @@ export default class Category extends Vue {
 
   get categoryUrl () {
     return this.category && `${_toKebabCase(this.category.title)}-${this.category.id}`
-  }
-
-  // TODO handle case when category was deleted. Go back in that case
-  async serverPrefetch () {
-    if (!this.categoryId) {
-      return
-    }
-    await this.$store.dispatch('category/loadCategory', this.categoryId)
-  }
-
-  beforeDestroy () {
-    this.$store.commit('category/setCategory', null)
   }
 
   openAddItemDialog () {
