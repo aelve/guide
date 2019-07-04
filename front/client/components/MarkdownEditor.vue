@@ -20,6 +20,7 @@
       <v-toolbar-items>
         <v-btn
           small
+          title="Save"
           class="mr-2 text-transform-none"
           @click="save"
         >
@@ -27,6 +28,7 @@
         </v-btn>
         <v-btn
           small
+          title="Cancel"
           class="text-transform-none"
           @click="cancel"
         >

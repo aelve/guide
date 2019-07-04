@@ -19,6 +19,7 @@
       depressed
       small
       light
+      :title="descriptionBtnText"
       color="lightgrey"
       @click="toggleEditDescription"
     >
@@ -65,6 +66,7 @@ export default class CategoryDescriptiom extends Vue {
     return this.$store.state.category.category.id
   }
 
+  // TODO refactor
   get descriptionBtnIcon () {
     const description = _get(this, '$store.state.category.category.description.html')
     return description ? this.descriptionButtonIcon = '$vuetify.icons.pen' : this.descriptionButtonIcon = '$vuetify.icons.plus'
@@ -72,7 +74,7 @@ export default class CategoryDescriptiom extends Vue {
 
   get descriptionBtnText () {
     const description = _get(this, '$store.state.category.category.description.html')
-    return description ? this.descriptionButtonText = 'edit description' : this.descriptionButtonText = 'add description'
+    return description ? this.descriptionButtonText = 'Edit description' : this.descriptionButtonText = 'Add description'
   }
 
   toggleEditDescription () {

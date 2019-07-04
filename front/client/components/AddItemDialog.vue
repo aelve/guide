@@ -31,6 +31,7 @@
         <v-btn
           flat
           color="primary"
+          title="Submit"
           class="add-cat-submit"
           :disabled="!isValid"
           @click.native="submit"
@@ -39,6 +40,7 @@
         </v-btn>
         <v-btn
           flat
+          title="Cancel"
           color="primary"
           @click.native="close"
         >

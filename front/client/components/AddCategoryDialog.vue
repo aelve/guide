@@ -37,6 +37,7 @@
           <v-spacer></v-spacer>
           <v-btn
             flat
+            title="Cancel"
             color="primary"
             @click.native="close"
           >
@@ -44,6 +45,7 @@
           </v-btn>
           <v-btn
             flat
+            title="Submit"
             color="primary"
             class="add-category-submit-btn"
             :disabled="!isValid"

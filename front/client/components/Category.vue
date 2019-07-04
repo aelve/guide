@@ -36,6 +36,7 @@
         flat
         class="ml-2"
         color="grey"
+        title="Add new item"
         @click="openAddItemDialog"
       >
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
