@@ -129,4 +129,8 @@ blockquote {
   margin-right: 0;
   border-radius: 5px;
 }
+/* vuetify v-select component when opened almost overlays its title */
+.v-menu__content {
+  margin-top: 5px;
+}
 </style>
