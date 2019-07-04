@@ -20,6 +20,7 @@
         <v-spacer />
         <v-btn
           flat
+          :title="cancelBtnText"
           color="primary"
           @click.native="cancel"
         >
@@ -27,6 +28,7 @@
         </v-btn>
         <v-btn
           flat
+          :title="confirmBtnText"
           color="primary"
           @click.native="confirm"
         >

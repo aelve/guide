@@ -75,6 +75,7 @@
           <v-btn
             class="ma-0 px-1"
             color="grey"
+            title="Add new category"
             flat
             @click="openAddCategoryDialog(groupName)"
           >

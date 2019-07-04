@@ -15,9 +15,10 @@
         >
           <v-card-text>{{modified}}</v-card-text>
         </v-card>
-        <v-btn 
-          depressed 
+        <v-btn
+          depressed
           small
+          title="Submit this version, disregard changes on server"
           @click="save(modified)"
         >
           Submit this version, disregard changes on server
@@ -34,6 +35,7 @@
         <v-btn 
           depressed 
           small
+          title="Accept this version, disregard my changes"
           @click="save(serverModified)"
         >
           Accept this version, disregard my changes

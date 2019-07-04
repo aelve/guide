@@ -11,5 +11,9 @@ import Component from 'vue-class-component'
   components: {
     Categories
   }})
-export default class Index extends Vue {}
+export default class Index extends Vue {
+  beforeMount () {
+    document.title = `Aelve Guide`
+  }
+}
 </script>
