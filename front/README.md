@@ -1,4 +1,5 @@
 ## Commands
+
 - `npm run dev` - Start developing environment (starts both server and setup client middleware for server).
 - `npm run build` - Builds to /dist folder. Compiles (from ts to js) server right in dist folder, client files compiled in /dist/src.
 
