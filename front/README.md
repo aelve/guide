@@ -1,7 +1,6 @@
 ## Commands
-
-- `dev` - Start developing environment (starts both server and setup client middleware for server).
-- `build` - Builds to /dist folder. Compiles (from ts to js) server right in dist folder, client files compiled in /dist/src.
+- `npm run dev` - Start developing environment (starts both server and setup client middleware for server).
+- `npm run build` - Builds to /dist folder. Compiles (from ts to js) server right in dist folder, client files compiled in /dist/src.
 
 ## Deploy process
   Requirements: Node version should be >= 11, because of using fs async methods which experimental now.
