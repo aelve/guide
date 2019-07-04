@@ -1,19 +1,24 @@
 <template>
   <div class="category-top">
-    <div
-      class="category-top-data"
-    >
-      <a-link
-        openInNewTab
-        :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on }">
-            <v-icon size="14" class="mr-3" left v-on="on">$vuetify.icons.rss</v-icon>
-          </template>
-          <span>{{`RSS feed of ${categoryTitle} category`}}</span>
-        </v-tooltip>
-      </a-link>
+    <div class="category-top-data">
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <a-link
+            openInNewTab
+            aria-label="RSS feed for all new items in this category"
+            :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
+            v-on="on"
+          >
+            <v-icon
+              left
+              size="18"
+              class="mr-3"
+            >$vuetify.icons.rss</v-icon>
+          </a-link>
+        </template>
+        <span>RSS feed for all new items in this category</span>
+      </v-tooltip>
+
       <p class="category-top-group mr-3"> {{categoryGroup}} </p>
       <v-icon size="8" class="mr-3" left>$vuetify.icons.circle</v-icon>
       <router-link
