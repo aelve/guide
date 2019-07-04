@@ -56,7 +56,7 @@ export default class CategoryItemSection extends Vue {
   }) editBtnIcon: string
   @Prop({
     type: String,
-    default: 'Edit'
+    default: 'edit'
   }) editBtnTitle: string
   @Prop(Boolean) customEdit: boolean
 

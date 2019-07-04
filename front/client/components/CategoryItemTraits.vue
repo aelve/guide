@@ -2,7 +2,7 @@
   <category-item-section
     customEdit
     editBtnIcon="plus"
-    editBtnTitle="Add"
+    editBtnTitle="add"
     :title="title"
     @toggleEdit="toggleAddTrait"
   >
@@ -28,7 +28,6 @@
           <category-item-btn
             slot="activator"
             size="22px"
-            title="Options"
             iconSize="14"
             icon="ellipsis-v"
           />

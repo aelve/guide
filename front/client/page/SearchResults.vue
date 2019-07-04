@@ -78,11 +78,6 @@ import ALink from 'client/components/ALink.vue'
 export default class SearchResults extends Vue {
   @Prop(String) query!: string
 
-  @Watch('query', { immediate: true })
-  setDocumentTitle (query) {
-    document.title = `${query} – Search results – Aelve Guide`
-  }
-
   mounted () {
     this.$store.commit('wiki/setSearchInput', this.query)
   }

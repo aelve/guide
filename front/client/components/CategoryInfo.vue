@@ -23,7 +23,7 @@
         {{categoryTitle}}
       </router-link>
       <category-item-btn
-        title="Edit item info"
+        title="edit item info"
         icon="cog"
         iconSize="18"
         @click="openCategoryInfoDialog"
@@ -32,7 +32,6 @@
     <v-btn
       class="ma-0 px-1"
       flat
-      title="Add new item"
       color="grey"
       @click="openDialog"
     >

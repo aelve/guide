@@ -12,11 +12,7 @@ import Vue from 'vue'
 import { Component } from 'vue-property-decorator'
 
 @Component
-export default class Page404 extends Vue {
-  beforeMount () {
-    document.title = `Error 404 – Aelve Guide`
-  }
-}
+export default class Page404 extends Vue { }
 </script>
 
 <style lang="postcss" scoped>

@@ -26,19 +26,19 @@
         <v-spacer></v-spacer>
         <v-toolbar-items class="category-item-toolbar-btns">
           <category-item-btn
-            title="Move item up"
+            title="move item up"
             icon="arrow-up"
             @click="moveItem('up')"
           />
 
           <category-item-btn
-            title="Move item down"
+            title="move item down"
             icon="arrow-down"
             @click="moveItem('down')"
           />
 
           <category-item-btn
-            title="Edit item info"
+            title="edit item info"
             icon="cog"
             @click="toggleEditItemInfoMenu"
           >
@@ -51,7 +51,7 @@
           </category-item-btn>
 
           <category-item-btn
-            title="Delete item"
+            title="delete item"
             icon="trash-alt"
             @click="deleteItem"
           />
@@ -71,7 +71,6 @@
         <v-flex align-self-end>
           <v-btn
             class="mr-0"
-            title="Save"
             :disabled="!isInfoSaveEnabled"
             @click="updateItemInfo"
           >
