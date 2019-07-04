@@ -60,21 +60,19 @@
         <v-spacer />
         <v-btn
           flat
-          color="primary"
-          title="Submit"
-          class="add-cat-submit"
-          :disabled="!isValid"
-          @click="updateCategoryInfo"
-        >
-          Submit
-        </v-btn>
-        <v-btn
-          flat
           title="Cancel"
           color="primary"
           @click.native="close"
         >
           Cancel
+        </v-btn>
+        <v-btn
+          color="info"
+          title="Submit"
+          :disabled="!isValid"
+          @click="updateCategoryInfo"
+        >
+          Submit
         </v-btn>
       </v-card-actions>
     </v-card>
