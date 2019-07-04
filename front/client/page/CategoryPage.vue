@@ -23,13 +23,6 @@ export default class CategoryPage extends Vue {
     return this.$store.state.category.category
   }
 
-  @Watch('category', { immediate: true })
-  setDocumentTitle (category) {
-    document.title = category
-      ? `${category.title} – Aelve Guide`
-      : 'Aelve Guide'
-  }
-
   // TODO handle case when category was deleted. Go back in that case
   async serverPrefetch () {
     if (!this.categoryId) {
@@ -38,8 +31,18 @@ export default class CategoryPage extends Vue {
     await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
+  beforeMount () {
+    this.$watch('category', this.setDocumentTitle, { immediate: true })
+  }
+
   beforeDestroy () {
     this.$store.commit('category/setCategory', null)
+  }
+
+  setDocumentTitle (category) {
+    document.title = category
+      ? `${category.title} – Aelve Guide`
+      : 'Aelve Guide'
   }
 }
 </script>

@@ -78,9 +78,12 @@ import ALink from 'client/components/ALink.vue'
 export default class SearchResults extends Vue {
   @Prop(String) query!: string
 
-  @Watch('query', { immediate: true })
-  setDocumentTitle (query) {
-    document.title = `${query} – Search results – Aelve Guide`
+  get results () {
+    return this.$store.state.wiki.searchResults
+  }
+
+  beforeMount () {
+    this.$watch('category', this.setDocumentTitle, { immediate: true })
   }
 
   mounted () {
@@ -91,10 +94,9 @@ export default class SearchResults extends Vue {
     await this.$store.dispatch('wiki/search', this.query)
   }
 
-  get results () {
-    return this.$store.state.wiki.searchResults
+  setDocumentTitle (query) {
+    document.title = `${query} – Search results – Aelve Guide`
   }
-
 }
 </script>
 
