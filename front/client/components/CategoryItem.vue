@@ -55,19 +55,21 @@
           small
           dark
           round
+          title="Expand"
           class="mx-0"
           @click="expandNotes"
         >
-          expand
+          Expand
         </v-btn>
         <v-btn
           small
           dark
           round
+          title="Collapse"
           class="mx-0"
           @click="collapseNotes"
         >
-          collapse
+          Collapse
         </v-btn>
 
         <ul>
