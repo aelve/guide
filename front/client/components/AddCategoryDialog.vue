@@ -44,9 +44,8 @@
             Cancel
           </v-btn>
           <v-btn
-            flat
             title="Submit"
-            color="primary"
+            color="info"
             class="add-category-submit-btn"
             :disabled="!isValid"
             @click.native="submit"

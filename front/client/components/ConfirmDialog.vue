@@ -27,9 +27,8 @@
           {{ cancelBtnText }}
         </v-btn>
         <v-btn
-          flat
           :title="confirmBtnText"
-          color="primary"
+          color="info"
           @click.native="confirm"
         >
           {{ confirmBtnText }}
