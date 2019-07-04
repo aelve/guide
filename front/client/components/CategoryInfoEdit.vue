@@ -39,20 +39,19 @@
             v-model="checkboxSections"
             label="Pros/cons enabled"
             value="ItemProsConsSection"
-            class="mb-2"
-            append-icon=""
+            class="mt-0 hide-v-messages"
           />
           <v-checkbox 
             v-model="checkboxSections"
             label="Ecosystem field enabled"
             value="ItemEcosystemSection"
-            class="mb-2"
+            class="mt-0 hide-v-messages"
           />
           <v-checkbox 
             v-model="checkboxSections"
             label="Notes field enabled"
             value="ItemNotesSection"
-            class="mb-2"
+            class="mt-0 hide-v-messages"
           />
         </v-form>
       </v-card-text>
@@ -144,3 +143,10 @@ export default class CategoryInfoEdit extends Vue {
   }
 }
 </script>
+
+<style scoped>
+>>> .hide-v-messages .v-messages {
+  display: none;
+}
+</style>
+
