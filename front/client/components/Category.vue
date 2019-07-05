@@ -2,7 +2,7 @@
   <v-container>
     <div class="category-wrapper">
       <template v-if="category">
-        <category-info
+        <CategoryHeader
           :category="category" 
           :categoryId="categoryId"
           :categoryTitle="category.title"
@@ -59,14 +59,14 @@ import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
 import category from 'client/store/modules/category'
-import CategoryInfo from 'client/components/CategoryInfo.vue'
+import CategoryHeader from 'client/components/CategoryHeader.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 
 @Component({
   components: {
     CategoryItem,
     CategoryDescription,
-    CategoryInfo,
+    CategoryHeader,
     AddItemDialog
   }
 })
