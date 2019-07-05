@@ -87,7 +87,6 @@ import { CategoryStatus } from 'client/service/Category'
 @Component
 export default class CategoryInfoEdit extends Vue {
   @Prop(Boolean) value!: boolean
-  @Prop(String) categoryId!: string
 
   title: string = ''
   group: string = ''
@@ -105,17 +104,28 @@ export default class CategoryInfoEdit extends Vue {
     (x: string) => !!x || 'Input can not be empty'
   ]
 
+  get category () {
+    return this.$store.state.category.category
+  }
+
   @Watch('value')
   onOpen () {
-    const category = this.$store.state.category.category
+    const { category } = this
+    if (!this.category) {
+      this.close()
+      return
+    }
     this.title = category.title
     this.group = category.group
     this.checkboxSections = category.sections
-    this.categoryStatus = { name: this.transformCategoryStatus(category.status), value: category.status }
+    this.categoryStatus = {
+      name: this.transformCategoryStatus(category.status),
+      value: category.status
+    }
   }
 
   transformCategoryStatus (status: string) {
-    switch(status) {
+    switch (status) {
       case CategoryStatus.finished:
         return 'Complete'
       case CategoryStatus.inProgress:
@@ -131,7 +141,7 @@ export default class CategoryInfoEdit extends Vue {
 
   async updateCategoryInfo () {
     await this.$store.dispatch('category/updateCategoryInfo', {
-      id: this.categoryId,
+      id: this.category.id,
       title: this.title,
       group: this.group,
       status: this.categoryStatus,
