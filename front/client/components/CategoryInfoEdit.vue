@@ -5,7 +5,7 @@
     max-width="500px"
   >
     <slot slot="activator" />
-    
+
     <v-card>
       <v-card-text>
         <v-form
@@ -27,7 +27,7 @@
             :rules="inputValidationRules"
             v-model="group"
           />
-          <v-select 
+          <v-select
             :items="categoryStatuses"
             item-text="name"
             item-value="value"
@@ -42,13 +42,13 @@
             class="mb-2"
             append-icon=""
           />
-          <v-checkbox 
+          <v-checkbox
             v-model="checkboxSections"
             label="Ecosystem field enabled"
             value="ItemEcosystemSection"
             class="mb-2"
           />
-          <v-checkbox 
+          <v-checkbox
             v-model="checkboxSections"
             label="Notes field enabled"
             value="ItemNotesSection"
@@ -84,7 +84,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { Prop, Watch } from 'vue-property-decorator';
+import { Prop, Watch } from 'vue-property-decorator'
 import { CategoryStatus } from 'client/service/Category'
 
 @Component
@@ -99,8 +99,8 @@ export default class CategoryInfoEdit extends Vue {
   isValid: boolean = false
 
   categoryStatuses = [
-    { name: 'Complete', value: 'CategoryFinished' }, 
-    { name: 'Work in progress', value: 'CategoryWIP' }, 
+    { name: 'Complete', value: 'CategoryFinished' },
+    { name: 'Work in progress', value: 'CategoryWIP' },
     { name: 'Stub', value: 'CategoryStub' }
   ]
 
