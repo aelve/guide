@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-dialog
+      lazy
       :value="value"
       @input="close"
       max-width="500px"

@@ -1,6 +1,7 @@
 <!-- Universal confirmation dialog, just pass text and function in Props -->
 <template>
   <v-dialog
+    lazy
     :value="value"
     :attach="attach"
     max-width="500px"

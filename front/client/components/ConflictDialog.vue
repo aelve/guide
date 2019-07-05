@@ -1,5 +1,6 @@
 <template>
   <v-dialog
+    lazy
     :value="value"
     persistent
     max-width="99vw"

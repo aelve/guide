@@ -1,5 +1,6 @@
 <template>
   <v-dialog
+    lazy
     :value="value"
     @input="close"
     @keyup.esc.native="close"
