@@ -1,6 +1,6 @@
 interface IConfirmDialogProps {
-  fullText: string
-  text: string
+  fullText?: string
+  text?: string
   confirmBtnText?: string
   cancelBtnText?: string
 }

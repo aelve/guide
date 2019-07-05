@@ -6,8 +6,8 @@ import DeferredPromise from 'utils/DeferredPromise'
 const ComponentClass = Vue.extend(ConfirmDialog)
 
 interface IConfirmDialogProps {
-  fullText: string
-  text: string
+  fullText?: string
+  text?: string
   confirmBtnText?: string
   cancelBtnText?: string
 }
