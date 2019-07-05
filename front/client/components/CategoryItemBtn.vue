@@ -1,6 +1,6 @@
 <template>
   <v-btn
-    icon
+    :icon="!!icon"
     class="ma-0"
     :style="style"
     v-bind="$attrs"
