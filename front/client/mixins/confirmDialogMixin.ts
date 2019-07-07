@@ -9,19 +9,30 @@ interface IConfirmDialogProps {
   fullText?: string
   text?: string
   confirmBtnText?: string
-  cancelBtnText?: string
+  cancelBtnText?: string,
+  confirmBtnProps?: object,
+  cancelBtnProps?: object
 }
 
 @Mixin
 export default class ConfirmDialogMixin extends Vue {
-  async _confirm ({ text, fullText, confirmBtnText, cancelBtnText }: IConfirmDialogProps): Promise<boolean> {
+  async _confirm ({
+    text,
+    fullText,
+    confirmBtnText,
+    cancelBtnText,
+    confirmBtnProps,
+    cancelBtnProps
+  }: IConfirmDialogProps): Promise<boolean> {
     const instance = new ComponentClass({
       propsData: {
         value: true,
         text,
         fullText,
         confirmBtnText,
-        cancelBtnText
+        cancelBtnText,
+        confirmBtnProps,
+        cancelBtnProps
       }
     })
     instance.$mount()

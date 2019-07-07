@@ -2,7 +2,9 @@ interface IConfirmDialogProps {
   fullText?: string
   text?: string
   confirmBtnText?: string
-  cancelBtnText?: string
+  cancelBtnText?: string,
+  confirmBtnProps?: object,
+  cancelBtnProps?: object
 }
 // TODO looks like documentation isn't working
 /**

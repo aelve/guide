@@ -14,22 +14,28 @@
         <slot />
       </v-card-text>
       <v-card-text v-else>
-        {{ fullText || `Are you sure you want to ${text} ?` }}
+        {{ fullText || `Are you sure you want to ${text}?` }}
       </v-card-text>
       <v-divider />
       <v-card-actions>
         <v-spacer />
         <v-btn
-          flat
-          :title="cancelBtnText"
-          color="primary"
+          v-bind="{
+            flat: true,
+            color:'primary',
+            title: cancelBtnText,
+            ...cancelBtnProps
+          }"
           @click.native="cancel"
         >
           {{ cancelBtnText }}
         </v-btn>
         <v-btn
-          :title="confirmBtnText"
-          color="info"
+          v-bind="{
+            color:'info',
+            title: confirmBtnText,
+            ...confirmBtnProps
+          }"
           @click.native="confirm"
         >
           {{ confirmBtnText }}
@@ -52,6 +58,8 @@ export default class ConfirmDialog extends Vue {
   @Prop(String) attach!: string
   @Prop({ default: 'Continue' }) confirmBtnText!: string
   @Prop({ default: 'Cancel' }) cancelBtnText!: string
+  @Prop(Object) confirmBtnProps!: object
+  @Prop(Object) cancelBtnProps!: object
 
   close () {
     this.$emit('input', false)
