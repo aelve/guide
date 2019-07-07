@@ -34,6 +34,7 @@
         <v-btn
           flat
           icon
+          title="Actions"
           class="category-actions-menu-btn"
           v-on="on"
         >

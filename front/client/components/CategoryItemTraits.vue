@@ -28,7 +28,7 @@
           <category-item-btn
             slot="activator"
             size="22px"
-            title="Options"
+            title="Actions"
             iconSize="14"
             icon="ellipsis-v"
           />
