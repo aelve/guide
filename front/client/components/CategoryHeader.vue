@@ -20,13 +20,10 @@
         <span>RSS feed for all new items in this category</span>
       </v-tooltip>
 
-      <router-link
-        class="category-top-link mr-3"
-        :to="categoryUrl"
-      >
+      <h2 class="category-name-title mr-3">
         {{categoryTitle}}
-      </router-link>
-      <h2 class="category-top-group"> {{categoryGroup}} </h2>
+      </h2>
+      <h2 class="category-group-title"> {{categoryGroup}} </h2>
     </div>
 
     <v-menu
@@ -169,20 +166,15 @@ export default class CategoryHeader extends Vue {
   font-size: 1px;
 }
 
-.category-top-link {
+.category-name-title {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 800;
   text-decoration: none;
-  color: #979797;
-  cursor: pointer;
-  transition: all ease-in-out 0.25s;
+  color: #2b2a2a;
+  letter-spacing: -1px;
 }
 
-.category-top-link:hover {
-  color: #000;
-}
-
-.category-top-group {
+.category-group-title {
   font-size: 16px;
   font-weight: normal;
 }
@@ -225,10 +217,10 @@ export default class CategoryHeader extends Vue {
 }
 
 @media (max-width: 425px) {
-  .category-top-link {
+  .category-name-title {
     font-size: 18px;
   }
-  .category-top-group {
+  .category-group-title {
     font-size: 14px;
   }
 }
