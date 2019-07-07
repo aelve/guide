@@ -132,7 +132,13 @@ export default class CategoryHeader extends Vue {
     this.$emit('openAddItemDialog')
   }
 
-  @Confirm({ text: 'delete this category' })
+  @Confirm({
+    text: 'delete this category',
+    confirmBtnText: 'Delete',
+    confirmBtnProps: {
+      color: 'error'
+    }
+  })
   async deleteCategory () {
     if (!this.category) {
       return
