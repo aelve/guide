@@ -3,7 +3,7 @@
     dark
     solo
     class="toolbar-search"
-    label="Search"
+    label="Search in all pages"
     :value="searchInput"
     @input="setSearchInput"
     @keyup.enter.native="processSearchInput"
