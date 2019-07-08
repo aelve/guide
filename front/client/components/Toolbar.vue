@@ -23,3 +23,9 @@ import axios from 'axios'
 })
 export default class Toolbar extends Vue {}
 </script>
+
+<style scoped>
+>>> .v-toolbar__content {
+  height: 64px !important;
+}
+</style>
