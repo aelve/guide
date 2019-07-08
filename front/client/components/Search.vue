@@ -2,7 +2,7 @@
   <v-text-field
     dark
     solo
-    class="toollbar-search"
+    class="toolbar-search"
     label="Search"
     :value="searchInput"
     @input="setSearchInput"
@@ -32,14 +32,10 @@ export default class SearchField extends Vue {
 </script>
 
 <style scoped>
-.toollbar-search {
-  margin-right: 15px;
-}
-
-.toollbar-search >>> div {
+.toolbar-search >>> div {
   margin-bottom: 0 !important;
 }
-.toollbar-search >>> label {
+.toolbar-search >>> label {
   font-size: 18px;
 }
 </style>
