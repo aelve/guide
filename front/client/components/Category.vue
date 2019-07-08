@@ -35,7 +35,7 @@
       <v-btn
         flat
         class="ml-2"
-        color="grey"
+        color="grey darken-2"
         title="Add new item"
         @click="openAddItemDialog"
       >

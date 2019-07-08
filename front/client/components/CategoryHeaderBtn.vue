@@ -3,7 +3,7 @@
     flat
     class="category-header-btn"
     :title="text"
-    color="grey"
+    color="grey darken-2"
     v-bind="$attrs"
     v-on="$listeners"
   >

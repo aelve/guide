@@ -8,7 +8,7 @@
   >
     <v-icon
       v-if="icon"
-      color="#979797"
+      color="grey darken-2"
       :size="iconSizeValue"
     >{{ iconText }}</v-icon>
     <slot />

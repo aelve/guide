@@ -39,7 +39,7 @@
           v-on="on"
         >
           <v-icon
-            color="grey"
+            color="grey darken-2"
             size="16"
           >$vuetify.icons.bars</v-icon>
         </v-btn>
