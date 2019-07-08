@@ -8,7 +8,7 @@
       <v-toolbar
         flat
         slot="header"
-        color="#d6d6d6"
+        color="#dedede"
         class="elevation-2"
         @click.stop=""
       >
@@ -199,6 +199,5 @@ export default class CategoryItemToolbar extends Vue {
 }
 .category-item-toolbar-btns > * {
   margin: 0 2px;
-  color: #979797;
 }
 </style>

@@ -194,7 +194,7 @@ export default class CategoryItem extends Vue {
 
 .category-item {
   position: relative;
-  background: #e5e5e5;
+  background: #eeeeee;
   margin: 0 0 40px;
 }
 
