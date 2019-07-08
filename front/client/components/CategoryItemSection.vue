@@ -1,11 +1,12 @@
 <template>
   <div class="category-item-section">
-    <h3 class="title font-weight-bold mb-1">
-      {{title}}
+    <h3 class="category-item-section__title title font-weight-bold mb-1">
+      {{ title }}
       <category-item-btn
         small
         :title="editBtnTitle"
         :icon="editBtnIcon"
+        class="ml-1"
         @click="toggleEdit"
       />
     </h3>
@@ -81,5 +82,9 @@ export default class CategoryItemSection extends Vue {
 <style scoped>
 .category-item-section:not(:last-child) {
   margin-bottom: 15px;
+}
+.category-item-section__title {
+  display: flex;
+  align-items: center;
 }
 </style>
