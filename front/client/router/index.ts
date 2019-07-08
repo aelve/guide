@@ -12,7 +12,7 @@ function createRouter () {
       if (savedPosition) {
         return savedPosition
       } else if (to.hash) {
-        return { selector: to.hash, offset: { y: 96, x: 0 } }
+        return { selector: to.hash }
       } else {
         return { x: 0, y: 0 }
       }

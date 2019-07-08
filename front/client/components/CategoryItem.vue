@@ -1,8 +1,10 @@
 <template>
-  <div
-    class="category-item"
-    :id="`item-${itemUid}`"
-  >
+  <div class="category-item">
+    <!-- This "hacky" element used as anchor and located with top offset because of page toolbar which can overlay category item header -->
+    <span
+      style="position: absolute; top: -96px;"
+      :id="`item-${itemUid}`"
+    />
 
     <category-item-toolbar
       :itemUid="itemUid"
@@ -191,6 +193,7 @@ export default class CategoryItem extends Vue {
 }
 
 .category-item {
+  position: relative;
   background: #e5e5e5;
   margin: 0 0 40px;
 }
