@@ -21,7 +21,10 @@
             :url="itemLink"
             openInNewTab
           >{{ itemName }}</a-link>
-          <span v-else>{{ itemName }}</span>
+          <span v-else>{{ itemName }}</span><template v-if="this.itemHackage">&nbsp;(<a
+            target="_blank"
+            :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
+          >Hackage</a>)</template>
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="category-item-toolbar-btns">
@@ -64,6 +67,10 @@
             label="Name"
           />
           <v-text-field
+            v-model="itemHackageEdit"
+            label="Name on Hackage (optional)"
+          />
+          <v-text-field
             v-model="itemLinkEdit"
             label="Site (optional)"
           />
@@ -100,15 +107,15 @@ export default class CategoryItemToolbar extends Vue {
   @Prop(String) itemUid!: string
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
-  @Prop(String) itemGroup!: string
   @Prop(String) itemHackage!: string
 
   isEditItemInfoMenuOpen: boolean = false
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
+  itemHackageEdit: string = this.itemHackage
 
   get isItemInfoEdited () {
-    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit
+    return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit || this.itemHackage !== this.itemHackageEdit
   }
 
   get isInfoSaveEnabled () {
@@ -134,7 +141,8 @@ export default class CategoryItemToolbar extends Vue {
       id: this.itemUid,
       body: {
         name: this.itemNameEdit,
-        link: this.getLinkForSave()
+        link: this.getLinkForSave(),
+        hackage: this.itemHackageEdit
       }
     })
     await this.$store.dispatch('category/reloadCategory')
