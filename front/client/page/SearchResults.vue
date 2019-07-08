@@ -83,7 +83,7 @@ export default class SearchResults extends Vue {
   }
 
   beforeMount () {
-    this.$watch('category', this.setDocumentTitle, { immediate: true })
+    this.$watch('query', this.setDocumentTitle, { immediate: true })
   }
 
   mounted () {
