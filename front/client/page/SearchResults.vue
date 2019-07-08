@@ -1,62 +1,59 @@
 <template>
   <v-container class="search-result-container">
-    <v-card
-      v-if="results && results.length"
-      v-for="(result, index) in results"
-      :key="index"
-      class="search-result-card"
-    >
-
-      <v-card-title
-        v-if="result.tag === 'Category'"
+    <template v-if="results && results.length">
+      <v-card
+        v-for="(result, index) in results"
+        :key="index"
+        class="search-result-card"
       >
-        <span class="search-result-title">
-          <span class="search-result-group-name">
-            {{ result.contents.info.group }}
-          </span>
-            »
-          <a-link
-            openInNewTab
-            :url="`http://guide.aelve.com:4801/haskell/${result.contents.info.id}`"
-          >
-            {{ result.contents.info.title }}
-          </a-link>
-        </span>
-      </v-card-title>
 
-      <v-card-title
-        v-else
-      >
-        <span class="search-result-title">
-          <a-link
-            openInNewTab
-            :url="`http://guide.aelve.com:4801/haskell/${result.contents.category.id}`"
-          >
-            {{ result.contents.category.title }}
-          </a-link>
-            »
-          <span>
-            <a-link
+        <v-card-title v-if="result.tag === 'Category'">
+          <span class="search-result-title">
+            <span class="search-result-group-name">
+              {{ result.contents.info.group }}
+            </span>
+              »
+            <router-link
               openInNewTab
-              :url="`http://guide.aelve.com:4801/haskell/${result.contents.category.id}#item-${result.contents.info.id}`"
+              :to="`/haskell/${result.contents.info.id}`"
             >
-            {{ result.contents.info.name }}</a-link>'s ecosystem
+              {{ result.contents.info.title }}
+            </router-link>
           </span>
-        </span>
-      </v-card-title>
+        </v-card-title>
 
-      <v-card-text
-        v-if="result.tag === 'Category' && result.contents.description"
-        v-html="result.contents.description.html"
-      />
-      <v-card-text
-        v-if="result.tag === 'Item' && result.contents.ecosystem"
-        v-html="result.contents.ecosystem.html"
-      />
-    </v-card>
+        <v-card-title v-else>
+          <span class="search-result-title">
+            <router-link
+              openInNewTab
+              :to="`/haskell/${result.contents.category.id}`"
+            >
+              {{ result.contents.category.title }}
+            </router-link>
+              »
+            <span>
+              <router-link
+                openInNewTab
+                :to="`/haskell/${result.contents.category.id}#item-${result.contents.info.id}`"
+              >
+              {{ result.contents.info.name }}</router-link>'s ecosystem
+            </span>
+          </span>
+        </v-card-title>
+
+        <v-card-text
+          v-if="result.tag === 'Category' && result.contents.description"
+          v-html="result.contents.description.html"
+        />
+        <v-card-text
+          v-if="result.tag === 'Item' && result.contents.ecosystem"
+          v-html="result.contents.ecosystem.html"
+        />
+      </v-card>
+    </template>
 
     <div
-      v-if="!results || !results.length"
+      v-else
       class="text-md-center display-1"
     >
       Nothing found
