@@ -48,6 +48,7 @@ function registerBeforeResolve () {
         return serverPrefetch.call({
           $store: store,
           $router: router,
+          ...component.options.methods,
           ...props
         })
       }
