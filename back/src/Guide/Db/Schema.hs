@@ -37,6 +37,7 @@ pass = "3"
 
 createTables :: Connection -> IO ()
 createTables conn = do
+  -- ToDo: check if tables exist with proper name, field and types.
   result <- mapM (\s -> HS.run s conn) sessionList
   let errors = lefts result
   unless (null errors) $ do
