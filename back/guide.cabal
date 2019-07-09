@@ -51,12 +51,13 @@ library
     Guide.App
     Guide.Api
       Guide.Api.Methods
-      Guide.Api.Migration
       Guide.Api.Server
       Guide.Api.Types
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
+    Guide.Db
+      Guide.Db.Schema
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions
