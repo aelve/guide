@@ -79,11 +79,6 @@ export default class SearchResults extends Vue {
     return this.$store.state.wiki.searchResults
   }
 
-  @Watch('query')
-  onQueryChange () {
-    this.search()
-  }
-
   beforeMount () {
     // This watch should be added in beforeMount (only on client) hook because setDocumentTitle function uses DOM api which is undefined on server
     this.$watch('query', this.setDocumentTitle, { immediate: true })
@@ -97,6 +92,7 @@ export default class SearchResults extends Vue {
     await this.search()
   }
 
+  @Watch('query')
   async search () {
     await this.$store.dispatch('wiki/search', this.query)
   }
