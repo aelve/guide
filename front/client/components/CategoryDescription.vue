@@ -96,19 +96,26 @@ export default class CategoryDescriptiom extends Vue {
   margin: 0 0 40px;
 }
 
-.category-description >>> p {
+.category-description {
   font-size: 16px;
 }
 
-.category-description >>> h1 {
-  margin-top: 10px;
-}
+.category-description >>> {
+  h1 {
+    font-size: 1.4rem;
+    margin: 15px 0;
+  }
+  h2 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+  }
+  h3 {
+    font-size: 1rem;
+    margin: 5px 0;
+  }
 
-.description-content {
-  white-space: pre-line;
-
-  >>> li {
-    white-space: normal;
+  p {
+    margin: 10px 0;
   }
 }
 </style>
