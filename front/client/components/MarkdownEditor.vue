@@ -158,6 +158,7 @@ export default class MarkdownEditor extends Vue {
       if (isLineInCodeblock) {
         element.style.background = 'rgba(0, 0, 0, 0.05)'
         element.style.fontFamily = 'monospace, monospace'
+        element.style.fontSize = '85%'
       }
     })
   }
