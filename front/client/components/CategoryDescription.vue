@@ -91,7 +91,7 @@ export default class CategoryDescriptiom extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .category-description {
   margin: 0 0 40px;
 }
@@ -105,7 +105,11 @@ export default class CategoryDescriptiom extends Vue {
 }
 
 .description-content {
-  white-space: pre-wrap;
+  white-space: pre-line;
+
+  >>> li {
+    white-space: normal;
+  }
 }
 </style>
 
