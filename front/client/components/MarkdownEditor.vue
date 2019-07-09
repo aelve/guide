@@ -96,7 +96,6 @@ export default class MarkdownEditor extends Vue {
         ? [
           'bold',
           'italic',
-          'strikethrough',
           'code',
           'quote',
           'heading',
@@ -110,8 +109,6 @@ export default class MarkdownEditor extends Vue {
           'image',
           'horizontal-rule',
           '|',
-          'preview',
-          'side-by-side',
           'fullscreen',
           {
             name: 'guide',
@@ -123,15 +120,45 @@ export default class MarkdownEditor extends Vue {
           },
         ]
         : false,
+      shortcuts: {
+        toggleBold: "Ctrl-B",
+        toggleItalic: "Ctrl-I",
+        toggleCodeBlock: "Ctrl-Alt-C",
+        toggleBlockquote: "Ctrl-'",
+        toggleHeadingSmaller: "Ctrl-H",
+        toggleHeadingBigger: "Shift-Ctrl-H",
+        toggleUnorderedList: "Ctrl-L",
+        toggleOrderedList: "Ctrl-Alt-L",
+        drawLink: "Ctrl-K",
+        drawImage: "Ctrl-Alt-I",
+        toggleFullScreen: "F11",
+        togglePreview: null,
+        cleanBlock: null,
+        toggleSideBySide: null
+      },
       renderingConfig: {
         markedOptions: {
           gfm: false
         }
       },
+      parsingConfig: {
+        strikethrough: false
+      },
       indentWithTabs: false
     })
     this.editor.codemirror.on('change', () => {
       this.$emit('input', this.editor.value())
+    })
+    this.editor.codemirror.on('renderLine', (codeMirror, line, element) => {
+      if (!line.styles) {
+        return
+      }
+      const isLineInCodeblock = line.styles.some(x => typeof x === 'string' && x.includes('comment'))
+      // Highlightens full line inside code block, since codeMirror itself highlights only symbols
+      if (isLineInCodeblock) {
+        element.style.background = 'rgba(0, 0, 0, 0.05)'
+        element.style.fontFamily = 'monospace, monospace'
+      }
     })
   }
 
@@ -167,7 +194,7 @@ export default class MarkdownEditor extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 >>> .editor-toolbar,
 >>> .CodeMirror {
   border: none;
@@ -179,9 +206,27 @@ export default class MarkdownEditor extends Vue {
      https://github.com/sparksuite/simplemde-markdown-editor/issues/619
   */
   box-sizing: content-box;
-}
->>> .CodeMirror {
-  font-size: 12px;
+  font-size: 16px;
+
+  .cm-header-1 {
+    font-size: 2rem;
+  }
+  .cm-header-2 {
+    font-size: 1.5rem;
+  }
+  .cm-header-3 {
+    font-size: 1.17rem;
+  }
+  .cm-header-5 {
+    font-size: 0.83rem;
+  }
+  .cm-header-6 {
+    font-size: 0.67rem;
+  }
+
+  .cm-comment {
+    background: unset;
+  }
 }
 >>> .v-toolbar__content {
   padding-left: 0;
