@@ -23,7 +23,7 @@ import qualified Hasql.Connection as HC
 main :: IO ()
 main = do
   conn <- connection
-  dbCreate conn
+  createTables conn
 
 connection :: IO Connection
 connection = do
@@ -33,28 +33,31 @@ connectionSettings :: Settings
 connectionSettings = HC.settings "localhost" 5432 "postgres" pass "guide"
 
 pass :: ByteString
-pass = ""
+pass = "3"
 
-dbCreate :: Connection -> IO ()
-dbCreate conn = do
+createTables :: Connection -> IO ()
+createTables conn = do
   result <- mapM (\s -> HS.run s conn) sessionList
-  mapM_ (hPrint stderr) $ lefts result
+  let errors = lefts result
+  unless (null errors) $ do
+    mapM_ (hPrint stderr) errors
+    fail "createTables failed"
 
 sessionList :: [Session ()]
 sessionList =
-  [ createTypeTraitType
-  , createDbCategories
-  , createDbItems
-  , createDbTraits
-  , createDbUsers
-  , createDbEdits
+  [ createTypeProCons
+  , createTableCategories
+  , createTableItems
+  , createTableTraits
+  , createTableUsers
+  , createTableEdits
   ]
 
-createTypeTraitType :: Session ()
-createTypeTraitType = HS.sql "CREATE TYPE trait_type AS ENUM ('pro', 'con');"
+createTypeProCons :: Session ()
+createTypeProCons = HS.sql "CREATE TYPE trait_type AS ENUM ('pro', 'con');"
 
-createDbTraits :: Session ()
-createDbTraits = HS.sql $ toByteString [text|
+createTableTraits :: Session ()
+createTableTraits = HS.sql $ toByteString [text|
   CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
@@ -68,8 +71,8 @@ createDbTraits = HS.sql $ toByteString [text|
   );
   |]
 
-createDbItems :: Session ()
-createDbItems = HS.sql $ toByteString [text|
+createTableItems :: Session ()
+createTableItems = HS.sql $ toByteString [text|
   CREATE TABLE items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
@@ -89,8 +92,8 @@ createDbItems = HS.sql $ toByteString [text|
   );
   |]
 
-createDbCategories :: Session ()
-createDbCategories = HS.sql $ toByteString [text|
+createTableCategories :: Session ()
+createTableCategories = HS.sql $ toByteString [text|
   CREATE TABLE categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
@@ -104,8 +107,8 @@ createDbCategories = HS.sql $ toByteString [text|
   );
   |]
 
-createDbUsers :: Session ()
-createDbUsers = HS.sql $ toByteString [text|
+createTableUsers :: Session ()
+createTableUsers = HS.sql $ toByteString [text|
   CREATE TABLE users (
     uid text PRIMARY KEY,           -- Unique user ID
     name text NOT NULL,             -- User name
@@ -117,8 +120,8 @@ createDbUsers = HS.sql $ toByteString [text|
   );
   |]
 
-createDbEdits :: Session ()
-createDbEdits = HS.sql $ toByteString [text|
+createTableEdits :: Session ()
+createTableEdits = HS.sql $ toByteString [text|
   CREATE TABLE pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
