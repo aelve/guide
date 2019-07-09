@@ -51,6 +51,7 @@ library
     Guide.App
     Guide.Api
       Guide.Api.Methods
+      Guide.Api.Migration
       Guide.Api.Server
       Guide.Api.Types
       Guide.Api.Error
@@ -129,6 +130,7 @@ library
                      , friendly-time == 0.4.*
                      , hashable
                      , haskell-src-meta
+                     , hasql
                      , http-api-data
                      , http-client
                      , http-client-tls
