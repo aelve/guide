@@ -119,10 +119,7 @@ export default class CategoryInfoEdit extends Vue {
     this.title = category.title
     this.group = category.group
     this.checkboxSections = category.sections
-    this.categoryStatus = {
-      name: this.transformCategoryStatus(category.status),
-      value: category.status
-    }
+    this.categoryStatus = category.status
   }
 
   transformCategoryStatus (status: string) {
