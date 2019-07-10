@@ -16,9 +16,7 @@
             <router-link
               openInNewTab
               :to="`/haskell/${result.contents.info.id}`"
-            >
-              {{ result.contents.info.title }}
-            </router-link>
+            >{{ result.contents.info.title }}</router-link>
           </span>
         </v-card-title>
 
@@ -27,16 +25,13 @@
             <router-link
               openInNewTab
               :to="`/haskell/${result.contents.category.id}`"
-            >
-              {{ result.contents.category.title }}
-            </router-link>
+            >{{ result.contents.category.title }}</router-link>
               »
             <span>
               <router-link
                 openInNewTab
                 :to="`/haskell/${result.contents.category.id}#item-${result.contents.info.id}`"
-              >
-              {{ result.contents.info.name }}</router-link>'s ecosystem
+              >{{ result.contents.info.name }}</router-link>'s ecosystem
             </span>
           </span>
         </v-card-title>
