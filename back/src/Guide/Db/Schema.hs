@@ -16,7 +16,7 @@ import qualified Hasql.Session as HS
 import qualified Hasql.Connection as HC
 
 
--- It runs creation tables at first time. If table name exists it skips it.
+-- | It runs creation tables at first time. If table name exists it skips it.
 -- If something returns an error it fails.
 -- Damp base to check it has correct tables fields and types.
 -- Check the migration version of data is correct also.
@@ -25,28 +25,28 @@ runCreateTables = do
   conn <- connection
   createTables conn
 
--- Throw error if connection lost
+-- | Throw error if connection lost
 connection :: IO Connection
 connection = do
   either (error . show) pure =<< HC.acquire connectionSettings
 
--- Connection settings
+-- | Connection settings
 connectionSettings :: Settings
 connectionSettings = HC.settings "localhost" 5432 dbUser dbPass dbName
 
--- Database user
+-- | Database user
 dbUser :: ByteString
 dbUser = "postgres"
 
--- Database password
+-- | Database password
 dbPass :: ByteString
 dbPass = "3"
 
--- Database name
+-- | Database name
 dbName :: ByteString
 dbName = "guide"
 
--- Create tables and fails if something returns an error.
+-- | Create tables and fails if something returns an error.
 createTables :: Connection -> IO ()
 createTables conn = do
   -- ToDo: check if tables exist with proper name, field and types.
@@ -57,7 +57,7 @@ createTables conn = do
     fail "createTables failed"
   putStrLn "Tables was created if they not exist."
 
--- List of all session
+-- | List of all session
 sessionList :: [Session ()]
 sessionList =
   [ createTypeProCon
@@ -68,14 +68,14 @@ sessionList =
   , createTableEdits
   ]
 
--- Drop if exists and then create type pro/con. It used in trait.
+-- | Drop if exists and then create type pro/con. It used in trait.
 createTypeProCon :: Session ()
 createTypeProCon = HS.sql $ toByteString [text|
   DROP TYPE IF EXISTS trait_type CASCADE;
   CREATE TYPE trait_type AS ENUM ('pro', 'con');
   |]
 
--- Create traits table if not exists
+-- | Create traits table if not exists
 createTableTraits :: Session ()
 createTableTraits = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS traits (
@@ -91,7 +91,7 @@ createTableTraits = HS.sql $ toByteString [text|
   );
   |]
 
--- Create items table if not exists
+-- | Create items table if not exists
 createTableItems :: Session ()
 createTableItems = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS items (
@@ -113,7 +113,7 @@ createTableItems = HS.sql $ toByteString [text|
   );
   |]
 
--- Create table for categories
+-- | Create table for categories
 createTableCategories :: Session ()
 createTableCategories = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS categories (
@@ -129,7 +129,7 @@ createTableCategories = HS.sql $ toByteString [text|
   );
   |]
 
--- Create table to store user's data
+-- | Create table to store user's data
 createTableUsers :: Session ()
 createTableUsers = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS users (
@@ -143,7 +143,7 @@ createTableUsers = HS.sql $ toByteString [text|
   );
   |]
 
--- Create table to store edits and who made it
+-- | Create table to store edits and who made it
 createTableEdits :: Session ()
 createTableEdits = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS pending_edits (
