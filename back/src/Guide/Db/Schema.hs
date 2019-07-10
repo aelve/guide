@@ -10,31 +10,43 @@ import Hasql.Session (Session)
 import NeatInterpolation
 import Data.Either (lefts)
 import System.IO (stderr, hPrint)
--- import Hasql.Statement (Statement(..))
 import Hasql.Connection (Connection, Settings)
 
 import qualified Hasql.Session as HS
--- import qualified Hasql.Decoders as HD
--- import qualified Hasql.Encoders as HE
--- import qualified Data.ByteString as B
 import qualified Hasql.Connection as HC
 
 
-main :: IO ()
-main = do
+-- It runs creation tables at first time. If table name exists it skips it.
+-- If something returns an error it fails.
+-- Damp base to check it has correct tables fields and types.
+-- Check the migration version of data is correct also.
+runCreateTables :: IO ()
+runCreateTables = do
   conn <- connection
   createTables conn
 
+-- Throw error if connection lost
 connection :: IO Connection
 connection = do
   either (error . show) pure =<< HC.acquire connectionSettings
 
+-- Connection settings
 connectionSettings :: Settings
-connectionSettings = HC.settings "localhost" 5432 "postgres" pass "guide"
+connectionSettings = HC.settings "localhost" 5432 dbUser dbPass dbName
 
-pass :: ByteString
-pass = "3"
+-- Database user
+dbUser :: ByteString
+dbUser = "postgres"
 
+-- Database password
+dbPass :: ByteString
+dbPass = "3"
+
+-- Database name
+dbName :: ByteString
+dbName = "guide"
+
+-- Create tables and fails if something returns an error.
 createTables :: Connection -> IO ()
 createTables conn = do
   -- ToDo: check if tables exist with proper name, field and types.
@@ -43,10 +55,12 @@ createTables conn = do
   unless (null errors) $ do
     mapM_ (hPrint stderr) errors
     fail "createTables failed"
+  putStrLn "Tables was created if they not exist."
 
+-- List of all session
 sessionList :: [Session ()]
 sessionList =
-  [ createTypeProCons
+  [ createTypeProCon
   , createTableCategories
   , createTableItems
   , createTableTraits
@@ -54,12 +68,17 @@ sessionList =
   , createTableEdits
   ]
 
-createTypeProCons :: Session ()
-createTypeProCons = HS.sql "CREATE TYPE trait_type AS ENUM ('pro', 'con');"
+-- Drop if exists and then create type pro/con. It used in trait.
+createTypeProCon :: Session ()
+createTypeProCon = HS.sql $ toByteString [text|
+  DROP TYPE IF EXISTS trait_type CASCADE;
+  CREATE TYPE trait_type AS ENUM ('pro', 'con');
+  |]
 
+-- Create traits table if not exists
 createTableTraits :: Session ()
 createTableTraits = HS.sql $ toByteString [text|
-  CREATE TABLE traits (
+  CREATE TABLE IF NOT EXISTS traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
       deleted boolean               -- Whether the trait is deleted
@@ -72,9 +91,10 @@ createTableTraits = HS.sql $ toByteString [text|
   );
   |]
 
+-- Create items table if not exists
 createTableItems :: Session ()
 createTableItems = HS.sql $ toByteString [text|
-  CREATE TABLE items (
+  CREATE TABLE IF NOT EXISTS items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
     created timestamp NOT NULL,     -- When the item was created
@@ -93,9 +113,10 @@ createTableItems = HS.sql $ toByteString [text|
   );
   |]
 
+-- Create table for categories
 createTableCategories :: Session ()
 createTableCategories = HS.sql $ toByteString [text|
-  CREATE TABLE categories (
+  CREATE TABLE IF NOT EXISTS categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
     created timestamp NOT NULL,     -- When the category was created
@@ -108,9 +129,10 @@ createTableCategories = HS.sql $ toByteString [text|
   );
   |]
 
+-- Create table to store user's data
 createTableUsers :: Session ()
 createTableUsers = HS.sql $ toByteString [text|
-  CREATE TABLE users (
+  CREATE TABLE IF NOT EXISTS users (
     uid text PRIMARY KEY,           -- Unique user ID
     name text NOT NULL,             -- User name
     email text NOT NULL,            -- User email
@@ -121,30 +143,13 @@ createTableUsers = HS.sql $ toByteString [text|
   );
   |]
 
+-- Create table to store edits and who made it
 createTableEdits :: Session ()
 createTableEdits = HS.sql $ toByteString [text|
-  CREATE TABLE pending_edits (
+  CREATE TABLE IF NOT EXISTS pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
     ip inet,                        -- IP address of edit maker
     time_ timestamp NOT NULL        -- When the edit was created
   );
   |]
-
-
--- Sandbox --
-
--- data Test = Test
---   { digit :: Int32
---   , string :: Text
---   } deriving Show
-
--- testStatement :: Statement () [Test]
--- testStatement = Statement sql encoder decoder True where
---   sql = "select * FROM test"
---   encoder = HE.noParams
---   decoder :: HD.Result [Test]
---   decoder = HD.rowList (Test <$> ((HD.column . HD.nonNullable) HD.int4) <*> ((HD.column . HD.nonNullable) HD.text))
-
--- testCreateStatement :: Session ()
--- testCreateStatement = HS.sql "CREATE TABLE test (digit integer, string text);"
