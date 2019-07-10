@@ -50,7 +50,13 @@ export default class RootComponent extends Vue {
   box-sizing: border-box;
 }
 p {
-  margin: 0;
+  margin-bottom: 10px;
+}
+li p {
+  margin-bottom: 0;
+}
+ul li:not(:last-child) {
+  margin-bottom: 2px;
 }
 code {
   color: inherit;

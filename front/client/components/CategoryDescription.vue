@@ -113,10 +113,6 @@ export default class CategoryDescriptiom extends Vue {
     font-size: 1rem;
     margin: 5px 0;
   }
-
-  p {
-    margin: 10px 0;
-  }
 }
 </style>
 
