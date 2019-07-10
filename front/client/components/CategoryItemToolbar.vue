@@ -2,7 +2,6 @@
   <v-expansion-panel class="category-item-toolbar">
     <v-expansion-panel-content
       hide-actions
-      lazy
       :value="isEditItemInfoMenuOpen"
     >
       <v-toolbar
