@@ -12,7 +12,7 @@
         <v-form
           lazy-validation
           v-model="isValid"
-          @keydown.native.prevent.enter="submit"
+          @keydown.native.prevent.ctrl.enter="updateCategoryInfo"
         >
           <v-text-field
             autofocus
