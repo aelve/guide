@@ -45,6 +45,7 @@ jobs:
       before_script:
         - sudo apt-get install -y libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
+        # travis_retry works around https://github.com/commercialhaskell/stack/issues/4888
         - travis_retry stack setup
       script:
         # Build
@@ -82,6 +83,7 @@ jobs:
       before_script:
         - sudo apt-get install -y libgmp-dev fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
+        # travis_retry works around https://github.com/commercialhaskell/stack/issues/4888
         - travis_retry stack setup
         # Install chromedriver
         - wget https://chromedriver.storage.googleapis.com/2.46/chromedriver_linux64.zip
