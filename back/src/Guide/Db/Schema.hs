@@ -49,7 +49,7 @@ dbName = "guide"
 -- | Create tables and fails if something returns an error.
 createTables :: Connection -> IO ()
 createTables conn = do
-  -- ToDo: check if tables exist with proper name, field and types.
+  -- TODO: check if tables exist with proper name, field and types.
   result <- mapM (\s -> HS.run s conn) sessionList
   let errors = lefts result
   unless (null errors) $ do
@@ -65,7 +65,7 @@ sessionList =
   , createTableItems
   , createTableTraits
   , createTableUsers
-  , createTableEdits
+  , createTablePendingEdits
   ]
 
 -- | Drop if exists and then create type pro/con. It used in trait.
@@ -124,8 +124,8 @@ createTableCategories = HS.sql $ toByteString [text|
     status_ text NOT NULL,          -- Category status ("in progress", etc); the list of
                                     --   possible statuses is defined by backend
     notes text NOT NULL,            -- Category notes as Markdown
-    enabled_sections text[]         -- Item sections to show to users; the list of possible
-      NOT NULL                      --   section names is defined by backend
+    enabled_sections text[]         -- Item sections to show to users; the list of
+      NOT NULL                      --   possible section names is defined by backend
   );
   |]
 
@@ -144,8 +144,8 @@ createTableUsers = HS.sql $ toByteString [text|
   |]
 
 -- | Create table to store edits and who made it
-createTableEdits :: Session ()
-createTableEdits = HS.sql $ toByteString [text|
+createTablePendingEdits :: Session ()
+createTablePendingEdits = HS.sql $ toByteString [text|
   CREATE TABLE IF NOT EXISTS pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
