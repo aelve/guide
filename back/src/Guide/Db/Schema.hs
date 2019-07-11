@@ -32,8 +32,10 @@ migrations =
 -- Determines which migrations have to be run, and runs them. Errors out if
 -- any migrations fail.
 --
--- Does not create the @guide@ database if it does not exist yet. Use
--- @CREATE DATABASE@ when running for the first time.
+-- Note: 'setupDatabase' uses @"guide"@ as the database name, but it does
+-- not create a database if it does not exist yet. You should create the
+-- database manually by doing @CREATE DATABASE guide;@ or run Postgres with
+-- @POSTGRES_DB=guide@ when running when running the app for the first time.
 --
 -- TODO: check schema hash as well, not just schema version?
 setupDatabase :: IO ()
@@ -41,7 +43,7 @@ setupDatabase = do
   conn <- connect
   mbSchemaVersion <- run' getSchemaVersion conn
   case mbSchemaVersion of
-    Nothing -> formatLn "No schema found, running all migrations"
+    Nothing -> formatLn "No schema found, creating tables and running all migrations"
     Just v  -> formatLn "Schema version is {}" v
   let schemaVersion = fromMaybe (-1) mbSchemaVersion
   for_ migrations $ \(migrationVersion, migration) ->
@@ -89,7 +91,9 @@ run' s c = either (error . show) pure =<< HS.run s c
 ----------------------------------------------------------------------------
 
 -- | Get schema version (i.e. the version of the last migration that was
--- run). If the @schema_version@ table doesn't exist, creates it.
+-- run).
+--
+-- If the @schema_version@ table doesn't exist, creates it.
 getSchemaVersion :: Session (Maybe Int32)
 getSchemaVersion = do
   HS.sql $ toByteString [text|
