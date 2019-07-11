@@ -2,33 +2,63 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module Guide.Db.Schema where
+module Guide.Db.Schema
+(
+  setupDatabase,
+)
+where
 
 import Imports
 
 import Hasql.Session (Session)
 import NeatInterpolation
-import Data.Either (lefts)
-import System.IO (stderr, hPrint)
 import Hasql.Connection (Connection, Settings)
+import Hasql.Statement (Statement (..))
 
 import qualified Hasql.Session as HS
 import qualified Hasql.Connection as HC
+import qualified Hasql.Encoders as HE
+import qualified Hasql.Decoders as HD
 
 
--- | It runs creation tables at first time. If table name exists it skips it.
--- If something returns an error it fails.
--- Damp base to check it has correct tables fields and types.
--- Check the migration version of data is correct also.
-runCreateTables :: IO ()
-runCreateTables = do
-  conn <- connection
-  createTables conn
+-- | List of all migrations.
+migrations :: [(Int32, Session ())]
+migrations =
+  [ (0, v0)
+  ]
 
--- | Throw error if connection lost
-connection :: IO Connection
-connection = do
-  either (error . show) pure =<< HC.acquire connectionSettings
+-- | Prepare the database for use by Guide.
+--
+-- Determines which migrations have to be run, and runs them. Errors out if
+-- any migrations fail.
+--
+-- Does not create the @guide@ database if it does not exist yet. Use
+-- @CREATE DATABASE@ when running for the first time.
+--
+-- TODO: check schema hash as well, not just schema version?
+setupDatabase :: IO ()
+setupDatabase = do
+  conn <- connect
+  mbSchemaVersion <- run' getSchemaVersion conn
+  case mbSchemaVersion of
+    Nothing -> formatLn "No schema found, running all migrations"
+    Just v  -> formatLn "Schema version is {}" v
+  let schemaVersion = fromMaybe (-1) mbSchemaVersion
+  for_ migrations $ \(migrationVersion, migration) ->
+    when (migrationVersion > schemaVersion) $ do
+      format "Migration {}: " migrationVersion
+      run' (migration >> setSchemaVersion migrationVersion) conn
+      formatLn "done"
+
+-- | Create a database connection (the destination is hard-coded for now).
+--
+-- Throws an 'error' if the connection could not be established.
+connect :: IO Connection
+connect = do
+  HC.acquire connectionSettings >>= \case
+    Left Nothing -> error "connect: unknown exception"
+    Left (Just x) -> error ("connect: " ++ toString x)
+    Right conn -> pure conn
 
 -- | Connection settings
 connectionSettings :: Settings
@@ -46,39 +76,70 @@ dbPass = "3"
 dbName :: ByteString
 dbName = "guide"
 
--- | Create tables and fails if something returns an error.
-createTables :: Connection -> IO ()
-createTables conn = do
-  -- TODO: check if tables exist with proper name, field and types.
-  result <- mapM (\s -> HS.run s conn) sessionList
-  let errors = lefts result
-  unless (null errors) $ do
-    mapM_ (hPrint stderr) errors
-    fail "createTables failed"
-  putStrLn "Tables was created if they not exist."
+----------------------------------------------------------------------------
+-- Utilities
+----------------------------------------------------------------------------
 
--- | List of all session
-sessionList :: [Session ()]
-sessionList =
-  [ createTypeProCon
-  , createTableCategories
-  , createTableItems
-  , createTableTraits
-  , createTableUsers
-  , createTablePendingEdits
-  ]
+-- | Like 'HS.run', but errors out in case of failure.
+run' :: Session a -> Connection -> IO a
+run' s c = either (error . show) pure =<< HS.run s c
 
--- | Drop if exists and then create type pro/con. It used in trait.
-createTypeProCon :: Session ()
-createTypeProCon = HS.sql $ toByteString [text|
-  DROP TYPE IF EXISTS trait_type CASCADE;
+----------------------------------------------------------------------------
+-- Schema version table
+----------------------------------------------------------------------------
+
+-- | Get schema version (i.e. the version of the last migration that was
+-- run). If the @schema_version@ table doesn't exist, creates it.
+getSchemaVersion :: Session (Maybe Int32)
+getSchemaVersion = do
+  HS.sql $ toByteString [text|
+    CREATE TABLE IF NOT EXISTS schema_version (
+      name text PRIMARY KEY,
+      version integer
+    );
+    INSERT INTO schema_version (name, version)
+      VALUES ('main', null)
+      ON CONFLICT DO NOTHING;
+    |]
+  let sql = "SELECT (version) FROM schema_version WHERE name = 'main'"
+      encoder = HE.noParams
+      decoder = HD.singleRow (HD.column (HD.nullable HD.int4))
+  HS.statement () (Statement sql encoder decoder False)
+
+-- | Set schema version.
+--
+-- Assumes the @schema_version@ table exists.
+setSchemaVersion :: Int32 -> Session ()
+setSchemaVersion version = do
+  let sql = "UPDATE schema_version SET version = $1 WHERE name = 'main'"
+      encoder = HE.param (HE.nullable HE.int4)
+      decoder = HD.noResult
+  HS.statement (Just version) (Statement sql encoder decoder True)
+
+----------------------------------------------------------------------------
+-- Version 0
+----------------------------------------------------------------------------
+
+-- | Schema version 0: initial schema.
+v0 :: Session ()
+v0 = do
+  v0_createTypeProCon
+  v0_createTableCategories
+  v0_createTableItems
+  v0_createTableTraits
+  v0_createTableUsers
+  v0_createTablePendingEdits
+
+-- | Create an enum type for trait type ("pro" or "con").
+v0_createTypeProCon :: Session ()
+v0_createTypeProCon = HS.sql $ toByteString [text|
   CREATE TYPE trait_type AS ENUM ('pro', 'con');
   |]
 
--- | Create traits table if not exists
-createTableTraits :: Session ()
-createTableTraits = HS.sql $ toByteString [text|
-  CREATE TABLE IF NOT EXISTS traits (
+-- | Create table @traits@, corresponding to 'Guide.Types.Core.Trait'.
+v0_createTableTraits :: Session ()
+v0_createTableTraits = HS.sql $ toByteString [text|
+  CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
       deleted boolean               -- Whether the trait is deleted
@@ -91,10 +152,10 @@ createTableTraits = HS.sql $ toByteString [text|
   );
   |]
 
--- | Create items table if not exists
-createTableItems :: Session ()
-createTableItems = HS.sql $ toByteString [text|
-  CREATE TABLE IF NOT EXISTS items (
+-- | Create table @items@, corresponding to 'Guide.Types.Core.Item'.
+v0_createTableItems :: Session ()
+v0_createTableItems = HS.sql $ toByteString [text|
+  CREATE TABLE items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
     created timestamp NOT NULL,     -- When the item was created
@@ -113,10 +174,10 @@ createTableItems = HS.sql $ toByteString [text|
   );
   |]
 
--- | Create table for categories
-createTableCategories :: Session ()
-createTableCategories = HS.sql $ toByteString [text|
-  CREATE TABLE IF NOT EXISTS categories (
+-- | Create table @categories@, corresponding to 'Guide.Types.Core.Category'.
+v0_createTableCategories :: Session ()
+v0_createTableCategories = HS.sql $ toByteString [text|
+  CREATE TABLE categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
     created timestamp NOT NULL,     -- When the category was created
@@ -129,10 +190,10 @@ createTableCategories = HS.sql $ toByteString [text|
   );
   |]
 
--- | Create table to store user's data
-createTableUsers :: Session ()
-createTableUsers = HS.sql $ toByteString [text|
-  CREATE TABLE IF NOT EXISTS users (
+-- | Create table @users@, storing user data.
+v0_createTableUsers :: Session ()
+v0_createTableUsers = HS.sql $ toByteString [text|
+  CREATE TABLE users (
     uid text PRIMARY KEY,           -- Unique user ID
     name text NOT NULL,             -- User name
     email text NOT NULL,            -- User email
@@ -143,10 +204,11 @@ createTableUsers = HS.sql $ toByteString [text|
   );
   |]
 
--- | Create table to store edits and who made it
-createTablePendingEdits :: Session ()
-createTablePendingEdits = HS.sql $ toByteString [text|
-  CREATE TABLE IF NOT EXISTS pending_edits (
+-- | Create table @pending_edits@, storing users' edits and metadata about
+-- them (who made the edit, when, etc).
+v0_createTablePendingEdits :: Session ()
+v0_createTablePendingEdits = HS.sql $ toByteString [text|
+  CREATE TABLE pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
     ip inet,                        -- IP address of edit maker
