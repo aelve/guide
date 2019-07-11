@@ -20,6 +20,7 @@ extra-deps:
 - stm-containers-0.2.16
 - lzma-clib-5.2.2
 - regex-1.0.1.5
+- hasql-1.4
 
 # Old versions from LTS 12+ (can and should be upgraded)
 - megaparsec-6.5.0

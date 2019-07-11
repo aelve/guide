@@ -56,6 +56,8 @@ library
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
+    Guide.Db
+      Guide.Db.Schema
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions
@@ -129,6 +131,7 @@ library
                      , friendly-time == 0.4.*
                      , hashable
                      , haskell-src-meta
+                     , hasql
                      , http-api-data
                      , http-client
                      , http-client-tls

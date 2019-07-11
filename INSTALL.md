@@ -16,7 +16,7 @@ The `back/config.json` file contains the config (it will be created at the first
 
 # How to install locally
 
-First install NPM (important!). Then do:
+First install NPM (important!) and `libpq`. Then do:
 
     $ make back
     $ make back/run
@@ -31,7 +31,7 @@ Create a droplet with Ubuntu. Install Stack (this command will import a GPG key,
 
     $ curl -sSL https://get.haskellstack.org/ | sh
 
-Install NPM.
+Install NPM and `libpq`.
 
 Clone and build `guide`:
 
