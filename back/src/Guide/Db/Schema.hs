@@ -43,14 +43,14 @@ setupDatabase = do
   conn <- connect
   mbSchemaVersion <- run' getSchemaVersion conn
   case mbSchemaVersion of
-    Nothing -> formatLn "No schema found, creating tables and running all migrations"
-    Just v  -> formatLn "Schema version is {}" v
+    Nothing -> formatLn "No schema found. Creating tables and running all migrations."
+    Just v  -> formatLn "Schema version is {}." v
   let schemaVersion = fromMaybe (-1) mbSchemaVersion
   for_ migrations $ \(migrationVersion, migration) ->
     when (migrationVersion > schemaVersion) $ do
       format "Migration {}: " migrationVersion
       run' (migration >> setSchemaVersion migrationVersion) conn
-      formatLn "done"
+      formatLn "done."
 
 -- | Create a database connection (the destination is hard-coded for now).
 --
