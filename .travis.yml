@@ -45,7 +45,7 @@ jobs:
       before_script:
         - sudo apt-get install -y libgmp-dev
         - curl -sSL https://get.haskellstack.org/ | sh
-        - stack setup
+        - travis_retry stack setup
       script:
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
@@ -82,7 +82,7 @@ jobs:
       before_script:
         - sudo apt-get install -y libgmp-dev fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
-        - stack setup
+        - travis_retry stack setup
         # Install chromedriver
         - wget https://chromedriver.storage.googleapis.com/2.46/chromedriver_linux64.zip
         - unzip chromedriver_linux64.zip
