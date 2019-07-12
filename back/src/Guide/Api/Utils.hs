@@ -16,11 +16,10 @@ module Guide.Api.Utils
 (
   jsonOptions,
   schemaOptions,
-  type (?)(..),
-  unH,
-  Primitive,
   BranchTag,
   RequestDetails(..),
+  field,
+  inlineSchema,
 )
 where
 
@@ -29,20 +28,19 @@ import Imports
 
 import GHC.TypeLits
 import Data.IP (IP)
-import GHC.Generics
 import Data.Aeson
-import Data.Swagger hiding (fieldLabelModifier)
-import Data.Swagger.Internal.Schema
+import Data.Swagger hiding (format, fieldLabelModifier)
 import Servant
 import Servant.Swagger
 import Network.HTTP.Types.Header (hReferer,hUserAgent)
 import Network.Wai (Request, requestHeaders, remoteHost)
 import Servant.Server.Internal (DelayedIO, withRequest, addHeaderCheck)
 
-import Guide.Utils (sockAddrToIP, Uid)
+import Guide.Utils (sockAddrToIP)
 
 import qualified Network.HTTP.Types.Header as NHTH
 import qualified Data.Text as T
+import qualified Data.HashMap.Strict.InsOrd as InsOrd
 
 ----------------------------------------------------------------------------
 -- Options
@@ -61,47 +59,6 @@ jsonOptions = defaultOptions{ fieldLabelModifier = camelTo2 '_' . trim }
 -- | Swagger schema-generating options that match 'jsonOptions'.
 schemaOptions :: SchemaOptions
 schemaOptions = fromAesonOptions jsonOptions
-
-----------------------------------------------------------------------------
--- Descriptions for record fields
-----------------------------------------------------------------------------
-
--- | A way to provide descriptions for record fields. Should only be used
--- for primitive types, because adding a description to a ref field is
--- impossible: <https://github.com/swagger-api/swagger-ui/issues/4732>
-newtype (?) (field :: *) (help :: Symbol) = H field
-  deriving (Eq, Generic, Show)
-
-instance ToJSON field => ToJSON (field ? help) where
-  toJSON (H a) = toJSON a
-
-instance FromJSON field => FromJSON (field ? help) where
-    parseJSON f = H <$> parseJSON f
-
-instance (KnownSymbol help, Primitive a, ToSchema a) => ToSchema (a ? help) where
-  declareNamedSchema _ = do
-    NamedSchema _ s <- declareNamedSchema (Proxy @a)
-    return $ NamedSchema Nothing (s & description ?~ toText desc)
-    where
-      desc = symbolVal (Proxy @help)
-
-instance {-# OVERLAPPING #-} (KnownSymbol help, Selector s, Primitive c, ToSchema c)
-  => GToSchema (S1 s (K1 i (Maybe c ? help))) where
-  gdeclareNamedSchema opts _ = fmap unnamed . withFieldSchema opts (Proxy2 :: Proxy2 s (K1 i (Maybe c ? help))) False
-
--- | Unwrapper for @field '?' help@
-unH :: forall field help . (field ? help) -> field
-unH (H field) = field
-
--- | Types that are allowed to be used with '?'.
-class Primitive a
-
-instance Primitive a => Primitive (Maybe a)
-instance Primitive [a]
-instance Primitive (Set a)
-instance Primitive Text
-instance Primitive (Uid a)
-instance Primitive UTCTime
 
 ----------------------------------------------------------------------------
 -- BranchTag
@@ -189,3 +146,30 @@ instance (HasServer api context)
                     T.takeWhile (/= ':') addr
                    -- IPv6 without port
                   | otherwise = addr
+
+----------------------------------------------------------------------------
+-- Schema lenses
+----------------------------------------------------------------------------
+
+-- | A lens for fields in Swagger schemas.
+--
+-- Throws an 'error' if the field does not exist.
+field
+  :: HasCallStack
+  => Text -> Lens' (InsOrd.InsOrdHashMap Text (Referenced Schema)) (Referenced Schema)
+field k f m = case InsOrd.lookup k m of
+  Just v -> f v <&> \v' -> InsOrd.insert k v' m
+  Nothing -> error $ format "field: field {} not found" (show k)
+
+-- | A lens for inline schemas.
+--
+-- Throws an 'error' if the field is a reference to another schema (i.e. not
+-- a primitive field like 'Text', 'Int', list, etc). In this case you can
+-- first generate the schema, e.g. with @toSchema (Proxy \@SomeType)@.
+inlineSchema
+  :: HasCallStack
+  => Lens' (Referenced Schema) Schema
+inlineSchema f (Inline v) =
+  Inline <$> f v
+inlineSchema _ (Ref r) =
+  error $ format "inlineSchema: expected Inline, got {}" (show r)

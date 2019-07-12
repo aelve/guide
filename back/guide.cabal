@@ -96,10 +96,7 @@ library
     Guide.Routes
     Imports
     To
-  build-depends:       Spock
-                     , Spock-digestive
-                     , Spock-lucid
-                     , acid-state
+  build-depends:       acid-state
                      , aeson
                      , aeson-pretty
                      , async
@@ -113,12 +110,12 @@ library
                      , containers >= 0.5
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
+                     , df1
+                     , di
+                     , di-core
+                     , di-monad
                      , digestive-functors
                      , directory >= 1.2
-                     , di
-                     , di-monad
-                     , di-core
-                     , df1
                      , ekg
                      , ekg-core
                      , exceptions
@@ -138,9 +135,11 @@ library
                      , http-types
                      , hvect
                      , ilist
+                     , insert-ordered-containers
                      , iproute == 1.7.*
                      , lucid >= 2.9.5 && < 3
                      , megaparsec == 6.*
+                     , microlens
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
@@ -159,24 +158,27 @@ library
                      , servant-server
                      , servant-swagger
                      , servant-swagger-ui
-                     , swagger2
                      , shortcut-links >= 0.4.2
+                     , signal
                      , split
+                     , Spock
+                     , Spock-digestive
+                     , Spock-lucid
                      , stache-plus == 0.1.*
                      , stm
                      , stm-containers >= 0.2.14 && < 0.3
+                     , swagger2
                      , template-haskell
                      , text
                      , time >= 1.5
                      , transformers
                      , uniplate
-                     , signal
                      , utf8-string
                      , vector
                      , wai
+                     , wai-cors
                      , wai-middleware-metrics
                      , wai-middleware-static
-                     , wai-cors
                      , warp
                      , xml-conduit
                      , xml-types

@@ -43,6 +43,8 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text.Lazy as TL
 -- Formatting
 import Fmt as X
+-- Call stack
+import GHC.Stack as X (HasCallStack)
 
 -- | Short type for lazy ByteString
 type LByteString = BSL.ByteString
