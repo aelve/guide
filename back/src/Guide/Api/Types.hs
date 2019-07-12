@@ -10,9 +10,18 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
+-- | This module provides the Servant API tree, as well as request and
+-- response types used by endpoints.
+--
+-- Many types in this module mirror types from "Guide.Types.Core", but they
+-- are more lightweight – i.e. they don't include some data that
+-- "Guide.Types.Core" data include, especially nested data. By using
+-- lightweight types we keep payloads small. The frontend can always request
+-- more data if it needs to.
+
 module Guide.Api.Types
   (
-  -- * API
+  -- * Routes
     Api
   , CategorySite(..)
   , ItemSite(..)
@@ -294,7 +303,7 @@ data SearchSite route = SearchSite
 type Api = RequestDetails :> ToServant Site AsApi
 
 --------------------------------------------------------------------------
--- Additional types for routes
+-- CTraitType
 --------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
@@ -309,6 +318,10 @@ instance A.ToJSON CTraitType where
 
 instance A.FromJSON CTraitType where
   parseJSON = A.genericParseJSON jsonOptions
+
+----------------------------------------------------------------------------
+-- CDirection
+----------------------------------------------------------------------------
 
 -- | Direction (Up/Down) for item or trait and their instances.
 data CDirection = DirectionUp | DirectionDown
@@ -334,13 +347,7 @@ instance A.FromJSON CDirection where
     tag    -> fail ("unknown direction " ++ show tag)
 
 ----------------------------------------------------------------------------
--- Client types
---
--- These are more "light-weight" Haskell types of 'Guide'.
---
--- Furthermore using these "light-weight" types we keep all data small
--- to send these over the wire w/o having deep nested data,
--- we might not need on front-end.
+-- CCreateTrait
 ----------------------------------------------------------------------------
 
 -- | Client type to create new trait.
@@ -358,6 +365,10 @@ instance A.FromJSON CCreateTrait where
 instance ToSchema CCreateTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
+----------------------------------------------------------------------------
+-- CMove
+----------------------------------------------------------------------------
+
 -- | Client type to move trait or item up or down.
 data CMove = CMove
   { cmDirection :: CDirection
@@ -371,6 +382,10 @@ instance A.FromJSON CMove where
 
 instance ToSchema CMove where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+----------------------------------------------------------------------------
+-- CCategoryInfo
+----------------------------------------------------------------------------
 
 -- | A "light-weight" client type of 'Category', which describes a category
 -- but doesn't give the notes or the items.
@@ -402,8 +417,12 @@ toCCategoryInfo Category{..} = CCategoryInfo
   , cciStatus  = _categoryStatus
   }
 
--- | A "light-weight" client type of 'Category', which gives all available
--- information about a category
+----------------------------------------------------------------------------
+-- CCategoryFull
+----------------------------------------------------------------------------
+
+-- | A client type of 'Category', which gives all available information
+-- about a category including the items contained in it.
 data CCategoryFull = CCategoryFull
   { ccfId          :: Uid Category
   , ccfTitle       :: Text            ? "Category title"
@@ -436,6 +455,10 @@ toCCategoryFull Category{..} = CCategoryFull
   , ccfItems       = H $ fmap toCItemFull _categoryItems
   }
 
+----------------------------------------------------------------------------
+-- CCategoryInfoEdit
+----------------------------------------------------------------------------
+
 -- | Client type to edit meta category information.
 data CCategoryInfoEdit = CCategoryInfoEdit
     { ccieTitle    :: Text            ? "Category title"
@@ -457,6 +480,10 @@ instance ToSchema CCategoryInfoEdit where
 instance ToSchema ItemSection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
+----------------------------------------------------------------------------
+-- CItemInfo
+----------------------------------------------------------------------------
+
 -- | A lightweight info type about an 'Item'. Doesn't contain e.g. item
 -- traits.
 --
@@ -475,6 +502,21 @@ instance A.ToJSON CItemInfo where
 
 instance ToSchema CItemInfo where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+-- | Factory to create a 'CItemInfo' from an 'Item'
+toCItemInfo :: Item -> CItemInfo
+toCItemInfo Item{..} = CItemInfo
+  { ciiId          = _itemUid
+  , ciiCreated     = H _itemCreated
+  , ciiName        = H _itemName
+  , ciiGroup       = H _itemGroup_
+  , ciiHackage     = H _itemHackage
+  , ciiLink        = H _itemLink
+  }
+
+----------------------------------------------------------------------------
+-- CItemInfoEdit
+----------------------------------------------------------------------------
 
 -- | A type for item edit requests. @Nothing@ means that the field should be
 -- left untouched; @Just Nothing@ means that the field should be erased.
@@ -509,6 +551,10 @@ instance A.FromJSON CItemInfoEdit where
 instance ToSchema CItemInfoEdit where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
+----------------------------------------------------------------------------
+-- CItemFull
+----------------------------------------------------------------------------
+
 -- | Client type of 'Item'
 data CItemFull = CItemFull
   { cifId          :: Uid Item
@@ -534,17 +580,6 @@ instance A.FromJSON CItemFull where
 instance ToSchema CItemFull where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Factory to create a 'CItemInfo' from an 'Item'
-toCItemInfo :: Item -> CItemInfo
-toCItemInfo Item{..} = CItemInfo
-  { ciiId          = _itemUid
-  , ciiCreated     = H _itemCreated
-  , ciiName        = H _itemName
-  , ciiGroup       = H _itemGroup_
-  , ciiHackage     = H _itemHackage
-  , ciiLink        = H _itemLink
-  }
-
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
 toCItemFull Item{..} = CItemFull
@@ -561,6 +596,10 @@ toCItemFull Item{..} = CItemFull
   , cifLink        = H _itemLink
   , cifToc         = H $ map toCTocHeading (markdownTreeMdTOC _itemNotes)
   }
+
+----------------------------------------------------------------------------
+-- CTrait
+----------------------------------------------------------------------------
 
 -- | Client type of 'Trait'
 data CTrait = CTrait
@@ -583,6 +622,10 @@ toCTrait trait = CTrait
   { ctId     = trait ^. uid
   , ctContent = toCMarkdown $ trait ^. content
   }
+
+----------------------------------------------------------------------------
+-- CMarkdown
+----------------------------------------------------------------------------
 
 -- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
@@ -620,6 +663,10 @@ instance ToCMarkdown MarkdownTree where
     , cmdHtml = H $ toText . renderText $ toHtml md
     }
 
+----------------------------------------------------------------------------
+-- CTocHeading
+----------------------------------------------------------------------------
+
 -- | Frontend's table of content type used in items' stuff.
 data CTocHeading = CTocHeading
   { cthContent     :: CMarkdown
@@ -644,6 +691,10 @@ toCTocHeading Node{..} = CTocHeading
   , cthSubheadings = map toCTocHeading subForest
   }
 
+----------------------------------------------------------------------------
+-- CTextEdit
+----------------------------------------------------------------------------
+
 -- | Frontend sends this type to edit notes or descriptions.
 data CTextEdit = CTextEdit
   { cteOriginal :: Text ? "State of base before editing"
@@ -659,7 +710,12 @@ instance A.FromJSON CTextEdit where
 instance ToSchema CTextEdit where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
--- | Backend returns this type if there is conflict between state of base before and after editing.
+----------------------------------------------------------------------------
+-- CMergeConflict
+----------------------------------------------------------------------------
+
+-- | Backend returns this type if there is conflict between state of base
+-- before and after editing.
 data CMergeConflict = CMergeConflict
   { cmcOriginal       :: Text ? "State of base before editing"
   , cmcModified       :: Text ? "Modified text"
@@ -674,7 +730,7 @@ instance ToSchema CMergeConflict where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
 
 ----------------------------------------------------------------------------
--- Search client types
+-- CSearchResult
 ----------------------------------------------------------------------------
 
 -- | Client type of 'SearchResult'
@@ -708,6 +764,10 @@ instance ToSchema CSearchResult where
         \parameters 'tag' and 'contents', where 'tag' is one of keys listed \
         \in this doc, and 'contents' is the object."
 
+----------------------------------------------------------------------------
+-- CSRCategory
+----------------------------------------------------------------------------
+
 -- | A category was found.
 data CSRCategory = CSRCategory
   { csrcInfo        :: CCategoryInfo
@@ -719,6 +779,10 @@ instance A.ToJSON CSRCategory where
 
 instance ToSchema CSRCategory where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
+
+----------------------------------------------------------------------------
+-- CSRItem
+----------------------------------------------------------------------------
 
 -- | An item was found.
 data CSRItem = CSRItem
@@ -737,6 +801,11 @@ instance ToSchema CSRItem where
       "Note: fields `summary` and `ecosystem` will be present only if the match \
       \was found in those fields."
 
+----------------------------------------------------------------------------
+-- toCSearchResult
+----------------------------------------------------------------------------
+
+-- | Create a 'CSearchResult' from a 'SearchResult'.
 toCSearchResult :: SearchResult -> CSearchResult
 toCSearchResult (SRCategory cat) =
   CSRCategoryResult $ CSRCategory
@@ -799,14 +868,6 @@ instance ToSchema (Uid Trait) where
     & S.type_ .~ SwaggerString
 
 instance ToSchema CategoryStatus
-
-instance ToSchema ItemKind where
-  declareNamedSchema _ = pure $ NamedSchema (Just "ItemKind") $ mempty
-    & S.type_ .~ SwaggerObject
-    & S.format ?~ "Can be one of the three things:\
-                  \ {tag: Library, contents: <package name>}\
-                  \ * {tag: Tool, contents: <package name>}\
-                  \ * {tag: Other}"
 
 instance ToSchema a => ToSchema (Tree a) where
     declareNamedSchema = genericDeclareNamedSchema schemaOptions
