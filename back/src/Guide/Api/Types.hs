@@ -38,6 +38,7 @@ module Guide.Api.Types
   , CTrait(..), toCTrait
 
   -- * Request and response types
+  , CCreateItem(..)
   , CCreateTrait(..)
   , CCategoryInfoEdit(..)
   , CItemInfoEdit(..)
@@ -165,10 +166,10 @@ data ItemSite route = ItemSite
   , _createItem :: route :-
       Summary "Create a new item in the given category"
       :> Description "Returns the ID of the created item."
-      :> ErrorResponse 400 "'name' not provided"
+      :> ErrorResponse 400 "'name' can not be empty"
       :> "item"
       :> Capture "categoryId" (Uid Category)
-      :> QueryParam' '[Required, Strict] "name" Text
+      :> ReqBody '[JSON] CCreateItem
       :> Post '[JSON] (Uid Item)
 
   , _setItemInfo :: route :-
@@ -245,7 +246,7 @@ data TraitSite route = TraitSite
   ,  _createTrait :: route :-
       Summary "Create a new trait in the given item"
       :> Description "Returns the ID of the created trait."
-      :> ErrorResponse 400 "'content' not provided"
+      :> ErrorResponse 400 "'content' can not be empty"
       :> "item"
       :> Capture "itemId" (Uid Item)
       :> "trait"
@@ -345,6 +346,35 @@ instance A.FromJSON CDirection where
     "up"   -> pure DirectionUp
     "down" -> pure DirectionDown
     tag    -> fail ("unknown direction " ++ show tag)
+
+----------------------------------------------------------------------------
+-- CCreateItem
+----------------------------------------------------------------------------
+
+-- | Client type to create new item.
+data CCreateItem = CCreateItem
+  { cciName    :: Text
+  , cciGroup   :: Maybe Text
+  , cciHackage :: Maybe Text
+  , cciLink    :: Maybe Url
+  } deriving (Show, Generic)
+
+instance A.ToJSON CCreateItem where
+  toJSON = A.genericToJSON jsonOptions
+
+instance A.FromJSON CCreateItem where
+  parseJSON = A.genericParseJSON jsonOptions
+
+instance ToSchema CCreateItem where
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "name" . inlineSchema . description ?= "Item name"
+        field "group" . inlineSchema . description ?= "Item group"
+        field "hackage" . inlineSchema . description ?= "Package name on Hackage"
+        field "link" . inlineSchema . description ?=
+          "Link to the official site, if exists"
 
 ----------------------------------------------------------------------------
 -- CCreateTrait
