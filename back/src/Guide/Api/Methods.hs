@@ -67,7 +67,7 @@ setCategoryNotes catId CTextEdit{..} =
   logHandler "setCategoryNotes" [attr "catId" catId] $ do
     serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
     checkConflict CTextEdit{..} serverModified
-    addEdit . fst =<< dbUpdate (SetCategoryNotes catId $ unH cteModified)
+    addEdit . fst =<< dbUpdate (SetCategoryNotes catId cteModified)
     pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
@@ -76,11 +76,11 @@ setCategoryInfo catId CCategoryInfoEdit{..} =
   logHandler "setCategoryInfo" [attr "catId" catId] $ do
     category <- getCategoryOrFail catId
     -- TODO diff and merge
-    (editTitle, _) <- dbUpdate $ SetCategoryTitle catId $ unH ccieTitle
-    (editGroup, _) <- dbUpdate $ SetCategoryGroup catId $ unH ccieGroup
+    (editTitle, _) <- dbUpdate $ SetCategoryTitle catId ccieTitle
+    (editGroup, _) <- dbUpdate $ SetCategoryGroup catId ccieGroup
     (editStatus, _) <- dbUpdate $ SetCategoryStatus catId ccieStatus
     let oldEnabledSections = category ^. enabledSections
-    let newEnabledSections = unH ccieSections
+    let newEnabledSections = ccieSections
     (editSection, _) <- dbUpdate $ ChangeCategoryEnabledSections catId
         (newEnabledSections S.\\ oldEnabledSections)
         (oldEnabledSections S.\\ newEnabledSections)
@@ -124,13 +124,13 @@ setItemInfo itemId CItemInfoEdit{..} =
   logHandler "setItemInfo" [attr "itemId" itemId] $ do
     void $ getItemOrFail itemId
     -- TODO diff and merge
-    whenJust (unH ciieName) $ \ciieName' ->
+    whenJust ciieName $ \ciieName' ->
       addEdit . fst =<< dbUpdate (SetItemName itemId ciieName')
-    whenJust (unH ciieGroup) $ \ciieGroup' ->
+    whenJust ciieGroup $ \ciieGroup' ->
       addEdit . fst =<< dbUpdate (SetItemGroup itemId ciieGroup')
-    whenJust (unH ciieHackage) $ \ciieHackage' ->
+    whenJust ciieHackage $ \ciieHackage' ->
       addEdit . fst =<< dbUpdate (SetItemHackage itemId ciieHackage')
-    whenJust (unH ciieLink) $ \ciieLink' -> do
+    whenJust ciieLink $ \ciieLink' -> do
       addEdit . fst =<< dbUpdate (SetItemLink itemId ciieLink')
     pure NoContent
 
@@ -140,7 +140,7 @@ setItemSummary itemId CTextEdit{..} =
   logHandler "setItemSummary" [attr "itemId" itemId] $ do
     serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
-    addEdit . fst =<< dbUpdate (SetItemSummary itemId $ unH cteModified)
+    addEdit . fst =<< dbUpdate (SetItemSummary itemId cteModified)
     pure NoContent
 
 -- | Set item's ecosystem.
@@ -149,7 +149,7 @@ setItemEcosystem itemId CTextEdit{..} =
   logHandler "setItemEcosystem" [attr "itemId" itemId] $ do
     serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
-    addEdit . fst =<< dbUpdate (SetItemEcosystem itemId $ unH cteModified)
+    addEdit . fst =<< dbUpdate (SetItemEcosystem itemId cteModified)
     pure NoContent
 
 -- | Set item's notes.
@@ -158,7 +158,7 @@ setItemNotes itemId CTextEdit{..} =
   logHandler "setItemNotes" [attr "itemId" itemId] $ do
     serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
-    addEdit . fst =<< dbUpdate (SetItemNotes itemId $ unH cteModified)
+    addEdit . fst =<< dbUpdate (SetItemNotes itemId cteModified)
     pure NoContent
 
 -- | Delete an item.
@@ -204,7 +204,7 @@ setTrait itemId traitId CTextEdit{..} =
   logHandler "setTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail itemId traitId
     checkConflict CTextEdit{..} serverModified
-    addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId $ unH cteModified)
+    addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId cteModified)
     pure NoContent
 
 -- | Delete a trait (pro/con).
@@ -298,15 +298,15 @@ getTraitOrFail itemId traitId = do
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Guider ()
 checkConflict CTextEdit{..} serverModified = do
-  let original = unH cteOriginal
-  let modified = unH cteModified
+  let original = cteOriginal
+  let modified = cteModified
   when (original /= serverModified) $ do
     let merged = merge original modified serverModified
     let conflict = CMergeConflict
           { cmcOriginal = cteOriginal
           , cmcModified = cteModified
-          , cmcServerModified = H serverModified
-          , cmcMerged = H merged
+          , cmcServerModified = serverModified
+          , cmcMerged = merged
           }
     throwError $ err409 {
       errReasonPhrase = "Merge conflict occurred",

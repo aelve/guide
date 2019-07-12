@@ -391,9 +391,9 @@ instance ToSchema CMove where
 -- but doesn't give the notes or the items.
 data CCategoryInfo = CCategoryInfo
   { cciId      :: Uid Category
-  , cciTitle   :: Text           ? "Category title"
-  , cciCreated :: UTCTime        ? "When the category was created"
-  , cciGroup_  :: Text           ? "Category group ('grandcategory')"
+  , cciTitle   :: Text
+  , cciCreated :: UTCTime
+  , cciGroup_  :: Text
   , cciStatus  :: CategoryStatus
   }
   deriving (Show, Generic)
@@ -405,15 +405,22 @@ instance A.FromJSON CCategoryInfo where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryInfo where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "title" . inlineSchema . description ?= "Category title"
+        field "created" .= Inline (toSchema (Proxy @UTCTime))
+        field "created" . inlineSchema . description ?= "When the category was created"
+        field "group" . inlineSchema . description ?= "Category group ('grandcategory')"
 
 -- | Factory to create a 'CCategoryInfo' from a 'Category'
 toCCategoryInfo :: Category -> CCategoryInfo
 toCCategoryInfo Category{..} = CCategoryInfo
   { cciId      = _categoryUid
-  , cciTitle   = H _categoryTitle
-  , cciCreated = H _categoryCreated
-  , cciGroup_  = H _categoryGroup_
+  , cciTitle   = _categoryTitle
+  , cciCreated = _categoryCreated
+  , cciGroup_  = _categoryGroup_
   , cciStatus  = _categoryStatus
   }
 
@@ -425,12 +432,12 @@ toCCategoryInfo Category{..} = CCategoryInfo
 -- about a category including the items contained in it.
 data CCategoryFull = CCategoryFull
   { ccfId          :: Uid Category
-  , ccfTitle       :: Text            ? "Category title"
-  , ccfGroup       :: Text            ? "Category group ('grandcategory')"
+  , ccfTitle       :: Text
+  , ccfGroup       :: Text
   , ccfStatus      :: CategoryStatus
   , ccfDescription :: CMarkdown
-  , ccfSections    :: Set ItemSection ? "Enabled item sections"
-  , ccfItems       :: [CItemFull]     ? "All items in the category"
+  , ccfSections    :: Set ItemSection
+  , ccfItems       :: [CItemFull]
   }
   deriving (Show, Generic)
 
@@ -441,18 +448,25 @@ instance A.FromJSON CCategoryFull where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryFull where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "title" . inlineSchema . description ?= "Category title"
+        field "group" . inlineSchema . description ?= "Category group ('grandcategory')"
+        field "sections" . inlineSchema . description ?= "Enabled item sections"
+        field "items" . inlineSchema . description ?= "All items in the category"
 
 -- | Factory to create a 'CCategoryFull' from a 'Category'
 toCCategoryFull :: Category -> CCategoryFull
 toCCategoryFull Category{..} = CCategoryFull
   { ccfId          = _categoryUid
-  , ccfTitle       = H _categoryTitle
-  , ccfGroup       = H _categoryGroup_
+  , ccfTitle       = _categoryTitle
+  , ccfGroup       = _categoryGroup_
   , ccfStatus      = _categoryStatus
   , ccfDescription = toCMarkdown _categoryNotes
-  , ccfSections    = H _categoryEnabledSections
-  , ccfItems       = H $ fmap toCItemFull _categoryItems
+  , ccfSections    = _categoryEnabledSections
+  , ccfItems       = fmap toCItemFull _categoryItems
   }
 
 ----------------------------------------------------------------------------
@@ -461,10 +475,10 @@ toCCategoryFull Category{..} = CCategoryFull
 
 -- | Client type to edit meta category information.
 data CCategoryInfoEdit = CCategoryInfoEdit
-    { ccieTitle    :: Text            ? "Category title"
-    , ccieGroup    :: Text            ? "Category group ('grandcategory')"
+    { ccieTitle    :: Text
+    , ccieGroup    :: Text
     , ccieStatus   :: CategoryStatus
-    , ccieSections :: Set ItemSection ? "Enabled item sections"
+    , ccieSections :: Set ItemSection
     }
     deriving (Show, Generic)
 
@@ -475,7 +489,13 @@ instance A.FromJSON CCategoryInfoEdit where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryInfoEdit where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "title" . inlineSchema . description ?= "Category title"
+        field "group" . inlineSchema . description ?= "Category group ('grandcategory')"
+        field "sections" . inlineSchema . description ?= "Enabled item sections"
 
 instance ToSchema ItemSection where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -490,28 +510,38 @@ instance ToSchema ItemSection where
 -- When updating it, don't forget to update 'CItemInfoEdit' and 'setItemInfo'.
 data CItemInfo = CItemInfo
   { ciiId      :: Uid Item
-  , ciiCreated :: UTCTime    ? "When the item was created"
-  , ciiName    :: Text       ? "Item name"
-  , ciiGroup   :: Maybe Text ? "Item group"
-  , ciiHackage :: Maybe Text ? "Package name on Hackage"
-  , ciiLink    :: Maybe Url  ? "Link to the official site, if exists"
+  , ciiCreated :: UTCTime
+  , ciiName    :: Text
+  , ciiGroup   :: Maybe Text
+  , ciiHackage :: Maybe Text
+  , ciiLink    :: Maybe Url
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemInfo where
   toJSON = A.genericToJSON jsonOptions
 
 instance ToSchema CItemInfo where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "created" .= Inline (toSchema (Proxy @UTCTime))
+        field "created" . inlineSchema . description ?= "When the item was created"
+        field "name" . inlineSchema . description ?= "Item name"
+        field "group" . inlineSchema . description ?= "Item group"
+        field "hackage" . inlineSchema . description ?= "Package name on Hackage"
+        field "link" . inlineSchema . description ?=
+          "Link to the official site, if exists"
 
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
 toCItemInfo Item{..} = CItemInfo
   { ciiId          = _itemUid
-  , ciiCreated     = H _itemCreated
-  , ciiName        = H _itemName
-  , ciiGroup       = H _itemGroup_
-  , ciiHackage     = H _itemHackage
-  , ciiLink        = H _itemLink
+  , ciiCreated     = _itemCreated
+  , ciiName        = _itemName
+  , ciiGroup       = _itemGroup_
+  , ciiHackage     = _itemHackage
+  , ciiLink        = _itemLink
   }
 
 ----------------------------------------------------------------------------
@@ -521,18 +551,19 @@ toCItemInfo Item{..} = CItemInfo
 -- | A type for item edit requests. @Nothing@ means that the field should be
 -- left untouched; @Just Nothing@ means that the field should be erased.
 data CItemInfoEdit = CItemInfoEdit
-  { ciieName    :: Maybe Text         ? "Item name"
-  , ciieGroup   :: Maybe (Maybe Text) ? "Item group"
-  , ciieHackage :: Maybe (Maybe Text) ? "Package name on Hackage"
-  , ciieLink    :: Maybe (Maybe Url)  ? "Link to the official site, if exists"
+  { ciieName    :: Maybe Text
+  , ciieGroup   :: Maybe (Maybe Text)
+  , ciieHackage :: Maybe (Maybe Text)
+  , ciieLink    :: Maybe (Maybe Url)
   } deriving (Show, Generic)
 
+-- Manual instances because we want special behavior for Maybe
 instance A.ToJSON CItemInfoEdit where
   toJSON ciie = A.object $ catMaybes
-    [ ("name"    A..=) <$> unH (ciieName ciie)
-    , ("group"   A..=) <$> unH (ciieGroup ciie)
-    , ("hackage" A..=) <$> unH (ciieHackage ciie)
-    , ("link"    A..=) <$> unH (ciieLink ciie)
+    [ ("name"    A..=) <$> ciieName ciie
+    , ("group"   A..=) <$> ciieGroup ciie
+    , ("hackage" A..=) <$> ciieHackage ciie
+    , ("link"    A..=) <$> ciieLink ciie
     ]
 
 instance A.FromJSON CItemInfoEdit where
@@ -542,14 +573,22 @@ instance A.FromJSON CItemInfoEdit where
     ciieHackage' <- o A..:! "hackage"
     ciieLink'    <- o A..:! "link"
     return CItemInfoEdit
-      { ciieName    = H ciieName'
-      , ciieGroup   = H ciieGroup'
-      , ciieHackage = H ciieHackage'
-      , ciieLink    = H ciieLink'
+      { ciieName    = ciieName'
+      , ciieGroup   = ciieGroup'
+      , ciieHackage = ciieHackage'
+      , ciieLink    = ciieLink'
       }
 
 instance ToSchema CItemInfoEdit where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "name" . inlineSchema . description ?= "Item name"
+        field "group" . inlineSchema . description ?= "Item group"
+        field "hackage" . inlineSchema . description ?= "Package name on Hackage"
+        field "link" . inlineSchema . description ?=
+          "Link to the official site, if exists"
 
 ----------------------------------------------------------------------------
 -- CItemFull
@@ -558,17 +597,17 @@ instance ToSchema CItemInfoEdit where
 -- | Client type of 'Item'
 data CItemFull = CItemFull
   { cifId          :: Uid Item
-  , cifName        :: Text                     ? "Item name"
-  , cifCreated     :: UTCTime                  ? "When the item was created"
-  , cifGroup       :: Maybe Text               ? "Item group"
-  , cifHackage     :: Maybe Text               ? "Package name on Hackage"
+  , cifName        :: Text
+  , cifCreated     :: UTCTime
+  , cifGroup       :: Maybe Text
+  , cifHackage     :: Maybe Text
   , cifSummary     :: CMarkdown
-  , cifPros        :: [CTrait]                 ? "Pros (positive traits)"
-  , cifCons        :: [CTrait]                 ? "Cons (negative traits)"
+  , cifPros        :: [CTrait]
+  , cifCons        :: [CTrait]
   , cifEcosystem   :: CMarkdown
   , cifNotes       :: CMarkdown
-  , cifLink        :: Maybe Url                ? "Link to the official site, if exists"
-  , cifToc         :: [CTocHeading]            ? "Table of contents"
+  , cifLink        :: Maybe Url
+  , cifToc         :: [CTocHeading]
   } deriving (Show, Generic)
 
 instance A.ToJSON CItemFull where
@@ -578,23 +617,36 @@ instance A.FromJSON CItemFull where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CItemFull where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "name" . inlineSchema . description ?= "Item name"
+        field "created" .= Inline (toSchema (Proxy @UTCTime))
+        field "created" . inlineSchema . description ?= "When the item was created"
+        field "group" . inlineSchema . description ?= "Item group"
+        field "hackage" . inlineSchema . description ?= "Package name on Hackage"
+        field "pros" . inlineSchema . description ?= "Pros (positive traits)"
+        field "cons" . inlineSchema . description ?= "Cons (negative traits)"
+        field "link" . inlineSchema . description ?=
+          "Link to the official site, if exists"
+        field "toc" . inlineSchema . description ?= "Table of contents"
 
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
 toCItemFull Item{..} = CItemFull
   { cifId          = _itemUid
-  , cifName        = H _itemName
-  , cifCreated     = H _itemCreated
-  , cifGroup       = H _itemGroup_
-  , cifHackage     = H _itemHackage
+  , cifName        = _itemName
+  , cifCreated     = _itemCreated
+  , cifGroup       = _itemGroup_
+  , cifHackage     = _itemHackage
   , cifSummary     = toCMarkdown _itemSummary
-  , cifPros        = H $ fmap toCTrait _itemPros
-  , cifCons        = H $ fmap toCTrait _itemCons
+  , cifPros        = fmap toCTrait _itemPros
+  , cifCons        = fmap toCTrait _itemCons
   , cifEcosystem   = toCMarkdown _itemEcosystem
   , cifNotes       = toCMarkdown _itemNotes
-  , cifLink        = H _itemLink
-  , cifToc         = H $ map toCTocHeading (markdownTreeMdTOC _itemNotes)
+  , cifLink        = _itemLink
+  , cifToc         = map toCTocHeading (markdownTreeMdTOC _itemNotes)
   }
 
 ----------------------------------------------------------------------------
@@ -629,8 +681,8 @@ toCTrait trait = CTrait
 
 -- | Client type of 'Markdown'
 data CMarkdown = CMarkdown
-  { cmdText :: Text ? "Markdown source"
-  , cmdHtml :: Text ? "Rendered HTML"
+  { cmdText :: Text
+  , cmdHtml :: Text
   } deriving (Show, Generic)
 
 instance A.ToJSON CMarkdown where
@@ -640,27 +692,32 @@ instance A.FromJSON CMarkdown where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CMarkdown where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "text" . inlineSchema . description ?= "Markdown source"
+        field "html" . inlineSchema . description ?= "Rendered HTML"
 
 -- | Type class to create 'CMarkdown'
 class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMarkdown MarkdownInline where
   toCMarkdown md = CMarkdown
-    { cmdText = H $ md^.mdSource
-    , cmdHtml = H $ toText $ md^.mdHtml
+    { cmdText = md^.mdSource
+    , cmdHtml = toText (md^.mdHtml)
     }
 
 instance ToCMarkdown MarkdownBlock where
   toCMarkdown md = CMarkdown
-    { cmdText = H $ md^.mdSource
-    , cmdHtml = H $ toText $ md^.mdHtml
+    { cmdText = md^.mdSource
+    , cmdHtml = toText (md^.mdHtml)
     }
 
 instance ToCMarkdown MarkdownTree where
   toCMarkdown md = CMarkdown
-    { cmdText = H $ md^.mdSource
-    , cmdHtml = H $ toText . renderText $ toHtml md
+    { cmdText = md^.mdSource
+    , cmdHtml = toText . renderText $ toHtml md
     }
 
 ----------------------------------------------------------------------------
@@ -670,7 +727,7 @@ instance ToCMarkdown MarkdownTree where
 -- | Frontend's table of content type used in items' stuff.
 data CTocHeading = CTocHeading
   { cthContent     :: CMarkdown
-  , cthSlug        :: Text           ? "In-page anchor for linking"
+  , cthSlug        :: Text
   , cthSubheadings :: [CTocHeading]
   } deriving (Show, Generic)
 
@@ -681,13 +738,17 @@ instance A.FromJSON CTocHeading where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CTocHeading where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "slug" . inlineSchema . description ?= "In-page anchor for linking"
 
 -- | 'toCTocHeading' converts a table of contents into the format expected by the frontend.
 toCTocHeading :: Tree Heading -> CTocHeading
 toCTocHeading Node{..} = CTocHeading
   { cthContent     = toCMarkdown $ headingMd rootLabel
-  , cthSlug        = H $ headingSlug rootLabel
+  , cthSlug        = headingSlug rootLabel
   , cthSubheadings = map toCTocHeading subForest
   }
 
@@ -697,8 +758,8 @@ toCTocHeading Node{..} = CTocHeading
 
 -- | Frontend sends this type to edit notes or descriptions.
 data CTextEdit = CTextEdit
-  { cteOriginal :: Text ? "State of base before editing"
-  , cteModified :: Text ? "Modified text"
+  { cteOriginal :: Text
+  , cteModified :: Text
   } deriving (Show, Generic)
 
 instance A.ToJSON CTextEdit where
@@ -708,7 +769,12 @@ instance A.FromJSON CTextEdit where
   parseJSON = A.genericParseJSON jsonOptions
 
 instance ToSchema CTextEdit where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "original" . inlineSchema . description ?= "State of base before editing"
+        field "modified" . inlineSchema . description ?= "Modified text"
 
 ----------------------------------------------------------------------------
 -- CMergeConflict
@@ -717,17 +783,26 @@ instance ToSchema CTextEdit where
 -- | Backend returns this type if there is conflict between state of base
 -- before and after editing.
 data CMergeConflict = CMergeConflict
-  { cmcOriginal       :: Text ? "State of base before editing"
-  , cmcModified       :: Text ? "Modified text"
-  , cmcServerModified :: Text ? "State of base after editing. (Base changed from another source)"
-  , cmcMerged         :: Text ? "Merged text"
+  { cmcOriginal       :: Text
+  , cmcModified       :: Text
+  , cmcServerModified :: Text
+  , cmcMerged         :: Text
   } deriving (Eq, Show, Generic)
 
 instance A.ToJSON CMergeConflict where
   toJSON = A.genericToJSON jsonOptions
 
 instance ToSchema CMergeConflict where
-  declareNamedSchema = genericDeclareNamedSchema schemaOptions
+  declareNamedSchema p = do
+    schema_ <- genericDeclareNamedSchema schemaOptions p
+    pure $ schema_ &~ do
+      zoom (S.schema . properties) $ do
+        field "original" . inlineSchema . description ?= "State of base before editing"
+        field "modified" . inlineSchema . description ?= "Modified text"
+        field "server_modified" . inlineSchema . description ?=
+          "State of base after editing by someone else (i.e. text got changed \
+          \on the server)"
+        field "merged" . inlineSchema . description ?= "An attempt to merge edits"
 
 ----------------------------------------------------------------------------
 -- CSearchResult
