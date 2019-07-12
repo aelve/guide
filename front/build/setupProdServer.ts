@@ -22,17 +22,15 @@ export default async function setupProdServer (app) {
   })
 
   async function handler (ctx) {
-    const context = {
-      url: ctx.path
-    }
+    const { url } = ctx
 
     try {
-      ctx.body = await renderer.renderToString(context)
+      ctx.body = await renderer.renderToString({ url })
     } catch (error) {
       ctx.body = error
     }
   }
 
-  app.use(koaMount('/src',  serve(path.resolve(__dirname, '../src/'))))
+  app.use(koaMount('/src', serve(path.resolve(__dirname, '../src/'))))
   app.use(handler)
 }
