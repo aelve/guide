@@ -215,9 +215,11 @@ withItem f = withCategory $ \categoryId -> do
 createItem :: Uid Category -> IO (Uid Item)
 createItem (Uid categoryId) = do
   request <- makeRequest
-    (Path $ "item/" <> toString categoryId <> "?name=testName")
+    (Path $ "item/" <> toString categoryId)
     (Method "POST")
-  snd <$> runRequest request
+  let body = object ["name" .= ("testName" :: Text)]
+      req = setRequestBodyJSON body request
+  snd <$> runRequest req
 
 deleteItem :: Uid Item -> IO (Maybe Bool)
 deleteItem (Uid itemId) = do
