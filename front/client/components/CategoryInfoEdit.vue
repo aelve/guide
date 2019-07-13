@@ -37,20 +37,23 @@
             class="mb-2"
           />
           <v-checkbox
-            v-model="checkboxSections"
-            label="Pros/cons enabled"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemProsConsSection', 'Pros/Cons')"
+            label="Pros/cons section"
             value="ItemProsConsSection"
             class="mt-0 hide-v-messages"
           />
           <v-checkbox
-            v-model="checkboxSections"
-            label="Ecosystem field enabled"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemEcosystemSection', 'Ecosystem')"
+            label="Ecosystem section"
             value="ItemEcosystemSection"
             class="mt-0 hide-v-messages"
           />
           <v-checkbox
-            v-model="checkboxSections"
-            label="Notes field enabled"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemNotesSection', 'Notes')"
+            label="Notes section"
             value="ItemNotesSection"
             class="mt-0 hide-v-messages"
           />
@@ -83,7 +86,6 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
-import { CategoryStatus } from 'client/service/Category'
 
 @Component
 export default class CategoryInfoEdit extends Vue {
@@ -94,6 +96,13 @@ export default class CategoryInfoEdit extends Vue {
   categoryStatus: object = {}
   checkboxSections: any[] = []
   isValid: boolean = false
+
+  // TODO replace ItemProsConsSection and other to constants
+  sectionDisableWarningAgreed = {
+    ItemProsConsSection: false,
+    ItemEcosystemSection: false,
+    ItemNotesSection: false
+  }
 
   categoryStatuses = [
     { name: 'Complete', value: 'CategoryFinished' },
@@ -118,19 +127,35 @@ export default class CategoryInfoEdit extends Vue {
     }
     this.title = category.title
     this.group = category.group
-    this.checkboxSections = category.sections
+    this.checkboxSections = category.sections.slice()
     this.categoryStatus = category.status
+    this.sectionDisableWarningAgreed = {
+      ItemProsConsSection: false,
+      ItemEcosystemSection: false,
+      ItemNotesSection: false
+    }
   }
 
-  transformCategoryStatus (status: string) {
-    switch (status) {
-      case CategoryStatus.finished:
-        return 'Complete'
-      case CategoryStatus.inProgress:
-        return 'Work in progress'
-      default:
-        return 'Stub'
+  async updateSectionEnabling (sectionValue, sectionName) {
+    const index = this.checkboxSections.indexOf(sectionValue)
+    const isSectionRemoved = index !== -1
+    if (!isSectionRemoved) {
+      this.checkboxSections.push(sectionValue)
+      return
     }
+
+    const isOriginallyEnabled = this.category.sections.includes(sectionValue)
+    const isSectionInEdit = this.$store.state.category.itemsSectionsInEdit[sectionValue].length
+    const wasAgreedOnce = this.sectionDisableWarningAgreed[sectionValue]
+    if (isOriginallyEnabled && isSectionInEdit && !wasAgreedOnce) {
+      const isConfirmed = await this._confirm({ fullText: `You have unsaved changes in one of items’ ${sectionName} section. If you disable this section, your changes will be lost.` })
+      if (!isConfirmed) {
+        return
+      }
+      this.sectionDisableWarningAgreed[sectionValue] = true
+    }
+
+    this.checkboxSections.splice(index, 1)
   }
 
   close () {
