@@ -20,11 +20,18 @@ const getters: GetterTree<ICategoryItemState, any> = {}
 const actions: ActionTree<ICategoryItemState, any> = {
   async createItem (
     { dispatch }: ActionContext<ICategoryItemState, any>,
-    { category, name }: ICreateCategoryItem
+    {
+      category,
+      name,
+      hackage,
+      link
+    }: ICreateCategoryItem
   ): Promise<ICategoryItem['id']> {
     const createdId = await CategoryItemService.createItem({
       category,
-      name
+      name,
+      hackage,
+      link
     })
     return createdId
   },

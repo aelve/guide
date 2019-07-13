@@ -23,8 +23,19 @@
             class="mb-2"
             label="Item name"
             :rules="itemValidationRules"
-            v-model="itemName"
+            v-model="name"
           />
+          <v-text-field
+            class="mb-2"
+            label="Name on Hackage (optional)"
+            v-model="hackage"
+          />
+          <v-text-field
+            class="mb-2"
+            label="Link to the official site, if exists"
+            v-model="link"
+          />
+
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -40,7 +51,7 @@
         <v-btn
           color="info"
           title="Submit"
-          :disabled="!isValid"
+          :disabled="!isValid || !name"
           @click.native="submit"
         >
           Submit
@@ -60,17 +71,19 @@ export default class AddItemDialog extends Vue {
   @Prop(Boolean) value!: boolean
   @Prop(String) categoryId!: string
 
-  itemName: string = ''
-
+  name: string = ''
   itemValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || 'Item name can not be empty'
   ]
-
+  hackage: string = ''
+  link: string = ''
   isValid: boolean = false
 
   @Watch('value')
   onOpen () {
-    this.itemName = ''
+    this.name = ''
+    this.hackage = ''
+    this.link = ''
   }
 
   close () {
@@ -78,9 +91,14 @@ export default class AddItemDialog extends Vue {
   }
 
   async submit () {
+    if (!this.isValid || !this.name) {
+      return
+    }
     const createdId = await this.$store.dispatch('categoryItem/createItem', {
       category: this.categoryId,
-      name: this.itemName
+      name: this.name,
+      hackage: this.hackage || null,
+      link: this.link || null
     })
     await this.$store.dispatch('category/reloadCategory')
     this.close()
