@@ -86,7 +86,6 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
-import { CategoryStatus } from 'client/service/Category'
 
 @Component
 export default class CategoryInfoEdit extends Vue {
