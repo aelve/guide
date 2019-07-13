@@ -30,6 +30,7 @@
           :toc="value.toc"
           :notes="value.notes"
           :kind="value.kind"
+          :sections="category.sections"
         />
       </template>
       <v-btn
