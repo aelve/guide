@@ -27,31 +27,40 @@
         />
       </category-item-section>
 
-      <div class="category-item-traits">
+      <div
+        v-if="isSectionEnabled('ItemProsConsSection')"
+        class="category-item-traits"
+      >
         <category-item-traits
           type="Pro"
           :itemId="itemUid"
           :traits="pros"
+          :isAnyTraitEditing.sync="isPropsEditing"
         />
         <category-item-traits
           type="Con"
           :itemId="itemUid"
           :traits="cons"
+          :isAnyTraitEditing.sync="isConsEditing"
         />
       </div>
 
       <category-item-section
+        v-if="isSectionEnabled('ItemEcosystemSection')"
         title="Ecosystem"
         :editText="ecosystem.text"
         @save="updateEcosystem({original: ecosystem.text, modified: $event})"
+        @toggleEdit="toggleItemEcosystemEditState"
       >
         <div v-html="ecosystem.html" />
       </category-item-section>
 
       <category-item-section
+        v-if="isSectionEnabled('ItemNotesSection')"
         title="Notes"
         :editText="notes.text"
         @save="updateNotes({original: notes.text, modified: $event})"
+        @toggleEdit="toggleItemNotesEditState"
       >
         <v-btn
           small
@@ -102,7 +111,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { Prop } from 'vue-property-decorator'
+import { Prop, Watch } from 'vue-property-decorator'
 import CategoryItemToolbar from 'client/components/CategoryItemToolbar.vue'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
@@ -131,8 +140,26 @@ export default class CategoryItem extends Vue {
   @Prop(String) itemUid!: string
   @Prop(String) link!: string
   @Prop(String) hackage!: string
+  @Prop(Array) sections!: string[]
 
   isNoteExpanded: boolean = false
+  isPropsEditing: boolean = false
+  isConsEditing: boolean = false
+
+  get isAnyTraitEditing () {
+    return this.isPropsEditing || this.isConsEditing
+  }
+
+  @Watch('isAnyTraitEditing', { immediate: true })
+  updateItemTraitEditingState (newVal, prevVal) {
+    if (newVal !== prevVal) {
+      this.$store.dispatch('category/toggleItemProsConsSectionEdit', this.itemUid)
+    }
+  }
+
+  isSectionEnabled (section) {
+    return this.sections.includes(section)
+  }
 
   expandNotes (): void {
     this.isNoteExpanded = true
@@ -140,6 +167,14 @@ export default class CategoryItem extends Vue {
 
   collapseNotes (): void {
     this.isNoteExpanded = false
+  }
+
+  toggleItemEcosystemEditState () {
+    this.$store.dispatch('category/toggleItemEcosystemSectionEdit', this.itemUid)
+  }
+
+  toggleItemNotesEditState () {
+    this.$store.dispatch('category/toggleItemNotesSectionEdit', this.itemUid)
   }
 
   @CatchConflictDecorator

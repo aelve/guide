@@ -118,25 +118,27 @@ export default class CategoryItemTraits extends Vue {
   @Prop(Array) traits!: any[]
   @Prop(String) type!: string
   @Prop(String) itemId: string
+  @Prop(Boolean) isAnyTraitEditing: boolean
 
-  isEdit: boolean = false
   isAddTrait: boolean = false
   traitsModel = []
 
   get title () {
     return this.type + 's'
   }
+  get isAnyTraitEditingOrAdding () {
+    return this.traitsModel.some(x => x.isEdit) || this.isAddTrait
+  }
 
-  @Watch('traits', {
-    immediate: true
-  })
+  @Watch('isAnyTraitEditingOrAdding', { immediate: true })
+  updateIsEditing (newVal) {
+    this.$emit('update:isAnyTraitEditing', newVal)
+  }
+
+  @Watch('traits', { immediate: true })
   setTraitsModel (traits) {
     this.traitsModel = _cloneDeep(traits)
     this.traitsModel.forEach(x => this.$set(x, 'isEdit', false))
-  }
-
-  toggleEdit () {
-    this.isEdit = !this.isEdit
   }
 
   @CatchConflictDecorator

@@ -64,8 +64,8 @@ export default class CategoryItemSection extends Vue {
   isEdit: boolean = false
 
   toggleEdit (): void {
+    this.$emit('toggleEdit')
     if (this.customEdit) {
-      this.$emit('toggleEdit')
       return
     }
     this.isEdit = !this.isEdit
