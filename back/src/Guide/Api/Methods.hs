@@ -108,14 +108,18 @@ getItem itemId =
 -- | Create a new item, given the name.
 --
 -- Returns the ID of the created item.
-createItem :: Uid Category -> Text -> Guider (Uid Item)
-createItem catId name' =
-  logHandler "createItem" [attr "catId" catId, attr "name" name'] $ do
+createItem :: Uid Category -> CCreateItem -> Guider (Uid Item)
+createItem catId CCreateItem{..} =
+  logHandler "createItem" [attr "catId" catId, attr "name" cciName] $ do
     _ <- getCategoryOrFail catId
-    when (T.null name') $ throwError err400{errReasonPhrase = "Name not provided"}
+    when (T.null cciName) $
+      throwError err400{errReasonPhrase = "'name' can not be empty"}
     itemId <- randomShortUid
     time <- liftIO getCurrentTime
-    addEdit . fst =<< dbUpdate (AddItem catId itemId name' time)
+    addEdit . fst =<< dbUpdate (AddItem catId itemId cciName time)
+    addEdit . fst =<< dbUpdate (SetItemGroup itemId cciGroup)
+    addEdit . fst =<< dbUpdate (SetItemHackage itemId cciHackage)
+    addEdit . fst =<< dbUpdate (SetItemLink itemId cciLink)
     pure itemId
 
 -- | Modify item info. Fields that are not present ('Nothing') are not modified.
@@ -191,7 +195,8 @@ getTrait itemId traitId =
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
 createTrait itemId CCreateTrait{..} =
   logHandler "createTrait" [attr "itemId" itemId] $ do
-    when (T.null cctContent) $ throwError err400{errReasonPhrase = "Trait text not provided"}
+    when (T.null cctContent) $
+      throwError err400{errReasonPhrase = "'content' can not be empty"}
     traitId <- randomShortUid
     addEdit . fst =<< case cctType of
       Con -> dbUpdate (AddCon itemId traitId cctContent)

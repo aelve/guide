@@ -53,13 +53,11 @@
 
 <script lang="ts">
 import _toKebabCase from 'lodash/kebabCase'
-import _get from 'lodash/get'
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategoryItem from 'client/components/CategoryItem.vue'
 import CategoryDescription from 'client/components/CategoryDescription.vue'
-import category from 'client/store/modules/category'
 import CategoryHeader from 'client/components/CategoryHeader.vue'
 import AddItemDialog from 'client/components/AddItemDialog.vue'
 

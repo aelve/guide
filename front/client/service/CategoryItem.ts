@@ -3,11 +3,17 @@ import { ICategoryFull } from './Category'
 
 class CategoryItemService {
   // TODO replace all axios /api request to axios instance to remove duplication of '/api/*'
-  async createItem ({ category, name }: ICreateCategoryItem) {
-    const { data } = await axios.post(`/api/item/${category}`, null, {
-      params: {
-        name
-      }
+  async createItem (
+    {
+      category,
+      name,
+      hackage,
+      link
+    }: ICreateCategoryItem) {
+    const { data } = await axios.post(`/api/item/${category}`, {
+      name,
+      hackage,
+      link
     })
     return data
   }
@@ -90,7 +96,7 @@ class CategoryItemService {
     })
   }
   // add here category description add/edit
-  async updateCategoryDescription ({ id, original, modified }: {id: string, original: string, modified: string}): Promise<any> {
+  async updateCategoryDescription ({ id, original, modified }: { id: string, original: string, modified: string }): Promise<any> {
     const { data } = await axios.put(`/api/category/${id}/notes`, {
       original,
       modified
@@ -101,7 +107,9 @@ class CategoryItemService {
 
 export interface ICreateCategoryItem {
   category: ICategoryFull['title'],
-  name: ICategoryItem['name']
+  name: ICategoryItem['name'],
+  hackage: ICategoryItem['hackage'],
+  link: ICategoryItem['link']
 }
 
 export interface ICategoryItem {
