@@ -1,96 +1,95 @@
 <template>
-  <div class="category-top">
-    <div class="category-top-titles">
+  <div class="category-header">
+    <h2 class="category-name-title" :title="categoryTitle">
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <a-link
             openInNewTab
             aria-label="RSS feed for all new items in this category"
             :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-            class="category-rss-button"
+            class="rss-link mr-1"
             v-on="on"
           >
             <v-icon
-              left
-              size="20"
-              class="mr-3 rss-link-icon"
+              size="24"
+              class="rss-link-icon"
             >$vuetify.icons.rss</v-icon>
           </a-link>
         </template>
         <span>RSS feed for all new items in this category</span>
-      </v-tooltip>
+      </v-tooltip>{{categoryTitle}}
+    </h2>
 
-      <h2 class="category-name-title mr-3">
-        {{categoryTitle}}
-      </h2>
-      <h2 class="category-group-title"> {{categoryGroup}} </h2>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div class="category-group-title-wrap">
+        in <span :title="categoryGroup" class="category-group-title"> {{ categoryGroup }} </span>
+      </div>
+
+      <div class="category-actions">
+        <CategoryHeaderBtn
+          text="New item"
+          icon="plus"
+          class="mr-1"
+          @click="openAddItemDialog"
+        />
+        <CategoryHeaderBtn
+          text="Category settings"
+          icon="cog "
+          class="mr-1"
+          @click="openCategorySettingsEditDialog"
+        />
+        <CategoryHeaderBtn
+          text="Delete category"
+          icon="trash-alt"
+          @click="deleteCategory"
+        />
+      </div>
+
+      <v-menu bottom left offset-y>
+        <template v-slot:activator="{ on }">
+          <v-btn
+            flat
+            icon
+            title="Actions"
+            class="category-actions-menu-btn"
+            v-on="on"
+          >
+            <v-icon
+              color="grey darken-2"
+              size="16"
+            >$vuetify.icons.bars</v-icon>
+          </v-btn>
+        </template>
+
+        <v-list>
+          <v-list-tile class="category-actions-menu-item">
+            <CategoryHeaderBtn
+              text="New item"
+              icon="plus"
+              class="mr-1"
+              @click="openAddItemDialog"
+            />
+          </v-list-tile>
+          <v-list-tile class="category-actions-menu-item">
+            <CategoryHeaderBtn
+              text="Category settings"
+              icon="cog"
+              class="mr-1"
+              @click="openCategorySettingsEditDialog"
+            />
+          </v-list-tile>
+          <v-list-tile class="category-actions-menu-item">
+            <CategoryHeaderBtn
+              text="Delete category"
+              icon="trash-alt"
+              @click="deleteCategory"
+            />
+          </v-list-tile>
+        </v-list>
+      </v-menu>
+
     </div>
-
-    <v-menu
-      bottom
-      left
-    >
-      <template v-slot:activator="{ on }">
-        <v-btn
-          flat
-          icon
-          title="Actions"
-          class="category-actions-menu-btn"
-          v-on="on"
-        >
-          <v-icon
-            color="grey darken-2"
-            size="16"
-          >$vuetify.icons.bars</v-icon>
-        </v-btn>
-      </template>
-
-      <v-list>
-        <v-list-tile class="category-actions-menu-item">
-          <CategoryHeaderBtn
-            text="New item"
-            icon="plus"
-            class="mr-1"
-            @click="openAddItemDialog"
-          />
-        </v-list-tile>
-        <v-list-tile class="category-actions-menu-item">
-          <CategoryHeaderBtn
-            text="Category settings"
-            icon="cog"
-            class="mr-1"
-            @click="openCategorySettingsEditDialog"
-          />
-        </v-list-tile>
-        <v-list-tile class="category-actions-menu-item">
-          <CategoryHeaderBtn
-            text="Delete category"
-            icon="trash-alt"
-            @click="deleteCategory"
-          />
-        </v-list-tile>
-      </v-list>
-    </v-menu>
-
-    <div class="category-actions">
-      <CategoryHeaderBtn
-        text="New item"
-        icon="plus"
-        class="mr-1"
-        @click="openAddItemDialog"
-      />
-      <CategoryHeaderBtn
-        text="Category settings"
-        icon="cog "
-        class="mr-1"
-        @click="openCategorySettingsEditDialog"
-      />
-      <CategoryHeaderBtn
-        text="Delete category"
-        icon="trash-alt"
-        @click="deleteCategory"
-      />
-    </div>
+    
 
     <category-info-edit
       v-model="isCategoryInfoEdit"
@@ -151,50 +150,69 @@ export default class CategoryHeader extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-.category-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin: 0 0 10px;
+.category-header {
+  border-bottom: 1px solid rgb(221, 221, 221);
+  margin-bottom: 20px;
+  padding-bottom: 5px;
+
+  /* Vuetify's v-menu component for some reason adds excess div next to v-menu activator button and this div is messing flex layout */
+  >>> .v-menu {
+    display: none;
+  }
+}
+.category-name-title {
+  font-size: 28px;
+  margin-bottom: 5px;
+  letter-spacing: -1px;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+
+  @media (max-width: 425px) {
+    font-size: 20px;
+  }
 }
 
-.rss-link-icon:hover {
-  color: #000;
-}
-
-.category-top-titles {
-  display: flex;
-  flex: 1;
-  align-items: baseline;
-}
-
-.category-rss-button {
+.rss-link {
   /* For vertical aligning on one line with category title */
   font-size: 1px;
 }
 
-.category-name-title {
-  font-size: 22px;
-  font-weight: 800;
-  text-decoration: none;
-  color: #2b2a2a;
-  letter-spacing: -1px;
+.rss-link-icon {
+  @media (max-width: 768px) {
+    height: 20px !important;
+  }
+  @media (max-width: 425px) {
+    height: 18px !important;
+  }
+
+  &:hover {
+    color: #000;
+  }
+}
+
+.category-group-title-wrap {
+  padding-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .category-group-title {
+  font-weight: 600;
   font-size: 16px;
-  font-weight: normal;
 }
 
 .category-actions-menu-btn {
+  margin: 0;
   display: none;
 }
 
 .category-actions {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  margin-top: 5px;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .category-actions-menu-item {
@@ -220,15 +238,6 @@ export default class CategoryHeader extends Vue {
   }
   .category-actions {
     display: none;
-  }
-}
-
-@media (max-width: 425px) {
-  .category-name-title {
-    font-size: 18px;
-  }
-  .category-group-title {
-    font-size: 14px;
   }
 }
 </style>

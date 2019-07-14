@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <toolbar />
-    <v-content>
+    <v-content class="app-content">
       <router-view />
     </v-content>
     <a-footer />
@@ -143,5 +143,12 @@ blockquote {
 /* vuetify v-select component when opened almost overlays its title */
 .v-menu__content {
   margin-top: 5px;
+}
+</style>
+
+<style scoped>
+/* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
+.app-content {
+  padding: 64px 0px 0px !important;
 }
 </style>
