@@ -9,14 +9,13 @@ module Guide.Db.Schema
 where
 
 import Imports
+import Guide.Db.Connection (connect, run')
 
 import Hasql.Session (Session)
 import NeatInterpolation
-import Hasql.Connection (Connection, Settings)
 import Hasql.Statement (Statement (..))
 
 import qualified Hasql.Session as HS
-import qualified Hasql.Connection as HC
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
 
@@ -51,40 +50,6 @@ setupDatabase = do
       format "Migration {}: " migrationVersion
       run' (migration >> setSchemaVersion migrationVersion) conn
       formatLn "done."
-
--- | Create a database connection (the destination is hard-coded for now).
---
--- Throws an 'error' if the connection could not be established.
-connect :: IO Connection
-connect = do
-  HC.acquire connectionSettings >>= \case
-    Left Nothing -> error "connect: unknown exception"
-    Left (Just x) -> error ("connect: " ++ toString x)
-    Right conn -> pure conn
-
--- | Connection settings
-connectionSettings :: Settings
-connectionSettings = HC.settings "localhost" 5432 dbUser dbPass dbName
-
--- | Database user
-dbUser :: ByteString
-dbUser = "postgres"
-
--- | Database password
-dbPass :: ByteString
-dbPass = "3"
-
--- | Database name
-dbName :: ByteString
-dbName = "guide"
-
-----------------------------------------------------------------------------
--- Utilities
-----------------------------------------------------------------------------
-
--- | Like 'HS.run', but errors out in case of failure.
-run' :: Session a -> Connection -> IO a
-run' s c = either (error . show) pure =<< HS.run s c
 
 ----------------------------------------------------------------------------
 -- Schema version table

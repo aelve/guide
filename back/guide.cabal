@@ -57,6 +57,8 @@ library
       Guide.Api.Utils
       Guide.Api.Guider
     Guide.Db
+      Guide.Db.Connection
+      Guide.Db.Get
       Guide.Db.Schema
     Guide.Logger
       Guide.Logger.Types
