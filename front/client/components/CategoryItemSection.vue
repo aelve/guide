@@ -80,9 +80,6 @@ export default class CategoryItemSection extends Vue {
 
 
 <style scoped>
-.category-item-section:not(:last-child) {
-  margin-bottom: 15px;
-}
 .category-item-section__title {
   display: flex;
   align-items: center;

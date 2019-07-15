@@ -18,6 +18,7 @@
 
       <category-item-section
         title="Summary"
+        class="mb-3"
         :editText="summary.text"
         @save="updateSummary({original: summary.text, modified: $event})"
       >
@@ -29,7 +30,7 @@
 
       <div
         v-if="isSectionEnabled('ItemProsConsSection')"
-        class="category-item-traits"
+        class="category-item-traits mb-3"
       >
         <category-item-traits
           type="Pro"
@@ -48,6 +49,7 @@
       <category-item-section
         v-if="isSectionEnabled('ItemEcosystemSection')"
         title="Ecosystem"
+        class="mb-3"
         :editText="ecosystem.text"
         @save="updateEcosystem({original: ecosystem.text, modified: $event})"
         @toggleEdit="toggleItemEcosystemEditState"
@@ -58,6 +60,7 @@
       <category-item-section
         v-if="isSectionEnabled('ItemNotesSection')"
         title="Notes"
+        class="mb-3"
         :editText="notes.text"
         @save="updateNotes({original: notes.text, modified: $event})"
         @toggleEdit="toggleItemNotesEditState"
@@ -238,6 +241,7 @@ export default class CategoryItem extends Vue {
 
 .category-item-traits > * {
   flex: 1;
+  min-width: calc(50% - 20px);
 }
 
 .category-item-traits > *:not(:last-child) {
