@@ -111,7 +111,7 @@ v0_createTableTraits = HS.sql [r|
   CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
-      deleted boolean               -- Whether the trait is deleted
+    deleted boolean               -- Whether the trait is deleted
       DEFAULT false
       NOT NULL,
     type_ trait_type NOT NULL,      -- Trait type (pro or con)
