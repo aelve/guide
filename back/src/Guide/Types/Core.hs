@@ -178,15 +178,15 @@ data Item = Item {
   _itemCreated     :: UTCTime,         -- ^ When the item was created
   _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
   _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
-  _itemLink        :: Maybe Url,       -- ^ Link to homepage or something
   _itemSummary     :: MarkdownBlock,   -- ^ Item summary
-  _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
-  _itemNotes       :: MarkdownTree,    -- ^ The notes section
   _itemPros        :: [Trait],         -- ^ Pros (positive traits)
   _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
                                        --   it'd be easy to restore them)
   _itemCons        :: [Trait],         -- ^ Cons (negative traits)
-  _itemConsDeleted :: [Trait]          -- ^ Deleted cons go here
+  _itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
+  _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
+  _itemNotes       :: MarkdownTree,    -- ^ The notes section
+  _itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
   deriving (Show, Generic, Data)
 

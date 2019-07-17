@@ -110,6 +110,7 @@ library
                      , cmark-highlight == 0.2.*
                      , cmark-sections == 0.3.*
                      , containers >= 0.5
+                     , contravariant-extras
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
                      , df1
@@ -145,11 +146,13 @@ library
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
+                     , named
                      , neat-interpolation == 0.3.*
                      , network
                      , network-uri
                      , patches-vector
                      , random >= 1.1
+                     , raw-strings-qq
                      , reroute
                      , safe
                      , safecopy

@@ -12,7 +12,7 @@ import Imports
 import Guide.Db.Connection (connect, run')
 
 import Hasql.Session (Session)
-import NeatInterpolation
+import Text.RawString.QQ
 import Hasql.Statement (Statement (..))
 
 import qualified Hasql.Session as HS
@@ -61,7 +61,7 @@ setupDatabase = do
 -- If the @schema_version@ table doesn't exist, creates it.
 getSchemaVersion :: Session (Maybe Int32)
 getSchemaVersion = do
-  HS.sql $ toByteString [text|
+  HS.sql [r|
     CREATE TABLE IF NOT EXISTS schema_version (
       name text PRIMARY KEY,
       version integer
@@ -101,13 +101,13 @@ v0 = do
 
 -- | Create an enum type for trait type ("pro" or "con").
 v0_createTypeProCon :: Session ()
-v0_createTypeProCon = HS.sql $ toByteString [text|
+v0_createTypeProCon = HS.sql [r|
   CREATE TYPE trait_type AS ENUM ('pro', 'con');
   |]
 
 -- | Create table @traits@, corresponding to 'Guide.Types.Core.Trait'.
 v0_createTableTraits :: Session ()
-v0_createTableTraits = HS.sql $ toByteString [text|
+v0_createTableTraits = HS.sql [r|
   CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
@@ -123,7 +123,7 @@ v0_createTableTraits = HS.sql $ toByteString [text|
 
 -- | Create table @items@, corresponding to 'Guide.Types.Core.Item'.
 v0_createTableItems :: Session ()
-v0_createTableItems = HS.sql $ toByteString [text|
+v0_createTableItems = HS.sql [r|
   CREATE TABLE items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
@@ -145,7 +145,7 @@ v0_createTableItems = HS.sql $ toByteString [text|
 
 -- | Create table @categories@, corresponding to 'Guide.Types.Core.Category'.
 v0_createTableCategories :: Session ()
-v0_createTableCategories = HS.sql $ toByteString [text|
+v0_createTableCategories = HS.sql [r|
   CREATE TABLE categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
@@ -161,7 +161,7 @@ v0_createTableCategories = HS.sql $ toByteString [text|
 
 -- | Create table @users@, storing user data.
 v0_createTableUsers :: Session ()
-v0_createTableUsers = HS.sql $ toByteString [text|
+v0_createTableUsers = HS.sql [r|
   CREATE TABLE users (
     uid text PRIMARY KEY,           -- Unique user ID
     name text NOT NULL,             -- User name
@@ -176,7 +176,7 @@ v0_createTableUsers = HS.sql $ toByteString [text|
 -- | Create table @pending_edits@, storing users' edits and metadata about
 -- them (who made the edit, when, etc).
 v0_createTablePendingEdits :: Session ()
-v0_createTablePendingEdits = HS.sql $ toByteString [text|
+v0_createTablePendingEdits = HS.sql [r|
   CREATE TABLE pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
