@@ -33,35 +33,49 @@ import Guide.Utils (Uid (..))
 getTest :: IO ()
 getTest = do
   conn <- connect
-  mTrait <- run' (getTraitByTraitIdMaybe "qwertassdf34") conn
+  mTrait <- run' (getTraitMaybe "qwertassdf34") conn
   print mTrait
-  traits <- run' (getTraitsByItemId "items1234567" (#deleted False) Pro) conn
+  traits <- run' (getTraitsByItem "items1234567" (#deleted False) Pro) conn
   print traits
-  mItem <- run' (getItemByItemIdMaybe "items1234567") conn
+  mItem <- run' (getItemMaybe "items1234567") conn
   print mItem
-  item <- run' (getItemByItemId "items1234567") conn
+  item <- run' (getItem "items1234567") conn
   print item
   -- wrong uid
   -- itemErr <- run' (getItemByItemId "wrong1234567") conn
   -- print itemErr
-  items <- run' (getItemsByCatId "categories11" (#deleted False)) conn
+  items <- run' (getItemsByCategory "categories11" (#deleted False)) conn
   print items
-  cat <- run' (getCatByCatIdMaybe "categories11") conn
+  catM <- run' (getCategoryMaybe "categories11") conn
+  print catM
+  cat <- run' (getCategory "categories11") conn
   print cat
+  catId <- run' (getCategoryIdByItem "items1234567") conn
+  print catId
+  catIds <- run' getCategoryIds conn
+  print catIds
+  cats <- run' getCategories conn
+  print cats
 
+--
 -- | Methods to get information from database
+--
+
+--
+-- | Traits
+--
 
 -- | Get trait by id, either it deleted or not.
-getTraitByTraitIdMaybe :: Uid Trait -> Session (Maybe Trait)
-getTraitByTraitIdMaybe Uid{..} = do
+getTraitMaybe :: Uid Trait -> Session (Maybe Trait)
+getTraitMaybe Uid{..} = do
   let sql = [r|SELECT uid, content FROM traits WHERE uid = $1;|]
       encoder = textEncoderNonNull
       decoder = HD.rowMaybe traitRow
   HS.statement uidToText (Statement sql encoder decoder False)
 
 -- | Get traits list by item id, deleted and trait_type filters.
-getTraitsByItemId :: Uid Item -> "deleted" :! Bool -> TraitType -> Session [Trait]
-getTraitsByItemId Uid{..} (arg #deleted -> deleted) traitType = do
+getTraitsByItem :: Uid Item -> "deleted" :! Bool -> TraitType -> Session [Trait]
+getTraitsByItem Uid{..} (arg #deleted -> deleted) traitType = do
   let sql = [r|
         SELECT uid, content FROM traits
           WHERE item_uid = $1 AND
@@ -72,9 +86,13 @@ getTraitsByItemId Uid{..} (arg #deleted -> deleted) traitType = do
       decoder = HD.rowList traitRow
   HS.statement (uidToText,deleted,traitType) (Statement sql encoder decoder False)
 
+--
+-- | Items
+--
+
 -- | Get maybe item by id, either it deleted or not.
-getItemByItemIdMaybe :: Uid Item -> Session (Maybe Item)
-getItemByItemIdMaybe uid@Uid{..} = do
+getItemMaybe :: Uid Item -> Session (Maybe Item)
+getItemMaybe uid@Uid{..} = do
   (_itemPros, _itemProsDeleted, _itemCons, _itemConsDeleted) <- itemTraits uid
   let pref = "item-notes-" <> uidToText <> "-"
   let sql = [r|
@@ -88,8 +106,8 @@ getItemByItemIdMaybe uid@Uid{..} = do
   HS.statement uidToText (Statement sql encoder decoder False)
 
 -- | Get item by id, either it deleted or not.
-getItemByItemId :: Uid Item -> Session Item
-getItemByItemId uid@Uid{..} = do
+getItem :: Uid Item -> Session Item
+getItem uid@Uid{..} = do
   (_itemPros, _itemProsDeleted, _itemCons, _itemConsDeleted) <- itemTraits uid
   let pref = "item-notes-" <> uidToText <> "-"
   let sql = [r|
@@ -103,8 +121,8 @@ getItemByItemId uid@Uid{..} = do
   HS.statement uidToText (Statement sql encoder decoder False)
 
 -- | Get items with category id and deleted filters
-getItemsByCatId :: Uid Category -> "deleted" :! Bool -> Session [Item]
-getItemsByCatId Uid{..} (arg #deleted -> deleted) = do
+getItemsByCategory :: Uid Category -> "deleted" :! Bool -> Session [Item]
+getItemsByCategory Uid{..} (arg #deleted -> deleted) = do
   let sql = [r|
         SELECT uid
           from items
@@ -114,34 +132,80 @@ getItemsByCatId Uid{..} (arg #deleted -> deleted) = do
       encoder = contrazip2 textEncoderNonNull boolEncoderNonNull
       decoder = HD.rowList $ Uid <$> textDecoderNonNull
   itemUids <- HS.statement (uidToText,deleted) (Statement sql encoder decoder False)
-  traverse getItemByItemId itemUids
+  traverse getItem itemUids
 
--- | Get category by id, either it deleted or not.
-getCatByCatIdMaybe :: Uid Category -> Session (Maybe Category)
-getCatByCatIdMaybe catId@Uid{..} = do
-  _categoryItems <- getItemsByCatId catId (#deleted False)
-  _categoryItemsDeleted <- getItemsByCatId catId (#deleted True)
+--
+-- | Categories
+--
+
+-- | Get maybe category by uid.
+getCategoryMaybe :: Uid Category -> Session (Maybe Category)
+getCategoryMaybe catId@Uid{..} = do
+  (_categoryItems, _categoryItemsDeleted) <- categoryItems catId
   let sql = [r|
         SELECT uid, title, created, group_, status_, notes, enabled_sections
           FROM categories
           WHERE uid = $1
         ;|]
       encoder = textEncoderNonNull
-      decoder = HD.rowMaybe $ do
-        _categoryUid <- Uid <$> textDecoderNonNull
-        _categoryTitle <- textDecoderNonNull
-        _categoryCreated <- localTimeToUTC utc <$> (HD.column . HD.nonNullable) HD.timestamp
-        _categoryGroup_ <- textDecoderNonNull
-        _categoryStatus <- toStatus <$> textDecoderNonNull
-        _categoryNotes <- toMarkdownBlock <$> textDecoderNonNull
-        selectionsText <- textArrayDecoder
-        let _categoryEnabledSections = Set.fromList $ map toSection selectionsText
-        let _categoryGroups = Map.empty
-        pure $ Category{..}
+      decoder = HD.rowMaybe $ categoryRow _categoryItems _categoryItemsDeleted
   HS.statement uidToText (Statement sql encoder decoder False)
 
+-- | Get category by uid.
+getCategory :: Uid Category -> Session Category
+getCategory catId@Uid{..} = do
+  (_categoryItems, _categoryItemsDeleted) <- categoryItems catId
+  let sql = [r|
+        SELECT uid, title, created, group_, status_, notes, enabled_sections
+          FROM categories
+          WHERE uid = $1
+        ;|]
+      encoder = textEncoderNonNull
+      decoder = HD.singleRow $ categoryRow _categoryItems _categoryItemsDeleted
+  HS.statement uidToText (Statement sql encoder decoder False)
 
+-- | Get category uid by item uid.
+getCategoryIdByItem :: Uid Item -> Session (Uid Category)
+getCategoryIdByItem (Uid itemId) = do
+  let sql = [r|
+        SELECT category_uid
+          from items
+          WHERE uid = $1
+        ;|]
+      encoder = textEncoderNonNull
+      decoder = HD.singleRow $ Uid <$> textDecoderNonNull
+  HS.statement itemId (Statement sql encoder decoder False)
+
+-- | Get category by item uid.
+getCategoryByItem :: Uid Item -> Session (Maybe Category)
+getCategoryByItem itemId = do
+  catId <- getCategoryIdByItem itemId
+  getCategoryMaybe catId
+
+-- | Get category's uid list
+getCategoryIds :: Session [Uid Category]
+getCategoryIds = do
+  let sql = [r|
+        SELECT uid
+          FROM categories
+        ;|]
+      encoder = HE.noParams
+      decoder = HD.rowList $ Uid <$> textDecoderNonNull
+  HS.statement () (Statement sql encoder decoder False)
+
+-- | Get all categories
+getCategories :: Session [Category]
+getCategories = do
+  catIds <- getCategoryIds
+  traverse getCategory catIds
+
+--
 -- | General functions
+--
+
+--
+-- | Encoders
+--
 
 -- | Encoder parameter for text
 textEncoderNonNull :: HE.Params Text
@@ -155,6 +219,10 @@ traitTypeEncoderNonNull = HE.param (HE.nonNullable $ HE.enum (T.pack . show))
 boolEncoderNonNull :: HE.Params Bool
 boolEncoderNonNull = HE.param (HE.nonNullable HE.bool)
 
+--
+-- | Decoders
+--
+
 -- | Decoder for nonNull text
 textDecoderNonNull :: HD.Row Text
 textDecoderNonNull = (HD.column . HD.nonNullable) HD.text
@@ -167,6 +235,10 @@ textDecoderNull = (HD.column . HD.nullable) HD.text
 textArrayDecoder :: HD.Row [Text]
 textArrayDecoder = (HD.column . HD.nonNullable)
   $ HD.array (HD.dimension replicateM (HD.element $ HD.nonNullable HD.text))
+
+--
+-- | Rows
+--
 
 -- | Trait row
 traitRow :: HD.Row Trait
@@ -189,14 +261,39 @@ itemRow pref _itemPros _itemProsDeleted _itemCons _itemConsDeleted = do
   _itemNotes <- toMarkdownTree pref <$> textDecoderNonNull
   pure $ Item{..}
 
+-- | Category row
+categoryRow :: [Item] -> [Item] -> HD.Row Category
+categoryRow _categoryItems _categoryItemsDeleted = do
+  _categoryUid <- Uid <$> textDecoderNonNull
+  _categoryTitle <- textDecoderNonNull
+  _categoryCreated <- localTimeToUTC utc <$> (HD.column . HD.nonNullable) HD.timestamp
+  _categoryGroup_ <- textDecoderNonNull
+  _categoryStatus <- toStatus <$> textDecoderNonNull
+  _categoryNotes <- toMarkdownBlock <$> textDecoderNonNull
+  selectionsText <- textArrayDecoder
+  let _categoryEnabledSections = Set.fromList $ map toSection selectionsText
+  let _categoryGroups = Map.empty
+  pure $ Category{..}
+
+--
+-- | Other
+--
+
 -- | Get all item's traits
 itemTraits :: Uid Item -> Session ([Trait], [Trait], [Trait], [Trait])
 itemTraits uid = do
-  _itemPros <- getTraitsByItemId uid (#deleted False) Pro
-  _itemProsDeleted <- getTraitsByItemId uid (#deleted True) Pro
-  _itemCons <- getTraitsByItemId uid (#deleted False) Con
-  _itemConsDeleted <- getTraitsByItemId uid (#deleted True) Con
+  _itemPros <- getTraitsByItem uid (#deleted False) Pro
+  _itemProsDeleted <- getTraitsByItem uid (#deleted True) Pro
+  _itemCons <- getTraitsByItem uid (#deleted False) Con
+  _itemConsDeleted <- getTraitsByItem uid (#deleted True) Con
   pure (_itemPros, _itemProsDeleted, _itemCons, _itemConsDeleted)
+
+-- | Get all category's items
+categoryItems :: Uid Category -> Session ([Item], [Item])
+categoryItems catId = do
+  _categoryItems <- getItemsByCategory catId (#deleted False)
+  _categoryItemsDeleted <- getItemsByCategory catId (#deleted True)
+  pure (_categoryItems, _categoryItemsDeleted)
 
 -- | Just ADT for traitType
 data TraitType = Pro | Con
