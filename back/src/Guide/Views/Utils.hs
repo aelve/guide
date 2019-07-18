@@ -64,7 +64,6 @@ import Web.Spock.Config
 import Data.List.Split
 -- digestive-functors
 import Text.Digestive (View)
--- import NeatInterpolation
 -- Web
 import Lucid hiding (for_)
 import Lucid.Base (makeAttribute)

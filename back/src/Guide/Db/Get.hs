@@ -14,7 +14,7 @@ import Contravariant.Extras.Contrazip (contrazip2, contrazip3)
 import Hasql.Session (Session)
 import Hasql.Statement (Statement (..))
 import Named
-import Text.RawString.QQ
+import Text.RawString.QQ (r)
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set

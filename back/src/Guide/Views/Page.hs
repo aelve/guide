@@ -30,7 +30,7 @@ where
 import Imports
 
 import Lucid hiding (for_)
-import NeatInterpolation
+import Text.RawString.QQ (r)
 
 import Guide.Config
 import Guide.JS (JS (..))
@@ -131,7 +131,7 @@ headTagDef page = do
   unless (T.null googleToken) $
     meta_ [name_ "google-site-verification", content_ googleToken]
   -- Report all Javascript errors with alerts
-  script_ [text|
+  script_ [r|
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       alert("Error in "+url+" at "+lineNo+":"+columnNo+": "+msg+
             "\n\n"+
@@ -145,10 +145,10 @@ headTagDef page = do
   onPageLoad (JS "autosize($('textarea'));")
   -- CSS that makes 'shown' and 'noScriptShown' work;
   -- see Note [show-hide]
-  noscript_ $ style_ [text|
+  noscript_ $ style_ [r|
     .section:not(.noscript-shown) {display:none;}
     |]
-  script_ [text|
+  script_ [r|
     var sheet = document.createElement('style');
     sheet.innerHTML = '.section:not(.shown) {display:none;}';
     // “head” instead of “body” because body isn't loaded yet
