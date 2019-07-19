@@ -28,8 +28,7 @@ export default class CategoryHeaderBtn extends Vue {
 .category-header-btn {
   margin: 0;
   padding: 0 4px;
-  height: 28px;
-  font-size: 12px;
+  font-size: 0.65rem;
   font-weight: bold;
 }
 </style>

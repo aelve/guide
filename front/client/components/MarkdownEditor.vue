@@ -207,7 +207,7 @@ export default class MarkdownEditor extends Vue {
      https://github.com/sparksuite/simplemde-markdown-editor/issues/619
   */
   box-sizing: content-box;
-  font-size: 16px;
+  font-size: 1rem;
 
   .cm-header-1 {
     font-size: 2rem;

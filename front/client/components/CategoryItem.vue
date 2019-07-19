@@ -23,7 +23,7 @@
         @save="updateSummary({original: summary.text, modified: $event})"
       >
         <div
-          class="mb-2 category-item-summary"
+          class="mb-2"
           v-html="summary.html"
         />
       </category-item-section>
@@ -217,18 +217,6 @@ export default class CategoryItem extends Vue {
   padding: 15px 20px;
 }
 
-.category-item-body >>> p {
-  font-size: 16px;
-}
-
-.category-item-body >>> li {
-  font-size: 16px;
-}
-
-.category-item-summary >>> h1 {
-  margin: 25px 0 5px;
-}
-
 .category-item {
   position: relative;
   background: #eeeeee;
@@ -237,6 +225,7 @@ export default class CategoryItem extends Vue {
 
 .category-item-traits {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .category-item-traits > * {

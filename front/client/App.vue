@@ -43,21 +43,88 @@ export default class RootComponent extends Vue {
 }
 </script>
 
-<style>
+<style lang="postcss">
 *,
 *:before,
 *:after {
   box-sizing: border-box;
 }
+
+html {
+  /*
+    Formula is: calc(
+      [min-font-size] +
+      ([max-font-size] - [min-font-size] * (100vw - [min-vw]) / ([max-vw] - [min-vw])
+    ); 
+  */
+  font-size: calc(16px + (22 - 16) * (100vw - 320px) / (1920 - 320));
+}
+:root {
+  --h1-font-size: 1.8rem;
+  --h2-font-size: 1.4rem;
+  --h3-font-size: 1.17rem;
+  --h4-font-size: 1rem;
+  --h5-font-size: 0.83rem;
+  --h6-font-size: 0.75rem;
+}
+
+h1 {
+  font-size: var(--h1-font-size);
+  margin: 1.95rem 0 0.5rem;
+}
+h2 {
+  font-size: var(--h2-font-size);
+  margin: 1.65rem 0 0.35rem;
+}
+h3 {
+  font-size: var(--h3-font-size);
+  margin: 1.35rem 0 0.25rem;
+}
+h4 {
+  font-size: var(--h4-font-size);
+  margin: 1rem 0 0.15rem;
+}
+h5 {
+  font-size: var(--h5-font-size);
+  margin: 0.8rem 0 0.1rem;
+}
+h6 {
+  font-size: var(--h6-font-size);
+  margin: 0.5rem 0 0;
+}
+
+.text-h1 {
+  font-size: var(--h1-font-size);
+}
+.text-h2 {
+  font-size: var(--h2-font-size);
+}
+.text-h3 {
+  font-size: var(--h3-font-size);
+}
+.text-h4 {
+  font-size: var(--h4-font-size);
+}
+.text-h5 {
+  font-size: var(--h5-font-size);
+}
+.text-h6 {
+  font-size: var(--h6-font-size);
+}
+
 p {
-  margin-bottom: 10px;
+  margin: 0.2rem 0 1.2rem 0;
 }
+
+ul,
+ol {
+  margin: 0.8rem 0;
+}
+
 li p {
-  margin-bottom: 0;
+  margin-top: 0;
 }
-ul li:not(:last-child) {
-  margin-bottom: 2px;
-}
+
 code {
   color: inherit;
   text-decoration: inherit;
@@ -88,7 +155,7 @@ code.sourceCode {
   padding: 8px;
 }
 .sourceCode:not(:last-child) code.sourceCode {
-  margin: 0 0 5px;
+  margin: 0 0 0.2rem;
 }
 a {
   text-decoration-line: none;
@@ -150,5 +217,6 @@ blockquote {
 /* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
 .app-content {
   padding: 64px 0px 0px !important;
+  line-height: 1.2;
 }
 </style>

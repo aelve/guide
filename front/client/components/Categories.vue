@@ -17,66 +17,53 @@
         :key="index"
       >
         <div class="category-group">
-          <h4 class="mb-2 display-1 font-weight-black category-group-name">
+          <h1 class="mt-0 mb-2 display-1 font-weight-black">
             {{ groupName }}
-          </h4>
+          </h1>
 
           <router-link
-            class="category-title"
+            class="category-title ml-2"
             v-for="category in groupCategories[CategoryStatus.finished]"
             :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
           >
-            <h6
-              class="ml-2 subheading font-weight-bold"
-            >
-              {{ category.title }}
-            </h6>
+            {{ category.title }}
           </router-link>
 
-          <h6
-            class="ml-2 mb-1 body-2 font-weight-bold"
-            v-if="groupCategories[CategoryStatus.inProgress]"
-          >
-            In progress
-          </h6>
-          <router-link
-            class="category-title ml-3"
-            v-for="category in groupCategories[CategoryStatus.inProgress]"
-            :key="category.id"
-            :to="`/haskell/${getCategoryUrl(category)}`"
-          >
-            <h6
-              class="ml-2 body-1 font-weight-bold"
+          <template v-if="groupCategories[CategoryStatus.inProgress]">
+            <h3 class="status-title">
+              In progress
+            </h3>
+            <router-link
+              class="category-title ml-3"
+              v-for="category in groupCategories[CategoryStatus.inProgress]"
+              :key="category.id"
+              :to="`/haskell/${getCategoryUrl(category)}`"
             >
               {{ category.title }}
-            </h6>
-          </router-link>
+            </router-link>
+          </template>
 
-          <h6
-            class="ml-2 mb-1 body-2 font-weight-bold"
-            v-if="groupCategories[CategoryStatus.toBeWritten]"
-          >
-            To be written
-          </h6>
-          <router-link
-            class="category-title ml-3"
-            v-for="category in groupCategories[CategoryStatus.toBeWritten]"
-            :key="category.id"
-            :to="`/haskell/${getCategoryUrl(category)}`"
-          >
-            <h6
-              class="ml-2 body-1 font-weight-bold"
+          <template v-if="groupCategories[CategoryStatus.toBeWritten]">
+            <h3 class="status-title">
+              To be written
+            </h3>
+
+            <router-link
+              class="category-title ml-3"
+              v-for="category in groupCategories[CategoryStatus.toBeWritten]"
+              :key="category.id"
+              :to="`/haskell/${getCategoryUrl(category)}`"
             >
               {{ category.title }}
-            </h6>
-          </router-link>
+            </router-link>
+          </template>
 
           <v-btn
+            flat
             class="ma-0 px-1"
             color="grey darken-2"
             title="Add new category"
-            flat
             @click="openAddCategoryDialog(groupName)"
           >
             <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
@@ -151,7 +138,14 @@ export default class Categories extends Vue {
 }
 .category-title {
   display: block;
+  font-size: 0.8rem;
   line-height: 1.2;
+  font-weight: 600;
+}
+.status-title {
+  font-size: 0.75rem;
+  margin: 0 0 4px 8px;
+
 }
 .category-title:not(:last-child) {
   margin-bottom: 5px;

@@ -1,24 +1,23 @@
 <template>
   <div class="category-header">
-    <h2 class="category-name-title" :title="categoryTitle">
+    <h1 class="category-name-title" :title="categoryTitle">
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <a-link
             openInNewTab
             aria-label="RSS feed for all new items in this category"
             :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-            class="rss-link mr-1"
+            class="rss-link"
             v-on="on"
           >
             <v-icon
-              size="24"
               class="rss-link-icon"
             >$vuetify.icons.rss</v-icon>
           </a-link>
         </template>
         <span>RSS feed for all new items in this category</span>
       </v-tooltip>{{categoryTitle}}
-    </h2>
+    </h1>
 
     <div style="display: flex; align-items: center; justify-content: space-between;">
       <div class="category-group-title-wrap">
@@ -161,31 +160,21 @@ export default class CategoryHeader extends Vue {
   }
 }
 .category-name-title {
-  font-size: 28px;
-  margin-bottom: 5px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 0 0 5px;
   letter-spacing: -1px;
-
-  @media (max-width: 768px) {
-    font-size: 24px;
-  }
-
-  @media (max-width: 425px) {
-    font-size: 20px;
-  }
 }
 
 .rss-link {
   /* For vertical aligning on one line with category title */
   font-size: 1px;
+  margin-right: 6px;
 }
 
 .rss-link-icon {
-  @media (max-width: 768px) {
-    height: 20px !important;
-  }
-  @media (max-width: 425px) {
-    height: 18px !important;
-  }
+  height: calc(1.8rem - 5px) !important;
+  width: auto;
 
   &:hover {
     color: #000;
@@ -202,7 +191,6 @@ export default class CategoryHeader extends Vue {
 
 .category-group-title {
   font-weight: 600;
-  font-size: 16px;
 }
 
 .category-actions-menu-btn {

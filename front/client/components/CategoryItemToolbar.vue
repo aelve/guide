@@ -11,7 +11,7 @@
         class="elevation-2"
         @click.stop=""
       >
-        <v-toolbar-title class="headline">
+        <v-toolbar-title class="text-h2">
           <router-link
             :to="{hash:`item-${itemUid}`}"
             class="category-item-anchor"
@@ -20,12 +20,14 @@
             :url="itemLink"
             openInNewTab
           >{{ itemName }}</a-link>
-          <span v-else>{{ itemName }}</span><template v-if="this.itemHackage">&nbsp;(<a
+          <span v-else>{{ itemName }}</span><span class="text-h4" v-if="this.itemHackage">&nbsp;(<a
             target="_blank"
             :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
-          >Hackage</a>)</template>
+          >Hackage</a>)</span>
         </v-toolbar-title>
+
         <v-spacer></v-spacer>
+
         <v-toolbar-items class="category-item-toolbar-btns">
           <category-item-btn
             title="Move item up"
@@ -59,6 +61,7 @@
           />
         </v-toolbar-items>
       </v-toolbar>
+
       <v-layout column class="pa-3">
         <v-flex>
           <v-text-field
@@ -172,7 +175,7 @@ export default class CategoryItemToolbar extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .category-item-anchor {
   color: rgb(151, 151, 151);
 }
@@ -186,17 +189,23 @@ export default class CategoryItemToolbar extends Vue {
 }
 .category-item-toolbar {
   display: flex;
+  margin: 0;
   box-shadow: none;
-}
-.category-item-toolbar >>> .v-expansion-panel__header {
-  padding: 0;
-  align-items: center;
-  cursor: unset;
-}
-.category-item-toolbar >>> .v-expansion-panel__body {
-  background: #d6d6d6;
-}
-.category-item-toolbar-btns > * {
-  margin: 0 2px;
+
+  >>> {
+    .v-expansion-panel__header {
+      padding: 0;
+      align-items: center;
+      cursor: unset;
+    }
+
+    .v-expansion-panel__body {
+      background: rgb(222, 222, 222);
+    }
+
+    .category-item-toolbar-btns > * {
+      margin: 0 2px;
+    }
+  }
 }
 </style>
