@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Guide.Db.Connection
+
+--
+-- Connection methods for postgres database
+--
+module Guide.Database.Connection
        ( connect
        , run'
        ) where

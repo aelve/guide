@@ -19,10 +19,10 @@
 module Guide.Types.Core
 (
   Trait(..),
+  TraitType (..),
   ItemKind(..),
     hackageName,
   ItemSection(..),
-    toSection,
   Item(..),
     pros,
     prosDeleted,
@@ -35,7 +35,6 @@ module Guide.Types.Core
     hueToDarkColor,
     hueToLightColor,
   CategoryStatus(..),
-    toStatus,
   Category(..),
     title,
     status,
@@ -104,6 +103,15 @@ instance A.ToJSON Trait where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
 
+-- | ADT for traitType
+data TraitType = Pro | Con
+  deriving Eq
+
+-- | Show instance for TraitType
+instance Show TraitType where
+  show Pro = "pro"
+  show Con = "con"
+
 ----------------------------------------------------------------------------
 -- Item
 ----------------------------------------------------------------------------
@@ -170,14 +178,6 @@ instance A.ToJSON ItemSection where
 instance A.FromJSON ItemSection where
   parseJSON = A.genericParseJSON A.defaultOptions
 
--- | Common read for ItemSection
-toSection :: Text -> ItemSection
-toSection = \case
-  "ItemProsConsSection" -> ItemProsConsSection
-  "ItemEcosystemSection" -> ItemEcosystemSection
-  "ItemNotesSection" -> ItemNotesSection
-  _ -> error "Unknown ItemSection"
-
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
@@ -240,14 +240,6 @@ instance A.ToJSON CategoryStatus where
 
 instance A.FromJSON CategoryStatus where
   parseJSON = A.genericParseJSON A.defaultOptions
-
--- Common read for CategoryStatus
-toStatus :: Text -> CategoryStatus
-toStatus = \case
-  "CategoryStub" -> CategoryStub
-  "CategoryWIP" -> CategoryWIP
-  "CategoryFinished" -> CategoryFinished
-  _ -> error "Unknown CategoryStatus"
 
 data CategoryStatus_v1
   = CategoryStub_v1

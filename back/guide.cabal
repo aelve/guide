@@ -56,10 +56,11 @@ library
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
-    Guide.Db
-      Guide.Db.Connection
-      Guide.Db.Get
-      Guide.Db.Schema
+    Guide.Database
+      Guide.Database.Connection
+      Guide.Database.Get
+      Guide.Database.Schema
+      Guide.Database.Convert
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions

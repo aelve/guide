@@ -2,14 +2,17 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module Guide.Db.Schema
+--
+-- | Schemas to create table for guide database
+--
+module Guide.Database.Schema
 (
   setupDatabase,
 )
 where
 
 import Imports
-import Guide.Db.Connection (connect, run')
+import Guide.Database.Connection (connect, run')
 
 import Hasql.Session (Session)
 import Text.RawString.QQ
@@ -111,7 +114,7 @@ v0_createTableTraits = HS.sql [r|
   CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
-    deleted boolean               -- Whether the trait is deleted
+    deleted boolean                 -- Whether the trait is deleted
       DEFAULT false
       NOT NULL,
     type_ trait_type NOT NULL,      -- Trait type (pro or con)
@@ -127,7 +130,7 @@ v0_createTableItems = HS.sql [r|
   CREATE TABLE items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
-    created timestamp NOT NULL,     -- When the item was created
+    created timestamptz NOT NULL,   -- When the item was created
     group_ text,                    -- Optional group
     link text,                      -- Optional URL
     hackage text,                   -- Package name on Hackage
@@ -149,7 +152,7 @@ v0_createTableCategories = HS.sql [r|
   CREATE TABLE categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
-    created timestamp NOT NULL,     -- When the category was created
+    created timestamptz NOT NULL,   -- When the category was created
     group_ text NOT NULL,           -- "Grandcategory"
     status_ text NOT NULL,          -- Category status ("in progress", etc); the list of
                                     --   possible statuses is defined by backend
