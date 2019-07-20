@@ -175,7 +175,7 @@ export default class MarkdownEditor extends Vue {
     // this function is triggered right after isReady set to true
     // isReady controls v-show of entire markup of component
     // nextTick is used cause html needs to be rendered after v-show triggered so focus will work
-    this.$nextTick(() => document.querySelector('.CodeMirror textarea').focus())
+    this.$nextTick(() => this.editor.codemirror.focus())
   }
 
   onEnterDown (event: KeyboardEvent) {
