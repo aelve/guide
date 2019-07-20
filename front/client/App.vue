@@ -144,6 +144,9 @@ blockquote {
 .v-menu__content {
   margin-top: 5px;
 }
+.v-toolbar__title  {
+  letter-spacing: inherit;
+}
 </style>
 
 <style scoped>
