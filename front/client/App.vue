@@ -148,6 +148,9 @@ blockquote {
   width: 1.25em !important;
   text-align: center !important;
 }
+.v-toolbar__title  {
+  letter-spacing: inherit;
+}
 </style>
 
 <style scoped>
