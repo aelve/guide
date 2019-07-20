@@ -57,7 +57,7 @@ html {
       ([max-font-size] - [min-font-size] * (100vw - [min-vw]) / ([max-vw] - [min-vw])
     ); 
   */
-  font-size: calc(16px + (22 - 16) * (100vw - 320px) / (1920 - 320));
+  font-size: calc(16px + (18 - 16) * (100vw - 320px) / (1920 - 320));
 }
 :root {
   --h1-font-size: 1.8rem;
@@ -70,23 +70,23 @@ html {
 
 h1 {
   font-size: var(--h1-font-size);
-  margin: 1.95rem 0 0.5rem;
+  margin: 1.95rem 0 0.6rem;
 }
 h2 {
   font-size: var(--h2-font-size);
-  margin: 1.65rem 0 0.35rem;
+  margin: 1.65rem 0 0.45rem;
 }
 h3 {
   font-size: var(--h3-font-size);
-  margin: 1.35rem 0 0.25rem;
+  margin: 1.35rem 0 0.35rem;
 }
 h4 {
   font-size: var(--h4-font-size);
-  margin: 1rem 0 0.15rem;
+  margin: 1rem 0 0.25rem;
 }
 h5 {
   font-size: var(--h5-font-size);
-  margin: 0.8rem 0 0.1rem;
+  margin: 0.8rem 0 0.2rem;
 }
 h6 {
   font-size: var(--h6-font-size);
@@ -217,6 +217,6 @@ blockquote {
 /* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
 .app-content {
   padding: 64px 0px 0px !important;
-  line-height: 1.2;
+  line-height: 150%;
 }
 </style>
