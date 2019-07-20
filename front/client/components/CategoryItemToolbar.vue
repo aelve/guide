@@ -309,7 +309,7 @@ export default class CategoryItemToolbar extends Vue {
         margin-left: 5px;
       }
 
-      @media only screen and (max-width: 959px) {
+      @media screen and (max-width: 959px) {
         padding: 0 8px;
       }
     }
