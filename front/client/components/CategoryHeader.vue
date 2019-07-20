@@ -19,7 +19,7 @@
       </v-tooltip>{{categoryTitle}}
     </h1>
 
-    <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="category-header__second-row">
       <div class="category-group-title-wrap">
         in <span :title="categoryGroup" class="category-group-title"> {{ categoryGroup }} </span>
       </div>
@@ -55,29 +55,27 @@
           >
             <v-icon
               color="grey darken-2"
-              size="16"
+              size="18"
             >$vuetify.icons.bars</v-icon>
           </v-btn>
         </template>
 
-        <v-list>
-          <v-list-tile class="category-actions-menu-item">
+        <v-list class="category-actions-menu-list">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="New item"
               icon="plus"
-              class="mr-1"
               @click="openAddItemDialog"
             />
           </v-list-tile>
-          <v-list-tile class="category-actions-menu-item">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="Category settings"
               icon="cog"
-              class="mr-1"
               @click="openCategorySettingsEditDialog"
             />
           </v-list-tile>
-          <v-list-tile class="category-actions-menu-item">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="Delete category"
               icon="trash-alt"
@@ -181,6 +179,12 @@ export default class CategoryHeader extends Vue {
   }
 }
 
+.category-header__second-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .category-group-title-wrap {
   padding-left: 4px;
   white-space: nowrap;
@@ -203,11 +207,10 @@ export default class CategoryHeader extends Vue {
   flex: 1;
 }
 
-.category-actions-menu-item {
-  height: 36px;
-
+.category-actions-menu-list {
   >>> .v-list__tile {
     height: 36px;
+    padding: 0 6px;
   }
 
   >>> button {
