@@ -12,73 +12,167 @@
         @click.stop=""
       >
         <v-toolbar-title class="text-h2">
-          <router-link
-            :to="{hash:`item-${itemUid}`}"
-            class="category-item-anchor"
-          >#</router-link>&nbsp;<a-link
-            v-if="itemLink"
-            :url="itemLink"
-            openInNewTab
-          >{{ itemName }}</a-link>
-          <span v-else>{{ itemName }}</span><span class="text-h4" v-if="this.itemHackage">&nbsp;(<a
-            target="_blank"
-            :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
-          >Hackage</a>)</span>
+          <span class="category-item-toolbar-title">
+            <router-link
+              :to="{hash:`item-${itemUid}`}"
+              class="category-item-anchor"
+            >#</router-link>
+
+            <div class="category-item-name-and-badges">
+              <a-link
+                v-if="itemLink"
+                class="category-item-name"
+                :url="itemLink"
+                openInNewTab
+              >{{ itemName }}</a-link>
+              <span class="category-item-name" v-else>{{ itemName }}</span>
+
+              <div class="category-item-badges">
+                <a
+                  v-if="this.itemHackage"
+                  class="text-h6 hackage-link"
+                  target="_blank"
+                  :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
+                >
+                  <v-icon
+                    color="#fff"
+                    class="mr-1"
+                    size="12"
+                  >$vuetify.icons.link</v-icon>hackage</a>
+              </div>
+            </div>
+          </span>
         </v-toolbar-title>
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items class="category-item-toolbar-btns">
-          <category-item-btn
-            title="Move item up"
-            icon="arrow-up"
-            @click="moveItem('up')"
-          />
+        <v-toolbar-items>
+          <div class="category-item-toolbar-btns">
+            <category-item-btn
+              iconSize="18"
+              title="Move item up"
+              icon="arrow-up"
+              @click="moveItem('up')"
+            />
+            <category-item-btn
+              iconSize="18"
+              title="Move item down"
+              icon="arrow-down"
+              @click="moveItem('down')"
+            />
+            <category-item-btn
+              iconSize="18"
+              title="Edit item info"
+              icon="cog"
+              @click="toggleEditItemInfoMenu"
+            >
+              <v-icon
+                v-if="isItemInfoEdited"
+                class="unsaved-changes-icon"
+                color="#6495ed"
+                size="8"
+              >$vuetify.icons.circle</v-icon>
+            </category-item-btn>
 
-          <category-item-btn
-            title="Move item down"
-            icon="arrow-down"
-            @click="moveItem('down')"
-          />
+            <category-item-btn
+              iconSize="18"
+              title="Delete item"
+              icon="trash-alt"
+              @click="deleteItem"
+            />
+          </div>
 
-          <category-item-btn
-            title="Edit item info"
-            icon="cog"
-            @click="toggleEditItemInfoMenu"
-          >
-            <v-icon
-              v-if="isItemInfoEdited"
-              class="edit-item-info-changed-icon"
-              color="#6495ed"
-              size="8"
-            >$vuetify.icons.circle</v-icon>
-          </category-item-btn>
+          <v-menu bottom left offset-y>
+            <template v-slot:activator="{ on }">
+              <v-btn
+                flat
+                icon
+                title="Actions"
+                class="category-toolbar-mobile-menu-btn"
+                v-on="on"
+              >
+                <v-icon
+                  size="18"
+                  color="grey darken-2"
+                >$vuetify.icons.bars</v-icon>
+              </v-btn>
+            </template>
 
-          <category-item-btn
-            title="Delete item"
-            icon="trash-alt"
-            @click="deleteItem"
-          />
+            <v-list class="category-item-toolbar-mobile-menu-list">
+              <v-list-tile>
+                <category-item-btn
+                  showTitle
+                  iconSize="18"
+                  title="Move item up"
+                  icon="arrow-up"
+                  @click="moveItem('up')"
+                />
+              </v-list-tile>
+              <v-list-tile>
+                <category-item-btn
+                  showTitle
+                  iconSize="18"
+                  title="Move item down"
+                  icon="arrow-down"
+                  @click="moveItem('down')"
+                />
+              </v-list-tile>
+              <v-list-tile>
+                <category-item-btn
+                  showTitle
+                  iconSize="18"
+                  title="Edit item info"
+                  icon="cog"
+                  @click="toggleEditItemInfoMenu"
+                >
+                  <v-icon
+                    v-if="isItemInfoEdited"
+                    class="unsaved-changes-icon"
+                    color="#6495ed"
+                    size="8"
+                  >$vuetify.icons.circle</v-icon>
+                </category-item-btn>
+              </v-list-tile>
+              <v-list-tile>
+                <category-item-btn
+                  showTitle
+                  iconSize="18"
+                  title="Delete item"
+                  icon="trash-alt"
+                  @click="deleteItem"
+                />
+              </v-list-tile>
+            </v-list>
+          </v-menu>
         </v-toolbar-items>
       </v-toolbar>
 
       <v-layout column class="pa-3">
         <v-flex>
-          <v-text-field
-            v-model="itemNameEdit"
-            label="Name"
-          />
-          <v-text-field
-            v-model="itemHackageEdit"
-            label="Name on Hackage (optional)"
-          />
-          <v-text-field
-            v-model="itemLinkEdit"
-            label="Site (optional)"
-          />
+          <v-form @keydown.native.enter.ctrl="updateItemInfo">
+            <v-text-field
+              v-model="itemNameEdit"
+              label="Name"
+            />
+            <v-text-field
+              v-model="itemHackageEdit"
+              label="Name on Hackage (optional)"
+            />
+            <v-text-field
+              v-model="itemLinkEdit"
+              label="Site (optional)"
+            />
+          </v-form>
         </v-flex>
         <v-flex align-self-end>
           <v-btn
+            title="Cancel"
+            @click="resetAndToggleEditItemInfoMenu"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="info"
             class="mr-0"
             title="Save"
             :disabled="!isInfoSaveEnabled"
@@ -138,7 +232,17 @@ export default class CategoryItemToolbar extends Vue {
     this.isEditItemInfoMenuOpen = !this.isEditItemInfoMenuOpen
   }
 
+  resetAndToggleEditItemInfoMenu () {
+    this.itemNameEdit = this.itemName
+    this.itemLinkEdit = this.itemLink
+    this.itemHackageEdit = this.itemHackage
+    this.toggleEditItemInfoMenu()
+  }
+
   async updateItemInfo (): Promise<void> {
+    if (!this.isInfoSaveEnabled) {
+      return
+    }
     await this.$store.dispatch('categoryItem/updateItemInfo', {
       id: this.itemUid,
       body: {
@@ -176,23 +280,40 @@ export default class CategoryItemToolbar extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-.category-item-anchor {
-  color: rgb(151, 151, 151);
-}
-.edit-item-info-changed-icon {
-  position: absolute;
-  bottom: 0;
-  right: 5px;
-}
-.category-item-toolbar >>> .v-toolbar__title {
-  overflow: visible;
-}
 .category-item-toolbar {
   display: flex;
   margin: 0;
   box-shadow: none;
 
   >>> {
+    .v-toolbar__content {
+      justify-content: space-between;
+      height: auto !important;
+      min-height: 56px;
+
+      .v-toolbar__title {
+        flex-wrap: wrap;
+        flex: 1;
+        overflow: visible;
+        padding: 12px 0;
+      }
+
+      .spacer {
+        display: none;
+      }
+
+      .v-toolbar__items {
+        height: 100%;
+        margin-top: 10px;
+        align-self: baseline;
+        margin-left: 5px;
+      }
+
+      @media only screen and (max-width: 959px) {
+        padding: 0 8px;
+      }
+    }
+
     .v-expansion-panel__header {
       padding: 0;
       align-items: center;
@@ -202,10 +323,84 @@ export default class CategoryItemToolbar extends Vue {
     .v-expansion-panel__body {
       background: rgb(222, 222, 222);
     }
+  }
+}
+.category-item-toolbar-title {
+  display: inline-flex;
+}
+.category-item-anchor {
+  color: rgb(151, 151, 151);
+}
+.category-item-name-and-badges {
+  margin-left: 0.4rem;
+}
+.category-item-name {
+  white-space: pre-line;
+  word-break: break-word;
+}
+.category-item-badges {
+  display: inline-block;
+  margin-left: 8px;
 
-    .category-item-toolbar-btns > * {
-      margin: 0 2px;
+  > * {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 5px;
+  }
+
+  .hackage-link {
+    background: #5e5184;
+    color: #fff;
+  }
+}
+.unsaved-changes-icon {
+  position: absolute;
+  bottom: 0;
+  right: 5px;
+}
+
+.category-item-toolbar-btns {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.category-toolbar-mobile-menu-btn {
+  display: none;
+  margin: 0;
+}
+
+.category-item-toolbar-mobile-menu-list {
+  >>> .v-list__tile {
+    height: 36px;
+    padding: 0 6px;
+  }
+
+  >>> button {
+    width: 100%;
+    padding: 5px;
+
+    .v-btn__content {
+      justify-content: flex-start;
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .category-toolbar-mobile-menu-btn {
+    display: block;
+  }
+  .category-item-toolbar-btns {
+    display: none;
+  }
+  .category-item-badges {
+    display: block;
+    margin: 5px 0 0 0;
+  }
+  .unsaved-changes-icon {
+    right: unset;
+    left: 13px;
   }
 }
 </style>

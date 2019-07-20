@@ -212,7 +212,7 @@ export default class CategoryItem extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .category-item-body {
   padding: 15px 20px;
 }
@@ -235,14 +235,21 @@ export default class CategoryItem extends Vue {
 
 .category-item-traits > *:not(:last-child) {
   margin-right: 20px;
+
+  @media screen and (max-width: 768px) {
+    margin-right: 0;
+  }
 }
 
-@media screend and (max-width: 768px) {
+@media screen and (max-width: 768px) {
   .category-item-body {
     width: 100%;
   }
   .category-item {
     margin: 0 0 30px;
+  }
+  .category-item-traits {
+    flex-direction: column;
   }
 }
 </style>
