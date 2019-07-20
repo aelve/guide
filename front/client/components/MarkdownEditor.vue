@@ -60,6 +60,10 @@ export default class MarkdownEditor extends Vue {
   }) height: number
   @Prop(Boolean) toolbar: boolean
   @Prop(Boolean) saveOnEnter: boolean
+  @Prop({
+    type: Boolean,
+    default: true
+  }) autofocus: boolean
 
   editor: object = null
   isReady: boolean = false
@@ -172,6 +176,9 @@ export default class MarkdownEditor extends Vue {
   }
 
   focusInputArea () {
+    if (!this.autofocus) {
+      return
+    }
     // this function is triggered right after isReady set to true
     // isReady controls v-show of entire markup of component
     // nextTick is used cause html needs to be rendered after v-show triggered so focus will work
