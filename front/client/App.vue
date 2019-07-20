@@ -121,6 +121,11 @@ ol {
   margin: 0.8rem 0;
 }
 
+ul > li:not(:last-child),
+ol > li:not(:last-child) {
+  margin-bottom: 5px;
+}
+
 li p {
   margin-top: 0;
 }
