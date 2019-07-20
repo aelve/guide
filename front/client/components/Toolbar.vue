@@ -1,7 +1,9 @@
 <template>
   <v-toolbar dark app>
     <v-toolbar-title>
-      <logo />
+      <logo
+        :class="{ 'mobile-hidden': !isSearchFieldHidden }"
+      />
     </v-toolbar-title>
     <v-spacer></v-spacer>
     <search-field
