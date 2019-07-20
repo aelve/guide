@@ -346,7 +346,7 @@ export default class CategoryItemToolbar extends Vue {
     vertical-align: middle;
     display: inline-flex;
     align-items: center;
-    padding: 4px;
+    padding: 0.1px 5px;
     border-radius: 5px;
   }
 
