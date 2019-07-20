@@ -44,7 +44,7 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
   },
   mixins: [conflictDialogMixin]
 })
-export default class CategoryDescriptiom extends Vue {
+export default class CategoryDescription extends Vue {
   editDescriptionShown: boolean = false
   originalDescription: string = _get(this, '$store.state.category.category.description.text')
   modified: string = ''
