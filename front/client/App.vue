@@ -144,6 +144,10 @@ blockquote {
 .v-menu__content {
   margin-top: 5px;
 }
+.svg-inline--fa {
+  width: 1.25em !important;
+  text-align: center !important;
+}
 .v-toolbar__title  {
   letter-spacing: inherit;
 }
