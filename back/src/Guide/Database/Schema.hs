@@ -2,9 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
---
 -- | Schemas to create table for guide database
---
 module Guide.Database.Schema
 (
   setupDatabase,
@@ -12,7 +10,6 @@ module Guide.Database.Schema
 where
 
 import Imports
-import Guide.Database.Connection (connect, run')
 
 import Hasql.Session (Session)
 import Text.RawString.QQ
@@ -21,6 +18,8 @@ import Hasql.Statement (Statement (..))
 import qualified Hasql.Session as HS
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
+
+import Guide.Database.Connection (connect, runS)
 
 
 -- | List of all migrations.
@@ -43,7 +42,7 @@ migrations =
 setupDatabase :: IO ()
 setupDatabase = do
   conn <- connect
-  mbSchemaVersion <- run' getSchemaVersion conn
+  mbSchemaVersion <- runS getSchemaVersion conn
   case mbSchemaVersion of
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
@@ -51,7 +50,7 @@ setupDatabase = do
   for_ migrations $ \(migrationVersion, migration) ->
     when (migrationVersion > schemaVersion) $ do
       format "Migration {}: " migrationVersion
-      run' (migration >> setSchemaVersion migrationVersion) conn
+      runS (migration >> setSchemaVersion migrationVersion) conn
       formatLn "done."
 
 ----------------------------------------------------------------------------
@@ -184,6 +183,6 @@ v0_createTablePendingEdits = HS.sql [r|
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
     ip inet,                        -- IP address of edit maker
-    time_ timestamp NOT NULL        -- When the edit was created
+    time_ timestamptz NOT NULL      -- When the edit was created
   );
   |]

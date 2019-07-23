@@ -199,8 +199,8 @@ createTrait itemId CCreateTrait{..} =
       throwError err400{errReasonPhrase = "'content' can not be empty"}
     traitId <- randomShortUid
     addEdit . fst =<< case cctType of
-      Con -> dbUpdate (AddCon itemId traitId cctContent)
-      Pro -> dbUpdate (AddPro itemId traitId cctContent)
+      CCon -> dbUpdate (AddCon itemId traitId cctContent)
+      CPro -> dbUpdate (AddPro itemId traitId cctContent)
     pure traitId
 
 -- | Update the text of a trait (pro/con).

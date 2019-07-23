@@ -22,7 +22,7 @@ cabal.config
 *.swp
 *.swo
 *#
-*yaml.lock
+*.lock
 
 
 # IDE/support

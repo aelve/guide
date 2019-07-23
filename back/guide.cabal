@@ -58,9 +58,10 @@ library
       Guide.Api.Guider
     Guide.Database
       Guide.Database.Connection
+      Guide.Database.Convert
       Guide.Database.Get
       Guide.Database.Schema
-      Guide.Database.Convert
+      Guide.Database.Types
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions

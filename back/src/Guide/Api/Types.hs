@@ -308,7 +308,7 @@ type Api = RequestDetails :> ToServant Site AsApi
 --------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
-data CTraitType = Pro | Con
+data CTraitType = CPro | CCon
     deriving (Show, Generic)
 
 instance ToSchema CTraitType where

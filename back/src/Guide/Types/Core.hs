@@ -107,11 +107,6 @@ instance A.ToJSON Trait where
 data TraitType = Pro | Con
   deriving Eq
 
--- | Show instance for TraitType
-instance Show TraitType where
-  show Pro = "pro"
-  show Con = "con"
-
 ----------------------------------------------------------------------------
 -- Item
 ----------------------------------------------------------------------------
