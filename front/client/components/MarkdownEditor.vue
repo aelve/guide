@@ -3,7 +3,10 @@
      cause easyMDE adds new html elements next to textarea -->
   <div
     class="elevation-2"
-    :class="{'markdown-editor_bottom-toolbar': bottomToolbar}"
+    :class="{
+      'markdown-editor_has-bottom-toolbar': bottomToolbar,
+      'markdown-editor_has-top-toolbar': toolbar
+    }"
     @keydown.capture.enter="onEnterDown"
     @keydown.ctrl.enter="onCtrlEnterDown"
     @keydown.esc="cancel"
@@ -15,7 +18,7 @@
       flat
       height="30"
       color="#e5e5e5"
-      class="pa-2 markdown-editor-bottom-toolbar"
+      class="pa-2 markdown-editor__bottom-toolbar"
       v-if="bottomToolbar"
       v-show="editor"
     >
@@ -226,19 +229,10 @@ export default class MarkdownEditor extends Vue {
 </script>
 
 <style lang="postcss" scoped>
->>> {
-  .editor-toolbar,
-  .CodeMirror {
-    border: none;
-    border-radius: 0;
-  }
-
-  .editor-toolbar,
-  .markdown-editor_bottom-toolbar .CodeMirror {
-    border-bottom: 1px solid #bbb;
-  }
-}
 >>> .CodeMirror {
+  border: 1px solid #bbb;
+  border-radius: 0;
+
   /* Fixes cutting of bottom edge of input
      https://github.com/sparksuite/simplemde-markdown-editor/issues/619
   */
@@ -264,6 +258,16 @@ export default class MarkdownEditor extends Vue {
   .cm-comment {
     background: unset;
   }
+}
+.markdown-editor_has-top-toolbar >>> .CodeMirror {
+  border-top: 1px solid #ddd;
+}
+.markdown-editor_has-bottom-toolbar >>> .CodeMirror {
+  border-bottom: 1px solid #ddd;
+}
+.markdown-editor__bottom-toolbar {
+  border: 1px solid #bbb !important;
+  border-top: none !important;
 }
 >>> .v-toolbar__content {
   padding: 0;
