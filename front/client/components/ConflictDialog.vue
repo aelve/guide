@@ -1,24 +1,22 @@
 <template>
   <v-dialog
     lazy
-    :value="value"
     persistent
-    max-width="99vw"
+    :value="value"
   >
     <slot slot="activator" />
 
     <div class="conflict-box">
       <div class="conflict-item">
-        <p class="title mb-2">Your version</p>
-        <v-card 
+        <h2 class="mt-0">Your version</h2>
+        <v-card
           color="#fdd"
           class="conflict-content"
         >
           <v-card-text>{{modified}}</v-card-text>
         </v-card>
         <v-btn
-          depressed
-          small
+          class="conflict-dialog-btn"
           title="Submit this version, disregard changes on server"
           @click="save(modified)"
         >
@@ -26,37 +24,48 @@
         </v-btn>
       </div>
       <div class="conflict-item">
-        <p class="title mb-2">Version on server</p>
+        <h2 class="mt-0">Version on server</h2>
         <v-card 
           color="#cfc"
           class="conflict-content"
         >
           <v-card-text>{{serverModified}}</v-card-text>
         </v-card>
-        <v-btn 
-          depressed 
-          small
-          title="Accept this version, disregard my changes"
+        <v-btn
+          class="conflict-dialog-btn"
+          title="Submit this version, disregard my changes"
           @click="save(serverModified)"
         >
           Accept this version, disregard my changes
         </v-btn>
       </div>
       <div class="conflict-item">
-        <p class="title mb-2">Merged version</p>
+        <h2 class="mt-0">Merged version</h2>
         <markdown-editor
-          class="mb-2"
           toolbar
-          :value="merged"
+          class="conflict-content_markdown"
+          height="auto"
+          v-model="mergedEdit"
+          :autofocus="false"
+          :bottomToolbar="false"
           @save="save"
         />
+        <v-btn
+          class="conflict-dialog-btn"
+          title="Submit merged version"
+          @click="save(mergedEdit)"
+        >
+          Submit the merged version
+        </v-btn>
       </div>
     </div>
   </v-dialog>
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import Vue from 'vue'
+import Component from 'vue-class-component'
+import { Prop, Watch } from 'vue-property-decorator'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 
 @Component({
@@ -70,6 +79,13 @@ export default class ConflictDialog extends Vue {
   @Prop(String) modified!: string
   @Prop(String) merged!: string
 
+  mergedEdit = this.merged
+
+  @Watch('merged')
+  onMergedChange (newVal) {
+    this.mergedEdit = newVal
+  }
+
   save (newValue: string) {
     this.$emit('save', newValue)
   }
@@ -77,45 +93,88 @@ export default class ConflictDialog extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
+>>> .v-dialog {
+  overflow-x: hidden;
+}
 .conflict-box {
   display: flex;
   background: #fff;
   padding: 20px;
-  justify-content: space-between;
-}
-.conflict-content {
-  flex: 1;
-  margin-bottom: 16px;
-  white-space: pre-wrap;
+  max-height: 90vh;
+
+  > *:not(:last-child) {
+    margin-right: 1.65rem;
+  }
 }
 .conflict-item {
-  width: 32%;
   display: flex;
-  flex-flow: column;
-}
+  max-height: 100%;
+  overflow: hidden;
+  align-items: center;
+  flex-direction: column;
+  flex: 1;
 
-@media screen and (max-width: 1200px) {
-  .conflict-box {
-    flex-wrap: wrap;
-  }
-
-  .conflict-item {
-    width: 49%;
-  }
-
-  .conflict-item:nth-last-child(1) {
-    width: 98%;
+  > h2 {
+    text-align: center;
   }
 }
+.conflict-content,
+.conflict-content_markdown {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  overflow: auto;
 
-@media screen and (max-width: 768px) {
+  >>> {
+    .CodeMirror {
+      flex: 1;
+    }
+    .v-card__text {
+      word-break: break-word;
+    }
+  }
+}
+.conflict-dialog-btn {
+  display: block;
+  margin: 0;
+  min-height: 60px;
+  min-width: 220px;
+  max-height: 60px;
+  max-width: 220px;
+  padding: 6px 16px;
+  font-weight: bold;
+  font-size: 0.7rem;
+
+  >>> .v-btn__content {
+    width: unset;
+    white-space: normal;
+  }
+}
+/* Without this styling codemirror input area scrolling breaks */
+.conflict-content_markdown >>> .CodeMirror-scroll {
+  min-height: 0 !important;
+}
+@media screen and (max-width: 900px) {
   .conflict-box {
-    flex-flow: column;
+    flex-direction: column;
+    max-height: unset;
+
+    > *:not(:last-child) {
+      margin-right: 0;
+      margin-bottom: 1.65rem;
+    }
   }
 
-  .conflict-item {
-    width: 100%;
+  /* For every content area to be the same */
+  .conflict-content,
+  .conflict-content_markdown {
+    max-height: 350px;
+    /* Without height setting codemirror input area is not scrollable */
+    height: 350px;
   }
 }
 </style>
