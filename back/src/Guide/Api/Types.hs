@@ -313,12 +313,22 @@ data CTraitType = CPro | CCon
 
 instance ToSchema CTraitType where
     declareNamedSchema = genericDeclareNamedSchema schemaOptions
+      { constructorTagModifier = \case
+          "CPro" -> "Pro"
+          "CCon" -> "Con"
+          other -> error ("TraitType schema: unknown tag " <> show other)
+      }
 
 instance A.ToJSON CTraitType where
-  toJSON = A.genericToJSON jsonOptions
+  toJSON = \case
+    CPro -> "Pro"
+    CCon -> "Con"
 
 instance A.FromJSON CTraitType where
-  parseJSON = A.genericParseJSON jsonOptions
+  parseJSON = \case
+    "Pro" -> pure CPro
+    "Con" -> pure CCon
+    tag    -> fail ("unknown TraitType: " ++ show tag)
 
 ----------------------------------------------------------------------------
 -- CDirection

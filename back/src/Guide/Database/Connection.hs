@@ -50,12 +50,12 @@ dbName = "guide"
 
 -- | Like 'HS.run', but errors out in case of failure. For DatabaseMonad
 runDM :: DatabaseMonad a -> Connection -> IO a
-runDM s c = either (error . show) pure
-  =<< either (error . show) pure
-  =<< HS.run (runExceptT s) c
+runDM s c = eitherRun =<< eitherRun =<< HS.run (runExceptT s) c
 
--- | -- | Like 'HS.run', but errors out in case of failure. For Session
+-- | Like 'HS.run', but errors out in case of failure. For Session
 runS :: Session a -> Connection -> IO a
-runS s c = either (error . show) pure =<< HS.run s c
+runS s c = eitherRun =<< HS.run s c
 
-
+-- | Abstract either
+eitherRun :: Show e => Either e a -> IO a
+eitherRun = either (error . show) pure
