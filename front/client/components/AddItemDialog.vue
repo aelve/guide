@@ -14,6 +14,7 @@
           lazy-validation
           v-model="isValid"
           @keydown.native.prevent.enter="submit"
+          ref="form"
         >
           <!-- v-if="value" - cause without it autofocus triggers on first modal open
           https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
@@ -50,11 +51,11 @@
         </v-btn>
         <v-btn
           color="info"
-          title="Submit"
+          title="Create"
           :disabled="!isValid || !name"
           @click.native="submit"
         >
-          Submit
+          Create
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -91,9 +92,10 @@ export default class AddItemDialog extends Vue {
   }
 
   async submit () {
-    if (!this.isValid || !this.name) {
+    if (!this.$refs.form.validate()) {
       return
     }
+
     const createdId = await this.$store.dispatch('categoryItem/createItem', {
       category: this.categoryId,
       name: this.name,
