@@ -86,7 +86,7 @@ export default class MarkdownEditor extends Vue {
   }
 
   get heightValue () {
-    return Number(this.height) === NaN
+    return Number(this.height)
       ? this.height
       : `${this.height}px`
   }
