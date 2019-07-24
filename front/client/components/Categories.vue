@@ -179,15 +179,12 @@ export default class Categories extends Vue {
   display: flex;
   flex-direction: column;
   align-items: baseline;
-
-  > h1 {
-    max-width: 90%;
-    word-break: break-word;
-  }
 }
 .group-title {
   font-weight: 900;
   font-size: 1.6rem;
+  max-width: 90%;
+  word-break: break-word;
 }
 .category-title {
   line-height: 1.2;
