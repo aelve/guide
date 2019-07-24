@@ -176,7 +176,13 @@ export default class CategoryItemTraits extends Vue {
     await this.$store.dispatch('category/reloadCategory')
   }
 
-  @Confirm({ text: 'delete this trait' })
+  @Confirm({
+    text: 'delete this trait',
+    confirmBtnText: 'Delete',
+    confirmBtnProps: {
+      color: 'error'
+    }
+  })
   async deleteTrait (trait: any) {
     await this.$store.dispatch('categoryItem/deleteItemTrait', {
       itemId: this.itemId,

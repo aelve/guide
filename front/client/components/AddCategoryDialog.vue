@@ -45,13 +45,13 @@
             Cancel
           </v-btn>
           <v-btn
-            title="Submit"
+            title="Create"
             color="info"
             class="add-category-submit-btn"
-            :disabled="!isValid"
+            :disabled="!isValid || !categoryName"
             @click.native="submit"
           >
-            Submit
+            Create
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -66,11 +66,12 @@
       ref="duplicateConfirm"
     >
       This group already has categories with the same name:
-      <a
+      <router-link
         v-for="category in sameNameCategories"
         :key="category.id"
+        :to="`/haskell/${getCategoryUrl(category)}`"
         target="_blank"
-      >{{ category.title }}</a>
+      >{{ category.title }}</router-link>
     </ConfirmDialog>
   </div>
 </template>
@@ -82,6 +83,7 @@ import { Prop, Watch } from 'vue-property-decorator'
 import { CategoryService } from 'client/service/Category'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 import DeferredPromise from 'utils/DeferredPromise'
+import getCategoryUrl from 'client/helpers/getCategoryUrl'
 
 @Component({
   components: {
@@ -157,6 +159,8 @@ export default class AddCategoryDialog extends Vue {
     })
     return promise
   }
+
+  getCategoryUrl = getCategoryUrl
 }
 </script>
 

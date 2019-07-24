@@ -263,7 +263,13 @@ export default class CategoryItemToolbar extends Vue {
     return this.itemLink === trimmed ? this.itemLink : normalizeUrl(trimmed)
   }
 
-  @Confirm({ text: 'delete this item' })
+  @Confirm({
+    text: 'delete this item',
+    confirmBtnText: 'Delete',
+    confirmBtnProps: {
+      color: 'error'
+    }
+  })
   async deleteItem (): Promise<void> {
     await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
     await this.$store.dispatch('category/reloadCategory')
