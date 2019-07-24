@@ -1,25 +1,16 @@
 <template>
-  <v-container grid-list-md>
-    <v-layout
-      row
-      wrap
-      justify-space-between
-    >
-      <v-flex
-        class="mr-3 mt-3"
-        column
-        xs12
-        sm5
-        md3
-        lg3
-        xl1
+  <div class="categories">
+    <div class="categories-flex-container">
+
+      <div
+        class="categories-column"
         v-for="(groupCategories, groupName, index) in groups"
         :key="index"
       >
         <div class="category-group">
-          <h1 class="mt-0 mb-2 display-1 font-weight-black">
+          <h2 class="mt-0 mb-2 group-title">
             {{ groupName }}
-          </h1>
+          </h2>
 
           <router-link
             class="category-title ml-2"
@@ -61,7 +52,7 @@
 
           <v-btn
             flat
-            class="ma-0 px-1"
+            class="ma-0 mt-1 px-1"
             color="grey darken-2"
             title="Add new category"
             @click="openAddCategoryDialog(groupName)"
@@ -70,13 +61,15 @@
             Add new category
           </v-btn>
         </div>
-      </v-flex>
-      <add-category-dialog
-        v-model="isAddGroupDialogOpen"
-        :groupName="addCategoryGroupName"
-      />
-    </v-layout>
-  </v-container>
+      </div>
+
+    </div>
+
+    <add-category-dialog
+      v-model="isAddGroupDialogOpen"
+      :groupName="addCategoryGroupName"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -132,22 +125,85 @@ export default class Categories extends Vue {
 }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
+.categories {
+  margin-top: 30px;
+}
+.categories-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: -15px -15px 0 0;
+  padding: 0 100px;
+
+  &:after {
+    content: "";
+    flex: 1;
+  }
+
+  @media screen and (max-width: 1150px) {
+    padding: 0 60px;
+  }
+
+  @media screen and (max-width: 830px) {
+    padding: 0 40px;
+  }
+}
+.categories-column {
+  margin: 15px 15px 0 0;
+  flex-shrink: 0;
+  flex-grow: 99999;
+
+  @media screen and (min-width: 1904px) {
+    flex-basis: calc(20% - 15px * 5);
+    max-width: calc(20% - 15px);
+  }
+  @media screen and (max-width: 1904px) {
+    flex-basis: calc(25% - 15px * 4);
+    max-width: calc(25% - 15px);
+  }
+  @media screen and (max-width: 1150px) {
+    flex-basis: calc(33.33333% - 15px * 3);
+    max-width: calc(33.33333% - 15px);
+  }
+  @media screen and (max-width: 830px) {
+    flex-basis: calc(50% - 15px * 2);
+    max-width: calc(50% - 15px);
+  }
+  @media screen and (max-width: 480px) {
+    flex-basis: calc(100% - 15px * 1);
+    max-width: calc(100% - 15px);
+  }
+}
 .category-group {
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+
+  > h1 {
+    max-width: 90%;
+    word-break: break-word;
+  }
+}
+.group-title {
+  font-weight: 900;
+  font-size: 1.6rem;
 }
 .category-title {
-  display: block;
-  font-size: 0.8rem;
   line-height: 1.2;
+  font-size: 0.9rem;
   font-weight: 600;
 }
-.status-title {
-  font-size: 0.75rem;
-  margin: 0 0 4px 8px;
-
+.category-title:not(:first-child) {
+  margin-top: 5px;
 }
-.category-title:not(:last-child) {
-  margin-bottom: 5px;
+.status-title {
+  font-size: 0.9rem;
+  margin: 4px 0 0 8px;
+  line-height: 1.7;
+
+  + .category-title {
+    margin-top: 0;
+  }
 }
 </style>
