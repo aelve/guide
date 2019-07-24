@@ -3,8 +3,12 @@
      cause easyMDE adds new html elements next to textarea -->
   <div
     class="elevation-2"
+    :class="{
+      'markdown-editor_has-bottom-toolbar': bottomToolbar,
+      'markdown-editor_has-top-toolbar': toolbar
+    }"
     @keydown.capture.enter="onEnterDown"
-    @keydown.ctrl.enter="save"
+    @keydown.ctrl.enter="onCtrlEnterDown"
     @keydown.esc="cancel"
     v-show="editor && isReady"
   >
@@ -14,7 +18,8 @@
       flat
       height="30"
       color="#e5e5e5"
-      class="pa-2 markdown-editor-bottom-toolbar"
+      class="pa-2 markdown-editor__bottom-toolbar"
+      v-if="bottomToolbar"
       v-show="editor"
     >
       <v-toolbar-items>
@@ -55,17 +60,35 @@ export default class MarkdownEditor extends Vue {
     default: ''
   }) value: string
   @Prop({
-    type: Number,
+    type: [Number, String],
     default: 300
-  }) height: number
+  }) height: number | string
   @Prop(Boolean) toolbar: boolean
   @Prop(Boolean) saveOnEnter: boolean
+  @Prop({
+    type: Boolean,
+    default: true
+  }) saveOnCtrlEnter: boolean
+  @Prop({
+    type: Boolean,
+    default: true
+  }) autofocus: boolean
+  @Prop({
+    type: Boolean,
+    default: true
+  }) bottomToolbar: boolean
 
   editor: object = null
   isReady: boolean = false
 
   get saveTip () {
     return `press${this.saveOnEnter ? ' Enter or' : ''} Ctrl+Enter to save`
+  }
+
+  get heightValue () {
+    return Number(this.height)
+      ? this.height
+      : `${this.height}px`
   }
 
   @Watch('value')
@@ -91,7 +114,7 @@ export default class MarkdownEditor extends Vue {
       initialValue: this.value,
       spellChecker: false,
       status: false,
-      minHeight: `${this.height}px`,
+      // minHeight: this.heightValue,
       toolbar: this.toolbar
         ? [
           'bold',
@@ -168,18 +191,28 @@ export default class MarkdownEditor extends Vue {
     if (!inputAreaEl) {
       return
     }
-    inputAreaEl.style.height = `${this.height}px`
+    inputAreaEl.style.height = this.heightValue
   }
 
   focusInputArea () {
+    if (!this.autofocus) {
+      return
+    }
     // this function is triggered right after isReady set to true
     // isReady controls v-show of entire markup of component
     // nextTick is used cause html needs to be rendered after v-show triggered so focus will work
-    this.$nextTick(() => document.querySelector('.CodeMirror textarea').focus())
+    this.$nextTick(() => this.editor.codemirror.focus())
   }
 
   onEnterDown (event: KeyboardEvent) {
     if (this.saveOnEnter) {
+      event.preventDefault()
+      this.save()
+    }
+  }
+
+  onCtrlEnterDown (event) {
+    if (this.saveOnCtrlEnter) {
       event.preventDefault()
       this.save()
     }
@@ -196,18 +229,15 @@ export default class MarkdownEditor extends Vue {
 </script>
 
 <style lang="postcss" scoped>
->>> .editor-toolbar,
 >>> .CodeMirror {
-  border: none;
+  border: 1px solid #bbb;
   border-radius: 0;
-  border-bottom: 1px solid #bbb;
-}
->>> .CodeMirror {
+
   /* Fixes cutting of bottom edge of input
      https://github.com/sparksuite/simplemde-markdown-editor/issues/619
   */
   box-sizing: content-box;
-  font-size: 16px;
+  font-size: 1rem;
 
   .cm-header-1 {
     font-size: 2rem;
@@ -229,10 +259,21 @@ export default class MarkdownEditor extends Vue {
     background: unset;
   }
 }
+.markdown-editor_has-top-toolbar >>> .CodeMirror {
+  border-top: 1px solid #ddd;
+}
+.markdown-editor_has-bottom-toolbar >>> .CodeMirror {
+  border-bottom: 1px solid #ddd;
+}
+.markdown-editor__bottom-toolbar {
+  border: 1px solid #bbb !important;
+  border-top: none !important;
+}
 >>> .v-toolbar__content {
-  padding-left: 0;
+  padding: 0;
 }
 .markdown-editor-save-tip {
   font-size: 11px;
+  line-height: 14px;
 }
 </style>

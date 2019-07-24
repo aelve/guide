@@ -94,7 +94,7 @@ export default class Category extends Vue {
   margin: 0 auto;
 }
 
-@media screend and (max-width: 768px) {
+@media screen and (max-width: 768px) {
   .category-item {
     margin: 0 0 30px;
   }

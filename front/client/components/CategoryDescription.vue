@@ -2,7 +2,7 @@
   <div class="category-description">
     <div v-if="!editDescriptionShown">
       <p v-if="!categoryDescription">This category has no description yet, you can contribute to the category by adding description</p>
-      <div class="description-content" v-else v-html="categoryDescription" />
+      <div class="category-description__content" v-else v-html="categoryDescription" />
     </div>
 
     <markdown-editor
@@ -44,7 +44,7 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
   },
   mixins: [conflictDialogMixin]
 })
-export default class CategoryDescriptiom extends Vue {
+export default class CategoryDescription extends Vue {
   editDescriptionShown: boolean = false
   originalDescription: string = _get(this, '$store.state.category.category.description.text')
   modified: string = ''
@@ -95,24 +95,11 @@ export default class CategoryDescriptiom extends Vue {
 .category-description {
   margin: 0 0 40px;
 }
-
-.category-description {
-  font-size: 16px;
+.category-description__content > :first-child {
+  margin-top: 0;
 }
-
-.category-description >>> {
-  h1 {
-    font-size: 1.4rem;
-    margin: 15px 0;
-  }
-  h2 {
-    font-size: 1.2rem;
-    margin: 10px 0;
-  }
-  h3 {
-    font-size: 1rem;
-    margin: 5px 0;
-  }
+.category-description__content > :last-child {
+  margin-bottom: 0;
 }
 </style>
 

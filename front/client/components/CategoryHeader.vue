@@ -1,26 +1,25 @@
 <template>
   <div class="category-header">
-    <h2 class="category-name-title" :title="categoryTitle">
+    <h1 class="category-name-title" :title="categoryTitle">
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <a-link
             openInNewTab
             aria-label="RSS feed for all new items in this category"
             :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-            class="rss-link mr-1"
+            class="rss-link"
             v-on="on"
           >
             <v-icon
-              size="24"
               class="rss-link-icon"
             >$vuetify.icons.rss</v-icon>
           </a-link>
         </template>
         <span>RSS feed for all new items in this category</span>
       </v-tooltip>{{categoryTitle}}
-    </h2>
+    </h1>
 
-    <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="category-header__second-row">
       <div class="category-group-title-wrap">
         in <span :title="categoryGroup" class="category-group-title"> {{ categoryGroup }} </span>
       </div>
@@ -56,29 +55,27 @@
           >
             <v-icon
               color="grey darken-2"
-              size="16"
+              size="18"
             >$vuetify.icons.bars</v-icon>
           </v-btn>
         </template>
 
-        <v-list>
-          <v-list-tile class="category-actions-menu-item">
+        <v-list class="category-actions-menu-list">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="New item"
               icon="plus"
-              class="mr-1"
               @click="openAddItemDialog"
             />
           </v-list-tile>
-          <v-list-tile class="category-actions-menu-item">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="Category settings"
               icon="cog"
-              class="mr-1"
               @click="openCategorySettingsEditDialog"
             />
           </v-list-tile>
-          <v-list-tile class="category-actions-menu-item">
+          <v-list-tile>
             <CategoryHeaderBtn
               text="Delete category"
               icon="trash-alt"
@@ -161,35 +158,31 @@ export default class CategoryHeader extends Vue {
   }
 }
 .category-name-title {
-  font-size: 28px;
-  margin-bottom: 5px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 0 0 5px;
   letter-spacing: -1px;
-
-  @media (max-width: 768px) {
-    font-size: 24px;
-  }
-
-  @media (max-width: 425px) {
-    font-size: 20px;
-  }
 }
 
 .rss-link {
   /* For vertical aligning on one line with category title */
   font-size: 1px;
+  margin-right: 6px;
 }
 
 .rss-link-icon {
-  @media (max-width: 768px) {
-    height: 20px !important;
-  }
-  @media (max-width: 425px) {
-    height: 18px !important;
-  }
+  height: calc(1.8rem - 5px) !important;
+  width: auto;
 
   &:hover {
     color: #000;
   }
+}
+
+.category-header__second-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .category-group-title-wrap {
@@ -202,7 +195,6 @@ export default class CategoryHeader extends Vue {
 
 .category-group-title {
   font-weight: 600;
-  font-size: 16px;
 }
 
 .category-actions-menu-btn {
@@ -215,11 +207,10 @@ export default class CategoryHeader extends Vue {
   flex: 1;
 }
 
-.category-actions-menu-item {
-  height: 36px;
-
+.category-actions-menu-list {
   >>> .v-list__tile {
     height: 36px;
+    padding: 0 6px;
   }
 
   >>> button {

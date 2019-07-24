@@ -1,5 +1,6 @@
 <template>
   <v-footer
+    class="pa-2"
     height="auto"
     color="lighten-1"
   >
@@ -8,8 +9,9 @@
       align-center
       row
       wrap
+      class="footer"
     >
-      <span class="mr-3">
+      <span>
         made by
         <a-link
           openInNewTab
@@ -18,7 +20,7 @@
           Aelve
         </a-link>
       </span>
-      <span class="mr-3">
+      <span>
         <a-link
           openInNewTab
           url="https://github.com/aelve/guide"
@@ -49,8 +51,15 @@ import Component from 'vue-class-component'
 export default class AFooter extends Vue { }
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .footer-link {
   display: inline-block;
+}
+.footer {
+  margin-right: -10px;
+
+  > * {
+    margin-right: 10px;
+  }
 }
 </style>

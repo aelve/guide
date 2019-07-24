@@ -7,7 +7,7 @@
     v-bind="$attrs"
     v-on="$listeners"
   >
-    <v-icon size="14" class="mr-1" left>{{`$vuetify.icons.${icon}`}}</v-icon>
+    <v-icon size="18" class="mr-1">{{`$vuetify.icons.${icon}`}}</v-icon>
     {{ text }}
   </v-btn>
 </template>
@@ -28,8 +28,6 @@ export default class CategoryHeaderBtn extends Vue {
 .category-header-btn {
   margin: 0;
   padding: 0 4px;
-  height: 28px;
-  font-size: 12px;
   font-weight: bold;
 }
 </style>

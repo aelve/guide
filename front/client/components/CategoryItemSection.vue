@@ -1,6 +1,6 @@
 <template>
   <div class="category-item-section">
-    <h3 class="category-item-section__title title font-weight-bold mb-1">
+    <h3 class="category-item-section__title title font-weight-bold mb-1 mt-0">
       {{ title }}
       <category-item-btn
         small

@@ -1,16 +1,21 @@
 <template>
   <v-btn
-    :icon="!!icon"
-    class="ma-0"
+    :icon="!!icon && !showTitle"
+    flat
+    class="ma-0 font-weight-bold"
+    color="grey darken-2"
     :style="style"
+    :title="title"
     v-bind="$attrs"
     v-on="$listeners"
   >
     <v-icon
       v-if="icon"
       color="grey darken-2"
+      :class="{ 'mr-1': showTitle }"
       :size="iconSizeValue"
     >{{ iconText }}</v-icon>
+    <template v-if="showTitle"> {{ title }} </template>
     <slot />
   </v-btn>
 </template>
@@ -27,6 +32,8 @@ export default class CategoryItemBtn extends Vue {
   @Prop(Boolean) small: boolean
   @Prop(String) size: string
   @Prop(String) iconSize: string
+  @Prop(String) title: string
+  @Prop(Boolean) showTitle: boolean
 
   get style () {
     // Size prop overlaps small prop

@@ -28,6 +28,10 @@ export default class SearchField extends Vue {
   setSearchInput (value: string) {
     this.$store.commit('wiki/setSearchInput', value)
   }
+
+  focus () {
+    this.$children[0].focus()
+  }
 }
 </script>
 
