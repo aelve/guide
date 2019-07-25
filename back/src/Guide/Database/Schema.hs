@@ -42,7 +42,7 @@ migrations =
 setupDatabase :: IO ()
 setupDatabase = do
   conn <- connect
-  mbSchemaVersion <- runSession getSchemaVersion conn
+  mbSchemaVersion <- runSession conn getSchemaVersion
   case mbSchemaVersion of
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
@@ -50,7 +50,7 @@ setupDatabase = do
   for_ migrations $ \(migrationVersion, migration) ->
     when (migrationVersion > schemaVersion) $ do
       format "Migration {}: " migrationVersion
-      runSession (migration >> setSchemaVersion migrationVersion) conn
+      runSession conn (migration >> setSchemaVersion migrationVersion)
       formatLn "done."
 
 ----------------------------------------------------------------------------

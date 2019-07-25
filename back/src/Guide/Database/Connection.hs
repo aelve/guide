@@ -6,14 +6,19 @@ module Guide.Database.Connection
        ( connect
        , runSessionExceptT
        , runSession
+       , runTransactionExceptT
+       , runTransaction
        ) where
 
+import Imports
 import Hasql.Connection (Connection, Settings)
 import Hasql.Session (Session)
-import Imports
+import Hasql.Transaction (Transaction)
+import Hasql.Transaction.Sessions (Mode, IsolationLevel(..))
 
 import qualified Hasql.Connection as HC
 import qualified Hasql.Session as HS
+import qualified Hasql.Transaction.Sessions as HT
 
 import Guide.Database.Types (DatabaseError)
 
@@ -48,17 +53,38 @@ dbName = "guide"
 -- Utilities
 ----------------------------------------------------------------------------
 
--- | Like 'HS.run', but errors out in case of failure.
---
--- For @ExceptT Session@.
-runSessionExceptT :: ExceptT DatabaseError Session a -> Connection -> IO a
-runSessionExceptT s c = unwrapRight =<< unwrapRight =<< HS.run (runExceptT s) c
+-- | Run an @ExceptT Session@ against the given database connection,
+-- throwing an 'error' in case of failure.
+runSessionExceptT :: Connection -> ExceptT DatabaseError Session a -> IO a
+runSessionExceptT connection session =
+  unwrapRight =<< unwrapRight =<< HS.run (runExceptT session) connection
 
--- | Like 'HS.run', but errors out in case of failure.
+-- | Run a @Session@ against the given database connection, throwing an
+-- 'error' in case of failure.
+runSession :: Connection -> Session a -> IO a
+runSession connection session =
+  unwrapRight =<< HS.run session connection
+
+-- | Run an @ExceptT Transaction@ against the given database connection,
+-- throwing an 'error' in case of failure.
 --
--- For @Session@.
-runSession :: Session a -> Connection -> IO a
-runSession s c = unwrapRight =<< HS.run s c
+-- The transaction is ran with the strongest ('Serializable') isolation
+-- level. Use 'HT.transaction' if you need a different isolation level.
+runTransactionExceptT
+  :: Connection -> Mode -> ExceptT DatabaseError Transaction a -> IO a
+runTransactionExceptT connection mode transaction =
+  unwrapRight =<< unwrapRight =<<
+  HS.run (HT.transaction Serializable mode (runExceptT transaction)) connection
+
+-- | Run a @Transaction@ against the given database connection, throwing an
+-- 'error' in case of failure.
+--
+-- The transaction is ran with the strongest ('Serializable') isolation
+-- level. Use 'HT.transaction' if you need a different isolation level.
+runTransaction :: Connection -> Mode -> Transaction a -> IO a
+runTransaction connection mode transaction =
+  unwrapRight =<<
+  HS.run (HT.transaction Serializable mode transaction) connection
 
 -- | Unwrap 'Either', failing in case of 'Left'.
 unwrapRight :: Show e => Either e a -> IO a

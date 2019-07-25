@@ -134,6 +134,7 @@ library
                      , hashable
                      , haskell-src-meta
                      , hasql
+                     , hasql-transaction
                      , http-api-data
                      , http-client
                      , http-client-tls
