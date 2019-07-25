@@ -316,7 +316,7 @@ instance ToSchema CTraitType where
       { constructorTagModifier = \case
           "CPro" -> "Pro"
           "CCon" -> "Con"
-          other -> error ("СTraitType schema: unknown tag " <> show other)
+          other -> error ("CTraitType schema: unknown value " <> show other)
       }
 
 instance A.ToJSON CTraitType where
@@ -325,9 +325,10 @@ instance A.ToJSON CTraitType where
     CCon -> "Con"
 
 instance A.FromJSON CTraitType where
-  parseJSON traitType =
-        A.withText "Pro" (const (pure CPro)) traitType
-    <|> A.withText "down" (const (pure CCon)) traitType
+  parseJSON = A.withText "CTraitType" $ \case
+    "Pro" -> pure CPro
+    "Con" -> pure CCon
+    other -> fail ("unknown trait type " <> show other)
 
 ----------------------------------------------------------------------------
 -- CDirection
@@ -342,7 +343,7 @@ instance ToSchema CDirection where
     { constructorTagModifier = \case
         "DirectionUp" -> "up"
         "DirectionDown" -> "down"
-        other -> error ("Direction schema: unknown tag " <> show other)
+        other -> error ("CDirection schema: unknown value " <> show other)
     }
 
 instance A.ToJSON CDirection where
@@ -351,9 +352,10 @@ instance A.ToJSON CDirection where
     DirectionDown -> "down"
 
 instance A.FromJSON CDirection where
-  parseJSON direction =
-        A.withText "up" (const (pure DirectionUp)) direction
-    <|> A.withText "down" (const (pure DirectionDown)) direction
+  parseJSON = A.withText "CDirection" $ \case
+    "up" -> pure DirectionUp
+    "down" -> pure DirectionDown
+    other -> fail ("unknown direction " <> show other)
 
 ----------------------------------------------------------------------------
 -- CCreateItem
