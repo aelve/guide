@@ -435,27 +435,6 @@ createItem t = do
 itemName :: CanSelect s => s -> ComplexSelector
 itemName item = item :// ".item-name"
 
-itemGroup :: CanSelect s => s -> ComplexSelector
-itemGroup item = item :// ".item-group"
-
-setItemGroup :: CanSelect s => Text -> s -> WD ()
-setItemGroup g item = do
-  form <- openItemEditForm item
-  sel <- select (form :// ByName "group")
-  opt <- select (sel :// HasText g)
-  selectDropdown sel opt
-  saveForm form
-  itemGroup item `shouldHaveText` g
-
-setItemCustomGroup :: CanSelect s => Text -> s -> WD ()
-setItemCustomGroup g item = do
-  form <- openItemEditForm item
-  sel <- select (form :// ByName "group")
-  opt <- select (sel :// HasText "New group...")
-  selectDropdown sel opt
-  enterInput g (form :// ByName "custom-group")
-  itemGroup item `shouldHaveText` g
-
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"
 

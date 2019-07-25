@@ -235,7 +235,6 @@ deleteItem (Uid itemId) = do
 itemInfo :: Value
 itemInfo = object
   [ "name"    .= ("exampleName"    :: String)
-  , "group"   .= ("exampleGroup"   :: String)
   , "hackage" .= ("string"         :: String)
   , "link"    .= ("http:/link.exp" :: String)
   ]

@@ -138,7 +138,7 @@ getItemMaybe itemId = do
   _itemConsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Con)
   let prefix = "item-notes-" <> uidToText itemId <> "-"
   let sql = [r|
-        SELECT uid, name, created, group_, link, hackage, summary, ecosystem, notes
+        SELECT uid, name, created, link, hackage, summary, ecosystem, notes
         FROM items
         WHERE uid = $1
         |]
@@ -147,7 +147,6 @@ getItemMaybe itemId = do
         _itemUid <- uidColumn
         _itemName <- textColumn
         _itemCreated <- timestamptzColumn
-        _itemGroup_ <- textColumnNullable
         _itemLink <- textColumnNullable
         _itemHackage <- textColumnNullable
         _itemSummary <- toMarkdownBlock <$> textColumn

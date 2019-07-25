@@ -116,7 +116,6 @@ export interface ICategoryItem {
   id: string
   name: string
   created: string
-  group?: string
   // TODO add appropriate types for summary, ecosystem and other properties with structure like
   // { text: string, html: string }
   summary: object

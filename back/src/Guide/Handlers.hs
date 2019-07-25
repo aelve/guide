@@ -137,16 +137,8 @@ setMethods = do
     link' <- T.strip <$> param' "link"
     hackage' <- (\x -> if T.null x then Nothing else Just x) . T.strip <$>
                 param' "hackage"
-    group' <- do
-      groupField <- param' "group"
-      customGroupField <- param' "custom-group"
-      return $ case groupField of
-        "-" -> Nothing
-        ""  -> Just customGroupField
-        _   -> Just groupField
     -- Modify the item
     -- TODO: actually validate the form and report errors
-    --       (don't forget to check that custom-group ≠ "")
     unless (T.null name') $ do
       (edit, _) <- dbUpdate (SetItemName itemId name')
       addEdit edit
@@ -160,8 +152,6 @@ setMethods = do
       _otherwise ->
           return ()
     do (edit, _) <- dbUpdate (SetItemHackage itemId hackage')
-       addEdit edit
-    do (edit, _) <- dbUpdate (SetItemGroup itemId group')
        addEdit edit
     -- After all these edits we can render the item
     item <- dbQuery (GetItem itemId)

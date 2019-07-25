@@ -364,7 +364,6 @@ instance A.FromJSON CDirection where
 -- | Client type to create new item.
 data CCreateItem = CCreateItem
   { cciName    :: Text
-  , cciGroup   :: Maybe Text
   , cciHackage :: Maybe Text
   , cciLink    :: Maybe Url
   } deriving (Show, Generic)
@@ -381,7 +380,6 @@ instance ToSchema CCreateItem where
     pure $ schema_ &~ do
       zoom (S.schema . properties) $ do
         field "name" . inlineSchema . description ?= "Item name"
-        field "group" . inlineSchema . description ?= "Item group"
         field "hackage" . inlineSchema . description ?= "Package name on Hackage"
         field "link" . inlineSchema . description ?=
           "Link to the official site, if exists"
@@ -552,7 +550,6 @@ data CItemInfo = CItemInfo
   { ciiId      :: Uid Item
   , ciiCreated :: UTCTime
   , ciiName    :: Text
-  , ciiGroup   :: Maybe Text
   , ciiHackage :: Maybe Text
   , ciiLink    :: Maybe Url
   } deriving (Show, Generic)
@@ -568,7 +565,6 @@ instance ToSchema CItemInfo where
         field "created" .= Inline (toSchema (Proxy @UTCTime))
         field "created" . inlineSchema . description ?= "When the item was created"
         field "name" . inlineSchema . description ?= "Item name"
-        field "group" . inlineSchema . description ?= "Item group"
         field "hackage" . inlineSchema . description ?= "Package name on Hackage"
         field "link" . inlineSchema . description ?=
           "Link to the official site, if exists"
@@ -579,7 +575,6 @@ toCItemInfo Item{..} = CItemInfo
   { ciiId          = _itemUid
   , ciiCreated     = _itemCreated
   , ciiName        = _itemName
-  , ciiGroup       = _itemGroup_
   , ciiHackage     = _itemHackage
   , ciiLink        = _itemLink
   }
@@ -592,7 +587,6 @@ toCItemInfo Item{..} = CItemInfo
 -- left untouched; @Just Nothing@ means that the field should be erased.
 data CItemInfoEdit = CItemInfoEdit
   { ciieName    :: Maybe Text
-  , ciieGroup   :: Maybe (Maybe Text)
   , ciieHackage :: Maybe (Maybe Text)
   , ciieLink    :: Maybe (Maybe Url)
   } deriving (Show, Generic)
@@ -601,7 +595,6 @@ data CItemInfoEdit = CItemInfoEdit
 instance A.ToJSON CItemInfoEdit where
   toJSON ciie = A.object $ catMaybes
     [ ("name"    A..=) <$> ciieName ciie
-    , ("group"   A..=) <$> ciieGroup ciie
     , ("hackage" A..=) <$> ciieHackage ciie
     , ("link"    A..=) <$> ciieLink ciie
     ]
@@ -609,12 +602,10 @@ instance A.ToJSON CItemInfoEdit where
 instance A.FromJSON CItemInfoEdit where
   parseJSON = A.withObject "CItemInfoEdit" $ \o -> do
     ciieName'    <- o A..:! "name"
-    ciieGroup'   <- o A..:! "group"
     ciieHackage' <- o A..:! "hackage"
     ciieLink'    <- o A..:! "link"
     return CItemInfoEdit
       { ciieName    = ciieName'
-      , ciieGroup   = ciieGroup'
       , ciieHackage = ciieHackage'
       , ciieLink    = ciieLink'
       }
@@ -625,7 +616,6 @@ instance ToSchema CItemInfoEdit where
     pure $ schema_ &~ do
       zoom (S.schema . properties) $ do
         field "name" . inlineSchema . description ?= "Item name"
-        field "group" . inlineSchema . description ?= "Item group"
         field "hackage" . inlineSchema . description ?= "Package name on Hackage"
         field "link" . inlineSchema . description ?=
           "Link to the official site, if exists"
@@ -639,7 +629,6 @@ data CItemFull = CItemFull
   { cifId          :: Uid Item
   , cifName        :: Text
   , cifCreated     :: UTCTime
-  , cifGroup       :: Maybe Text
   , cifHackage     :: Maybe Text
   , cifSummary     :: CMarkdown
   , cifPros        :: [CTrait]
@@ -664,7 +653,6 @@ instance ToSchema CItemFull where
         field "name" . inlineSchema . description ?= "Item name"
         field "created" .= Inline (toSchema (Proxy @UTCTime))
         field "created" . inlineSchema . description ?= "When the item was created"
-        field "group" . inlineSchema . description ?= "Item group"
         field "hackage" . inlineSchema . description ?= "Package name on Hackage"
         field "pros" . inlineSchema . description ?= "Pros (positive traits)"
         field "cons" . inlineSchema . description ?= "Cons (negative traits)"
@@ -678,7 +666,6 @@ toCItemFull Item{..} = CItemFull
   { cifId          = _itemUid
   , cifName        = _itemName
   , cifCreated     = _itemCreated
-  , cifGroup       = _itemGroup_
   , cifHackage     = _itemHackage
   , cifSummary     = toCMarkdown _itemSummary
   , cifPros        = fmap toCTrait _itemPros

@@ -48,15 +48,6 @@ HTML: item-info-title
 <div style="font-size:23px; line-height:27px;">
   {{> item-title}}
 </div>
-<div class="item-group" style="line-height:27px;">
-  {{#item.group_}}{{.}}{{/item.group_}}{{^item.group_}}other{{/item.group_}}
-</div>
-
-CSS
-------------------------------------------------------------
-.item-group {
-  padding-left: 2em;
-}
 
 HTML: item-info-controls
 ------------------------------------------------------------
