@@ -2,7 +2,8 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module Guide.Db.Schema
+-- | Schemas to create table for guide database
+module Guide.Database.Schema
 (
   setupDatabase,
 )
@@ -11,14 +12,14 @@ where
 import Imports
 
 import Hasql.Session (Session)
-import NeatInterpolation
-import Hasql.Connection (Connection, Settings)
+import Text.RawString.QQ
 import Hasql.Statement (Statement (..))
 
 import qualified Hasql.Session as HS
-import qualified Hasql.Connection as HC
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
+
+import Guide.Database.Connection (connect, runSession)
 
 
 -- | List of all migrations.
@@ -41,7 +42,7 @@ migrations =
 setupDatabase :: IO ()
 setupDatabase = do
   conn <- connect
-  mbSchemaVersion <- run' getSchemaVersion conn
+  mbSchemaVersion <- runSession conn getSchemaVersion
   case mbSchemaVersion of
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
@@ -49,42 +50,8 @@ setupDatabase = do
   for_ migrations $ \(migrationVersion, migration) ->
     when (migrationVersion > schemaVersion) $ do
       format "Migration {}: " migrationVersion
-      run' (migration >> setSchemaVersion migrationVersion) conn
+      runSession conn (migration >> setSchemaVersion migrationVersion)
       formatLn "done."
-
--- | Create a database connection (the destination is hard-coded for now).
---
--- Throws an 'error' if the connection could not be established.
-connect :: IO Connection
-connect = do
-  HC.acquire connectionSettings >>= \case
-    Left Nothing -> error "connect: unknown exception"
-    Left (Just x) -> error ("connect: " ++ toString x)
-    Right conn -> pure conn
-
--- | Connection settings
-connectionSettings :: Settings
-connectionSettings = HC.settings "localhost" 5432 dbUser dbPass dbName
-
--- | Database user
-dbUser :: ByteString
-dbUser = "postgres"
-
--- | Database password
-dbPass :: ByteString
-dbPass = "3"
-
--- | Database name
-dbName :: ByteString
-dbName = "guide"
-
-----------------------------------------------------------------------------
--- Utilities
-----------------------------------------------------------------------------
-
--- | Like 'HS.run', but errors out in case of failure.
-run' :: Session a -> Connection -> IO a
-run' s c = either (error . show) pure =<< HS.run s c
 
 ----------------------------------------------------------------------------
 -- Schema version table
@@ -96,7 +63,7 @@ run' s c = either (error . show) pure =<< HS.run s c
 -- If the @schema_version@ table doesn't exist, creates it.
 getSchemaVersion :: Session (Maybe Int32)
 getSchemaVersion = do
-  HS.sql $ toByteString [text|
+  HS.sql [r|
     CREATE TABLE IF NOT EXISTS schema_version (
       name text PRIMARY KEY,
       version integer
@@ -136,17 +103,17 @@ v0 = do
 
 -- | Create an enum type for trait type ("pro" or "con").
 v0_createTypeProCon :: Session ()
-v0_createTypeProCon = HS.sql $ toByteString [text|
+v0_createTypeProCon = HS.sql [r|
   CREATE TYPE trait_type AS ENUM ('pro', 'con');
   |]
 
 -- | Create table @traits@, corresponding to 'Guide.Types.Core.Trait'.
 v0_createTableTraits :: Session ()
-v0_createTableTraits = HS.sql $ toByteString [text|
+v0_createTableTraits = HS.sql [r|
   CREATE TABLE traits (
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
-      deleted boolean               -- Whether the trait is deleted
+    deleted boolean                 -- Whether the trait is deleted
       DEFAULT false
       NOT NULL,
     type_ trait_type NOT NULL,      -- Trait type (pro or con)
@@ -158,11 +125,11 @@ v0_createTableTraits = HS.sql $ toByteString [text|
 
 -- | Create table @items@, corresponding to 'Guide.Types.Core.Item'.
 v0_createTableItems :: Session ()
-v0_createTableItems = HS.sql $ toByteString [text|
+v0_createTableItems = HS.sql [r|
   CREATE TABLE items (
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
-    created timestamp NOT NULL,     -- When the item was created
+    created timestamptz NOT NULL,   -- When the item was created
     group_ text,                    -- Optional group
     link text,                      -- Optional URL
     hackage text,                   -- Package name on Hackage
@@ -180,11 +147,11 @@ v0_createTableItems = HS.sql $ toByteString [text|
 
 -- | Create table @categories@, corresponding to 'Guide.Types.Core.Category'.
 v0_createTableCategories :: Session ()
-v0_createTableCategories = HS.sql $ toByteString [text|
+v0_createTableCategories = HS.sql [r|
   CREATE TABLE categories (
     uid text PRIMARY KEY,           -- Unique category ID
     title text NOT NULL,            -- Category title
-    created timestamp NOT NULL,     -- When the category was created
+    created timestamptz NOT NULL,   -- When the category was created
     group_ text NOT NULL,           -- "Grandcategory"
     status_ text NOT NULL,          -- Category status ("in progress", etc); the list of
                                     --   possible statuses is defined by backend
@@ -196,7 +163,7 @@ v0_createTableCategories = HS.sql $ toByteString [text|
 
 -- | Create table @users@, storing user data.
 v0_createTableUsers :: Session ()
-v0_createTableUsers = HS.sql $ toByteString [text|
+v0_createTableUsers = HS.sql [r|
   CREATE TABLE users (
     uid text PRIMARY KEY,           -- Unique user ID
     name text NOT NULL,             -- User name
@@ -211,11 +178,11 @@ v0_createTableUsers = HS.sql $ toByteString [text|
 -- | Create table @pending_edits@, storing users' edits and metadata about
 -- them (who made the edit, when, etc).
 v0_createTablePendingEdits :: Session ()
-v0_createTablePendingEdits = HS.sql $ toByteString [text|
+v0_createTablePendingEdits = HS.sql [r|
   CREATE TABLE pending_edits (
     uid bigserial PRIMARY KEY,      -- Unique id
     edit json NOT NULL,             -- Edit in JSON format
     ip inet,                        -- IP address of edit maker
-    time_ timestamp NOT NULL        -- When the edit was created
+    time_ timestamptz NOT NULL      -- When the edit was created
   );
   |]

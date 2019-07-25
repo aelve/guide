@@ -308,17 +308,27 @@ type Api = RequestDetails :> ToServant Site AsApi
 --------------------------------------------------------------------------
 
 -- | Trait type (Pro/Con) and instances.
-data CTraitType = Pro | Con
+data CTraitType = CPro | CCon
     deriving (Show, Generic)
 
 instance ToSchema CTraitType where
     declareNamedSchema = genericDeclareNamedSchema schemaOptions
+      { constructorTagModifier = \case
+          "CPro" -> "Pro"
+          "CCon" -> "Con"
+          other -> error ("CTraitType schema: unknown value " <> show other)
+      }
 
 instance A.ToJSON CTraitType where
-  toJSON = A.genericToJSON jsonOptions
+  toJSON = \case
+    CPro -> "Pro"
+    CCon -> "Con"
 
 instance A.FromJSON CTraitType where
-  parseJSON = A.genericParseJSON jsonOptions
+  parseJSON = A.withText "CTraitType" $ \case
+    "Pro" -> pure CPro
+    "Con" -> pure CCon
+    other -> fail ("unknown trait type " <> show other)
 
 ----------------------------------------------------------------------------
 -- CDirection
@@ -333,7 +343,7 @@ instance ToSchema CDirection where
     { constructorTagModifier = \case
         "DirectionUp" -> "up"
         "DirectionDown" -> "down"
-        other -> error ("Direction schema: unknown tag " <> show other)
+        other -> error ("CDirection schema: unknown value " <> show other)
     }
 
 instance A.ToJSON CDirection where
@@ -342,10 +352,10 @@ instance A.ToJSON CDirection where
     DirectionDown -> "down"
 
 instance A.FromJSON CDirection where
-  parseJSON = \case
-    "up"   -> pure DirectionUp
+  parseJSON = A.withText "CDirection" $ \case
+    "up" -> pure DirectionUp
     "down" -> pure DirectionDown
-    tag    -> fail ("unknown direction " ++ show tag)
+    other -> fail ("unknown direction " <> show other)
 
 ----------------------------------------------------------------------------
 -- CCreateItem

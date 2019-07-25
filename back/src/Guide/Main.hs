@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
@@ -28,8 +27,6 @@ import Control.Concurrent.Async
 import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
--- Text
-import NeatInterpolation (text)
 -- Web
 import Lucid hiding (for_)
 import Network.Wai.Middleware.Static (addBase, staticPolicy)
@@ -261,9 +258,9 @@ guideApp waiMetrics = do
       Spock.get "/js.js" $ do
         setHeader "Content-Type" "application/javascript; charset=utf-8"
         (csrfTokenName, csrfTokenValue) <- getCsrfHeader
-        let jqueryCsrfProtection = [text|
-              guidejs.csrfProtection.enable("$csrfTokenName", "$csrfTokenValue");
-            |]
+        let jqueryCsrfProtection =
+              format "guidejs.csrfProtection.enable(\"{}\", \"{}\");"
+                     csrfTokenName csrfTokenValue
         js <- getJS
         Spock.bytes $ toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS

@@ -21,6 +21,7 @@ extra-deps:
 - lzma-clib-5.2.2
 - regex-1.0.1.5
 - hasql-1.4
+- hasql-transaction-0.7.2
 
 # Old versions from LTS 12+ (can and should be upgraded)
 - megaparsec-6.5.0

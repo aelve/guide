@@ -22,6 +22,8 @@ cabal.config
 *.swp
 *.swo
 *#
+*.lock
+
 
 # IDE/support
 .idea/

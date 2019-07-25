@@ -19,6 +19,7 @@
 module Guide.Types.Core
 (
   Trait(..),
+  TraitType (..),
   ItemKind(..),
     hackageName,
   ItemSection(..),
@@ -101,6 +102,10 @@ deriveSafeCopySorted 3 'base ''Trait_v3
 instance A.ToJSON Trait where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
+
+-- | ADT for traitType
+data TraitType = Pro | Con
+  deriving Eq
 
 ----------------------------------------------------------------------------
 -- Item
