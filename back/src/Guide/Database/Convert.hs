@@ -1,36 +1,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
--- | Convert function used to combine hasql queries.
+-- | Encoders and decoders for types used in the database schema.
 module Guide.Database.Convert
        (
-       -- * Bool
+       -- * 'Bool'
          boolParam
        , boolParamNullable
-       -- * Text
+
+       -- * 'Text'
        , textParam
-       , textColumn
        , textParamNullable
+       , textColumn
        , textColumnNullable
-       -- * TraitType
-       , traitTypeParam
-       -- * [Text]
-       , textArrayColumn
-       -- * Uid
+
+       -- * 'Uid'
        , uidParam
        , uidColumn
-       -- * UTCTime
+
+       -- * 'UTCTime'
        , timestamptzColumn
-       -- * ItemSection
-       , itemSectionColumn
-       -- * CategoryStatus
+
+       -- * 'TraitType'
+       , traitTypeParam
+
+       -- * 'CategoryStatus'
        , categoryStatusColumn
+
+       -- * @Set 'ItemSection'@
+       , itemSectionSetColumn
        ) where
 
 
 import Imports
 
 import Data.Functor.Contravariant (contramap)
+import qualified Data.Set as Set
 
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
@@ -39,133 +44,106 @@ import Guide.Types.Core (CategoryStatus (..), ItemSection (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
 
--- Convert functions for database
-
 ----------------------------------------------------------------------------
 -- Bool
 ----------------------------------------------------------------------------
 
--- | nonNullable Bool
-boolEncoder :: HE.NullableOrNot HE.Value Bool
-boolEncoder = HE.nonNullable HE.bool
-
--- | nullable Bool
-boolEncoderNullable :: HE.NullableOrNot HE.Value (Maybe Bool)
-boolEncoderNullable = HE.nullable HE.bool
-
--- | Encode bool
+-- | Pass a 'Bool' to a query.
 boolParam :: HE.Params Bool
-boolParam = HE.param boolEncoder
+boolParam = HE.param (HE.nonNullable HE.bool)
 
--- | Encode nullable bool
+-- | Pass a nullable 'Bool' to a query.
 boolParamNullable :: HE.Params (Maybe Bool)
-boolParamNullable = HE.param boolEncoderNullable
+boolParamNullable = HE.param (HE.nullable HE.bool)
 
 ----------------------------------------------------------------------------
 -- Text
 ----------------------------------------------------------------------------
 
--- | nonNullable Text for Encoder
-textEncoder :: HE.NullableOrNot HE.Value Text
-textEncoder = HE.nonNullable HE.text
-
--- | nonNullable Text for Decoder
-textDecoder :: HD.NullableOrNot HD.Value Text
-textDecoder = HD.nonNullable HD.text
-
--- | nullable Text for Encoder
-textEncoderNullable :: HE.NullableOrNot HE.Value (Maybe Text)
-textEncoderNullable = HE.nullable HE.text
-
--- | nullable Text for Decoder
-textDecoderNullable :: HD.NullableOrNot HD.Value (Maybe Text)
-textDecoderNullable = HD.nullable HD.text
-
--- | Encode text
+-- | Pass a 'Text' to a query.
 textParam :: HE.Params Text
-textParam = HE.param textEncoder
+textParam = HE.param (HE.nonNullable HE.text)
 
--- | Decode text
-textColumn :: HD.Row Text
-textColumn = HD.column textDecoder
-
--- | Encode nullable text
+-- | Pass a nullable 'Text' to a query.
 textParamNullable :: HE.Params (Maybe Text)
-textParamNullable = HE.param textEncoderNullable
+textParamNullable = HE.param (HE.nullable HE.text)
 
--- | Decode nullable text
+-- | Get a 'Text' from a query.
+textColumn :: HD.Row Text
+textColumn = HD.column (HD.nonNullable HD.text)
+
+-- | Get a nullable 'Text' from a query.
 textColumnNullable :: HD.Row (Maybe Text)
-textColumnNullable = HD.column textDecoderNullable
-
-----------------------------------------------------------------------------
--- TraitType
-----------------------------------------------------------------------------
-
--- | Encode TraitType
-traitTypeParam :: HE.Params TraitType
-traitTypeParam = HE.param (HE.nonNullable $ HE.enum showTraitType)
-  where
-    showTraitType = \case
-      Pro -> "pro"
-      Con -> "con"
+textColumnNullable = HD.column (HD.nullable HD.text)
 
 ----------------------------------------------------------------------------
 -- Uid
 ----------------------------------------------------------------------------
 
--- | Encode Uid
+-- | Pass a 'Uid' to a query.
 uidParam :: HE.Params (Uid a)
 uidParam = contramap uidToText textParam
 
--- | Decode Uid
+-- | Get a 'Uid' from a query.
 uidColumn :: HD.Row (Uid a)
 uidColumn = Uid <$> textColumn
-
-----------------------------------------------------------------------------
--- [Text]
-----------------------------------------------------------------------------
-
--- | Decode [Text]
-textArrayColumn :: HD.Row [Text]
-textArrayColumn = (HD.column . HD.nonNullable)
-  $ HD.array (HD.dimension replicateM (HD.element textDecoder))
 
 ----------------------------------------------------------------------------
 -- UTCTime
 ----------------------------------------------------------------------------
 
--- Decode UTCTime
+-- | Get a 'UTCTime' from a query.
 timestamptzColumn :: HD.Row UTCTime
 timestamptzColumn = HD.column (HD.nonNullable HD.timestamptz)
+
+----------------------------------------------------------------------------
+-- TraitType
+----------------------------------------------------------------------------
+
+-- | Encode a 'TraitType'.
+traitTypeEncoder :: HE.Value TraitType
+traitTypeEncoder = HE.enum $ \case
+  Pro -> "pro"
+  Con -> "con"
+
+-- | Pass a 'TraitType' to a query.
+traitTypeParam :: HE.Params TraitType
+traitTypeParam = HE.param (HE.nonNullable traitTypeEncoder)
 
 ----------------------------------------------------------------------------
 -- CategoryStatus
 ----------------------------------------------------------------------------
 
--- | Decode CategoryStatus
+-- | Decode a 'CategoryStatus'.
+categoryStatusDecoder :: HD.Value CategoryStatus
+categoryStatusDecoder = HD.enum $ \case
+  "stub" -> Just CategoryStub
+  "wip" -> Just CategoryWIP
+  "finished" -> Just CategoryFinished
+  _ -> Nothing
+
+-- | Get a 'CategoryStatus' from a query.
 categoryStatusColumn :: HD.Row CategoryStatus
-categoryStatusColumn = HD.column (HD.nonNullable $ HD.enum showCategoryStatus)
-  where
-    showCategoryStatus = \case
-      "stub" -> Just CategoryStub
-      "wip" -> Just CategoryWIP
-      "finished" -> Just CategoryFinished
-      _ -> Nothing
+categoryStatusColumn = HD.column (HD.nonNullable categoryStatusDecoder)
 
 ----------------------------------------------------------------------------
--- [ItemSection]
+-- Set ItemSection
 ----------------------------------------------------------------------------
 
--- | Decode [ItemSection]
-itemSectionColumn :: HD.Row [ItemSection]
-itemSectionColumn = HD.column
-    $ HD.nonNullable
-    $ HD.listArray
-    $ HD.nonNullable
-    $ HD.enum showItemSection
-  where
-    showItemSection = \case
-      "ItemProsConsSection" -> Just ItemProsConsSection
-      "ItemEcosystemSection" -> Just ItemEcosystemSection
-      "ItemNotesSection" -> Just ItemNotesSection
-      _ -> Nothing
+-- | Decode an 'ItemSection'.
+itemSectionDecoder :: HD.Value ItemSection
+itemSectionDecoder = HD.enum $ \case
+  "pros_cons" -> Just ItemProsConsSection
+  "ecosystem" -> Just ItemEcosystemSection
+  "notes" -> Just ItemNotesSection
+  _ -> Nothing
+
+-- | Get a @Set ItemSection@ from a query.
+itemSectionSetColumn :: HD.Row (Set ItemSection)
+itemSectionSetColumn =
+  fmap Set.fromList
+  $ HD.column
+  $ HD.nonNullable
+  $ HD.listArray
+  $ HD.nonNullable
+  $ itemSectionDecoder

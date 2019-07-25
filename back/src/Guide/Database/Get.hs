@@ -34,7 +34,6 @@ import Named
 import Text.RawString.QQ (r)
 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Session as HS
@@ -193,8 +192,7 @@ getCategoryMaybe catId = do
         _categoryGroup_ <- textColumn
         _categoryStatus <- categoryStatusColumn
         _categoryNotes <- toMarkdownBlock <$> textColumn
-        itemSelection <- itemSectionColumn
-        let _categoryEnabledSections = Set.fromList itemSelection
+        _categoryEnabledSections <- itemSectionSetColumn
         let _categoryGroups = Map.empty
         pure $ Category{..}
   lift $ HS.statement catId (Statement sql encoder decoder False)
