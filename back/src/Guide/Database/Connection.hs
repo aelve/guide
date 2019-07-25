@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
--- | Connection methods for postgres database
+-- | Connect to the Guide database.
 module Guide.Database.Connection
        ( connect
        , runSessionExceptT
@@ -48,14 +48,18 @@ dbName = "guide"
 -- Utilities
 ----------------------------------------------------------------------------
 
--- | Like 'HS.run', but errors out in case of failure. For ExceptT Session
+-- | Like 'HS.run', but errors out in case of failure.
+--
+-- For @ExceptT Session@.
 runSessionExceptT :: ExceptT DatabaseError Session a -> Connection -> IO a
-runSessionExceptT s c = eitherRun =<< eitherRun =<< HS.run (runExceptT s) c
+runSessionExceptT s c = unwrapRight =<< unwrapRight =<< HS.run (runExceptT s) c
 
--- | Like 'HS.run', but errors out in case of failure. For Session
+-- | Like 'HS.run', but errors out in case of failure.
+--
+-- For @Session@.
 runSession :: Session a -> Connection -> IO a
-runSession s c = eitherRun =<< HS.run s c
+runSession s c = unwrapRight =<< HS.run s c
 
--- | Abstract either
-eitherRun :: Show e => Either e a -> IO a
-eitherRun = either (error . show) pure
+-- | Unwrap 'Either', failing in case of 'Left'.
+unwrapRight :: Show e => Either e a -> IO a
+unwrapRight = either (error . show) pure
