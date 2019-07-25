@@ -202,7 +202,6 @@ library
                      , RankNTypes
                      , MultiParamTypeClasses
                      , FunctionalDependencies
-                     , TemplateHaskell
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
@@ -263,7 +262,6 @@ test-suite tests
                      , RankNTypes
                      , MultiParamTypeClasses
                      , FunctionalDependencies
-                     , TemplateHaskell
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
