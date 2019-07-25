@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 
 -- | Types for edits.

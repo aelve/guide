@@ -1,5 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TemplateHaskell    #-}
 
 -- | A type for users. Currently unused.
 module Guide.Types.User
