@@ -316,7 +316,7 @@ instance ToSchema CTraitType where
       { constructorTagModifier = \case
           "CPro" -> "Pro"
           "CCon" -> "Con"
-          other -> error ("TraitType schema: unknown tag " <> show other)
+          other -> error ("СTraitType schema: unknown tag " <> show other)
       }
 
 instance A.ToJSON CTraitType where
