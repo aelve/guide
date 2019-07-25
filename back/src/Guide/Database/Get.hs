@@ -21,7 +21,7 @@ module Guide.Database.Get
        , getCategory
        , getCategoryMaybe
        , getCategories
-       , getCategoryByItem
+       , getCategoryByItemMaybe
 
        ) where
 
@@ -70,8 +70,8 @@ getTest = do
   print catM
   cat <- runTransactionExceptT conn Read (getCategory "categories11")
   print cat
-  catId <- runTransactionExceptT conn Read (getCategoryIdByItem "items1234567")
-  print catId
+  mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "items1234567")
+  print mCatId
   catIds <- runTransactionExceptT conn Read getCategoryIds
   print catIds
   cats <- runTransactionExceptT conn Read getCategories
@@ -236,25 +236,26 @@ getCategory catId = do
     -- deletes a category but the page is still there.
 
 -- | Get the ID of the category that an item belongs to.
-getCategoryIdByItem :: Uid Item -> ExceptT DatabaseError Transaction (Uid Category)
-getCategoryIdByItem itemId = do
+getCategoryIdByItemMaybe
+  :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
+getCategoryIdByItemMaybe itemId = do
   let sql = [r|
         SELECT category_uid
         FROM items
         WHERE uid = $1
         |]
-      -- TODO fail if not found.
       encoder = uidParam
-      decoder = HD.singleRow $ uidColumn
+      decoder = HD.rowMaybe $ uidColumn
   lift $ HT.statement itemId (Statement sql encoder decoder False)
 
 -- | Get the category that an item belongs to.
 --
--- TODO rename with 'Maybe' or smth?
-getCategoryByItem :: Uid Item -> ExceptT DatabaseError Transaction (Maybe Category)
-getCategoryByItem itemId = do
-  catId <- getCategoryIdByItem itemId
-  getCategoryMaybe catId
+-- Returns 'Nothing' if either the item or the category are not found.
+getCategoryByItemMaybe
+  :: Uid Item -> ExceptT DatabaseError Transaction (Maybe Category)
+getCategoryByItemMaybe itemId = do
+  catId <- getCategoryIdByItemMaybe itemId
+  join @Maybe <$> traverse getCategoryMaybe catId
 
 -- | Get a list of available categories' IDs.
 --
