@@ -32,15 +32,11 @@ module Guide.Types.Core
     ecosystem,
     hackage,
     link,
-  Hue(..),
-    hueToDarkColor,
-    hueToLightColor,
   CategoryStatus(..),
   Category(..),
     title,
     status,
     enabledSections,
-    groups,
     items,
     itemsDeleted,
     categorySlug,
@@ -182,7 +178,7 @@ data Item = Item {
   _itemUid         :: Uid Item,        -- ^ Item ID
   _itemName        :: Text,            -- ^ Item title
   _itemCreated     :: UTCTime,         -- ^ When the item was created
-  _itemGroup_      :: Maybe Text,      -- ^ Item group (affects item's color)
+  _itemGroup_      :: Maybe Text,      -- ^ Item group
   _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
   _itemSummary     :: MarkdownBlock,   -- ^ Item summary
   _itemPros        :: [Trait],         -- ^ Pros (positive traits)
@@ -269,18 +265,18 @@ data Category = Category {
   _categoryItemsDeleted    :: [Item],
   -- | Enabled sections in this category. E.g, if this set contains
   -- 'ItemNotesSection', then notes will be shown for each item
-  _categoryEnabledSections :: Set ItemSection,
-  -- | All groups of items belonging to the category, as well as their
-  -- colors. Storing colors explicitly lets us keep colors consistent when
-  -- all items in a group are deleted
-  _categoryGroups          :: Map Text Hue
+  _categoryEnabledSections :: Set ItemSection
   }
   deriving (Show, Generic, Data)
 
-deriveSafeCopySorted 11 'extension ''Category
+deriveSafeCopySorted 12 'extension ''Category
 makeFields ''Category
 
-changelog ''Category (Current 11, Past 10)
+changelog ''Category (Current 12, Past 11)
+  [Removed "_categoryGroups" [t|Map Text Hue|] ]
+deriveSafeCopySorted 11 'extension ''Category_v11
+
+changelog ''Category (Past 11, Past 10)
   [Removed "_categoryProsConsEnabled"  [t|Bool|],
    Removed "_categoryEcosystemEnabled" [t|Bool|],
    Removed "_categoryNotesEnabled"     [t|Bool|],

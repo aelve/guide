@@ -34,7 +34,6 @@ import Hasql.Transaction.Sessions (Mode(Read))
 import Named
 import Text.RawString.QQ (r)
 
-import qualified Data.Map as Map
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
@@ -216,7 +215,6 @@ getCategoryMaybe catId = do
         _categoryStatus <- categoryStatusColumn
         _categoryNotes <- toMarkdownBlock <$> textColumn
         _categoryEnabledSections <- itemSectionSetColumn
-        let _categoryGroups = Map.empty  -- TODO fix
         pure $ Category{..}
   lift $ HT.statement catId (Statement sql encoder decoder False)
 

@@ -220,13 +220,6 @@ changelog ''GlobalState (Past 8, Past 7) [
   ]
 deriveSafeCopySorted 7 'base ''GlobalState_v7
 
-addGroupIfDoesNotExist :: Text -> Map Text Hue -> Map Text Hue
-addGroupIfDoesNotExist g gs
-  | M.member g gs = gs
-  | otherwise     = M.insert g firstNotTaken gs
-  where
-    firstNotTaken = head $ map Hue [1..] \\ M.elems gs
-
 traitById :: Uid Trait -> Lens' Item Trait
 traitById traitId = singular $
   maybeTraitById traitId `failing`
@@ -360,7 +353,6 @@ addCategory catId title' group' created' = do
         _categoryCreated = created',
         _categoryStatus = CategoryStub,
         _categoryNotes = toMarkdownBlock "",
-        _categoryGroups = mempty,
         _categoryItems = [],
         _categoryItemsDeleted = [] }
   categories %= (newCategory :)
@@ -472,38 +464,11 @@ setItemLink itemId link' = do
   let edit = Edit'SetItemLink itemId oldLink link'
   (edit,) <$> use (itemById itemId)
 
--- Also updates the list of groups in the category
 setItemGroup :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemGroup itemId newGroup = do
-  catId <- view uid . findCategoryByItem itemId <$> get
-  let categoryLens :: Lens' GlobalState Category
-      categoryLens = categoryById catId
-  let itemLens :: Lens' GlobalState Item
-      itemLens = itemById itemId
-  -- If the group is new, add it to the list of groups in the category (which
-  -- causes a new hue to be generated, too)
-  case newGroup of
-    Nothing -> return ()
-    Just x  -> categoryLens.groups %= addGroupIfDoesNotExist x
-  -- Update list of groups if the group is going to be empty after the item
-  -- is moved to a different group. Note that this is done after adding a new
-  -- group because we also want the color to change. So, if the item was the
-  -- only item in its group, the sequence of actions is as follows:
-  --
-  --   * new group is added (and hence a new color is assigned)
-  --   * old group is deleted (and now the old color is unused)
-  oldGroup <- use (itemLens.group_)
-  case oldGroup of
-    Nothing -> return ()
-    Just g  -> when (oldGroup /= newGroup) $ do
-      allItems <- use (categoryLens.items)
-      let inOurGroup item = item^.group_ == Just g
-      when (length (filter inOurGroup allItems) == 1) $
-        categoryLens.groups %= M.delete g
-  -- Now we can actually change the group
-  itemLens.group_ .= newGroup
+  oldGroup <- itemById itemId . group_ <<.= newGroup
   let edit = Edit'SetItemGroup itemId oldGroup newGroup
-  (edit,) <$> use itemLens
+  (edit,) <$> use (itemById itemId)
 
 setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemHackage itemId hackage' = do
@@ -571,16 +536,6 @@ deleteItem itemId = do
     Nothing   -> return (Left "item not found")
     Just item -> do
       allItems <- use (categoryLens.items)
-      -- If the item was the only item in its group, delete the group (and
-      -- make the hue available for new items)
-      case item^.group_ of
-        Nothing       -> return ()
-        Just oldGroup -> do
-          let itemsInOurGroup = [item' | item' <- allItems,
-                                         item'^.group_ == Just oldGroup]
-          when (length itemsInOurGroup == 1) $
-            categoryLens.groups %= M.delete oldGroup
-      -- And now delete the item (i.e. move it to “deleted”)
       case findIndex (hasUid itemId) allItems of
         Nothing      -> return (Left "item not found")
         Just itemPos -> do
