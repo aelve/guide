@@ -164,6 +164,12 @@ HTML: item-info-edit-form
   </label>
   <input id="site" name="link" value="{{item.link}}"
           type="text" autocomplete="off">
+
+  <div class="form-btn-group">
+    <input value="Save" class="save" type="submit">
+    <input value="Cancel" class="cancel" type="button"
+          onclick="itemInfoCancelEdit('{{item.uid}}');">
+  </div>
 </form>
 
 
