@@ -78,7 +78,10 @@ getTest = do
 -- Traits
 ----------------------------------------------------------------------------
 
--- | Get trait by id, either it deleted or not.
+-- | Get a 'Trait'.
+--
+-- Traits marked as deleted will still be returned if they physically exist
+-- in the database.
 getTraitMaybe :: Uid Trait -> ExceptT DatabaseError Session (Maybe Trait)
 getTraitMaybe traitId = do
   let sql = [r|
@@ -93,7 +96,10 @@ getTraitMaybe traitId = do
         pure $ Trait{..}
   lift $ HS.statement traitId (Statement sql encoder decoder False)
 
--- | Get traits list by item id, deleted and trait_type filters.
+-- | Get traits belonging to an item.
+--
+-- The @#deleted@ flag specifies whether to return only "normal" or only
+-- deleted traits. To get both, call 'getTraitsByItem' twice.
 getTraitsByItem
   :: Uid Item
   -> "deleted" :! Bool
@@ -118,14 +124,17 @@ getTraitsByItem itemId (arg #deleted -> deleted) (arg #traitType -> traitType) =
 -- Items
 ----------------------------------------------------------------------------
 
--- | Get maybe item by id, either it deleted or not.
+-- | Get an 'Item'.
+--
+-- Items marked as deleted will still be returned if they physically exist
+-- in the database.
 getItemMaybe :: Uid Item -> ExceptT DatabaseError Session (Maybe Item)
 getItemMaybe itemId = do
   _itemPros <- getTraitsByItem itemId (#deleted False) (#traitType Pro)
   _itemProsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Pro)
   _itemCons <- getTraitsByItem itemId (#deleted False) (#traitType Con)
   _itemConsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Con)
-  let pref = "item-notes-" <> uidToText itemId <> "-"
+  let prefix = "item-notes-" <> uidToText itemId <> "-"
   let sql = [r|
         SELECT uid, name, created, group_, link, hackage, summary, ecosystem, notes
         FROM items
@@ -141,19 +150,27 @@ getItemMaybe itemId = do
         _itemHackage <- textColumnNullable
         _itemSummary <- toMarkdownBlock <$> textColumn
         _itemEcosystem <- toMarkdownBlock <$> textColumn
-        _itemNotes <- toMarkdownTree pref <$> textColumn
+        _itemNotes <- toMarkdownTree prefix <$> textColumn
         pure $ Item{..}
   lift $ HS.statement itemId (Statement sql encoder decoder False)
 
--- | Get item by id, either it deleted or not.
+-- | Get an 'Item'.
+--
+-- Items marked as deleted will still be returned if they physically exist
+-- in the database.
+--
+-- Fails with 'ItemNotFound' when the item does not exist.
 getItem :: Uid Item -> ExceptT DatabaseError Session Item
 getItem itemId = do
   mItem <- getItemMaybe itemId
   case mItem of
-        Nothing   -> throwError $ ItemNotFound itemId
-        Just item -> pure item
+    Nothing   -> throwError $ ItemNotFound itemId
+    Just item -> pure item
 
--- | Get items with category id and deleted filters
+-- | Get items belonging to a category.
+--
+-- The @#deleted@ flag specifies whether to return only "normal" or only
+-- deleted items. To get both, call 'getItemsByCategory' twice.
 getItemsByCategory
   :: Uid Category
   -> "deleted" :! Bool
@@ -168,13 +185,16 @@ getItemsByCategory catId (arg #deleted -> deleted) = do
       encoder = contrazip2 uidParam boolParam
       decoder = HD.rowList $ uidColumn
   itemUids <- lift $ HS.statement (catId,deleted) (Statement sql encoder decoder False)
-  traverse getItem itemUids
+  traverse getItem itemUids  -- TODO fix
 
 ----------------------------------------------------------------------------
 -- Categories
 ----------------------------------------------------------------------------
 
--- | Get maybe category by uid.
+-- | Get a 'Category'.
+--
+-- Categories marked as deleted will still be returned if they physically
+-- exist in the database.
 getCategoryMaybe :: Uid Category -> ExceptT DatabaseError Session (Maybe Category)
 getCategoryMaybe catId = do
   _categoryItems <- getItemsByCategory catId (#deleted False)
@@ -193,19 +213,26 @@ getCategoryMaybe catId = do
         _categoryStatus <- categoryStatusColumn
         _categoryNotes <- toMarkdownBlock <$> textColumn
         _categoryEnabledSections <- itemSectionSetColumn
-        let _categoryGroups = Map.empty
+        let _categoryGroups = Map.empty  -- TODO fix
         pure $ Category{..}
   lift $ HS.statement catId (Statement sql encoder decoder False)
 
--- | Get category by uid.
+-- | Get a 'Category'.
+--
+-- Categories marked as deleted will still be returned if they physically
+-- exist in the database.
+--
+-- Fails with 'CategoryNotFound' when the category does not exist.
 getCategory :: Uid Category -> ExceptT DatabaseError Session Category
 getCategory catId = do
   mCat <- getCategoryMaybe catId
   case mCat of
     Nothing  -> throwError $ CategoryNotFound catId
     Just cat -> pure cat
+    -- TODO: consider not returning deleted categories? Otherwise somebody
+    -- deletes a category but the page is still there.
 
--- | Get category uid by item uid.
+-- | Get the ID of the category that an item belongs to.
 getCategoryIdByItem :: Uid Item -> ExceptT DatabaseError Session (Uid Category)
 getCategoryIdByItem itemId = do
   let sql = [r|
@@ -213,17 +240,24 @@ getCategoryIdByItem itemId = do
         FROM items
         WHERE uid = $1
         |]
+      -- TODO fail if not found.
       encoder = uidParam
       decoder = HD.singleRow $ uidColumn
   lift $ HS.statement itemId (Statement sql encoder decoder False)
 
--- | Get category by item uid.
+-- | Get the category that an item belongs to.
+--
+-- TODO rename with 'Maybe' or smth?
 getCategoryByItem :: Uid Item -> ExceptT DatabaseError Session (Maybe Category)
 getCategoryByItem itemId = do
   catId <- getCategoryIdByItem itemId
   getCategoryMaybe catId
 
--- | Get category's uid list
+-- | Get a list of available categories' IDs.
+--
+-- Includes categories marked as deleted.
+--
+-- TODO explain why we store deleted categories at all.
 getCategoryIds :: ExceptT DatabaseError Session [Uid Category]
 getCategoryIds = do
   let sql = [r|
@@ -234,8 +268,10 @@ getCategoryIds = do
       decoder = HD.rowList $ uidColumn
   lift $ HS.statement () (Statement sql encoder decoder False)
 
--- | Get all categories
+-- | Get all categories.
+--
+-- Includes categories marked as deleted.
 getCategories :: ExceptT DatabaseError Session [Category]
 getCategories = do
   catIds <- getCategoryIds
-  traverse getCategory catIds
+  traverse getCategory catIds -- TODO fix
