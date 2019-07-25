@@ -19,7 +19,7 @@ import qualified Hasql.Session as HS
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
 
-import Guide.Database.Connection (connect, runS)
+import Guide.Database.Connection (connect, runSession)
 
 
 -- | List of all migrations.
@@ -42,7 +42,7 @@ migrations =
 setupDatabase :: IO ()
 setupDatabase = do
   conn <- connect
-  mbSchemaVersion <- runS getSchemaVersion conn
+  mbSchemaVersion <- runSession getSchemaVersion conn
   case mbSchemaVersion of
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
@@ -50,7 +50,7 @@ setupDatabase = do
   for_ migrations $ \(migrationVersion, migration) ->
     when (migrationVersion > schemaVersion) $ do
       format "Migration {}: " migrationVersion
-      runS (migration >> setSchemaVersion migrationVersion) conn
+      runSession (migration >> setSchemaVersion migrationVersion) conn
       formatLn "done."
 
 ----------------------------------------------------------------------------

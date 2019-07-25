@@ -4,18 +4,18 @@
 -- | Connection methods for postgres database
 module Guide.Database.Connection
        ( connect
-       , runDM
-       , runS
+       , runSessionExceptT
+       , runSession
        ) where
 
-import Imports
 import Hasql.Connection (Connection, Settings)
 import Hasql.Session (Session)
+import Imports
 
 import qualified Hasql.Connection as HC
 import qualified Hasql.Session as HS
 
-import Guide.Database.Types (DatabaseMonad)
+import Guide.Database.Types (DatabaseError)
 
 
 -- | Create a database connection (the destination is hard-coded for now).
@@ -48,13 +48,13 @@ dbName = "guide"
 -- Utilities
 ----------------------------------------------------------------------------
 
--- | Like 'HS.run', but errors out in case of failure. For DatabaseMonad
-runDM :: DatabaseMonad a -> Connection -> IO a
-runDM s c = eitherRun =<< eitherRun =<< HS.run (runExceptT s) c
+-- | Like 'HS.run', but errors out in case of failure. For ExceptT Session
+runSessionExceptT :: ExceptT DatabaseError Session a -> Connection -> IO a
+runSessionExceptT s c = eitherRun =<< eitherRun =<< HS.run (runExceptT s) c
 
 -- | Like 'HS.run', but errors out in case of failure. For Session
-runS :: Session a -> Connection -> IO a
-runS s c = eitherRun =<< HS.run s c
+runSession :: Session a -> Connection -> IO a
+runSession s c = eitherRun =<< HS.run s c
 
 -- | Abstract either
 eitherRun :: Show e => Either e a -> IO a

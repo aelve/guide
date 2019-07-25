@@ -325,10 +325,9 @@ instance A.ToJSON CTraitType where
     CCon -> "Con"
 
 instance A.FromJSON CTraitType where
-  parseJSON = \case
-    "Pro" -> pure CPro
-    "Con" -> pure CCon
-    tag    -> fail ("unknown TraitType: " ++ show tag)
+  parseJSON traitType =
+        A.withText "Pro" (const (pure CPro)) traitType
+    <|> A.withText "down" (const (pure CCon)) traitType
 
 ----------------------------------------------------------------------------
 -- CDirection
@@ -352,10 +351,9 @@ instance A.ToJSON CDirection where
     DirectionDown -> "down"
 
 instance A.FromJSON CDirection where
-  parseJSON = \case
-    "up"   -> pure DirectionUp
-    "down" -> pure DirectionDown
-    tag    -> fail ("unknown direction " ++ show tag)
+  parseJSON direction =
+        A.withText "up" (const (pure DirectionUp)) direction
+    <|> A.withText "down" (const (pure DirectionDown)) direction
 
 ----------------------------------------------------------------------------
 -- CCreateItem

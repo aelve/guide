@@ -28,6 +28,7 @@ module Guide.Database.Get
 import Imports
 
 import Contravariant.Extras.Contrazip (contrazip2, contrazip3)
+import Hasql.Session (Session)
 import Hasql.Statement (Statement (..))
 import Named
 import Text.RawString.QQ (r)
@@ -38,40 +39,40 @@ import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Session as HS
 
-import Guide.Database.Connection (connect, runDM)
+import Guide.Database.Connection (connect, runSessionExceptT)
 import Guide.Database.Convert
+import Guide.Database.Types
 import Guide.Markdown (toMarkdownBlock, toMarkdownInline, toMarkdownTree)
 import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
-import Guide.Database.Types
 
 
 -- | Just to test queries
 getTest :: IO ()
 getTest = do
   conn <- connect
-  mTrait <- runDM (getTraitMaybe "qwertassdf34") conn
+  mTrait <- runSessionExceptT (getTraitMaybe "qwertassdf34") conn
   print mTrait
-  traits <- runDM (getTraitsByItem "items1234567" (#deleted False) (#traitType Pro)) conn
+  traits <- runSessionExceptT (getTraitsByItem "items1234567" (#deleted False) (#traitType Pro)) conn
   print traits
-  mItem <- runDM (getItemMaybe "items1234567") conn
+  mItem <- runSessionExceptT (getItemMaybe "items1234567") conn
   print mItem
-  item <- runDM (getItem "items1234567") conn
+  item <- runSessionExceptT (getItem "items1234567") conn
   print item
   -- wrong uid
-  -- itemErr <- runDM (getItemByItemId "wrong1234567") conn
+  -- itemErr <- runSessionExceptT (getItemByItemId "wrong1234567") conn
   -- print itemErr
-  items <- runDM (getItemsByCategory "categories11" (#deleted False)) conn
+  items <- runSessionExceptT (getItemsByCategory "categories11" (#deleted False)) conn
   print items
-  catM <- runDM (getCategoryMaybe "categories11") conn
+  catM <- runSessionExceptT (getCategoryMaybe "categories11") conn
   print catM
-  cat <- runDM (getCategory "categories11") conn
+  cat <- runSessionExceptT (getCategory "categories11") conn
   print cat
-  catId <- runDM (getCategoryIdByItem "items1234567") conn
+  catId <- runSessionExceptT (getCategoryIdByItem "items1234567") conn
   print catId
-  catIds <- runDM getCategoryIds conn
+  catIds <- runSessionExceptT getCategoryIds conn
   print catIds
-  cats <- runDM getCategories conn
+  cats <- runSessionExceptT getCategories conn
   print cats
 
 ----------------------------------------------------------------------------
@@ -79,7 +80,7 @@ getTest = do
 ----------------------------------------------------------------------------
 
 -- | Get trait by id, either it deleted or not.
-getTraitMaybe :: Uid Trait -> DatabaseMonad (Maybe Trait)
+getTraitMaybe :: Uid Trait -> ExceptT DatabaseError Session (Maybe Trait)
 getTraitMaybe traitId = do
   let sql = [r|
         SELECT uid, content
@@ -91,10 +92,14 @@ getTraitMaybe traitId = do
         _traitUid <- uidColumn
         _traitContent <- toMarkdownInline <$> textColumn
         pure $ Trait{..}
-  toDatabaseMonad $ HS.statement traitId (Statement sql encoder decoder False)
+  lift $ HS.statement traitId (Statement sql encoder decoder False)
 
 -- | Get traits list by item id, deleted and trait_type filters.
-getTraitsByItem :: Uid Item -> "deleted" :! Bool -> "traitType" :! TraitType -> DatabaseMonad [Trait]
+getTraitsByItem
+  :: Uid Item
+  -> "deleted" :! Bool
+  -> "traitType" :! TraitType
+  -> ExceptT DatabaseError Session [Trait]
 getTraitsByItem itemId (arg #deleted -> deleted) (arg #traitType -> traitType) = do
   let sql = [r|
         SELECT uid, content
@@ -108,14 +113,14 @@ getTraitsByItem itemId (arg #deleted -> deleted) (arg #traitType -> traitType) =
         _traitUid <- uidColumn
         _traitContent <- toMarkdownInline <$> textColumn
         pure $ Trait{..}
-  toDatabaseMonad $ HS.statement (itemId,deleted,traitType) (Statement sql encoder decoder False)
+  lift $ HS.statement (itemId,deleted,traitType) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
 
 -- | Get maybe item by id, either it deleted or not.
-getItemMaybe :: Uid Item -> DatabaseMonad (Maybe Item)
+getItemMaybe :: Uid Item -> ExceptT DatabaseError Session (Maybe Item)
 getItemMaybe itemId = do
   _itemPros <- getTraitsByItem itemId (#deleted False) (#traitType Pro)
   _itemProsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Pro)
@@ -139,18 +144,21 @@ getItemMaybe itemId = do
         _itemEcosystem <- toMarkdownBlock <$> textColumn
         _itemNotes <- toMarkdownTree pref <$> textColumn
         pure $ Item{..}
-  toDatabaseMonad $ HS.statement itemId (Statement sql encoder decoder False)
+  lift $ HS.statement itemId (Statement sql encoder decoder False)
 
 -- | Get item by id, either it deleted or not.
-getItem :: Uid Item -> DatabaseMonad Item
+getItem :: Uid Item -> ExceptT DatabaseError Session Item
 getItem itemId = do
   mItem <- getItemMaybe itemId
   case mItem of
-        Nothing   -> ExceptT $ pure $ Left $ ItemNotFound itemId
-        Just item -> ExceptT $ pure $ Right item
+        Nothing   -> throwError $ ItemNotFound itemId
+        Just item -> pure item
 
 -- | Get items with category id and deleted filters
-getItemsByCategory :: Uid Category -> "deleted" :! Bool -> DatabaseMonad [Item]
+getItemsByCategory
+  :: Uid Category
+  -> "deleted" :! Bool
+  -> ExceptT DatabaseError Session [Item]
 getItemsByCategory catId (arg #deleted -> deleted) = do
   let sql = [r|
         SELECT uid
@@ -160,7 +168,7 @@ getItemsByCategory catId (arg #deleted -> deleted) = do
         |]
       encoder = contrazip2 uidParam boolParam
       decoder = HD.rowList $ uidColumn
-  itemUids <- toDatabaseMonad $ HS.statement (catId,deleted) (Statement sql encoder decoder False)
+  itemUids <- lift $ HS.statement (catId,deleted) (Statement sql encoder decoder False)
   traverse getItem itemUids
 
 ----------------------------------------------------------------------------
@@ -168,7 +176,7 @@ getItemsByCategory catId (arg #deleted -> deleted) = do
 ----------------------------------------------------------------------------
 
 -- | Get maybe category by uid.
-getCategoryMaybe :: Uid Category -> DatabaseMonad (Maybe Category)
+getCategoryMaybe :: Uid Category -> ExceptT DatabaseError Session (Maybe Category)
 getCategoryMaybe catId = do
   _categoryItems <- getItemsByCategory catId (#deleted False)
   _categoryItemsDeleted <- getItemsByCategory catId (#deleted True)
@@ -189,18 +197,18 @@ getCategoryMaybe catId = do
         let _categoryEnabledSections = Set.fromList itemSelection
         let _categoryGroups = Map.empty
         pure $ Category{..}
-  toDatabaseMonad $ HS.statement catId (Statement sql encoder decoder False)
+  lift $ HS.statement catId (Statement sql encoder decoder False)
 
 -- | Get category by uid.
-getCategory :: Uid Category -> DatabaseMonad Category
+getCategory :: Uid Category -> ExceptT DatabaseError Session Category
 getCategory catId = do
   mCat <- getCategoryMaybe catId
   case mCat of
-    Nothing  -> fail "getCategory returns nothing"
+    Nothing  -> throwError $ CategoryNotFound catId
     Just cat -> pure cat
 
 -- | Get category uid by item uid.
-getCategoryIdByItem :: Uid Item -> DatabaseMonad (Uid Category)
+getCategoryIdByItem :: Uid Item -> ExceptT DatabaseError Session (Uid Category)
 getCategoryIdByItem itemId = do
   let sql = [r|
         SELECT category_uid
@@ -209,16 +217,16 @@ getCategoryIdByItem itemId = do
         |]
       encoder = uidParam
       decoder = HD.singleRow $ uidColumn
-  toDatabaseMonad $ HS.statement itemId (Statement sql encoder decoder False)
+  lift $ HS.statement itemId (Statement sql encoder decoder False)
 
 -- | Get category by item uid.
-getCategoryByItem :: Uid Item -> DatabaseMonad (Maybe Category)
+getCategoryByItem :: Uid Item -> ExceptT DatabaseError Session (Maybe Category)
 getCategoryByItem itemId = do
   catId <- getCategoryIdByItem itemId
   getCategoryMaybe catId
 
 -- | Get category's uid list
-getCategoryIds :: DatabaseMonad [Uid Category]
+getCategoryIds :: ExceptT DatabaseError Session [Uid Category]
 getCategoryIds = do
   let sql = [r|
         SELECT uid
@@ -226,10 +234,10 @@ getCategoryIds = do
         |]
       encoder = HE.noParams
       decoder = HD.rowList $ uidColumn
-  toDatabaseMonad $ HS.statement () (Statement sql encoder decoder False)
+  lift $ HS.statement () (Statement sql encoder decoder False)
 
 -- | Get all categories
-getCategories :: DatabaseMonad [Category]
+getCategories :: ExceptT DatabaseError Session [Category]
 getCategories = do
   catIds <- getCategoryIds
   traverse getCategory catIds
