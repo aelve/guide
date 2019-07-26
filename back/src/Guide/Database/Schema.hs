@@ -130,7 +130,6 @@ v0_createTableItems = HS.sql [r|
     uid text PRIMARY KEY,           -- Unique item ID
     name text NOT NULL,             -- Item title
     created timestamptz NOT NULL,   -- When the item was created
-    group_ text,                    -- Optional group
     link text,                      -- Optional URL
     hackage text,                   -- Package name on Hackage
     summary text NOT NULL,          -- Item summary as Markdown

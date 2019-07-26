@@ -52,13 +52,6 @@ renderMethods = do
   Spock.get (renderRoute <//> categoryVar <//> "notes") $ \catId -> do
     category <- dbQuery (GetCategory catId)
     lucidIO $ renderCategoryNotes category
-  -- Item colors
-  Spock.get (renderRoute <//> itemVar <//> "colors") $ \itemId -> do
-    item <- dbQuery (GetItem itemId)
-    category <- dbQuery (GetCategoryByItem itemId)
-    let hue = getItemHue category item
-    json $ M.fromList [("light" :: Text, hueToLightColor hue),
-                       ("dark" :: Text, hueToDarkColor hue)]
   -- Item info
   Spock.get (renderRoute <//> itemVar <//> "info") $ \itemId -> do
     item <- dbQuery (GetItem itemId)
@@ -144,16 +137,8 @@ setMethods = do
     link' <- T.strip <$> param' "link"
     hackage' <- (\x -> if T.null x then Nothing else Just x) . T.strip <$>
                 param' "hackage"
-    group' <- do
-      groupField <- param' "group"
-      customGroupField <- param' "custom-group"
-      return $ case groupField of
-        "-" -> Nothing
-        ""  -> Just customGroupField
-        _   -> Just groupField
     -- Modify the item
     -- TODO: actually validate the form and report errors
-    --       (don't forget to check that custom-group ≠ "")
     unless (T.null name') $ do
       (edit, _) <- dbUpdate (SetItemName itemId name')
       addEdit edit
@@ -167,9 +152,6 @@ setMethods = do
       _otherwise ->
           return ()
     do (edit, _) <- dbUpdate (SetItemHackage itemId hackage')
-       addEdit edit
-    -- This does all the work of assigning new colors, etc. automatically
-    do (edit, _) <- dbUpdate (SetItemGroup itemId group')
        addEdit edit
     -- After all these edits we can render the item
     item <- dbQuery (GetItem itemId)

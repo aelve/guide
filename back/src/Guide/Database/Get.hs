@@ -34,7 +34,6 @@ import Hasql.Transaction.Sessions (Mode(Read))
 import Named
 import Text.RawString.QQ (r)
 
-import qualified Data.Map as Map
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
@@ -139,7 +138,7 @@ getItemMaybe itemId = do
   _itemConsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Con)
   let prefix = "item-notes-" <> uidToText itemId <> "-"
   let sql = [r|
-        SELECT uid, name, created, group_, link, hackage, summary, ecosystem, notes
+        SELECT uid, name, created, link, hackage, summary, ecosystem, notes
         FROM items
         WHERE uid = $1
         |]
@@ -148,7 +147,6 @@ getItemMaybe itemId = do
         _itemUid <- uidColumn
         _itemName <- textColumn
         _itemCreated <- timestamptzColumn
-        _itemGroup_ <- textColumnNullable
         _itemLink <- textColumnNullable
         _itemHackage <- textColumnNullable
         _itemSummary <- toMarkdownBlock <$> textColumn
@@ -216,7 +214,6 @@ getCategoryMaybe catId = do
         _categoryStatus <- categoryStatusColumn
         _categoryNotes <- toMarkdownBlock <$> textColumn
         _categoryEnabledSections <- itemSectionSetColumn
-        let _categoryGroups = Map.empty  -- TODO fix
         pure $ Category{..}
   lift $ HT.statement catId (Statement sql encoder decoder False)
 

@@ -142,11 +142,8 @@ undoEdit (Edit'SetItemLink itemId old new) = do
   if now /= new
     then return (Left "link has been changed further")
     else Right () <$ dbUpdate (SetItemLink itemId old)
-undoEdit (Edit'SetItemGroup itemId old new) = do
-  now <- view group_ <$> dbQuery (GetItem itemId)
-  if now /= new
-    then return (Left "group has been changed further")
-    else Right () <$ dbUpdate (SetItemGroup itemId old)
+undoEdit (Edit'SetItemGroup _ _ _) = do
+  return (Left "groups are not supported anymore")
 undoEdit (Edit'SetItemHackage itemId old new) = do
   now <- view hackage <$> dbQuery (GetItem itemId)
   if now /= new

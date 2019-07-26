@@ -254,63 +254,6 @@ itemTests = session "items" $ using [chromeCaps] $ do
         form <- openItemEditForm item1
         enterInput "New item" (form :// ByName "name")
         itemName item1 `shouldHaveText` "New item"
-    describe "group" $ do
-      wd "is present and “other” by default" $ do
-        itemGroup item1 `shouldHaveText` "other"
-        fs <- fontSize (itemGroup item1); fs `shouldBeInRange` (15,17)
-        form <- openItemEditForm item1
-        (form :// ByName "group" :// ":checked") `shouldHaveText` "-"
-        click (form :// ".cancel")
-      wd "custom group input is hidden but then shows" $ do
-        form <- openItemEditForm item1
-        sel <- select (form :// ByName "group")
-        opt <- select (sel :// HasText "New group...")
-        shouldBeHidden (form :// ByName "custom-group")
-        selectDropdown sel opt
-        shouldBeDisplayed (form :// ByName "custom-group")
-        click (form :// ".cancel")
-      wd "can be changed to a custom group" $ do
-        setItemCustomGroup "some group" item1
-      -- TODO: check that it works with 2 groups etc
-      wd "is automatically put into all items' choosers" $ do
-        createItem "Another item"
-        -- TODO: make a combinator for this
-        items <- selectAll ".item"
-        waitUntil wait_delay $ expect (length items >= 2)
-        for_ items $ \item -> do
-          form <- openItemEditForm item
-          checkPresent $
-            form :// ByName "group" :// "option" :& HasText "some group"
-          click (form :// ".cancel")
-      wd "is present in the chooser after a refresh" $ do
-        refresh
-        form <- openItemEditForm item1
-        sel <- select (form :// ByName "group")
-        (sel :// ":checked") `shouldHaveText` "some group"
-        click (form :// ".cancel")
-        -- TODO: more convoluted change scenarious
-      -- TODO: setting custom group to something that already exists
-      -- doesn't result in two equal groups
-      wd "changing it changes the color" $ do
-        [itemA, itemB, itemC] <- replicateM 3 (createItem "blah")
-        setItemCustomGroup "one" itemA
-        setItemGroup "one" itemB
-        setItemCustomGroup "two" itemC
-        let getColors = for [itemA, itemB, itemC] $ \item ->
-              (,) <$> cssProp (item :// ".item-info") "background-color"
-                  <*> cssProp (item :// ".item-body") "background-color"
-        -- A=1,B=1,C=2; check that A=B, A≠C
-        do [aCol, bCol, cCol] <- getColors
-           aCol `shouldBe` bCol; aCol `shouldNotBe` cCol
-        -- A:=2; now A=2,B=1,C=2; check that A≠B, A=C
-        setItemCustomGroup "two" itemA
-        do [aCol, bCol, cCol] <- getColors
-           aCol `shouldNotBe` bCol; aCol `shouldBe` cCol
-        -- C:=1; now A=2,B=1,C=1; check that A≠C, B=C
-        setItemGroup "one" itemC
-        do [aCol, bCol, cCol] <- getColors
-           aCol `shouldNotBe` cCol; bCol `shouldBe` cCol
-
     -- TODO: kind
     -- TODO: site
 
@@ -491,27 +434,6 @@ createItem t = do
 
 itemName :: CanSelect s => s -> ComplexSelector
 itemName item = item :// ".item-name"
-
-itemGroup :: CanSelect s => s -> ComplexSelector
-itemGroup item = item :// ".item-group"
-
-setItemGroup :: CanSelect s => Text -> s -> WD ()
-setItemGroup g item = do
-  form <- openItemEditForm item
-  sel <- select (form :// ByName "group")
-  opt <- select (sel :// HasText g)
-  selectDropdown sel opt
-  saveForm form
-  itemGroup item `shouldHaveText` g
-
-setItemCustomGroup :: CanSelect s => Text -> s -> WD ()
-setItemCustomGroup g item = do
-  form <- openItemEditForm item
-  sel <- select (form :// ByName "group")
-  opt <- select (sel :// HasText "New group...")
-  selectDropdown sel opt
-  enterInput g (form :// ByName "custom-group")
-  itemGroup item `shouldHaveText` g
 
 categoryTitle :: Selector
 categoryTitle = ByCSS ".category-title"

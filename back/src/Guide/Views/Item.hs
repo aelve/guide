@@ -20,7 +20,6 @@ module Guide.Views.Item
 
   -- * Helpers that should probably be moved somewhere
   renderTrait,
-  getItemHue,
 )
 where
 
@@ -39,7 +38,6 @@ import Guide.Utils
 import Guide.Views.Utils
 
 import qualified Data.Aeson as A
-import qualified Data.Map as M
 import qualified Data.Text.IO as T
 
 import qualified Guide.JS as JS
@@ -57,8 +55,7 @@ renderItem category item =
   -- The id is used for links in feeds, and for anchor links
   div_ [id_ (itemNodeId item), class_ "item"] $ do
     renderItemInfo category item
-    let bg = hueToLightColor $ getItemHue category item
-    div_ [class_ "item-body", style_ ("background-color:" <> bg)] $ do
+    div_ [class_ "item-body", style_ ("background-color:#F0F0F0")] $ do
       -- See Note [enabled sections]
       renderItemDescription item
       hiddenIf (ItemProsConsSection `notElem` category^.enabledSections) $
@@ -104,26 +101,16 @@ renderItemTitle item =
     "item" A..= item ]
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
+-- TODO: give a link to oldest available docs when the new docs aren't there
 
 -- | Render item info.
---
--- TODO: give a link to oldest available docs when the new docs aren't there
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item =
   mustache "item-info" $ A.object [
     "category" A..= cat,
     "item" A..= item,
     "link_to_item" A..= itemLink cat item,
-    "hackage" A..= (item^.hackage),
-    "category_groups" A..= do
-        gr <- M.keys (cat^.groups)
-        return $ A.object [
-          "name" A..= gr,
-          "selected" A..= (Just gr == item^.group_) ],
-    "item_no_group" A..= isNothing (item^.group_),
-    "item_color" A..= A.object [
-      "dark"  A..= hueToDarkColor (getItemHue cat item),
-      "light" A..= hueToLightColor (getItemHue cat item) ] ]
+    "hackage" A..= (item^.hackage) ]
 
 -- | Render item description.
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
@@ -311,10 +298,3 @@ renderItemNotes category item = do
 
     section "editing" [uid_ editingSectionUid] $
       return ()
-
--- | Decide what color should an item have. (Requires looking at its parent
--- category.)
-getItemHue :: Category -> Item -> Hue
-getItemHue category item = case item^.group_ of
-  Nothing -> NoHue
-  Just s  -> M.findWithDefault NoHue s (category^.groups)

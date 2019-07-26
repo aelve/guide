@@ -117,7 +117,6 @@ createItem catId CCreateItem{..} =
     itemId <- randomShortUid
     time <- liftIO getCurrentTime
     addEdit . fst =<< dbUpdate (AddItem catId itemId cciName time)
-    addEdit . fst =<< dbUpdate (SetItemGroup itemId cciGroup)
     addEdit . fst =<< dbUpdate (SetItemHackage itemId cciHackage)
     addEdit . fst =<< dbUpdate (SetItemLink itemId cciLink)
     pure itemId
@@ -130,8 +129,6 @@ setItemInfo itemId CItemInfoEdit{..} =
     -- TODO diff and merge
     whenJust ciieName $ \ciieName' ->
       addEdit . fst =<< dbUpdate (SetItemName itemId ciieName')
-    whenJust ciieGroup $ \ciieGroup' ->
-      addEdit . fst =<< dbUpdate (SetItemGroup itemId ciieGroup')
     whenJust ciieHackage $ \ciieHackage' ->
       addEdit . fst =<< dbUpdate (SetItemHackage itemId ciieHackage')
     whenJust ciieLink $ \ciieLink' -> do
