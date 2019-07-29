@@ -62,7 +62,7 @@ library
       Guide.Database.Convert
       Guide.Database.Get
       Guide.Database.Schema
-      -- Guide.Database.Set
+      Guide.Database.Set
       Guide.Database.Types
     Guide.Logger
       Guide.Logger.Types
