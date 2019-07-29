@@ -19,15 +19,18 @@ module Guide.Database.Convert
        , uidColumn
 
        -- * 'UTCTime'
+       , timestamptzParam
        , timestamptzColumn
 
        -- * 'TraitType'
        , traitTypeParam
 
        -- * 'CategoryStatus'
+       , categoryStatusParam
        , categoryStatusColumn
 
        -- * @Set 'ItemSection'@
+       , itemSectionSetParam
        , itemSectionSetColumn
        ) where
 
@@ -92,6 +95,10 @@ uidColumn = Uid <$> textColumn
 -- UTCTime
 ----------------------------------------------------------------------------
 
+-- | Encode a 'UTCTime'.
+timestamptzParam :: HE.Params UTCTime
+timestamptzParam = HE.param (HE.nonNullable HE.timestamptz)
+
 -- | Get a 'UTCTime' from a query.
 timestamptzColumn :: HD.Row UTCTime
 timestamptzColumn = HD.column (HD.nonNullable HD.timestamptz)
@@ -114,6 +121,17 @@ traitTypeParam = HE.param (HE.nonNullable traitTypeEncoder)
 -- CategoryStatus
 ----------------------------------------------------------------------------
 
+-- | Encode a 'CategoryStatus'.
+categoryStatusEncoder :: HE.Value CategoryStatus
+categoryStatusEncoder = HE.enum $ \case
+  CategoryStub -> "stub"
+  CategoryWIP -> "wip"
+  CategoryFinished -> "finished"
+
+-- | Pass a 'CategoryStatus' to a query.
+categoryStatusParam :: HE.Params CategoryStatus
+categoryStatusParam = HE.param (HE.nonNullable categoryStatusEncoder)
+
 -- | Decode a 'CategoryStatus'.
 categoryStatusDecoder :: HD.Value CategoryStatus
 categoryStatusDecoder = HD.enum $ \case
@@ -129,6 +147,22 @@ categoryStatusColumn = HD.column (HD.nonNullable categoryStatusDecoder)
 ----------------------------------------------------------------------------
 -- Set ItemSection
 ----------------------------------------------------------------------------
+
+-- | Encode an 'ItemSection'.
+itemSectionEncoder :: HE.Value ItemSection
+itemSectionEncoder = HE.enum $ \case
+  ItemProsConsSection -> "pros_cons"
+  ItemEcosystemSection -> "ecosystem"
+  ItemNotesSection -> "notes"
+
+-- | Pass a @Set ItemSection@ to a query.
+itemSectionSetParam :: HE.Params (Set ItemSection)
+itemSectionSetParam = contramap Set.toList
+  $ HE.param
+  $ HE.nonNullable
+  $ HE.foldableArray
+  $ HE.nonNullable
+  $ itemSectionEncoder
 
 -- | Decode an 'ItemSection'.
 itemSectionDecoder :: HD.Value ItemSection
