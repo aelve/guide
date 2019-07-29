@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 
--- | Insert database queries.
+-- | Insert queries.
 module Guide.Database.Add
        (
        -- * Trait
@@ -18,19 +18,37 @@ import Imports
 import Contravariant.Extras.Contrazip (contrazip4, contrazip7, contrazip9)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
+import Hasql.Transaction.Sessions (Mode (..))
 import Text.RawString.QQ (r)
 
 import qualified Data.Set as Set
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
+import Guide.Database.Connection (connect, runTransactionExceptT)
 import Guide.Database.Convert
+import Guide.Database.Get
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
 
--- Insert category to database
+-- | Test add functions
+testAdd :: IO ()
+testAdd = do
+  conn <- connect
+  time <- getCurrentTime
+  -- runTransactionExceptT conn Write (addCategory "category1111" "addedCat" "groupCat" time)
+  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- print cat
+  -- runTransactionExceptT conn Write (addItem "category1111" "item11112222" "addedItem" time)
+  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- print item
+  runTransactionExceptT conn Write (addTrait "item11112222" "trait1112222" Pro "content")
+  trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  print trait
+
+-- | Insert category to database.
 addCategory
   :: Uid Category    -- ^ New category's id
   -> Text            -- ^ Title
@@ -54,7 +72,7 @@ addCategory catId title group_ created = do
   lift $ HT.statement (catId, title, created, group_, CategoryWIP, "", Set.empty)
     (Statement sql encoder decoder False)
 
--- Insert item to database
+-- | Insert item to database.
 addItem
   :: Uid Category    -- ^ Category id
   -> Uid Item        -- ^ New item's id
@@ -80,7 +98,7 @@ addItem catId itemId name created = do
   lift $ HT.statement (itemId, name, created, Nothing, Nothing, "", "", "", catId)
     (Statement sql encoder decoder False)
 
--- Insert trait to database
+-- | Insert trait to database.
 addTrait
   :: Uid Item        -- ^ Item id
   -> Uid Trait       -- ^ New trait's id
@@ -89,8 +107,8 @@ addTrait
   -> ExceptT DatabaseError Transaction ()
 addTrait itemId traitId type_ content = do
   let sql = [r|
-        INSERT INTO items (uid, content, type_, item_uid)
-        VALUES ($1,$2,$3,$4)
+        INSERT INTO traits (uid, content, type_, item_uid)
+        VALUES ($1,$2,($3 :: trait_type),$4)
         |]
       encoder = contrazip4 uidParam textParam traitTypeParam uidParam
       decoder = HD.noResult
