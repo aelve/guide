@@ -1,5 +1,8 @@
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TypeOperators     #-}
 
 -- | Insert queries.
 module Guide.Database.Add
@@ -19,6 +22,7 @@ import Contravariant.Extras.Contrazip (contrazip4, contrazip7, contrazip9)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
+import Named
 import Text.RawString.QQ (r)
 
 import qualified Data.Set as Set
@@ -33,29 +37,14 @@ import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (.
 import Guide.Utils (Uid (..))
 
 
--- | Test add functions
-testAdd :: IO ()
-testAdd = do
-  conn <- connect
-  time <- getCurrentTime
-  -- runTransactionExceptT conn Write (addCategory "category1111" "addedCat" "groupCat" time)
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
-  -- print cat
-  -- runTransactionExceptT conn Write (addItem "category1111" "item11112222" "addedItem" time)
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
-  -- print item
-  runTransactionExceptT conn Write (addTrait "item11112222" "trait1112222" Pro "content")
-  trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
-  print trait
-
 -- | Insert category to database.
 addCategory
-  :: Uid Category    -- ^ New category's id
-  -> Text            -- ^ Title
-  -> Text            -- ^ Group
-  -> UTCTime         -- ^ Creation time
+  :: Uid Category       -- ^ New category's id
+  -> "title" :! Text    -- ^ Title
+  -> "group_" :! Text   -- ^ Group
+  -> UTCTime            -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addCategory catId title group_ created = do
+addCategory catId (arg #title -> title) (arg #group_ -> group_) created = do
   let sql = [r|
         INSERT INTO categories (uid, title, created, group_, status_, notes, enabled_sections)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -74,12 +63,12 @@ addCategory catId title group_ created = do
 
 -- | Insert item to database.
 addItem
-  :: Uid Category    -- ^ Category id
-  -> Uid Item        -- ^ New item's id
-  -> Text            -- ^ Name
-  -> UTCTime         -- ^ Creation time
+  :: Uid Category       -- ^ Category id
+  -> Uid Item           -- ^ New item's id
+  -> "name" :! Text     -- ^ Name
+  -> UTCTime            -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addItem catId itemId name created = do
+addItem catId itemId (arg #name -> name) created = do
   let sql = [r|
         INSERT INTO items (uid, name, created, link, hackage, summary, ecosystem, notes, category_uid)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
@@ -100,12 +89,12 @@ addItem catId itemId name created = do
 
 -- | Insert trait to database.
 addTrait
-  :: Uid Item        -- ^ Item id
-  -> Uid Trait       -- ^ New trait's id
-  -> TraitType       -- ^ Pro or Con
-  -> Text            -- ^ Trait content
+  :: Uid Item             -- ^ Item id
+  -> Uid Trait            -- ^ New trait's id
+  -> TraitType            -- ^ Pro or Con
+  -> "content" :! Text    -- ^ Trait content
   -> ExceptT DatabaseError Transaction ()
-addTrait itemId traitId type_ content = do
+addTrait itemId traitId type_ (arg #content -> content) = do
   let sql = [r|
         INSERT INTO traits (uid, content, type_, item_uid)
         VALUES ($1,$2,($3 :: trait_type),$4)
@@ -113,3 +102,21 @@ addTrait itemId traitId type_ content = do
       encoder = contrazip4 uidParam textParam traitTypeParam uidParam
       decoder = HD.noResult
   lift $ HT.statement (traitId, content, type_, itemId) (Statement sql encoder decoder False)
+
+
+-- Sandbox
+
+-- Test add functions
+testAdd :: IO ()
+testAdd = do
+  conn <- connect
+  time <- getCurrentTime
+  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group_ "groupCat") time)
+  cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  print cat
+  runTransactionExceptT conn Write (addItem "category1111" "item11112222" (#name "addedItem") time)
+  item <- runTransactionExceptT conn Read (getItem "item11112222")
+  print item
+  runTransactionExceptT conn Write (addTrait "item11112222" "trait1112222" Pro (#content "content"))
+  trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  print trait

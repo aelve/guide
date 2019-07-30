@@ -46,36 +46,6 @@ import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
 
--- | Just to test queries
-getTest :: IO ()
-getTest = do
-  conn <- connect
-  mTrait <- runTransactionExceptT conn Read (getTraitMaybe "qwertassdf34")
-  print mTrait
-  traits <- runTransactionExceptT conn Read $
-    getTraitsByItem "items1234567" (#deleted False) (#traitType Pro)
-  print traits
-  mItem <- runTransactionExceptT conn Read (getItemMaybe "items1234567")
-  print mItem
-  item <- runTransactionExceptT conn Read (getItem "items1234567")
-  print item
-  -- wrong uid
-  -- itemErr <- runTransactionExceptT conn Read (getItemByItemId "wrong1234567")
-  -- print itemErr
-  items <- runTransactionExceptT conn Read $
-    getItemsByCategory "categories11" (#deleted False)
-  print items
-  catM <- runTransactionExceptT conn Read (getCategoryMaybe "categories11")
-  print catM
-  cat <- runTransactionExceptT conn Read (getCategory "categories11")
-  print cat
-  mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "items1234567")
-  print mCatId
-  catIds <- runTransactionExceptT conn Read getCategoryIds
-  print catIds
-  cats <- runTransactionExceptT conn Read getCategories
-  print cats
-
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
@@ -105,9 +75,9 @@ getTraitMaybe traitId = do
 getTraitsByItem
   :: Uid Item
   -> "deleted" :! Bool
-  -> "traitType" :! TraitType
+  -> TraitType
   -> ExceptT DatabaseError Transaction [Trait]
-getTraitsByItem itemId (arg #deleted -> deleted) (arg #traitType -> traitType) = do
+getTraitsByItem itemId (arg #deleted -> deleted) traitType = do
   let sql = [r|
         SELECT uid, content
         FROM traits
@@ -132,10 +102,10 @@ getTraitsByItem itemId (arg #deleted -> deleted) (arg #traitType -> traitType) =
 -- in the database.
 getItemMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe Item)
 getItemMaybe itemId = do
-  _itemPros <- getTraitsByItem itemId (#deleted False) (#traitType Pro)
-  _itemProsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Pro)
-  _itemCons <- getTraitsByItem itemId (#deleted False) (#traitType Con)
-  _itemConsDeleted <- getTraitsByItem itemId (#deleted True) (#traitType Con)
+  _itemPros <- getTraitsByItem itemId (#deleted False) Pro
+  _itemProsDeleted <- getTraitsByItem itemId (#deleted True) Pro
+  _itemCons <- getTraitsByItem itemId (#deleted False) Con
+  _itemConsDeleted <- getTraitsByItem itemId (#deleted True) Con
   let prefix = "item-notes-" <> uidToText itemId <> "-"
   let sql = [r|
         SELECT uid, name, created, link, hackage, summary, ecosystem, notes
@@ -276,3 +246,36 @@ getCategories :: ExceptT DatabaseError Transaction [Category]
 getCategories = do
   catIds <- getCategoryIds
   traverse getCategory catIds
+
+
+-- Sandbox
+
+-- | Just to test queries
+getTest :: IO ()
+getTest = do
+  conn <- connect
+  mTrait <- runTransactionExceptT conn Read (getTraitMaybe "qwertassdf34")
+  print mTrait
+  traits <- runTransactionExceptT conn Read $
+    getTraitsByItem "items1234567" (#deleted False) Pro
+  print traits
+  mItem <- runTransactionExceptT conn Read (getItemMaybe "items1234567")
+  print mItem
+  item <- runTransactionExceptT conn Read (getItem "items1234567")
+  print item
+  -- wrong uid
+  -- itemErr <- runTransactionExceptT conn Read (getItemByItemId "wrong1234567")
+  -- print itemErr
+  items <- runTransactionExceptT conn Read $
+    getItemsByCategory "categories11" (#deleted False)
+  print items
+  catM <- runTransactionExceptT conn Read (getCategoryMaybe "categories11")
+  print catM
+  cat <- runTransactionExceptT conn Read (getCategory "categories11")
+  print cat
+  mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "items1234567")
+  print mCatId
+  catIds <- runTransactionExceptT conn Read getCategoryIds
+  print catIds
+  cats <- runTransactionExceptT conn Read getCategories
+  print cats
