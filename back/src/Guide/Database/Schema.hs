@@ -156,7 +156,9 @@ v0_createTableCategories = HS.sql [r|
                                     --   possible statuses is defined by backend
     notes text NOT NULL,            -- Category notes as Markdown
     enabled_sections text[]         -- Item sections to show to users; the list of
-      NOT NULL                      --   possible section names is defined by backend
+      NOT NULL,                     --   possible section names is defined by backend
+    items_order text[]              -- Items order. It allows move them up and down
+      NOT NULL
   );
   |]
 

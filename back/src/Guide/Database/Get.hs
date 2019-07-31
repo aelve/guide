@@ -22,6 +22,8 @@ module Guide.Database.Get
        , getCategoryMaybe
        , getCategories
        , getCategoryByItemMaybe
+       , getCategoryIdByItemMaybe
+       , getCategoryItemsOrder
 
        ) where
 
@@ -30,7 +32,7 @@ import Imports
 import Contravariant.Extras.Contrazip (contrazip2, contrazip3)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Hasql.Transaction.Sessions (Mode(Read))
+import Hasql.Transaction.Sessions (Mode (Read))
 import Named
 import Text.RawString.QQ (r)
 
@@ -187,6 +189,19 @@ getCategoryMaybe catId = do
         pure $ Category{..}
   lift $ HT.statement catId (Statement sql encoder decoder False)
 
+-- | Get 'items_order' from category.
+getCategoryItemsOrder :: Uid Category -> ExceptT DatabaseError Transaction [Uid Item]
+getCategoryItemsOrder catId = do
+  let sql = [r|
+        SELECT items_order
+        FROM categories
+        WHERE uid = $1
+        |]
+      encoder = uidParam
+      decoder = HD.singleRow uidsColumn
+
+  lift $ HT.statement catId (Statement sql encoder decoder False)
+
 -- | Get a 'Category'.
 --
 -- Categories marked as deleted will still be returned if they physically
@@ -254,28 +269,30 @@ getCategories = do
 getTest :: IO ()
 getTest = do
   conn <- connect
-  mTrait <- runTransactionExceptT conn Read (getTraitMaybe "qwertassdf34")
-  print mTrait
-  traits <- runTransactionExceptT conn Read $
-    getTraitsByItem "items1234567" (#deleted False) Pro
-  print traits
-  mItem <- runTransactionExceptT conn Read (getItemMaybe "items1234567")
-  print mItem
-  item <- runTransactionExceptT conn Read (getItem "items1234567")
-  print item
-  -- wrong uid
-  -- itemErr <- runTransactionExceptT conn Read (getItemByItemId "wrong1234567")
-  -- print itemErr
-  items <- runTransactionExceptT conn Read $
-    getItemsByCategory "categories11" (#deleted False)
-  print items
-  catM <- runTransactionExceptT conn Read (getCategoryMaybe "categories11")
-  print catM
-  cat <- runTransactionExceptT conn Read (getCategory "categories11")
+  -- mTrait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  -- print mTrait
+  -- traits <- runTransactionExceptT conn Read $
+  --   getTraitsByItem "item11112222" (#deleted False) Pro
+  -- print traits
+  -- mItem <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  -- print mItem
+  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- print item
+  -- -- wrong uid
+  -- -- itemErr <- runTransactionExceptT conn Read (getItemByItemId "wrong1234567")
+  -- -- print itemErr
+  -- items <- runTransactionExceptT conn Read $
+  --   getItemsByCategory "category1111" (#deleted False)
+  -- print items
+  -- catM <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- print catM
+  cat <- runTransactionExceptT conn Read (getCategory "category1111")
   print cat
-  mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "items1234567")
-  print mCatId
-  catIds <- runTransactionExceptT conn Read getCategoryIds
-  print catIds
-  cats <- runTransactionExceptT conn Read getCategories
-  print cats
+  -- mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "item11112222")
+  -- print mCatId
+  -- catIds <- runTransactionExceptT conn Read getCategoryIds
+  -- print catIds
+  -- cats <- runTransactionExceptT conn Read getCategories
+  -- print cats
+  itemOrder <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
+  print itemOrder
