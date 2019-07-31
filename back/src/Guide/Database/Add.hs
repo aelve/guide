@@ -18,7 +18,8 @@ module Guide.Database.Add
 
 import Imports
 
-import Contravariant.Extras.Contrazip (contrazip4, contrazip8, contrazip11)
+import Data.Functor.Contravariant ((>$<))
+import Contravariant.Extras.Contrazip (contrazip4, contrazip8)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
@@ -26,6 +27,7 @@ import Named
 import Text.RawString.QQ (r)
 
 import qualified Data.Set as Set
+import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
@@ -37,6 +39,10 @@ import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
+
+----------------------------------------------------------------------------
+-- addCategory
+----------------------------------------------------------------------------
 
 -- | Insert category to database.
 addCategory
@@ -63,6 +69,40 @@ addCategory catId (arg #title -> title) (arg #group_ -> group_) created = do
   lift $ HT.statement (catId, title, created, group_, CategoryWIP, "", Set.empty, [])
     (Statement sql encoder decoder False)
 
+----------------------------------------------------------------------------
+-- addItem
+----------------------------------------------------------------------------
+
+data ItemRow = ItemRow
+  { itemRowUid :: Uid Item
+  , itemRowName :: Text
+  , itemRowCreated :: UTCTime
+  , itemRowLink :: Maybe Text
+  , itemRowHackage :: Maybe Text
+  , itemRowSummary :: Text
+  , itemRowEcosystem :: Text
+  , itemRowNotes :: Text
+  , itemRowDeleted :: Bool
+  , itemRowCategoryUid :: Uid Category
+  , itemRowProsOrder :: [Uid Trait]
+  , itemRowConsOrder :: [Uid Trait]
+  }
+
+itemRowParams :: HE.Params ItemRow
+itemRowParams =
+  (itemRowUid >$< uidParam) <>
+  (itemRowName >$< textParam) <>
+  (itemRowCreated >$< timestamptzParam) <>
+  (itemRowLink >$< textParamNullable) <>
+  (itemRowHackage >$< textParamNullable) <>
+  (itemRowSummary >$< textParam) <>
+  (itemRowEcosystem >$< textParam) <>
+  (itemRowNotes >$< textParam) <>
+  (itemRowDeleted >$< boolParam) <>
+  (itemRowCategoryUid >$< uidParam) <>
+  (itemRowProsOrder >$< uidsParam) <>
+  (itemRowConsOrder >$< uidsParam)
+
 -- | Insert item to database.
 addItem
   :: Uid Category       -- ^ Category id
@@ -76,23 +116,29 @@ addItem catId itemId (arg #name -> name) created = do
           (uid, name, created, link, hackage, summary, ecosystem, notes, category_uid, pros_order, cons_order)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         |]
-      encoder = contrazip11
-        uidParam
-        textParam
-        timestamptzParam
-        textParamNullable
-        textParamNullable
-        textParam
-        textParam
-        textParam
-        uidParam
-        uidsParam
-        uidsParam
+      encoder = itemRowParams
       decoder = HD.noResult
-  lift $ HT.statement (itemId, name, created, Nothing, Nothing, "", "", "", catId, [], [])
+  lift $ HT.statement
+    ItemRow
+      { itemRowUid = itemId
+      , itemRowName = name
+      , itemRowCreated = created
+      , itemRowLink = Nothing
+      , itemRowHackage = Nothing
+      , itemRowSummary = ""
+      , itemRowEcosystem = ""
+      , itemRowNotes = ""
+      , itemRowDeleted = False
+      , itemRowCategoryUid = catId
+      , itemRowProsOrder = []
+      , itemRowConsOrder = [] }
     (Statement sql encoder decoder False)
   -- Adds itemId to category's items_order list.
   addItemIdToCategory catId itemId
+
+----------------------------------------------------------------------------
+-- addTrait
+----------------------------------------------------------------------------
 
 -- | Insert trait to database.
 addTrait
