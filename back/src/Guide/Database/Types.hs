@@ -15,4 +15,5 @@ data DatabaseError
   = ItemNotFound (Uid Item)
   | CategoryNotFound (Uid Category)
   | ItemOrCategoryNotFound
+  | TraitOrItemNotFound
   deriving Show

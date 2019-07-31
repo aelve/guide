@@ -28,6 +28,7 @@ module Guide.Database.Convert
 
        -- * 'TraitType'
        , traitTypeParam
+       , traitTypeColumn
 
        -- * 'CategoryStatus'
        , categoryStatusParam
@@ -120,6 +121,17 @@ traitTypeEncoder = HE.enum $ \case
 -- | Pass a 'TraitType' to a query.
 traitTypeParam :: HE.Params TraitType
 traitTypeParam = HE.param (HE.nonNullable traitTypeEncoder)
+
+-- | Decode a 'TraitType'.
+traitTypeDecoder :: HD.Value TraitType
+traitTypeDecoder = HD.enum $ \case
+  "pro" -> Just Pro
+  "con" -> Just Con
+  _ -> Nothing
+
+-- | Get a 'TraitType' from a query.
+traitTypeColumn :: HD.Row TraitType
+traitTypeColumn = HD.column (HD.nonNullable traitTypeDecoder)
 
 ----------------------------------------------------------------------------
 -- CategoryStatus
