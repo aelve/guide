@@ -140,7 +140,11 @@ v0_createTableItems = HS.sql [r|
       NOT NULL,
     category_uid text               -- Category that the item belongs to
       REFERENCES categories (uid)
-      ON DELETE CASCADE
+      ON DELETE CASCADE,
+    pros_order text[]               -- Order of pro traits
+      NOT NULL,
+    cons_order text[]               -- Order of con traits
+      NOT NULL
   );
   |]
 

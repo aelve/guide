@@ -13,10 +13,13 @@ module Guide.Database.Get
        -- * Trait
          getTraitMaybe
        , getTraitsByItem
+       , getTraitTypeByTraitId
        -- * Item
        , getItem
        , getItemMaybe
        , getItemsByCategory
+       , getItemTraitsOrder
+       , getItemIdByTraitMaybe
        -- * Category
        , getCategory
        , getCategoryMaybe
@@ -94,6 +97,19 @@ getTraitsByItem itemId (arg #deleted -> deleted) traitType = do
         pure $ Trait{..}
   lift $ HT.statement (itemId,deleted,traitType) (Statement sql encoder decoder False)
 
+-- | Get a 'TraitType' by traitId.
+getTraitTypeByTraitId :: Uid Trait -> ExceptT DatabaseError Transaction TraitType
+getTraitTypeByTraitId traitId = do
+  let sql = [r|
+        SELECT type_
+        FROM traits
+        WHERE uid = $1
+        |]
+      encoder = uidParam
+      decoder = HD.singleRow traitTypeColumn
+  lift $ HT.statement traitId (Statement sql encoder decoder False)
+
+
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
@@ -160,6 +176,37 @@ getItemsByCategory catId (arg #deleted -> deleted) = do
   itemUids <- lift $ HT.statement (catId,deleted) (Statement sql encoder decoder False)
   traverse getItem itemUids
 
+-- | Get 'pros_order' or 'cons_order' of item..
+getItemTraitsOrder :: Uid Item -> TraitType -> ExceptT DatabaseError Transaction [Uid Trait]
+getItemTraitsOrder itemId traitType = do
+  let sql = case traitType of
+        Pro -> [r|
+          SELECT pros_order
+          FROM items
+          WHERE uid = $1
+          |]
+        Con -> [r|
+          SELECT cons_order
+          FROM items
+          WHERE uid = $1
+          |]
+      encoder = uidParam
+      decoder = HD.singleRow uidsColumn
+  lift $ HT.statement itemId (Statement sql encoder decoder False)
+
+-- | Get items by trait
+getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
+getItemIdByTraitMaybe traitId = do
+  let sql = [r|
+        SELECT item_uid
+        FROM traits
+        WHERE uid = $1
+        |]
+      encoder = uidParam
+      decoder = HD.rowMaybe $ uidColumn
+  lift $ HT.statement traitId (Statement sql encoder decoder False)
+
+
 ----------------------------------------------------------------------------
 -- Categories
 ----------------------------------------------------------------------------
@@ -189,7 +236,7 @@ getCategoryMaybe catId = do
         pure $ Category{..}
   lift $ HT.statement catId (Statement sql encoder decoder False)
 
--- | Get 'items_order' from category.
+-- | Get 'items_order' of category.
 getCategoryItemsOrder :: Uid Category -> ExceptT DatabaseError Transaction [Uid Item]
 getCategoryItemsOrder catId = do
   let sql = [r|
@@ -199,7 +246,6 @@ getCategoryItemsOrder catId = do
         |]
       encoder = uidParam
       decoder = HD.singleRow uidsColumn
-
   lift $ HT.statement catId (Statement sql encoder decoder False)
 
 -- | Get a 'Category'.
