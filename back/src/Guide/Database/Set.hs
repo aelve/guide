@@ -24,12 +24,16 @@ module Guide.Database.Set
        , setCategoryGroup
        , setCategoryNotes
        , setCategoryStatus
-       , changeCategoryEnabledSections
+       , setCategoryEnabledSections
+       , addItemIdToCategory
 
        -- * Deletion
        , deleteCategory
        , deleteItem
        , deleteTrait
+
+       -- * Moving
+       , moveItem
 
        ) where
 
@@ -52,8 +56,7 @@ import Guide.Database.Get
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), ItemSection (..),
                          Trait (..))
-import Guide.Utils (Uid (..))
-import Guide.Utils (Url)
+import Guide.Utils (Direction (..), Uid (..), Url, moveDown, moveUp)
 
 
 ----------------------------------------------------------------------------
@@ -109,12 +112,12 @@ setCategoryStatus catId status = do
   lift $ HT.statement (catId, status) (Statement sql encoder decoder False)
 
 -- | Set category selections.
-changeCategoryEnabledSections
+setCategoryEnabledSections
   :: Uid Category
   -> Set ItemSection     -- ^ Sections to enable
   -> Set ItemSection     -- ^ Sections to disable
   -> ExceptT DatabaseError Transaction ()
-changeCategoryEnabledSections catId toEnable toDisable = do
+setCategoryEnabledSections catId toEnable toDisable = do
   oldSections <- _categoryEnabledSections <$> getCategory catId
   let newSections = (oldSections <> toEnable) Set.\\ toDisable
   let sql = [r|
@@ -125,6 +128,38 @@ changeCategoryEnabledSections catId toEnable toDisable = do
       encoder = contrazip2 uidParam itemSectionSetParam
       decoder = HD.noResult
   lift $ HT.statement (catId, newSections) (Statement sql encoder decoder False)
+
+-- | Add itemId to category items_order.
+addItemIdToCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
+addItemIdToCategory catId itemId = do
+    itemsOrder <- getCategoryItemsOrder catId
+    let addItemId =
+          if notElem itemId itemsOrder then itemId : itemsOrder else itemsOrder
+    let sql = [r|
+          UPDATE categories
+          SET items_order = $2
+          WHERE uid = $1
+          |]
+        encoder = contrazip2 uidParam uidsParam
+        decoder = HD.noResult
+    lift $ HT.statement
+      (catId, addItemId) (Statement sql encoder decoder False)
+
+-- | Delete itemId from category items_order.
+deleteItemIdFromCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
+deleteItemIdFromCategory catId itemId = do
+    itemsOrder <- getCategoryItemsOrder catId
+    let deleteItemId =
+          if elem itemId itemsOrder then filter (/= itemId) itemsOrder else itemsOrder
+    let sql = [r|
+          UPDATE categories
+          SET items_order = $2
+          WHERE uid = $1
+          |]
+        encoder = contrazip2 uidParam uidsParam
+        decoder = HD.noResult
+    lift $ HT.statement
+      (catId, deleteItemId) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Items
@@ -206,17 +241,43 @@ setItemEcosystem itemId (arg #ecosystem -> ecosystem) = do
 
 -- | Set item to be deleted.
 --
--- When 'deleted' is True, item will marked as deleted.
+-- When 'deleted' is True, item will marked as deleted (_categoryItemsDeleted)
+-- otherwise item will marked as notDeleted (_categoryItems)
 setItemDeleted :: Uid Item -> "deleted" :! Bool -> ExceptT DatabaseError Transaction ()
 setItemDeleted itemId (arg #deleted -> deleted) = do
-  let sql = [r|
-        UPDATE items
-        SET deleted = $2
-        WHERE uid = $1
-        |]
-      encoder = contrazip2 uidParam boolParam
-      decoder = HD.noResult
-  lift $ HT.statement (itemId, deleted) (Statement sql encoder decoder False)
+  mCategoryId <- getCategoryIdByItemMaybe itemId
+  case mCategoryId of
+    Nothing -> throwError ItemOrCategoryNotFound
+    Just catId -> do
+      let sql = [r|
+            UPDATE items
+            SET deleted = $2
+            WHERE uid = $1
+            |]
+          encoder = contrazip2 uidParam boolParam
+          decoder = HD.noResult
+      lift $ HT.statement (itemId, deleted) (Statement sql encoder decoder False)
+      if deleted then deleteItemIdFromCategory catId itemId
+      else addItemIdToCategory catId itemId
+
+-- | Move item up or down.
+moveItem :: Uid Item -> "direction" :! Bool -> ExceptT DatabaseError Transaction ()
+moveItem itemId (arg #direction -> direction) = do
+  let move = if direction then moveUp else moveDown
+  mCategoryId <- getCategoryIdByItemMaybe itemId
+  case mCategoryId of
+    Nothing -> throwError ItemOrCategoryNotFound
+    Just catId -> do
+      itemsOrder <- getCategoryItemsOrder catId
+      let newItemsOrder = move (== itemId) itemsOrder
+      let sql = [r|
+            UPDATE categories
+            SET items_order = $2
+            WHERE uid = $1
+            |]
+          encoder = contrazip2 uidParam uidsParam
+          decoder = HD.noResult
+      lift $ HT.statement (catId, newItemsOrder) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Traits
@@ -266,13 +327,19 @@ deleteCategory catId = do
 -- | Delete item completly.
 deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItem itemId = do
-  let sql = [r|
-        DELETE FROM items
-        WHERE uid = $1
-        |]
-      encoder = uidParam
-      decoder = HD.noResult
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  mCategoryId <- getCategoryIdByItemMaybe itemId
+  case mCategoryId of
+    Nothing -> throwError ItemOrCategoryNotFound
+    Just catId -> do
+      let sql = [r|
+            DELETE FROM items
+            WHERE uid = $1
+            |]
+          encoder = uidParam
+          decoder = HD.noResult
+      lift $ HT.statement itemId (Statement sql encoder decoder False)
+      -- it need to delete itemId from category's items_order
+      deleteItemIdFromCategory catId itemId
 
 -- | Delete trait completly.
 deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
@@ -319,7 +386,7 @@ testSet = do
   -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
   -- print $ _categoryEnabledSections cat
   -- runTransactionExceptT conn Write
-  --   (changeCategoryEnabledSections "category1111"
+  --   (setCategoryEnabledSections "category1111"
   --     (Set.fromList [ItemProsConsSection, ItemNotesSection])
   --     (Set.fromList [ItemEcosystemSection]))
   -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
@@ -360,11 +427,13 @@ testSet = do
   -- runTransactionExceptT conn Write (setItemEcosystem "item11112222" ! #ecosystem "Export ENV")
   -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
   -- print $ _itemEcosystem item'
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
-  -- print item
-  -- runTransactionExceptT conn Write (setItemDeleted "item11112222" ! #deleted True)
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
-  -- print item'
+
+  -- Mark item 'deleted' and check it if it deleted from items_order list
+  -- itemOrder <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
+  -- print itemOrder
+  -- runTransactionExceptT conn Write (setItemDeleted "item11112222" ! #deleted False)
+  -- itemOrder' <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
+  -- print itemOrder'
 
   -- trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
   -- print trait
@@ -390,15 +459,24 @@ testSet = do
   -- print item
 
   -- Delete item
-  -- item <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
-  -- print item
-  -- runTransactionExceptT conn Write (deleteItem "item11112222")
-  -- item' <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
-  -- print item'
+  item <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  print item
+  runTransactionExceptT conn Write (deleteItem "item11112222")
+  item' <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  print item'
 
   -- Delete Category
-  cat <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
-  print cat
-  runTransactionExceptT conn Write (deleteCategory "category1111")
-  cat' <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
-  print cat'
+  -- cat <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- print cat
+  -- runTransactionExceptT conn Write (deleteCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- print cat'
+
+  -- Move Item
+  -- cat' <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- print cat'
+  itemOrder <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
+  print itemOrder
+  -- runTransactionExceptT conn Write (moveItem "item22223333" ! #direction False)
+  itemOrder' <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
+  print itemOrder'

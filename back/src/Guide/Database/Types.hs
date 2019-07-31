@@ -14,4 +14,5 @@ import Guide.Utils (Uid (..))
 data DatabaseError
   = ItemNotFound (Uid Item)
   | CategoryNotFound (Uid Category)
+  | ItemOrCategoryNotFound
   deriving Show

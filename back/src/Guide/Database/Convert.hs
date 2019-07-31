@@ -18,6 +18,10 @@ module Guide.Database.Convert
        , uidParam
        , uidColumn
 
+       -- * '[Uid]
+       , uidsParam
+       , uidsColumn
+
        -- * 'UTCTime'
        , timestamptzParam
        , timestamptzColumn
@@ -181,3 +185,22 @@ itemSectionSetColumn =
   $ HD.listArray
   $ HD.nonNullable
   $ itemSectionDecoder
+
+----------------------------------------------------------------------------
+-- [Uid]
+----------------------------------------------------------------------------
+
+-- | Pass a @[Uid]@ to a query.
+uidsParam :: HE.Params [Uid a]
+uidsParam = HE.param
+  $ HE.nonNullable
+  $ HE.foldableArray
+  $ HE.nonNullable
+  $ contramap uidToText HE.text
+
+uidsColumn :: HD.Row [Uid a]
+uidsColumn = HD.column
+  $ HD.nonNullable
+  $ HD.listArray
+  $ HD.nonNullable
+  $ Uid <$> HD.text
