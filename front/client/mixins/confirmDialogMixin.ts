@@ -33,11 +33,11 @@ export default class ConfirmDialogMixin extends Vue {
         cancelBtnText,
         confirmBtnProps,
         cancelBtnProps
-      }
+      },
+      parent: this
     })
     instance.$mount()
     const deferredPromise = new DeferredPromise()
-    this.$el.appendChild(instance.$el)
     instance.$on('confirmed', () => {
       instance.$destroy()
       deferredPromise.resolve(true)
@@ -46,6 +46,8 @@ export default class ConfirmDialogMixin extends Vue {
       instance.$destroy()
       deferredPromise.resolve(false)
     })
+    this.$el.appendChild(instance.$el)
+
     return deferredPromise
   }
 }

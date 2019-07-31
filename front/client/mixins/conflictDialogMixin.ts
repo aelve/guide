@@ -20,15 +20,16 @@ export default class ConflictDialogMixin extends Vue {
         serverModified,
         modified,
         merged
-      }
+      },
+      parent: this
     })
     instance.$mount()
     const deferredPromise = new DeferredPromise()
-    this.$el.appendChild(instance.$el)
     instance.$on('save', (newVal) => {
       instance.$destroy()
       deferredPromise.resolve(newVal)
     })
+    this.$el.appendChild(instance.$el)
 
     return deferredPromise
   }
