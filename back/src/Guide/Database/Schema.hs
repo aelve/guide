@@ -141,9 +141,9 @@ v0_createTableItems = HS.sql [r|
     category_uid text               -- Category that the item belongs to
       REFERENCES categories (uid)
       ON DELETE CASCADE,
-    pros_order text[]               -- Order of pro traits
+    pros_order text[]               -- Uids of Pro Trait in order to move them up and down
       NOT NULL,
-    cons_order text[]               -- Order of con traits
+    cons_order text[]               -- Uids of Con Trait in order to move them up and down
       NOT NULL
   );
   |]
@@ -156,12 +156,12 @@ v0_createTableCategories = HS.sql [r|
     title text NOT NULL,            -- Category title
     created timestamptz NOT NULL,   -- When the category was created
     group_ text NOT NULL,           -- "Grandcategory"
-    status_ text NOT NULL,          -- Category status ("in progress", etc); the list of
+    status text NOT NULL,          -- Category status ("in progress", etc); the list of
                                     --   possible statuses is defined by backend
     notes text NOT NULL,            -- Category notes as Markdown
     enabled_sections text[]         -- Item sections to show to users; the list of
       NOT NULL,                     --   possible section names is defined by backend
-    items_order text[]              -- Items order. It allows move them up and down
+    items_order text[]              -- Uid Items in order. It allows move them up and down
       NOT NULL
   );
   |]

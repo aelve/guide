@@ -60,7 +60,7 @@ import Guide.Database.Get
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), ItemSection (..),
                          Trait (..), TraitType (..))
-import Guide.Utils (Uid (..), Url, moveDown, moveUp)
+import Guide.Utils (Uid (..), Direction (..), Url, moveDown, moveUp)
 
 
 ----------------------------------------------------------------------------
@@ -103,12 +103,12 @@ setCategoryNotes catId (arg #notes -> notes) = do
       decoder = HD.noResult
   lift $ HT.statement (catId, notes) (Statement sql encoder decoder False)
 
--- | Set new category notes.
+-- | Set category status.
 setCategoryStatus :: Uid Category -> CategoryStatus -> ExceptT DatabaseError Transaction ()
 setCategoryStatus catId status = do
   let sql = [r|
         UPDATE categories
-        SET status_ = $2
+        SET status = $2
         WHERE uid = $1
         |]
       encoder = contrazip2 uidParam categoryStatusParam
@@ -118,12 +118,12 @@ setCategoryStatus catId status = do
 -- | Set category selections.
 setCategoryEnabledSections
   :: Uid Category
-  -> Set ItemSection     -- ^ Sections to enable
-  -> Set ItemSection     -- ^ Sections to disable
+  -> "enable" :! Set ItemSection     -- ^ Sections to enable
+  -> "disable" :! Set ItemSection    -- ^ Sections to disable
   -> ExceptT DatabaseError Transaction ()
-setCategoryEnabledSections catId toEnable toDisable = do
+setCategoryEnabledSections catId (arg #enable -> enable) (arg #disable -> disable) = do
   oldSections <- _categoryEnabledSections <$> getCategory catId
-  let newSections = (oldSections <> toEnable) Set.\\ toDisable
+  let newSections = (oldSections <> enable) Set.\\ disable
   let sql = [r|
         UPDATE categories
         SET enabled_sections = $2
@@ -136,34 +136,34 @@ setCategoryEnabledSections catId toEnable toDisable = do
 -- | Add itemId to category items_order.
 addItemIdToCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
 addItemIdToCategory catId itemId = do
-    itemsOrder <- getCategoryItemsOrder catId
-    let addItemId =
-          if notElem itemId itemsOrder then itemId : itemsOrder else itemsOrder
-    let sql = [r|
-          UPDATE categories
-          SET items_order = $2
-          WHERE uid = $1
-          |]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement
-      (catId, addItemId) (Statement sql encoder decoder False)
+  itemsOrder <- getCategoryItemsOrder catId
+  when (elem itemId itemsOrder) $ throwError ElementIdIsInOrder
+  let addItemId = itemId : itemsOrder
+  let sql = [r|
+        UPDATE categories
+        SET items_order = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement
+    (catId, addItemId) (Statement sql encoder decoder False)
 
 -- | Delete itemId from category items_order.
 deleteItemIdFromCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItemIdFromCategory catId itemId = do
-    itemsOrder <- getCategoryItemsOrder catId
-    let deleteItemId =
-          if elem itemId itemsOrder then filter (/= itemId) itemsOrder else itemsOrder
-    let sql = [r|
-          UPDATE categories
-          SET items_order = $2
-          WHERE uid = $1
-          |]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement
-      (catId, deleteItemId) (Statement sql encoder decoder False)
+  itemsOrder <- getCategoryItemsOrder catId
+  when (notElem itemId itemsOrder) $ throwError ElementIdIsNotInOrder
+  let deleteItemId = filter (/= itemId) itemsOrder
+  let sql = [r|
+        UPDATE categories
+        SET items_order = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement
+    (catId, deleteItemId) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Items
@@ -182,8 +182,8 @@ setItemName itemId (arg #name -> name) = do
   lift $ HT.statement (itemId, name) (Statement sql encoder decoder False)
 
 -- | Set item link.
-setItemLink :: Uid Item -> "link" :? Url -> ExceptT DatabaseError Transaction ()
-setItemLink itemId (argF #link -> link) = do
+setItemLink :: Uid Item -> "link" :! Maybe Url -> ExceptT DatabaseError Transaction ()
+setItemLink itemId (arg #link -> link) = do
   let sql = [r|
         UPDATE items
         SET link = $2
@@ -196,8 +196,8 @@ setItemLink itemId (argF #link -> link) = do
 -- | Set item hackage.
 --
 -- "hackage" :? Text == Maybe Text with label.
-setItemHackage :: Uid Item -> "hackage" :? Text -> ExceptT DatabaseError Transaction ()
-setItemHackage itemId (argF #hackage -> hackage) = do
+setItemHackage :: Uid Item -> "hackage" :! Maybe Text -> ExceptT DatabaseError Transaction ()
+setItemHackage itemId (arg #hackage -> hackage) = do
   let sql = [r|
         UPDATE items
         SET hackage = $2
@@ -249,46 +249,42 @@ setItemEcosystem itemId (arg #ecosystem -> ecosystem) = do
 -- otherwise item will marked as notDeleted (_categoryItems)
 setItemDeleted :: Uid Item -> "deleted" :! Bool -> ExceptT DatabaseError Transaction ()
 setItemDeleted itemId (arg #deleted -> deleted) = do
-  mCategoryId <- getCategoryIdByItemMaybe itemId
-  case mCategoryId of
-    Nothing -> throwError ItemOrCategoryNotFound
-    Just catId -> do
-      let sql = [r|
-            UPDATE items
-            SET deleted = $2
-            WHERE uid = $1
-            |]
-          encoder = contrazip2 uidParam boolParam
-          decoder = HD.noResult
-      lift $ HT.statement (itemId, deleted) (Statement sql encoder decoder False)
-      if deleted then deleteItemIdFromCategory catId itemId
-      else addItemIdToCategory catId itemId
+  catId <- getCategoryIdByItem itemId
+  let sql = [r|
+        UPDATE items
+        SET deleted = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam boolParam
+      decoder = HD.noResult
+  lift $ HT.statement (itemId, deleted) (Statement sql encoder decoder False)
+  if deleted then deleteItemIdFromCategory catId itemId
+  else addItemIdToCategory catId itemId
 
 -- | Move item up or down.
-moveItem :: Uid Item -> "direction" :! Bool -> ExceptT DatabaseError Transaction ()
-moveItem itemId (arg #direction -> direction) = do
-  let move = if direction then moveUp else moveDown
-  mCategoryId <- getCategoryIdByItemMaybe itemId
-  case mCategoryId of
-    Nothing -> throwError ItemOrCategoryNotFound
-    Just catId -> do
-      itemsOrder <- getCategoryItemsOrder catId
-      let newItemsOrder = move (== itemId) itemsOrder
-      let sql = [r|
-            UPDATE categories
-            SET items_order = $2
-            WHERE uid = $1
-            |]
-          encoder = contrazip2 uidParam uidsParam
-          decoder = HD.noResult
-      lift $ HT.statement (catId, newItemsOrder) (Statement sql encoder decoder False)
+moveItem :: Uid Item -> Direction -> ExceptT DatabaseError Transaction ()
+moveItem itemId direction = do
+  let move = case direction of
+        MoveUp -> moveUp
+        MoveDown -> moveDown
+  catId <- getCategoryIdByItem itemId
+  itemsOrder <- getCategoryItemsOrder catId
+  let newItemsOrder = move (== itemId) itemsOrder
+  let sql = [r|
+        UPDATE categories
+        SET items_order = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement (catId, newItemsOrder) (Statement sql encoder decoder False)
 
 -- | Add traitId to item, either pros_order or cons_order.
 addTraitIdToItem :: Uid Item -> Uid Trait -> TraitType -> ExceptT DatabaseError Transaction ()
 addTraitIdToItem itemId traitId traitType = do
     traitsOrder <- getItemTraitsOrder itemId traitType
-    let addTraitId =
-          if notElem traitId traitsOrder then traitId : traitsOrder else traitsOrder
+    when (elem traitId traitsOrder) $ throwError ElementIdIsInOrder
+    let addTraitId = traitId : traitsOrder
     let sql = case traitType of
           Pro -> [r|
             UPDATE items
@@ -309,8 +305,8 @@ addTraitIdToItem itemId traitId traitType = do
 deleteTraitIdFromItem :: Uid Item -> Uid Trait -> TraitType -> ExceptT DatabaseError Transaction ()
 deleteTraitIdFromItem itemId traitId traitType = do
     traitsOrder <- getItemTraitsOrder itemId traitType
-    let deleteTraitId =
-          if elem traitId traitsOrder then filter (/= traitId) traitsOrder else traitsOrder
+    when (notElem traitId traitsOrder) $ throwError ElementIdIsNotInOrder
+    let deleteTraitId = filter (/= traitId) traitsOrder
     let sql = case traitType of
           Pro -> [r|
             UPDATE items
@@ -349,47 +345,43 @@ setTraitContent traitId (arg #content -> content) = do
 -- otherwise as notDeleted.
 setTraitDeleted :: Uid Trait -> "deleted" :! Bool -> ExceptT DatabaseError Transaction ()
 setTraitDeleted traitId (arg #deleted -> deleted) = do
-  mItemId <- getItemIdByTraitMaybe traitId
-  case mItemId of
-    Nothing -> throwError TraitOrItemNotFound
-    Just itemId -> do
-      let sql = [r|
-            UPDATE traits
-            SET deleted = $2
-            WHERE uid = $1
-            |]
-          encoder = contrazip2 uidParam boolParam
-          decoder = HD.noResult
-      lift $ HT.statement (traitId, deleted) (Statement sql encoder decoder False)
-      traitType <- getTraitTypeByTraitId traitId
-      if deleted then deleteTraitIdFromItem itemId traitId traitType
-      else addTraitIdToItem itemId traitId traitType
+  itemId <- getItemIdByTrait traitId
+  let sql = [r|
+        UPDATE traits
+        SET deleted = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam boolParam
+      decoder = HD.noResult
+  lift $ HT.statement (traitId, deleted) (Statement sql encoder decoder False)
+  traitType <- getTraitTypeByTraitId traitId
+  if deleted then deleteTraitIdFromItem itemId traitId traitType
+  else addTraitIdToItem itemId traitId traitType
 
 -- | Move itrait up or down.
-moveTrait :: Uid Trait -> "direction" :! Bool -> ExceptT DatabaseError Transaction ()
-moveTrait traitId (arg #direction -> direction) = do
-  let move = if direction then moveUp else moveDown
-  mItemId <- getItemIdByTraitMaybe traitId
-  case mItemId of
-    Nothing -> throwError TraitOrItemNotFound
-    Just itemId -> do
-      traitType <- getTraitTypeByTraitId traitId
-      traitsOrder <- getItemTraitsOrder itemId traitType
-      let newTraitsOrder = move (== traitId) traitsOrder
-      let sql = case traitType of
-            Pro -> [r|
-              UPDATE items
-              SET pros_order = $2
-              WHERE uid = $1
-              |]
-            Con -> [r|
-              UPDATE items
-              SET cons_order = $2
-              WHERE uid = $1
-              |]
-          encoder = contrazip2 uidParam uidsParam
-          decoder = HD.noResult
-      lift $ HT.statement (itemId, newTraitsOrder) (Statement sql encoder decoder False)
+moveTrait :: Uid Trait -> Direction -> ExceptT DatabaseError Transaction ()
+moveTrait traitId direction = do
+  let move = case direction of
+        MoveUp -> moveUp
+        MoveDown -> moveDown
+  itemId <- getItemIdByTrait traitId
+  traitType <- getTraitTypeByTraitId traitId
+  traitsOrder <- getItemTraitsOrder itemId traitType
+  let newTraitsOrder = move (== traitId) traitsOrder
+  let sql = case traitType of
+        Pro -> [r|
+          UPDATE items
+          SET pros_order = $2
+          WHERE uid = $1
+          |]
+        Con -> [r|
+          UPDATE items
+          SET cons_order = $2
+          WHERE uid = $1
+          |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement (itemId, newTraitsOrder) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Deletion
@@ -409,36 +401,30 @@ deleteCategory catId = do
 -- | Delete item completly.
 deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItem itemId = do
-  mCategoryId <- getCategoryIdByItemMaybe itemId
-  case mCategoryId of
-    Nothing -> throwError ItemOrCategoryNotFound
-    Just catId -> do
-      let sql = [r|
-            DELETE FROM items
-            WHERE uid = $1
-            |]
-          encoder = uidParam
-          decoder = HD.noResult
-      lift $ HT.statement itemId (Statement sql encoder decoder False)
-      -- it need to delete itemId from category's items_order
-      deleteItemIdFromCategory catId itemId
+  catId <- getCategoryIdByItem itemId
+  let sql = [r|
+        DELETE FROM items
+        WHERE uid = $1
+        |]
+      encoder = uidParam
+      decoder = HD.noResult
+  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  -- it need to delete itemId from category's items_order
+  deleteItemIdFromCategory catId itemId
 
 -- | Delete trait completly.
 deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
 deleteTrait traitId = do
-  mItemId <- getItemIdByTraitMaybe traitId
-  case mItemId of
-    Nothing -> throwError TraitOrItemNotFound
-    Just itemId -> do
-      let sql = [r|
-            DELETE FROM traits
-            WHERE uid = $1
-            |]
-          encoder = uidParam
-          decoder = HD.noResult
-      lift $ HT.statement traitId (Statement sql encoder decoder False)
-      traitType <- getTraitTypeByTraitId traitId
-      deleteTraitIdFromItem itemId traitId traitType
+  itemId <- getItemIdByTrait traitId
+  traitType <- getTraitTypeByTraitId traitId
+  let sql = [r|
+        DELETE FROM traits
+        WHERE uid = $1
+        |]
+      encoder = uidParam
+      decoder = HD.noResult
+  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  deleteTraitIdFromItem itemId traitId traitType
 
 
 -- Sandbox
@@ -547,7 +533,7 @@ testSet = do
   print item
   traitOrder <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Con)
   print traitOrder
-  runTransactionExceptT conn Write (moveTrait "traitCon1122" ! #direction True)
+  runTransactionExceptT conn Write (moveTrait "traitCon1122" MoveUp)
   traitOrder' <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Con)
   print traitOrder'
 

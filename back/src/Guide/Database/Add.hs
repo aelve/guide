@@ -48,12 +48,12 @@ import Guide.Utils (Uid (..))
 addCategory
   :: Uid Category       -- ^ New category's id
   -> "title" :! Text    -- ^ Title
-  -> "group_" :! Text   -- ^ Group
+  -> "group" :! Text   -- ^ Group
   -> UTCTime            -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addCategory catId (arg #title -> title) (arg #group_ -> group_) created = do
+addCategory catId (arg #title -> title) (arg #group -> group_) created = do
   let sql = [r|
-        INSERT INTO categories (uid, title, created, group_, status_, notes, enabled_sections, items_order)
+        INSERT INTO categories (uid, title, created, group_, status, notes, enabled_sections, items_order)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         |]
       encoder = contrazip8
@@ -165,7 +165,7 @@ testAdd :: IO ()
 testAdd = do
   conn <- connect
   time <- getCurrentTime
-  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group_ "groupCat") time)
+  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") time)
   cat <- runTransactionExceptT conn Read (getCategory "category1111")
   print cat
 

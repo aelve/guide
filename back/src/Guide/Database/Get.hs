@@ -19,12 +19,14 @@ module Guide.Database.Get
        , getItemMaybe
        , getItemsByCategory
        , getItemTraitsOrder
+       , getItemIdByTrait
        , getItemIdByTraitMaybe
        -- * Category
        , getCategory
        , getCategoryMaybe
        , getCategories
        , getCategoryByItemMaybe
+       , getCategoryIdByItem
        , getCategoryIdByItemMaybe
        , getCategoryItemsOrder
 
@@ -206,6 +208,15 @@ getItemIdByTraitMaybe traitId = do
       decoder = HD.rowMaybe $ uidColumn
   lift $ HT.statement traitId (Statement sql encoder decoder False)
 
+-- | Get items by trait
+--
+-- Throw an error when 'Uid Trait' not found.
+getItemIdByTrait :: Uid Trait -> ExceptT DatabaseError Transaction (Uid Item)
+getItemIdByTrait traitId = do
+  mItemId <- getItemIdByTraitMaybe traitId
+  case mItemId of
+    Nothing  -> throwError $ TraitNotFound traitId
+    Just itemId -> pure itemId
 
 ----------------------------------------------------------------------------
 -- Categories
@@ -220,7 +231,7 @@ getCategoryMaybe catId = do
   _categoryItems <- getItemsByCategory catId (#deleted False)
   _categoryItemsDeleted <- getItemsByCategory catId (#deleted True)
   let sql = [r|
-        SELECT uid, title, created, group_, status_, notes, enabled_sections
+        SELECT uid, title, created, group_, status, notes, enabled_sections
         FROM categories
         WHERE uid = $1
         |]
@@ -275,6 +286,16 @@ getCategoryIdByItemMaybe itemId = do
       encoder = uidParam
       decoder = HD.rowMaybe $ uidColumn
   lift $ HT.statement itemId (Statement sql encoder decoder False)
+
+-- | Get an ID of the category that an item belongs to.
+--
+-- Throw error if item not found.
+getCategoryIdByItem :: Uid Item -> ExceptT DatabaseError Transaction (Uid Category)
+getCategoryIdByItem itemId = do
+  mCatId <- getCategoryIdByItemMaybe itemId
+  case mCatId of
+    Nothing  -> throwError $ ItemNotFound itemId
+    Just catId -> pure catId
 
 -- | Get the category that an item belongs to.
 --

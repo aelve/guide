@@ -16,6 +16,7 @@
 module Guide.Utils
 (
   -- * Lists
+  Direction (..),
   moveUp,
   moveDown,
   deleteFirst,
@@ -113,6 +114,10 @@ import qualified Network.URI as URI
 ----------------------------------------------------------------------------
 -- Lists
 ----------------------------------------------------------------------------
+
+-- | Datatype is to point the direction for either items or traits
+data Direction = MoveUp | MoveDown
+  deriving Eq
 
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]

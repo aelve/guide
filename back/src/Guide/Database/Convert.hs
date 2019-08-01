@@ -18,7 +18,7 @@ module Guide.Database.Convert
        , uidParam
        , uidColumn
 
-       -- * '[Uid]
+       -- * ['Uid']
        , uidsParam
        , uidsColumn
 
@@ -88,19 +88,27 @@ textColumnNullable = HD.column (HD.nullable HD.text)
 -- Uid
 ----------------------------------------------------------------------------
 
+-- | Encode a 'Uid'.
+uidEncoder :: HE.Value (Uid a)
+uidEncoder = contramap uidToText HE.text
+
 -- | Pass a 'Uid' to a query.
 uidParam :: HE.Params (Uid a)
-uidParam = contramap uidToText textParam
+uidParam = HE.param (HE.nonNullable uidEncoder)
+
+-- | Decode a 'Uid'.
+uidDecoder :: HD.Value (Uid a)
+uidDecoder = Uid <$> HD.text
 
 -- | Get a 'Uid' from a query.
 uidColumn :: HD.Row (Uid a)
-uidColumn = Uid <$> textColumn
+uidColumn = HD.column (HD.nonNullable uidDecoder)
 
 ----------------------------------------------------------------------------
 -- UTCTime
 ----------------------------------------------------------------------------
 
--- | Encode a 'UTCTime'.
+-- | Pass a 'UTCTime' to a query.
 timestamptzParam :: HE.Params UTCTime
 timestamptzParam = HE.param (HE.nonNullable HE.timestamptz)
 
@@ -202,17 +210,18 @@ itemSectionSetColumn =
 -- [Uid]
 ----------------------------------------------------------------------------
 
+-- | Encode a ['Uid'].
+uidsEncoder :: HE.Value [Uid a]
+uidsEncoder = HE.foldableArray $ HE.nonNullable uidEncoder
+
 -- | Pass a @[Uid]@ to a query.
 uidsParam :: HE.Params [Uid a]
-uidsParam = HE.param
-  $ HE.nonNullable
-  $ HE.foldableArray
-  $ HE.nonNullable
-  $ contramap uidToText HE.text
+uidsParam = HE.param $ HE.nonNullable uidsEncoder
 
+-- | Decode a ['Uid'].
+uidsDecoder :: HD.Value [Uid a]
+uidsDecoder = HD.listArray $ HD.nonNullable uidDecoder
+
+-- | Get a @[Uid]@ from a query.
 uidsColumn :: HD.Row [Uid a]
-uidsColumn = HD.column
-  $ HD.nonNullable
-  $ HD.listArray
-  $ HD.nonNullable
-  $ Uid <$> HD.text
+uidsColumn = HD.column $ HD.nonNullable uidsDecoder

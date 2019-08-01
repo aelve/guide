@@ -6,7 +6,7 @@ module Guide.Database.Types
 
 import Imports
 
-import Guide.Types.Core (Category (..), Item (..))
+import Guide.Types.Core (Category (..), Item (..), Trait(..))
 import Guide.Utils (Uid (..))
 
 
@@ -14,6 +14,7 @@ import Guide.Utils (Uid (..))
 data DatabaseError
   = ItemNotFound (Uid Item)
   | CategoryNotFound (Uid Category)
-  | ItemOrCategoryNotFound
-  | TraitOrItemNotFound
+  | TraitNotFound (Uid Trait)
+  | ElementIdIsInOrder
+  | ElementIdIsNotInOrder
   deriving Show
