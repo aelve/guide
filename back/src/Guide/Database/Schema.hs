@@ -12,12 +12,12 @@ where
 import Imports
 
 import Hasql.Session (Session)
-import Text.RawString.QQ
 import Hasql.Statement (Statement (..))
+import Text.RawString.QQ
 
-import qualified Hasql.Session as HS
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
+import qualified Hasql.Session as HS
 
 import Guide.Database.Connection (connect, runSession)
 

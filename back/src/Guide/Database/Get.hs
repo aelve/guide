@@ -215,7 +215,7 @@ getItemIdByTrait :: Uid Trait -> ExceptT DatabaseError Transaction (Uid Item)
 getItemIdByTrait traitId = do
   mItemId <- getItemIdByTraitMaybe traitId
   case mItemId of
-    Nothing  -> throwError $ TraitNotFound traitId
+    Nothing     -> throwError $ TraitNotFound traitId
     Just itemId -> pure itemId
 
 ----------------------------------------------------------------------------
@@ -294,7 +294,7 @@ getCategoryIdByItem :: Uid Item -> ExceptT DatabaseError Transaction (Uid Catego
 getCategoryIdByItem itemId = do
   mCatId <- getCategoryIdByItemMaybe itemId
   case mCatId of
-    Nothing  -> throwError $ ItemNotFound itemId
+    Nothing    -> throwError $ ItemNotFound itemId
     Just catId -> pure catId
 
 -- | Get the category that an item belongs to.

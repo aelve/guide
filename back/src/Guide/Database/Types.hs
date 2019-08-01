@@ -6,7 +6,7 @@ module Guide.Database.Types
 
 import Imports
 
-import Guide.Types.Core (Category (..), Item (..), Trait(..))
+import Guide.Types.Core (Category (..), Item (..), Trait (..))
 import Guide.Utils (Uid (..))
 
 

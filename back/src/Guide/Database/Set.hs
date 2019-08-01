@@ -60,7 +60,7 @@ import Guide.Database.Get
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), ItemSection (..),
                          Trait (..), TraitType (..))
-import Guide.Utils (Uid (..), Direction (..), Url, moveDown, moveUp)
+import Guide.Utils (Direction (..), Uid (..), Url, moveDown, moveUp)
 
 
 ----------------------------------------------------------------------------
@@ -265,7 +265,7 @@ setItemDeleted itemId (arg #deleted -> deleted) = do
 moveItem :: Uid Item -> Direction -> ExceptT DatabaseError Transaction ()
 moveItem itemId direction = do
   let move = case direction of
-        MoveUp -> moveUp
+        MoveUp   -> moveUp
         MoveDown -> moveDown
   catId <- getCategoryIdByItem itemId
   itemsOrder <- getCategoryItemsOrder catId
@@ -362,7 +362,7 @@ setTraitDeleted traitId (arg #deleted -> deleted) = do
 moveTrait :: Uid Trait -> Direction -> ExceptT DatabaseError Transaction ()
 moveTrait traitId direction = do
   let move = case direction of
-        MoveUp -> moveUp
+        MoveUp   -> moveUp
         MoveDown -> moveDown
   itemId <- getItemIdByTrait traitId
   traitType <- getTraitTypeByTraitId traitId

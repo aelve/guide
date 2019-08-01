@@ -170,11 +170,11 @@ addItem catId itemId (arg #name -> name) created = do
 
 -- | Trait intermediary type.
 data TraitRow = TraitRow
-  { traitRowUid        :: Uid Trait
-  , traitRowContent    :: Text
-  , traitRowDeleted    :: Bool
-  , traitRowType       :: TraitType
-  , traitRowItemUid    :: Uid Item
+  { traitRowUid     :: Uid Trait
+  , traitRowContent :: Text
+  , traitRowDeleted :: Bool
+  , traitRowType    :: TraitType
+  , traitRowItemUid :: Uid Item
   }
 
 -- | Pass a 'TraitRow' to query.
