@@ -19,7 +19,6 @@ module Guide.Database.Add
 import Imports
 
 import Data.Functor.Contravariant ((>$<))
-import Contravariant.Extras.Contrazip (contrazip4, contrazip8)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
@@ -27,8 +26,8 @@ import Named
 import Text.RawString.QQ (r)
 
 import qualified Data.Set as Set
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
 
 import Guide.Database.Connection (connect, runTransactionExceptT)
@@ -36,13 +35,38 @@ import Guide.Database.Convert
 import Guide.Database.Get
 import Guide.Database.Set (addItemIdToCategory, addTraitIdToItem)
 import Guide.Database.Types
-import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..))
+import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), ItemSection, Trait (..),
+                         TraitType (..))
 import Guide.Utils (Uid (..))
 
 
 ----------------------------------------------------------------------------
 -- addCategory
 ----------------------------------------------------------------------------
+
+-- | Category intermediary type.
+data CategoryRow = CategoryRow
+  { categoryRowUid        :: Uid Category
+  , categoryRowTitle      :: Text
+  , categoryRowCreated    :: UTCTime
+  , categoryRowGroup      :: Text
+  , categoryRowStatus     :: CategoryStatus
+  , categoryRowNotes      :: Text
+  , categoryRowSelections :: Set ItemSection
+  , categoryRowItemOrder  :: [Uid Item]
+  }
+
+-- | Pass a 'CategoryRow' to query.
+categoryRowParams :: HE.Params CategoryRow
+categoryRowParams =
+  (categoryRowUid >$< uidParam) <>
+  (categoryRowTitle >$< textParam) <>
+  (categoryRowCreated >$< timestamptzParam) <>
+  (categoryRowGroup >$< textParam) <>
+  (categoryRowStatus >$< categoryStatusParam) <>
+  (categoryRowNotes >$< textParam) <>
+  (categoryRowSelections >$< itemSectionSetParam) <>
+  (categoryRowItemOrder >$< uidsParam)
 
 -- | Insert category to database.
 addCategory
@@ -56,38 +80,42 @@ addCategory catId (arg #title -> title) (arg #group -> group_) created = do
         INSERT INTO categories (uid, title, created, group_, status, notes, enabled_sections, items_order)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         |]
-      encoder = contrazip8
-        uidParam
-        textParam
-        timestamptzParam
-        textParam
-        categoryStatusParam
-        textParam
-        itemSectionSetParam
-        uidsParam
+      encoder = categoryRowParams
       decoder = HD.noResult
-  lift $ HT.statement (catId, title, created, group_, CategoryWIP, "", Set.empty, [])
+  lift $ HT.statement
+    CategoryRow
+     { categoryRowUid = catId
+     , categoryRowTitle = title
+     , categoryRowCreated = created
+     , categoryRowGroup = group_
+     , categoryRowStatus = CategoryWIP
+     , categoryRowNotes = ""
+     , categoryRowSelections = Set.empty
+     , categoryRowItemOrder = []
+     }
     (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- addItem
 ----------------------------------------------------------------------------
 
+-- | Item intermediary type.
 data ItemRow = ItemRow
-  { itemRowUid :: Uid Item
-  , itemRowName :: Text
-  , itemRowCreated :: UTCTime
-  , itemRowLink :: Maybe Text
-  , itemRowHackage :: Maybe Text
-  , itemRowSummary :: Text
-  , itemRowEcosystem :: Text
-  , itemRowNotes :: Text
-  , itemRowDeleted :: Bool
+  { itemRowUid         :: Uid Item
+  , itemRowName        :: Text
+  , itemRowCreated     :: UTCTime
+  , itemRowLink        :: Maybe Text
+  , itemRowHackage     :: Maybe Text
+  , itemRowSummary     :: Text
+  , itemRowEcosystem   :: Text
+  , itemRowNotes       :: Text
+  , itemRowDeleted     :: Bool
   , itemRowCategoryUid :: Uid Category
-  , itemRowProsOrder :: [Uid Trait]
-  , itemRowConsOrder :: [Uid Trait]
+  , itemRowProsOrder   :: [Uid Trait]
+  , itemRowConsOrder   :: [Uid Trait]
   }
 
+-- | Pass a 'ItemRow' to query.
 itemRowParams :: HE.Params ItemRow
 itemRowParams =
   (itemRowUid >$< uidParam) <>
@@ -140,6 +168,24 @@ addItem catId itemId (arg #name -> name) created = do
 -- addTrait
 ----------------------------------------------------------------------------
 
+-- | Trait intermediary type.
+data TraitRow = TraitRow
+  { traitRowUid        :: Uid Trait
+  , traitRowContent    :: Text
+  , traitRowDeleted    :: Bool
+  , traitRowType       :: TraitType
+  , traitRowItemUid    :: Uid Item
+  }
+
+-- | Pass a 'TraitRow' to query.
+traitRowParams :: HE.Params TraitRow
+traitRowParams =
+  (traitRowUid >$< uidParam) <>
+  (traitRowContent >$< textParam) <>
+  (traitRowDeleted >$< boolParam) <>
+  (traitRowType >$< traitTypeParam) <>
+  (traitRowItemUid >$< uidParam)
+
 -- | Insert trait to database.
 addTrait
   :: Uid Item             -- ^ Item id
@@ -152,9 +198,17 @@ addTrait itemId traitId traitType (arg #content -> content) = do
         INSERT INTO traits (uid, content, type_, item_uid)
         VALUES ($1,$2,($3 :: trait_type),$4)
         |]
-      encoder = contrazip4 uidParam textParam traitTypeParam uidParam
+      encoder = traitRowParams
       decoder = HD.noResult
-  lift $ HT.statement (traitId, content, traitType, itemId) (Statement sql encoder decoder False)
+  lift $ HT.statement
+    TraitRow
+      { traitRowUid = traitId
+      , traitRowContent = content
+      , traitRowDeleted  = False
+      , traitRowType = traitType
+      , traitRowItemUid = itemId
+      }
+    (Statement sql encoder decoder False)
   addTraitIdToItem itemId traitId traitType
 
 
