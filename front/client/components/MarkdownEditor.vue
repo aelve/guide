@@ -16,33 +16,31 @@
 
     <v-toolbar
       flat
-      height="30"
+      height="auto"
       color="#e5e5e5"
-      class="pa-2 markdown-editor__bottom-toolbar"
+      class="markdown-editor__bottom-toolbar"
       v-if="bottomToolbar"
       v-show="editor"
     >
+      <span class="markdown-editor-save-tip">
+        {{ saveTip }}
+      </span>
       <v-toolbar-items>
         <v-btn
-          small
-          title="Save"
-          class="mr-2 text-transform-none"
-          @click="save"
-        >
-          Save
-        </v-btn>
-        <v-btn
-          small
+          class="mr-2"
           title="Cancel"
-          class="text-transform-none"
           @click="cancel"
         >
           Cancel
         </v-btn>
+        <v-btn
+          color="info"
+          title="Save"
+          @click="save"
+        >
+          Save
+        </v-btn>
       </v-toolbar-items>
-      <span class="markdown-editor-save-tip ml-1">
-        {{ saveTip }}
-      </span>
     </v-toolbar>
   </div>
 </template>
@@ -266,14 +264,25 @@ export default class MarkdownEditor extends Vue {
   border-bottom: 1px solid #ddd;
 }
 .markdown-editor__bottom-toolbar {
-  border: 1px solid #bbb !important;
-  border-top: none !important;
-}
->>> .v-toolbar__content {
-  padding: 0;
-}
-.markdown-editor-save-tip {
-  font-size: 11px;
-  line-height: 14px;
+  >>> {
+    .v-toolbar__content {
+      padding: 8px;
+      justify-content: flex-end;
+    }
+    .v-toolbar__items > .v-btn {
+      height: 26px !important;
+      border-radius: 4px;
+    }
+  }
+
+  .markdown-editor-save-tip {
+    font-size: 11px;
+    line-height: 14px;
+    margin-right: 5px;
+
+    @media screen and (max-width: 425px) {
+      display: none;
+    }
+  }
 }
 </style>

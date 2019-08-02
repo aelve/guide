@@ -16,8 +16,7 @@
           </a-link>
         </template>
         <span>RSS feed for all new items in this category</span>
-      </v-tooltip>{{categoryTitle}}
-    </h1>
+      </v-tooltip>{{categoryTitle}}</h1>
 
     <div class="category-header__second-row">
       <div class="category-group-title-wrap">
@@ -47,7 +46,7 @@
       <v-menu bottom left offset-y>
         <template v-slot:activator="{ on }">
           <v-btn
-            flat
+            text
             icon
             title="Actions"
             class="category-actions-menu-btn"
@@ -164,15 +163,15 @@ export default class CategoryHeader extends Vue {
   letter-spacing: -1px;
 }
 
-.rss-link {
-  /* For vertical aligning on one line with category title */
-  font-size: 1px;
-  margin-right: 6px;
+/* Space beetwen category rss ling title  */
+.rss-link:after {
+  content: " ";
+  visibility: hidden;
 }
 
 .rss-link-icon {
   height: calc(1.8rem - 5px) !important;
-  width: auto;
+  vertical-align: bottom;
 
   &:hover {
     color: #000;
@@ -198,8 +197,10 @@ export default class CategoryHeader extends Vue {
 }
 
 .category-actions-menu-btn {
-  margin: 0;
   display: none;
+  margin: 0;
+  width: 36px;
+  height: 36px;
 }
 
 .category-actions {

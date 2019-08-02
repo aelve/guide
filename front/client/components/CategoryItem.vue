@@ -68,7 +68,7 @@
         <v-btn
           small
           dark
-          round
+          rounded
           title="Expand"
           class="mx-0"
           @click="expandNotes"
@@ -78,7 +78,7 @@
         <v-btn
           small
           dark
-          round
+          rounded
           title="Collapse"
           class="mx-0"
           @click="collapseNotes"
@@ -213,14 +213,15 @@ export default class CategoryItem extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-.category-item-body {
-  padding: 15px 20px;
-}
-
 .category-item {
   position: relative;
   background: #eeeeee;
   margin: 0 0 40px;
+  border-radius: 4px;
+}
+
+.category-item-body {
+  padding: 15px 20px;
 }
 
 .category-item-traits {

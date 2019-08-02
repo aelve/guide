@@ -2,6 +2,7 @@
   <v-text-field
     dark
     solo
+    hide-details
     class="toolbar-search"
     label="Search in all pages"
     :value="searchInput"
@@ -36,10 +37,5 @@ export default class SearchField extends Vue {
 </script>
 
 <style scoped>
-.toolbar-search >>> div {
-  margin-bottom: 0 !important;
-}
-.toolbar-search >>> label {
-  font-size: 18px;
-}
+
 </style>

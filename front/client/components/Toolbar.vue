@@ -1,17 +1,21 @@
 <template>
-  <v-toolbar dark app>
+  <v-app-bar
+    dark
+    app
+    color="#232323"
+  >
     <v-toolbar-title>
-      <logo
-        :class="{ 'mobile-hidden': !isSearchFieldHidden }"
-      />
+      <logo :class="{ 'mobile-hidden': !isSearchFieldHidden }"/>
     </v-toolbar-title>
+
     <v-spacer></v-spacer>
+
     <search-field
       :class="{ 'mobile-hidden': isSearchFieldHidden }"
       ref="searchField"
     />
     <v-btn
-      flat
+      text
       icon
       title="Search"
       color="#fff"
@@ -20,7 +24,7 @@
     >
       <v-icon size="20">$vuetify.icons.search</v-icon>
     </v-btn>
-  </v-toolbar>
+  </v-app-bar>
 </template>
 
 <script lang="ts">
@@ -28,7 +32,6 @@ import Vue from 'vue'
 import SearchField from 'client/components/SearchField.vue'
 import Logo from 'client/components/Logo.vue'
 import Component from 'vue-class-component'
-import axios from 'axios'
 
 @Component({
   components: {
@@ -52,9 +55,6 @@ export default class Toolbar extends Vue {
 >>> .v-toolbar__content {
   height: 64px !important;
 }
-.mobile-hidden {
-  display: block;
-}
 .mobile-displayed {
   display: none;
 }
@@ -63,7 +63,7 @@ export default class Toolbar extends Vue {
     display: none;
   }
   .mobile-displayed {
-    display: block;
+    display: inline-flex;
   }
 }
 </style>

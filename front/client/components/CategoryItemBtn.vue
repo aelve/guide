@@ -1,12 +1,13 @@
 <template>
   <v-btn
-    :icon="!!icon && !showTitle"
-    flat
-    class="ma-0 font-weight-bold"
-    color="grey darken-2"
-    :style="style"
-    :title="title"
-    v-bind="$attrs"
+    class="font-weight-bold"
+    v-bind="{
+        color: 'grey darken-2',
+        icon: !!icon && !showTitle,
+        style,
+        title,
+        ...$attrs
+    }"
     v-on="$listeners"
   >
     <v-icon

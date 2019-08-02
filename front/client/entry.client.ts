@@ -62,6 +62,9 @@ function getComponentAndItsChildren (component, result?) {
   if (!result) {
     result = []
   }
+  if (!component.options) {
+    return result
+  }
   if (!result.includes(component)) {
     result.push(component)
   }

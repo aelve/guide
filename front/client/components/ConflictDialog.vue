@@ -1,10 +1,18 @@
 <template>
   <v-dialog
-    lazy
     persistent
     :value="value"
   >
-    <slot slot="activator" />
+
+    <template
+      v-if="$slots.activator"
+      v-slot:activator="{ on }"
+    >
+      <slot
+        slot="activator"
+        v-on="on"
+      />
+    </template>
 
     <div class="conflict-box">
       <div class="conflict-item">
