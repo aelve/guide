@@ -227,6 +227,9 @@ export default class MarkdownEditor extends Vue {
 </script>
 
 <style lang="postcss" scoped>
+>>> .editor-toolbar {
+  font-size: 0.8rem;
+}
 >>> .CodeMirror {
   border: 1px solid #bbb;
   border-radius: 0;
