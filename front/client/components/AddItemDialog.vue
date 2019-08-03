@@ -21,7 +21,6 @@
           ref="form"
           v-model="isValid"
           @keydown.native.prevent.enter="submit"
-          ref="form"
         >
           <!-- reason for "v-if" - see AddCategoryDialog.vue template-->
           <v-text-field
