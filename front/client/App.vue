@@ -210,10 +210,17 @@ td.sourceCode {
 blockquote {
   background: rgba(10, 10, 10, 0.075);
   border-left: 5px solid rgba(10, 10, 10, 0.15);
-  padding: 1px 1em;
+  padding: 0.4em 1em;
   margin-left: 0;
   margin-right: 0;
   border-radius: 5px;
+
+  > *:first-child {
+    margin-top: 0;
+  }
+  > *:last-child {
+    margin-bottom: 0;
+  }
 }
 .svg-inline--fa {
   width: 1.25em !important;
