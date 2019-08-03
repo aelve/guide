@@ -143,6 +143,10 @@ export default class ConflictDialog extends Vue {
     }
     .v-card__text {
       word-break: break-word;
+      font-size: 1rem;
+      line-height: inherit;
+      letter-spacing: normal;
+      color: #000;
     }
   }
 }
