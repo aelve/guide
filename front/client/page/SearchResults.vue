@@ -49,7 +49,7 @@
 
     <div
       v-else
-      class="text-md-center display-1"
+      class="text-center display-1"
     >
       Nothing found
     </div>

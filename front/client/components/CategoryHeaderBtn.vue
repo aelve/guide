@@ -1,9 +1,9 @@
 <template>
   <v-btn
-    flat
+    text
     class="category-header-btn"
-    :title="text"
     color="grey darken-2"
+    :title="text"
     v-bind="$attrs"
     v-on="$listeners"
   >
@@ -25,9 +25,10 @@ export default class CategoryHeaderBtn extends Vue {
 </script>
 
 <style scoped>
-.category-header-btn {
-  margin: 0;
+/* .v-btn selector added for more specificity to override vuetify styles without using !important*/
+.v-btn.category-header-btn {
   padding: 0 4px;
+  font-size: 0.8rem;
   font-weight: bold;
 }
 </style>

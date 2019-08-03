@@ -56,7 +56,7 @@ export default class AFooter extends Vue { }
   display: inline-block;
 }
 .footer {
-  margin-right: -10px;
+  margin: 0 -10px 0 0;
 
   > * {
     margin-right: 10px;

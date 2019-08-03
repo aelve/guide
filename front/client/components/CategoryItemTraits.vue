@@ -13,63 +13,59 @@
         class="position-relative category-item-trait"
       >
 
-        <div
-          v-html="trait.content.html"
-          v-if="!trait.isEdit"
-        />
+        <template v-if="!trait.isEdit">
+          <div v-html="trait.content.html" />
 
-        <v-menu
-          v-if="!trait.isEdit"
-          lazy
-          offset-y
-          nudge-bottom="2"
-          class="category-item-edit-trait-menu"
-        >
-          <category-item-btn
-            slot="activator"
-            size="22px"
-            title="Actions"
-            iconSize="14"
-            icon="ellipsis-v"
-          />
-          <v-list dense>
-            <v-list-tile
-              tag="div"
-              @click="moveTrait(trait, 'up')"
-            >
-              <v-list-tile-title>
-                Move up
-              </v-list-tile-title>
-            </v-list-tile>
+          <v-menu bottom left offset-y>
+            <template v-slot:activator="{ on }">
+              <category-item-btn
+                class="trait-actions-menu-btn"
+                size="22px"
+                title="Actions"
+                iconSize="14"
+                icon="ellipsis-v"
+                v-on='on'
+              />
+            </template>
+            <v-list dense>
+              <v-list-item
+                tag="div"
+                @click="moveTrait(trait, 'up')"
+              >
+                <v-list-item-title>
+                  Move up
+                </v-list-item-title>
+              </v-list-item>
 
-            <v-list-tile
-              tag="div"
-              @click="moveTrait(trait, 'down')"
-            >
-              <v-list-tile-title>
-                Move down
-              </v-list-tile-title>
-            </v-list-tile>
+              <v-list-item
+                tag="div"
+                @click="moveTrait(trait, 'down')"
+              >
+                <v-list-item-title>
+                  Move down
+                </v-list-item-title>
+              </v-list-item>
 
-            <v-list-tile
-              tag="div"
-              @click="trait.isEdit = true"
-            >
-              <v-list-tile-title>
-                Edit
-              </v-list-tile-title>
-            </v-list-tile>
+              <v-list-item
+                tag="div"
+                @click="trait.isEdit = true"
+              >
+                <v-list-item-title>
+                  Edit
+                </v-list-item-title>
+              </v-list-item>
 
-            <v-list-tile
-              tag="div"
-              @click="deleteTrait(trait)"
-            >
-              <v-list-tile-title>
-                Delete
-              </v-list-tile-title>
-            </v-list-tile>
-          </v-list>
-        </v-menu>
+              <v-list-item
+                tag="div"
+                @click="deleteTrait(trait)"
+              >
+                <v-list-item-title>
+                  Delete
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
 
         <markdown-editor
           v-if="trait.isEdit"
@@ -208,12 +204,12 @@ export default class CategoryItemTraits extends Vue {
 .category-item-trait {
   padding-right: 24px;
 }
-.category-item-edit-trait-menu {
+.trait-actions-menu-btn {
   position: absolute;
   top: 0;
   right: 0;
 }
->>> .v-list__tile {
+>>> .v-list-item {
   padding: 0 8px;
 }
 </style>

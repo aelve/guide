@@ -1,20 +1,30 @@
 <template>
   <v-dialog
-    lazy
     :value="value"
     @input="close"
     max-width="500px"
   >
-    <slot slot="activator" />
+    
+    <template
+      v-if="$slots.activator"
+      v-slot:activator="{ on }"
+    >
+      <slot
+        slot="activator"
+        v-on="on"
+      />
+    </template>
+
 
     <v-card>
       <v-card-text>
         <v-form
-          lazy-validation
           v-model="isValid"
           @keydown.native.prevent.ctrl.enter="updateCategoryInfo"
         >
+          <!-- reason for "v-if" - see AddCategoryDialog.vue template-->
           <v-text-field
+            v-if="value"
             autofocus
             class="mb-2"
             label="Title"
@@ -22,47 +32,53 @@
             v-model="title"
           />
           <v-text-field
-            autofocus
             class="mb-2"
             label="Group"
             :rules="inputValidationRules"
             v-model="group"
           />
           <v-select
-            :items="categoryStatuses"
             item-text="name"
             item-value="value"
+            :menu-props="{ offsetY: true, closeOnClick: true }"
+            :items="categoryStatuses"
             v-model="categoryStatus"
             label="Status"
             class="mb-2"
           />
           <v-checkbox
-            :inputValue="checkboxSections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemProsConsSection', 'Pros/Cons')"
+            hide-details
+            color="info"
+            class="category-info-edit__checkbox"
             label="Pros/cons section"
             value="ItemProsConsSection"
-            class="mt-0 hide-v-messages"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemProsConsSection', 'Pros/Cons')"
           />
           <v-checkbox
-            :inputValue="checkboxSections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemEcosystemSection', 'Ecosystem')"
+            hide-details
+            color="info"
+            class="category-info-edit__checkbox"
             label="Ecosystem section"
             value="ItemEcosystemSection"
-            class="mt-0 hide-v-messages"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemEcosystemSection', 'Ecosystem')"
           />
           <v-checkbox
-            :inputValue="checkboxSections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemNotesSection', 'Notes')"
+            hide-details
+            color="info"
+            class="category-info-edit__checkbox"
             label="Notes section"
             value="ItemNotesSection"
-            class="mt-0 hide-v-messages"
+            :inputValue="checkboxSections"
+            @click.native.capture.prevent.stop="updateSectionEnabling('ItemNotesSection', 'Notes')"
           />
         </v-form>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          flat
+          text
           title="Cancel"
           color="primary"
           @click.native="close"
@@ -177,9 +193,17 @@ export default class CategoryInfoEdit extends Vue {
 }
 </script>
 
-<style scoped>
->>> .hide-v-messages .v-messages {
-  display: none;
+<style lang="postcss" scoped>
+.category-info-edit__checkbox >>> {
+  .v-input--selection-controls__input {
+    margin-right: 12px;
+  }
+
+  /* We using fontawesome icons which turned out to be bigger than vuetify default icons
+     and checkbox icon gets some strange offset if overflow is visible */
+  svg {
+    overflow: hidden;
+  }
 }
 </style>
 

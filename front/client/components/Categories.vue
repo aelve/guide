@@ -51,13 +51,13 @@
           </template>
 
           <v-btn
-            flat
+            text
             class="ma-0 mt-1 px-1"
             color="grey darken-2"
             title="Add new category"
             @click="openAddCategoryDialog(groupName)"
           >
-            <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
+            <v-icon size="14" class="mr-1" left v-text="'$vuetify.icons.plus'"></v-icon>
             Add new category
           </v-btn>
         </div>
@@ -69,6 +69,9 @@
       v-model="isAddGroupDialogOpen"
       :groupName="addCategoryGroupName"
     />
+    <!-- <v-dialog v-model="isAddGroupDialogOpen">
+
+    </v-dialog> -->
   </div>
 </template>
 
@@ -125,7 +128,8 @@ export default class Categories extends Vue {
 
 <style lang="postcss" scoped>
 .categories {
-  margin-top: 30px;
+  /* Bellow we use negative margins for flex container and it creates unwanted horizontal scroll bar */
+  overflow-x: hidden;
 }
 .categories-flex-container {
   display: flex;
@@ -185,20 +189,23 @@ export default class Categories extends Vue {
   word-break: break-word;
 }
 .category-title {
-  line-height: 1.2;
   font-size: 0.9rem;
   font-weight: 600;
-}
-.category-title:not(:first-child) {
   margin-top: 5px;
+}
+.category-title,
+.status-title {
+  line-height: 1.2;
 }
 .status-title {
   font-size: 0.9rem;
-  margin: 4px 0 0 8px;
-  line-height: 1.7;
+  margin: 6px 0 4px 8px;
 
   + .category-title {
     margin-top: 0;
   }
+}
+.group-title + * {
+  margin-top: 0;
 }
 </style>

@@ -162,12 +162,15 @@ code.sourceCode {
 .sourceCode:not(:last-child) code.sourceCode {
   margin: 0 0 0.2rem;
 }
-a {
+a,
+/* So much selectors is required to overwrite vuetify styles */
+.v-application .app-content a {
   text-decoration-line: none;
-  color: #0061c0;
-}
-a:hover {
-  text-decoration-line: underline;
+  color: #005ebd;
+
+  &:hover {
+    text-decoration-line: underline;
+  }
 }
 .text-transform-none {
   text-transform: none !important;
@@ -212,23 +215,23 @@ blockquote {
   margin-right: 0;
   border-radius: 5px;
 }
-/* vuetify v-select component when opened almost overlays its title */
-.v-menu__content {
-  margin-top: 5px;
-}
 .svg-inline--fa {
   width: 1.25em !important;
   text-align: center !important;
 }
-.v-toolbar__title  {
+.v-toolbar__title {
   letter-spacing: inherit;
+}
+/* Some useless and obstructive div that vuetify add along with "v-menu" component */
+.v-menu--inline {
+  display: none;
 }
 </style>
 
 <style scoped>
 /* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
 .app-content {
-  padding: 64px 0px 0px !important;
+  padding: 100px 0px 36px !important;
   line-height: 150%;
 }
 </style>

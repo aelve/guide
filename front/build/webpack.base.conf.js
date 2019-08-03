@@ -2,6 +2,7 @@ const path = require('path')
 const { DefinePlugin } = require('webpack')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin')
+const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -50,14 +51,13 @@ const config = {
         test: /\.js$/,
         use: {
           loader: 'babel-loader'
-        }
+        },
+        // exclude: /node_modules\/(?!(vuetify)\/).*/
+        exclude: /(node_modules)/
       },
       {
         test: /\.ts$/,
         use: [
-          {
-            loader: 'babel-loader'
-          },
           {
             loader: 'ts-loader',
             options: {
@@ -70,9 +70,6 @@ const config = {
       {
         test: /\.tsx$/,
         use: [
-          {
-            loader: 'babel-loader'
-          },
           {
             loader: 'ts-loader',
             options: {
@@ -125,32 +122,16 @@ const config = {
         ]
       },
       {
-        test: /\.scss$/,
+        test: /\.s(c|a)ss$/,
         use: [
-          {
-            loader: 'vue-style-loader',
-            options: {
-              sourceMap: false,
-              shadowMode: false
-            }
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: false,
-              importLoaders: 2
-            }
-          },
-          {
-            loader: 'postcss-loader',
-            options: {
-              sourceMap: false
-            }
-          },
+          'vue-style-loader',
+          'css-loader',
           {
             loader: 'sass-loader',
             options: {
-              sourceMap: false
+              implementation: require('sass'),
+              fiber: require('fibers'),
+              indentedSyntax: true // optional
             }
           }
         ]
@@ -188,7 +169,8 @@ const config = {
     new FriendlyErrorsWebpackPlugin(),
     new DefinePlugin({
       NODE_ENV: isProduction ? "'production'" : "'development'"
-    })
+    }),
+    new VuetifyLoaderPlugin()
   ]
 }
 

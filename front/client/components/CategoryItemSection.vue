@@ -1,5 +1,5 @@
 <template>
-  <div class="category-item-section">
+  <section class="category-item-section">
     <h3 class="category-item-section__title title font-weight-bold mb-1 mt-0">
       {{ title }}
       <category-item-btn
@@ -22,7 +22,7 @@
       @cancel="toggleEdit"
       @save="save"
     />
-  </div>
+  </section>
 </template>
 
 <script lang="ts">
@@ -80,6 +80,9 @@ export default class CategoryItemSection extends Vue {
 
 
 <style scoped>
+.category-item-section {
+  max-width: 100%;
+}
 .category-item-section__title {
   display: flex;
   align-items: center;

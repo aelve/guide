@@ -1,79 +1,94 @@
 <template>
-  <div>
-    <v-dialog
-      lazy
-      :value="value"
-      @input="close"
-      max-width="500px"
+  <v-dialog
+    :value="value"
+    @input="close"
+    max-width="500px"
+  >
+
+    <template
+      v-if="$slots.activator"
+      v-slot:activator="{ on }"
     >
+      <slot
+        slot="activator"
+        v-on="on"
+      />
+    </template>
 
-      <slot slot="activator" />
+    <v-card>
+      <v-card-text>
+        <v-form
+          ref="form"
+          v-model="isValid"
+          @keydown.native.enter="submit"
+        >
+        <!-- v-if="value" - cause without it autofocus triggers on first modal open
+          https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
+          <v-text-field
+            v-if="value"
+            autofocus
+            ref="categoryNameInput"
+            class="mb-3"
+            label="Category name"
+            :rules="categoryValidationRules"
+            v-model="categoryName"
+          />
+          <v-text-field
+            v-model="groupNameInternal"
+            label="Group"
+          />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          text
+          title="Cancel"
+          color="primary"
+          @click.native="close"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          title="Submit"
+          color="info"
+          class="add-category-submit-btn"
+          :disabled="!isValid"
+          @click.native="submit"
+        >
+          Submit
+        </v-btn>
+      </v-card-actions>
+    </v-card>
 
-      <v-card @keyup.esc.native="close" tabindex="0">
-        <v-card-text>
-          <v-form
-            ref="form"
-            lazy-validation
-            v-model="isValid"
-            @keydown.native.enter="submit"
-          >
-          <!-- v-if="value" - cause without it autofocus triggers on first modal open
-            https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
-            <v-text-field
-              v-if="value"
-              class="mb-3"
-              label="Category name"
-              autofocus
-              :rules="categoryValidationRules"
-              v-model="categoryName"
-              ref="categoryNameInput"
-            />
-            <v-text-field
-              v-model="groupNameInternal"
-              label="Group"
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            flat
-            title="Cancel"
-            color="primary"
-            @click.native="close"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            title="Create"
-            color="info"
-            class="add-category-submit-btn"
-            :disabled="!isValid || !categoryName"
-            @click.native="submit"
-          >
-            Create
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-
-    </v-dialog>
-
+    <!--
+      `eager` prop is provided here because dialog doesn't get focus on first render without it
+      which leads to inability of closing it with `esc` btn
+      TODO fix, when issue is fixed in vuetify https://github.com/vuetifyjs/vuetify/issues/8220
+    -->
     <ConfirmDialog
-      v-if="isDuplicateConfirmShow"
-      :value="isDuplicateConfirmShow"
-      max-width="500px"
-      attach="#app"
+      eager
       ref="duplicateConfirm"
+      max-width="500px"
+      :value="isDuplicateConfirmShow"
     >
       This group already has categories with the same name:
-      <router-link
-        v-for="category in sameNameCategories"
-        :key="category.id"
-        :to="`/haskell/${getCategoryUrl(category)}`"
-        target="_blank"
-      >{{ category.title }}</router-link>
+      <ul class="duplicate-categories-list">
+        <li
+          v-for="category in sameNameCategories"
+          :key="category.id"
+        >
+          <router-link
+            v-for="category in sameNameCategories"
+            :key="category.id"
+            :to="`/haskell/${getCategoryUrl(category)}`"
+            target="_blank"
+          >{{ category.title }}</router-link>>
+        </li>
+      </ul>
     </ConfirmDialog>
-  </div>
+
+  </v-dialog>
 </template>
 
 <script lang="ts">
@@ -140,6 +155,7 @@ export default class AddCategoryDialog extends Vue {
       title: this.categoryName,
       group: this.groupNameInternal
     })
+    this.close()
     this.$router.push(`haskell/${createdId}`)
   }
 
@@ -148,9 +164,14 @@ export default class AddCategoryDialog extends Vue {
     this.isDuplicateConfirmShow = true
     this.$nextTick(() => {
       const duplicateConfirm = this.$refs.duplicateConfirm
+
       duplicateConfirm.$once('canceled', () => {
         promise.resolve(false)
         this.isDuplicateConfirmShow = false
+
+        // when duplicateConfirm dialog closed it automatically sets focus on <body>
+        // and we focus on name input for: so that user could change category name and so that he could push esc to close dialog
+        this.$nextTick(() => this.$refs.categoryNameInput.focus())
       })
       duplicateConfirm.$once('confirmed', () => {
         promise.resolve(true)
@@ -164,5 +185,20 @@ export default class AddCategoryDialog extends Vue {
 }
 </script>
 
-<style>
+<style lang="postcss" scoped>
+.duplicate-categories-list {
+  display: inline;
+  margin: 0;
+  padding: 0;
+
+  > li {
+    list-style-type: none;
+    display: inline;
+
+    &:not(:last-child):after {
+      content: ", ";
+    }
+  }
+}
 </style>
+

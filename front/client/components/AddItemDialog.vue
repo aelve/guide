@@ -1,29 +1,34 @@
 <template>
   <v-dialog
-    lazy
     :value="value"
     @input="close"
     @keyup.esc.native="close"
     max-width="500px"
   >
-    <slot slot="activator" />
+    <template
+      v-if="$slots.activator"
+      v-slot:activator="{ on }"
+    >
+      <slot
+        slot="activator"
+        v-on="on"
+      />
+    </template>
    
     <v-card>
       <v-card-text>
         <v-form
-          lazy-validation
+          ref="form"
           v-model="isValid"
           @keydown.native.prevent.enter="submit"
-          ref="form"
         >
-          <!-- v-if="value" - cause without it autofocus triggers on first modal open
-          https://stackoverflow.com/questions/51472947/vuetifys-autofocus-works-only-on-first-modal-open -->
+          <!-- reason for "v-if" - see AddCategoryDialog.vue template-->
           <v-text-field
             v-if="value"
             autofocus
             class="mb-2"
             label="Item name"
-            :rules="itemValidationRules"
+            :rules="nameValidationRules"
             v-model="name"
           />
           <v-text-field
@@ -42,7 +47,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          flat
+          text
           title="Cancel"
           color="primary"
           @click.native="close"
@@ -51,8 +56,8 @@
         </v-btn>
         <v-btn
           color="info"
+          :disabled="!isValid"
           title="Create"
-          :disabled="!isValid || !name"
           @click.native="submit"
         >
           Create
@@ -73,13 +78,15 @@ export default class AddItemDialog extends Vue {
   @Prop(String) categoryId!: string
 
   name: string = ''
-  itemValidationRules: Array<(x: string) => boolean | string> = [
+  nameValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || 'Item name can not be empty'
   ]
   hackage: string = ''
   link: string = ''
   isValid: boolean = false
 
+  // TODO create mixin or external dialog component which reset data on new open,
+  // cause this code is duplicated in another dialog components (AddCategoryDialog)
   @Watch('value')
   onOpen () {
     this.name = ''

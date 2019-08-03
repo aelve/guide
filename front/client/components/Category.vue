@@ -34,7 +34,7 @@
         />
       </template>
       <v-btn
-        flat
+        text
         class="ml-2"
         color="grey darken-2"
         title="Add new item"

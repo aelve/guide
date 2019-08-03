@@ -9,11 +9,10 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 const webpackConfig = merge(baseConfig, {
   mode: isProduction ? 'production' : 'development',
-  target: 'node',
-  devtool: isProduction ? false : 'source-map',
   entry: path.resolve(__dirname, '../client/entry.server.ts'),
+  devtool: isProduction ? false : 'source-map',
+  target: 'node',
   output: {
-    filename: 'server-bundle.js',
     libraryTarget: 'commonjs2'
   },
   externals: nodeExternals({
@@ -21,7 +20,8 @@ const webpackConfig = merge(baseConfig, {
       /\.css$/,
       /\.sass$/,
       /\.scss$/,
-      /\.svg$/
+      /\.svg$/,
+      /vuetify\/.*/
     ]
   }),
 
