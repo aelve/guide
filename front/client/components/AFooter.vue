@@ -34,9 +34,9 @@
         licensed under
         <a-link
           openInNewTab
-          url="http://guide.aelve.com:4801/license"
+          url="https://creativecommons.org/licenses/by-sa/4.0/"
         >
-          CC+ BY-SA 4.0
+          CC BY-SA 4.0
         </a-link>
       </span>
     </v-layout>
