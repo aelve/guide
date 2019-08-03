@@ -76,14 +76,14 @@
 </template>
 
 <script lang="ts">
-import _groupBy from 'lodash/groupBy'
-import _toKebabCase from 'lodash/kebabCase'
-import _sortBy from 'lodash/sortBy'
-import _fromPairs from 'lodash/fromPairs'
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { ICategoryInfo, CategoryStatus } from 'client/service/Category'
 import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
+import _groupBy from 'lodash/groupBy'
+import _sortBy from 'lodash/sortBy'
+import _fromPairs from 'lodash/fromPairs'
+import getCategoryUrl from 'client/helpers/getCategoryUrl'
+import { ICategoryInfo, CategoryStatus } from 'client/service/Category'
 
 @Component({
   components: {
@@ -122,9 +122,7 @@ export default class Categories extends Vue {
     this.isAddGroupDialogOpen = true
   }
 
-  getCategoryUrl (category: ICategoryInfo): string {
-    return `${_toKebabCase(category.title)}-${category.id}`
-  }
+  getCategoryUrl = getCategoryUrl
 }
 </script>
 

@@ -21,6 +21,7 @@
           ref="form"
           v-model="isValid"
           @keydown.native.prevent.enter="submit"
+          ref="form"
         >
           <!-- reason for "v-if" - see AddCategoryDialog.vue template-->
           <v-text-field
@@ -56,11 +57,11 @@
         </v-btn>
         <v-btn
           color="info"
-          title="Submit"
           :disabled="!isValid"
+          title="Create"
           @click.native="submit"
         >
-          Submit
+          Create
         </v-btn>
       </v-card-actions>
     </v-card>

@@ -60,7 +60,9 @@ showLogLine timeFormat (Di.Core.Log time lvl path msg) =
   format "[{}] {}: {} | {}" time' (show lvl) path' msg'
   where
     time' = formatTime defaultTimeLocale timeFormat (systemToUTCTime time)
-    path' = case showPath path of "" -> "<root>"; s -> s
+    path' = case showPath path of
+      "" -> "<root>"
+      s -> s
     msg'  = T.replace "\n" ";" (toText (Df1.unMessage msg))
 
 -- | Pretty-print a log path.

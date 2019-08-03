@@ -78,7 +78,12 @@
           v-for="category in sameNameCategories"
           :key="category.id"
         >
-          <a target="_blank">{{ category.title }}</a>
+          <router-link
+            v-for="category in sameNameCategories"
+            :key="category.id"
+            :to="`/haskell/${getCategoryUrl(category)}`"
+            target="_blank"
+          >{{ category.title }}</router-link>>
         </li>
       </ul>
     </ConfirmDialog>
@@ -93,6 +98,7 @@ import { Prop, Watch } from 'vue-property-decorator'
 import { CategoryService } from 'client/service/Category'
 import ConfirmDialog from 'client/components/ConfirmDialog.vue'
 import DeferredPromise from 'utils/DeferredPromise'
+import getCategoryUrl from 'client/helpers/getCategoryUrl'
 
 @Component({
   components: {
@@ -174,6 +180,8 @@ export default class AddCategoryDialog extends Vue {
     })
     return promise
   }
+
+  getCategoryUrl = getCategoryUrl
 }
 </script>
 

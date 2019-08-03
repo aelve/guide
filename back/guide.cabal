@@ -56,8 +56,12 @@ library
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
-    Guide.Db
-      Guide.Db.Schema
+    Guide.Database
+      Guide.Database.Connection
+      Guide.Database.Convert
+      Guide.Database.Get
+      Guide.Database.Schema
+      Guide.Database.Types
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions
@@ -108,6 +112,7 @@ library
                      , cmark-highlight == 0.2.*
                      , cmark-sections == 0.3.*
                      , containers >= 0.5
+                     , contravariant-extras
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
                      , df1
@@ -129,6 +134,7 @@ library
                      , hashable
                      , haskell-src-meta
                      , hasql
+                     , hasql-transaction
                      , http-api-data
                      , http-client
                      , http-client-tls
@@ -143,11 +149,13 @@ library
                      , microlens-platform >= 0.3.2
                      , mmorph == 1.*
                      , mtl >= 2.1.1
+                     , named
                      , neat-interpolation == 0.3.*
                      , network
                      , network-uri
                      , patches-vector
                      , random >= 1.1
+                     , raw-strings-qq
                      , reroute
                      , safe
                      , safecopy
@@ -194,7 +202,6 @@ library
                      , RankNTypes
                      , MultiParamTypeClasses
                      , FunctionalDependencies
-                     , TemplateHaskell
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric
@@ -242,7 +249,7 @@ test-suite tests
                      , text
                      , temporary
                      , transformers
-                     , webdriver >= 0.8.4 && < 0.9
+                     , webdriver
                      , yaml
   hs-source-dirs:      tests
   default-language:    Haskell2010
@@ -255,7 +262,6 @@ test-suite tests
                      , RankNTypes
                      , MultiParamTypeClasses
                      , FunctionalDependencies
-                     , TemplateHaskell
                      , DeriveFunctor
                      , DeriveTraversable
                      , DeriveGeneric

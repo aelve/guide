@@ -10,7 +10,6 @@
       :itemUid="itemUid"
       :itemName="name"
       :itemLink="link"
-      :itemGroup="group"
       :itemHackage="hackage"
     />
 
@@ -132,7 +131,6 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
 export default class CategoryItem extends Vue {
   // TODO get rid of so many props get data from Vuex
   @Prop(String) name!: string
-  @Prop(String) group!: string
   @Prop(Object) summary!: { text: string, html: string }
   @Prop(Array) pros!: any[]
   @Prop(Array) cons!: any[]

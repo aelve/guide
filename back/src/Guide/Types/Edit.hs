@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 
 -- | Types for edits.
@@ -78,7 +79,7 @@ data Edit
       editItemUid     :: Uid Item,
       editItemLink    :: Maybe Url,
       editItemNewLink :: Maybe Url }
-  | Edit'SetItemGroup {
+  | Edit'SetItemGroup {  -- TODO: remove after migration to Postgres
       editItemUid      :: Uid Item,
       editItemGroup    :: Maybe Text,
       editItemNewGroup :: Maybe Text }
