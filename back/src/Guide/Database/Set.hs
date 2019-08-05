@@ -358,7 +358,7 @@ setTraitDeleted traitId (arg #deleted -> deleted) = do
   if deleted then deleteTraitIdFromItem itemId traitId traitType
   else addTraitIdToItem itemId traitId traitType
 
--- | Move itrait up or down.
+-- | Move trait up or down.
 moveTrait :: Uid Trait -> Direction -> ExceptT DatabaseError Transaction ()
 moveTrait traitId direction = do
   let move = case direction of
