@@ -7,6 +7,8 @@ module Guide.Database.Convert
        -- * 'Bool'
          boolParam
        , boolParamNullable
+       , boolColumn
+       , boolColumnNullable
 
        -- * 'Text'
        , textParam
@@ -37,17 +39,30 @@ module Guide.Database.Convert
        -- * @Set 'ItemSection'@
        , itemSectionSetParam
        , itemSectionSetColumn
+
+       -- * 'CategoryRow'
+       , categoryRowParams
+       , categoryRowColumn
+
+       -- * 'ItemRow'
+       , itemRowParams
+       , itemRowColumn
+
+       -- * 'TraitRow'
+       , traitRowParams
+       , traitRowColumn
        ) where
 
 
 import Imports
 
-import Data.Functor.Contravariant (contramap)
-import qualified Data.Set as Set
+import Data.Functor.Contravariant (contramap, (>$<))
 
+import qualified Data.Set as Set
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 
+import Guide.Database.Types
 import Guide.Types.Core (CategoryStatus (..), ItemSection (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
@@ -63,6 +78,14 @@ boolParam = HE.param (HE.nonNullable HE.bool)
 -- | Pass a nullable 'Bool' to a query.
 boolParamNullable :: HE.Params (Maybe Bool)
 boolParamNullable = HE.param (HE.nullable HE.bool)
+
+-- | Get a 'Bool' from a query.
+boolColumn :: HD.Row Bool
+boolColumn = HD.column (HD.nonNullable HD.bool)
+
+-- | Get a nullable 'Bool' from a query.
+boolColumnNullable :: HD.Row Bool
+boolColumnNullable = HD.column (HD.nonNullable HD.bool)
 
 ----------------------------------------------------------------------------
 -- Text
@@ -214,7 +237,7 @@ itemSectionSetColumn =
 uidsEncoder :: HE.Value [Uid a]
 uidsEncoder = HE.foldableArray $ HE.nonNullable uidEncoder
 
--- | Pass a @[Uid]@ to a query.
+-- | Pass a ['Uid'] to a query.
 uidsParam :: HE.Params [Uid a]
 uidsParam = HE.param $ HE.nonNullable uidsEncoder
 
@@ -222,6 +245,92 @@ uidsParam = HE.param $ HE.nonNullable uidsEncoder
 uidsDecoder :: HD.Value [Uid a]
 uidsDecoder = HD.listArray $ HD.nonNullable uidDecoder
 
--- | Get a @[Uid]@ from a query.
+-- | Get a ['Uid'] from a query.
 uidsColumn :: HD.Row [Uid a]
 uidsColumn = HD.column $ HD.nonNullable uidsDecoder
+
+----------------------------------------------------------------------------
+-- CategoryRow
+----------------------------------------------------------------------------
+
+-- | Pass a 'CategoryRow' to query.
+categoryRowParams :: HE.Params CategoryRow
+categoryRowParams =
+  (categoryRowUid >$< uidParam) <>
+  (categoryRowTitle >$< textParam) <>
+  (categoryRowCreated >$< timestamptzParam) <>
+  (categoryRowGroup >$< textParam) <>
+  (categoryRowStatus >$< categoryStatusParam) <>
+  (categoryRowNotes >$< textParam) <>
+  (categoryRowSelections >$< itemSectionSetParam) <>
+  (categoryRowItemOrder >$< uidsParam)
+
+-- | Get a 'CategoryRow' from query.
+categoryRowColumn :: HD.Row CategoryRow
+categoryRowColumn = CategoryRow
+  <$> uidColumn
+  <*> textColumn
+  <*> timestamptzColumn
+  <*> textColumn
+  <*> categoryStatusColumn
+  <*> textColumn
+  <*> itemSectionSetColumn
+  <*> uidsColumn
+
+----------------------------------------------------------------------------
+-- ItemRow
+----------------------------------------------------------------------------
+
+-- | Pass a 'ItemRow' to query.
+itemRowParams :: HE.Params ItemRow
+itemRowParams =
+  (itemRowUid >$< uidParam) <>
+  (itemRowName >$< textParam) <>
+  (itemRowCreated >$< timestamptzParam) <>
+  (itemRowLink >$< textParamNullable) <>
+  (itemRowHackage >$< textParamNullable) <>
+  (itemRowSummary >$< textParam) <>
+  (itemRowEcosystem >$< textParam) <>
+  (itemRowNotes >$< textParam) <>
+  (itemRowDeleted >$< boolParam) <>
+  (itemRowCategoryUid >$< uidParam) <>
+  (itemRowProsOrder >$< uidsParam) <>
+  (itemRowConsOrder >$< uidsParam)
+
+-- | Get a 'ItemRow' from query.
+itemRowColumn :: HD.Row ItemRow
+itemRowColumn = ItemRow
+  <$> uidColumn
+  <*> textColumn
+  <*> timestamptzColumn
+  <*> textColumnNullable
+  <*> textColumnNullable
+  <*> textColumn
+  <*> textColumn
+  <*> textColumn
+  <*> boolColumn
+  <*> uidColumn
+  <*> uidsColumn
+  <*> uidsColumn
+
+----------------------------------------------------------------------------
+-- TraitRow
+----------------------------------------------------------------------------
+
+-- | Pass a 'TraitRow' to query.
+traitRowParams :: HE.Params TraitRow
+traitRowParams =
+  (traitRowUid >$< uidParam) <>
+  (traitRowContent >$< textParam) <>
+  (traitRowDeleted >$< boolParam) <>
+  (traitRowType >$< traitTypeParam) <>
+  (traitRowItemUid >$< uidParam)
+
+-- | Get a 'TraitRow' from query.
+traitRowColumn :: HD.Row TraitRow
+traitRowColumn = TraitRow
+  <$> uidColumn
+  <*> textColumn
+  <*> boolColumn
+  <*> traitTypeColumn
+  <*> uidColumn

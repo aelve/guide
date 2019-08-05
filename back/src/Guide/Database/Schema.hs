@@ -114,7 +114,6 @@ v0_createTableTraits = HS.sql [r|
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
     deleted boolean                 -- Whether the trait is deleted
-      DEFAULT false
       NOT NULL,
     type_ trait_type NOT NULL,      -- Trait type (pro or con)
     item_uid text                   -- Item that the trait belongs to
@@ -136,7 +135,6 @@ v0_createTableItems = HS.sql [r|
     ecosystem text NOT NULL,        -- The ecosystem section
     notes text NOT NULL,            -- The notes section
     deleted boolean                 -- Whether the item is deleted
-      DEFAULT false
       NOT NULL,
     category_uid text               -- Category that the item belongs to
       REFERENCES categories (uid)

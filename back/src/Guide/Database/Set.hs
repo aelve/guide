@@ -80,8 +80,8 @@ setCategoryTitle catId (arg #title -> title) = do
   lift $ HT.statement (catId, title) (Statement sql encoder decoder False)
 
 -- | Set category group.
-setCategoryGroup :: Uid Category -> "group_" :! Text -> ExceptT DatabaseError Transaction ()
-setCategoryGroup catId (arg #group_ -> group_) = do
+setCategoryGroup :: Uid Category -> "group" :! Text -> ExceptT DatabaseError Transaction ()
+setCategoryGroup catId (arg #group -> group_) = do
   let sql = [r|
         UPDATE categories
         SET group_ = $2
@@ -122,7 +122,7 @@ setCategoryEnabledSections
   -> "disable" :! Set ItemSection    -- ^ Sections to disable
   -> ExceptT DatabaseError Transaction ()
 setCategoryEnabledSections catId (arg #enable -> enable) (arg #disable -> disable) = do
-  oldSections <- _categoryEnabledSections <$> getCategory catId
+  oldSections <- categoryRowSelections <$> getCategoryRow catId
   let newSections = (oldSections <> enable) Set.\\ disable
   let sql = [r|
         UPDATE categories
@@ -136,9 +136,9 @@ setCategoryEnabledSections catId (arg #enable -> enable) (arg #disable -> disabl
 -- | Add itemId to category items_order.
 addItemIdToCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
 addItemIdToCategory catId itemId = do
-  itemsOrder <- getCategoryItemsOrder catId
-  when (elem itemId itemsOrder) $ throwError ElementIdIsInOrder
-  let addItemId = itemId : itemsOrder
+  itemsOrder <- categoryRowItemOrder <$> getCategoryRow catId
+  when (elem itemId itemsOrder) $ throwError $ ItemAlreadyInCategory catId itemId
+  let addItemId = itemsOrder ++ [itemId]
   let sql = [r|
         UPDATE categories
         SET items_order = $2
@@ -152,8 +152,8 @@ addItemIdToCategory catId itemId = do
 -- | Delete itemId from category items_order.
 deleteItemIdFromCategory :: Uid Category -> Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItemIdFromCategory catId itemId = do
-  itemsOrder <- getCategoryItemsOrder catId
-  when (notElem itemId itemsOrder) $ throwError ElementIdIsNotInOrder
+  itemsOrder <- categoryRowItemOrder <$> getCategoryRow catId
+  when (notElem itemId itemsOrder) $ throwError $ ItemNotInCategory catId itemId
   let deleteItemId = filter (/= itemId) itemsOrder
   let sql = [r|
         UPDATE categories
@@ -194,8 +194,6 @@ setItemLink itemId (arg #link -> link) = do
   lift $ HT.statement (itemId, link) (Statement sql encoder decoder False)
 
 -- | Set item hackage.
---
--- "hackage" :? Text == Maybe Text with label.
 setItemHackage :: Uid Item -> "hackage" :! Maybe Text -> ExceptT DatabaseError Transaction ()
 setItemHackage itemId (arg #hackage -> hackage) = do
   let sql = [r|
@@ -261,30 +259,19 @@ setItemDeleted itemId (arg #deleted -> deleted) = do
   if deleted then deleteItemIdFromCategory catId itemId
   else addItemIdToCategory catId itemId
 
--- | Move item up or down.
-moveItem :: Uid Item -> Direction -> ExceptT DatabaseError Transaction ()
-moveItem itemId direction = do
-  let move = case direction of
-        MoveUp   -> moveUp
-        MoveDown -> moveDown
-  catId <- getCategoryIdByItem itemId
-  itemsOrder <- getCategoryItemsOrder catId
-  let newItemsOrder = move (== itemId) itemsOrder
-  let sql = [r|
-        UPDATE categories
-        SET items_order = $2
-        WHERE uid = $1
-        |]
-      encoder = contrazip2 uidParam uidsParam
-      decoder = HD.noResult
-  lift $ HT.statement (catId, newItemsOrder) (Statement sql encoder decoder False)
-
 -- | Add traitId to item, either pros_order or cons_order.
-addTraitIdToItem :: Uid Item -> Uid Trait -> TraitType -> ExceptT DatabaseError Transaction ()
-addTraitIdToItem itemId traitId traitType = do
-    traitsOrder <- getItemTraitsOrder itemId traitType
-    when (elem traitId traitsOrder) $ throwError ElementIdIsInOrder
-    let addTraitId = traitId : traitsOrder
+addTraitIdToItem
+  :: Uid Item
+  -> Uid Trait
+  -> "traitType" :! TraitType
+  -> ExceptT DatabaseError Transaction ()
+addTraitIdToItem itemId traitId (arg #traitType -> traitType) = do
+    itemRow <- getItemRow itemId
+    let traitsOrder = case traitType of
+          Pro -> itemRowProsOrder itemRow
+          Con -> itemRowConsOrder itemRow
+    when (elem traitId traitsOrder) $ throwError $ TraitAlreadyInItem itemId traitId
+    let addTraitId = traitsOrder ++ [traitId]
     let sql = case traitType of
           Pro -> [r|
             UPDATE items
@@ -302,26 +289,51 @@ addTraitIdToItem itemId traitId traitType = do
       (itemId, addTraitId) (Statement sql encoder decoder False)
 
 -- | Delete traitId from item, either pros_order or cons_order.
-deleteTraitIdFromItem :: Uid Item -> Uid Trait -> TraitType -> ExceptT DatabaseError Transaction ()
-deleteTraitIdFromItem itemId traitId traitType = do
-    traitsOrder <- getItemTraitsOrder itemId traitType
-    when (notElem traitId traitsOrder) $ throwError ElementIdIsNotInOrder
-    let deleteTraitId = filter (/= traitId) traitsOrder
-    let sql = case traitType of
-          Pro -> [r|
-            UPDATE items
-            SET pros_order = $2
-            WHERE uid = $1
-            |]
-          Con -> [r|
-            UPDATE items
-            SET cons_order = $2
-            WHERE uid = $1
-            |]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement
-      (itemId, deleteTraitId) (Statement sql encoder decoder False)
+deleteTraitIdFromItem
+  :: Uid Item
+  -> Uid Trait
+  -> "traitType" :! TraitType
+  -> ExceptT DatabaseError Transaction ()
+deleteTraitIdFromItem itemId traitId (arg #traitType -> traitType) = do
+  itemRow <- getItemRow itemId
+  let traitsOrder = case traitType of
+        Pro -> itemRowProsOrder itemRow
+        Con -> itemRowConsOrder itemRow
+  when (notElem traitId traitsOrder) $ throwError $ TraitNotInItem itemId traitId
+  let deleteTraitId = filter (/= traitId) traitsOrder
+  let sql = case traitType of
+        Pro -> [r|
+          UPDATE items
+          SET pros_order = $2
+          WHERE uid = $1
+          |]
+        Con -> [r|
+          UPDATE items
+          SET cons_order = $2
+          WHERE uid = $1
+          |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement
+    (itemId, deleteTraitId) (Statement sql encoder decoder False)
+
+-- | Move item up or down.
+moveItem :: Uid Item -> Direction -> ExceptT DatabaseError Transaction ()
+moveItem itemId direction = do
+  let move = case direction of
+        MoveUp   -> moveUp
+        MoveDown -> moveDown
+  catId <- getCategoryIdByItem itemId
+  itemsOrder <- categoryRowItemOrder <$> getCategoryRow catId
+  let newItemsOrder = move (== itemId) itemsOrder
+  let sql = [r|
+        UPDATE categories
+        SET items_order = $2
+        WHERE uid = $1
+        |]
+      encoder = contrazip2 uidParam uidsParam
+      decoder = HD.noResult
+  lift $ HT.statement (catId, newItemsOrder) (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------
 -- Traits
@@ -354,9 +366,9 @@ setTraitDeleted traitId (arg #deleted -> deleted) = do
       encoder = contrazip2 uidParam boolParam
       decoder = HD.noResult
   lift $ HT.statement (traitId, deleted) (Statement sql encoder decoder False)
-  traitType <- getTraitTypeByTraitId traitId
-  if deleted then deleteTraitIdFromItem itemId traitId traitType
-  else addTraitIdToItem itemId traitId traitType
+  traitType <- traitRowType <$> getTraitRow traitId
+  if deleted then deleteTraitIdFromItem itemId traitId (#traitType traitType)
+  else addTraitIdToItem itemId traitId (#traitType traitType)
 
 -- | Move trait up or down.
 moveTrait :: Uid Trait -> Direction -> ExceptT DatabaseError Transaction ()
@@ -365,8 +377,11 @@ moveTrait traitId direction = do
         MoveUp   -> moveUp
         MoveDown -> moveDown
   itemId <- getItemIdByTrait traitId
-  traitType <- getTraitTypeByTraitId traitId
-  traitsOrder <- getItemTraitsOrder itemId traitType
+  traitType <- traitRowType <$> getTraitRow traitId
+  itemRow <- getItemRow itemId
+  let traitsOrder = case traitType of
+        Pro -> itemRowProsOrder itemRow
+        Con -> itemRowConsOrder itemRow
   let newTraitsOrder = move (== traitId) traitsOrder
   let sql = case traitType of
         Pro -> [r|
@@ -416,7 +431,7 @@ deleteItem itemId = do
 deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
 deleteTrait traitId = do
   itemId <- getItemIdByTrait traitId
-  traitType <- getTraitTypeByTraitId traitId
+  traitType <- traitRowType <$> getTraitRow traitId
   let sql = [r|
         DELETE FROM traits
         WHERE uid = $1
@@ -424,7 +439,7 @@ deleteTrait traitId = do
       encoder = uidParam
       decoder = HD.noResult
   lift $ HT.statement traitId (Statement sql encoder decoder False)
-  deleteTraitIdFromItem itemId traitId traitType
+  deleteTraitIdFromItem itemId traitId (#traitType traitType)
 
 
 -- Sandbox
@@ -433,138 +448,128 @@ deleteTrait traitId = do
 testSet :: IO ()
 testSet = do
   conn <- connect
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryTitle cat
   -- runTransactionExceptT conn Write (setCategoryTitle "category1111" "addedCatNew")
-  -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryTitle cat'
 
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryGroup_ cat
   -- runTransactionExceptT conn Write (setCategoryGroup "category1111" "groupNew2")
-  -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryGroup_ cat'
 
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryNotes cat
   -- runTransactionExceptT conn Write (setCategoryNotes "category1111" "new note")
-  -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryNotes cat'
 
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryStatus cat
   -- runTransactionExceptT conn Write (setCategoryStatus "category1111" CategoryStub)
-  -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryStatus cat'
 
-  -- cat <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryEnabledSections cat
   -- runTransactionExceptT conn Write
   --   (setCategoryEnabledSections "category1111"
   --     (Set.fromList [ItemProsConsSection, ItemNotesSection])
   --     (Set.fromList [ItemEcosystemSection]))
-  -- cat' <- runTransactionExceptT conn Read (getCategory "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   -- print $ _categoryEnabledSections cat'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemName item
   -- runTransactionExceptT conn Write (setItemName "item11112222" (#name "new note"))
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemName item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemLink item
   -- runTransactionExceptT conn Write (setItemLink "item11112222" (#link "ya.ru"))
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemLink item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemLink item
   -- runTransactionExceptT conn Write (setItemLink "item11112222" ! defaults)
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemLink item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemHackage item
   -- runTransactionExceptT conn Write (setItemHackage "item11112222" ! #hackage "hello")
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemHackage item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemSummary item
   -- runTransactionExceptT conn Write (setItemSummary "item11112222" ! #summary "hello, people!")
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemSummary item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemNotes item
   -- runTransactionExceptT conn Write (setItemNotes "item11112222" ! #notes "hello, people with notes!")
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemNotes item'
 
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemEcosystem item
   -- runTransactionExceptT conn Write (setItemEcosystem "item11112222" ! #ecosystem "Export ENV")
-  -- item' <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print $ _itemEcosystem item'
 
   -- Mark item 'deleted' and check it if it deleted from items_order list
-  -- itemOrder <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
-  -- print itemOrder
   -- runTransactionExceptT conn Write (setItemDeleted "item11112222" ! #deleted False)
-  -- itemOrder' <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
-  -- print itemOrder'
 
 
-  -- trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  -- trait <- runTransactionExceptT conn Read (getTraitRowMaybe "trait1112222")
   -- print trait
   -- runTransactionExceptT conn Write (setTraitContent "trait1112222" ! #content "all pro")
-  -- trait' <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  -- trait' <- runTransactionExceptT conn Read (getTraitRowMaybe "trait1112222")
   -- print trait'
 
-  -- trait <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Pro)
+  -- trait <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
   -- print trait
   -- runTransactionExceptT conn Write (setTraitDeleted "traitPro1122" ! #deleted False)
-  -- trait' <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Pro)
+  -- trait' <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
   -- print trait'
 
     -- Move Trait
-  item <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  item <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
   print item
-  traitOrder <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Con)
-  print traitOrder
   runTransactionExceptT conn Write (moveTrait "traitCon1122" MoveUp)
-  traitOrder' <- runTransactionExceptT conn Read (getItemTraitsOrder "item11112222" Con)
-  print traitOrder'
+  item' <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
+  print item'
 
   -- Delete trait
-  -- trait <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  -- trait <- runTransactionExceptT conn Read (getTraitRowMaybe "trait1112222")
   -- print trait
   -- runTransactionExceptT conn Write (deleteTrait "trait1112222")
-  -- trait' <- runTransactionExceptT conn Read (getTraitMaybe "trait1112222")
+  -- trait' <- runTransactionExceptT conn Read (getTraitRowMaybe "trait1112222")
   -- print trait'
-  -- item <- runTransactionExceptT conn Read (getItem "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
   -- print item
 
   -- Delete item
-  -- item <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  -- item <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
   -- print item
   -- runTransactionExceptT conn Write (deleteItem "item11112222")
-  -- item' <- runTransactionExceptT conn Read (getItemMaybe "item11112222")
+  -- item' <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
   -- print item'
 
   -- Delete Category
-  -- cat <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- cat <- runTransactionExceptT conn Read (getCategoryRowMaybe "category1111")
   -- print cat
   -- runTransactionExceptT conn Write (deleteCategory "category1111")
-  -- cat' <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRowMaybe "category1111")
   -- print cat'
 
   -- Move Item
-  -- cat' <- runTransactionExceptT conn Read (getCategoryMaybe "category1111")
+  -- cat' <- runTransactionExceptT conn Read (getCategoryRowMaybe "category1111")
   -- print cat'
-  -- itemOrder <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
-  -- print itemOrder
   -- runTransactionExceptT conn Write (moveItem "item22223333" ! #direction False)
-  -- itemOrder' <- runTransactionExceptT conn Read (getCategoryItemsOrder "category1111")
-  -- print itemOrder'
