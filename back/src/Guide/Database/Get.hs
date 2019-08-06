@@ -86,7 +86,7 @@ getTraitRow traitId = do
 
 -- | Get deleted traits belonging to an item.
 --
--- | To fetch pro and con traits use 'getDeletedTraitRowsByItem twice.
+-- | To fetch pro and con traits use 'getDeletedTraitRowsByItem' twice.
 getDeletedTraitRowsByItem
   :: Uid Item
   -> "traitType" :! TraitType
