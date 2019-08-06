@@ -263,22 +263,22 @@ setItemDeleted itemId (arg #deleted -> deleted) = do
 addTraitIdToItem
   :: Uid Item
   -> Uid Trait
-  -> "traitType" :! TraitType
+  -> TraitType
   -> ExceptT DatabaseError Transaction ()
-addTraitIdToItem itemId traitId (arg #traitType -> traitType) = do
+addTraitIdToItem itemId traitId traitType = do
     itemRow <- getItemRow itemId
     let traitsOrder = case traitType of
-          Pro -> itemRowProsOrder itemRow
-          Con -> itemRowConsOrder itemRow
+          TraitTypePro -> itemRowProsOrder itemRow
+          TraitTypeCon -> itemRowConsOrder itemRow
     when (elem traitId traitsOrder) $ throwError $ TraitAlreadyInItem itemId traitId
     let addTraitId = traitsOrder ++ [traitId]
     let sql = case traitType of
-          Pro -> [r|
+          TraitTypePro -> [r|
             UPDATE items
             SET pros_order = $2
             WHERE uid = $1
             |]
-          Con -> [r|
+          TraitTypeCon -> [r|
             UPDATE items
             SET cons_order = $2
             WHERE uid = $1
@@ -292,22 +292,22 @@ addTraitIdToItem itemId traitId (arg #traitType -> traitType) = do
 deleteTraitIdFromItem
   :: Uid Item
   -> Uid Trait
-  -> "traitType" :! TraitType
+  -> TraitType
   -> ExceptT DatabaseError Transaction ()
-deleteTraitIdFromItem itemId traitId (arg #traitType -> traitType) = do
+deleteTraitIdFromItem itemId traitId traitType = do
   itemRow <- getItemRow itemId
   let traitsOrder = case traitType of
-        Pro -> itemRowProsOrder itemRow
-        Con -> itemRowConsOrder itemRow
+        TraitTypePro -> itemRowProsOrder itemRow
+        TraitTypeCon -> itemRowConsOrder itemRow
   when (notElem traitId traitsOrder) $ throwError $ TraitNotInItem itemId traitId
   let deleteTraitId = filter (/= traitId) traitsOrder
   let sql = case traitType of
-        Pro -> [r|
+        TraitTypePro -> [r|
           UPDATE items
           SET pros_order = $2
           WHERE uid = $1
           |]
-        Con -> [r|
+        TraitTypeCon -> [r|
           UPDATE items
           SET cons_order = $2
           WHERE uid = $1
@@ -367,8 +367,8 @@ setTraitDeleted traitId (arg #deleted -> deleted) = do
       decoder = HD.noResult
   lift $ HT.statement (traitId, deleted) (Statement sql encoder decoder False)
   traitType <- traitRowType <$> getTraitRow traitId
-  if deleted then deleteTraitIdFromItem itemId traitId (#traitType traitType)
-  else addTraitIdToItem itemId traitId (#traitType traitType)
+  if deleted then deleteTraitIdFromItem itemId traitId traitType
+  else addTraitIdToItem itemId traitId traitType
 
 -- | Move trait up or down.
 moveTrait :: Uid Trait -> Direction -> ExceptT DatabaseError Transaction ()
@@ -380,16 +380,16 @@ moveTrait traitId direction = do
   traitType <- traitRowType <$> getTraitRow traitId
   itemRow <- getItemRow itemId
   let traitsOrder = case traitType of
-        Pro -> itemRowProsOrder itemRow
-        Con -> itemRowConsOrder itemRow
+        TraitTypePro -> itemRowProsOrder itemRow
+        TraitTypeCon -> itemRowConsOrder itemRow
   let newTraitsOrder = move (== traitId) traitsOrder
   let sql = case traitType of
-        Pro -> [r|
+        TraitTypePro -> [r|
           UPDATE items
           SET pros_order = $2
           WHERE uid = $1
           |]
-        Con -> [r|
+        TraitTypeCon -> [r|
           UPDATE items
           SET cons_order = $2
           WHERE uid = $1
@@ -439,7 +439,7 @@ deleteTrait traitId = do
       encoder = uidParam
       decoder = HD.noResult
   lift $ HT.statement traitId (Statement sql encoder decoder False)
-  deleteTraitIdFromItem itemId traitId (#traitType traitType)
+  deleteTraitIdFromItem itemId traitId traitType
 
 
 -- Sandbox

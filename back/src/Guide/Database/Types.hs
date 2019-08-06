@@ -187,15 +187,10 @@ traitRowToTrait TraitRow{..} = Trait
 traitToTraitRow
   :: Uid Item
   -> "deleted" :! Bool
-  -> "traitType" :! TraitType
+  -> TraitType
   -> Trait
   -> TraitRow
-traitToTraitRow
-  itemId
-  (arg #deleted -> deleted)
-  (arg #traitType -> traitType)
-  Trait{..}
-  =
+traitToTraitRow itemId (arg #deleted -> deleted) traitType Trait{..} =
   TraitRow
     { traitRowUid = _traitUid
     , traitRowContent = toText $ show _traitContent

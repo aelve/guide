@@ -100,8 +100,9 @@ instance A.ToJSON Trait where
   toJSON = A.genericToJSON A.defaultOptions {
     A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
 
--- | ADT for traitType
-data TraitType = Pro | Con
+-- | ADT for trait type. Traits can be pros (positive traits) and cons
+-- (negative traits).
+data TraitType = TraitTypePro | TraitTypeCon
   deriving (Eq, Show)
 
 ----------------------------------------------------------------------------

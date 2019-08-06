@@ -38,7 +38,6 @@ import Contravariant.Extras.Contrazip (contrazip2)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (Read))
-import Named
 import Text.RawString.QQ (r)
 
 import qualified Hasql.Decoders as HD
@@ -89,9 +88,9 @@ getTraitRow traitId = do
 -- | To fetch pro and con traits use 'getDeletedTraitRowsByItem' twice.
 getDeletedTraitRowsByItem
   :: Uid Item
-  -> "traitType" :! TraitType
+  -> TraitType
   -> ExceptT DatabaseError Transaction [TraitRow]
-getDeletedTraitRowsByItem itemId (arg #traitType -> traitType) = do
+getDeletedTraitRowsByItem itemId traitType = do
   let sql = [r|
         SELECT uid, content, deleted, type_, item_uid
         FROM traits
@@ -106,13 +105,13 @@ getDeletedTraitRowsByItem itemId (arg #traitType -> traitType) = do
 -- | Get available traits (they ordered) beloning to an item.
 getTraitRowsByItem
   :: Uid Item
-  -> "traitType" :! TraitType
+  -> TraitType
   -> ExceptT DatabaseError Transaction [TraitRow]
-getTraitRowsByItem itemId (arg #traitType -> traitType) = do
+getTraitRowsByItem itemId traitType = do
   itemRow <- getItemRow itemId
   let traitsOrder = case traitType of
-        Pro -> itemRowProsOrder itemRow
-        Con -> itemRowConsOrder itemRow
+        TraitTypePro -> itemRowProsOrder itemRow
+        TraitTypeCon -> itemRowConsOrder itemRow
   traverse getTraitRow traitsOrder
 
 ----------------------------------------------------------------------------

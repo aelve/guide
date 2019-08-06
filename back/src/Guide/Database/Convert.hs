@@ -146,8 +146,8 @@ timestamptzColumn = HD.column (HD.nonNullable HD.timestamptz)
 -- | Encode a 'TraitType'.
 traitTypeEncoder :: HE.Value TraitType
 traitTypeEncoder = HE.enum $ \case
-  Pro -> "pro"
-  Con -> "con"
+  TraitTypePro -> "pro"
+  TraitTypeCon -> "con"
 
 -- | Pass a 'TraitType' to a query.
 traitTypeParam :: HE.Params TraitType
@@ -156,8 +156,8 @@ traitTypeParam = HE.param (HE.nonNullable traitTypeEncoder)
 -- | Decode a 'TraitType'.
 traitTypeDecoder :: HD.Value TraitType
 traitTypeDecoder = HD.enum $ \case
-  "pro" -> Just Pro
-  "con" -> Just Con
+  "pro" -> Just TraitTypePro
+  "con" -> Just TraitTypeCon
   _ -> Nothing
 
 -- | Get a 'TraitType' from a query.

@@ -152,12 +152,12 @@ addTrait itemId traitId traitType (arg #content -> content) = do
     TraitRow
       { traitRowUid = traitId
       , traitRowContent = content
-      , traitRowDeleted  = False
+      , traitRowDeleted = False
       , traitRowType = traitType
       , traitRowItemUid = itemId
       }
     (Statement sql encoder decoder False)
-  addTraitIdToItem itemId traitId (#traitType traitType)
+  addTraitIdToItem itemId traitId traitType
 
 
 -- Sandbox
@@ -179,28 +179,28 @@ testAdd = do
   print item2
 
 
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1111" Pro (#content "content Pro 1"))
+  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1111" TraitTypePro (#content "content Pro 1"))
   traitP11 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro1111")
   print traitP11
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1122" Pro (#content "content Pro 2"))
+  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1122" TraitTypePro (#content "content Pro 2"))
   traitP12 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro1122")
   print traitP12
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1111" Con (#content "content Con 1"))
+  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1111" TraitTypeCon (#content "content Con 1"))
   traitC11 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon1111")
   print traitC11
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1122" Con (#content "content Con 2"))
+  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1122" TraitTypeCon (#content "content Con 2"))
   traitC12 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon1122")
   print traitC12
 
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2222" Pro (#content "content Pro 1"))
+  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2222" TraitTypePro (#content "content Pro 1"))
   traitP21 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro2222")
   print traitP21
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2233" Pro (#content "content Pro 2"))
+  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2233" TraitTypePro (#content "content Pro 2"))
   traitP22 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro2233")
   print traitP22
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2222" Con (#content "content Con 1"))
+  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2222" TraitTypeCon (#content "content Con 1"))
   traitC21 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon2222")
   print traitC21
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2233" Con (#content "content Con 2"))
+  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2233" TraitTypeCon (#content "content Con 2"))
   traitC22 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon2233")
   print traitC22
