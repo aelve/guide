@@ -89,18 +89,27 @@ data TraitRow = TraitRow
 --
 -- | To fetch items (they have an order) use 'getItemRowsByCategory' from 'Get' module.
 -- | To fetch deleted items use 'getDeletedItemRowsByCategory' from 'Get' module
-categoryRowToCategory :: "items" :! [Item] -> "itemsDeleted" :! [Item] -> CategoryRow -> Category
-categoryRowToCategory (arg #items -> items) (arg #itemsDeleted -> itemsDeleted) CategoryRow{..} = Category
-  { _categoryUid = categoryRowUid
-  , _categoryTitle = categoryRowTitle
-  , _categoryCreated = categoryRowCreated
-  , _categoryGroup_ = categoryRowGroup
-  , _categoryStatus = categoryRowStatus
-  , _categoryNotes = toMarkdownBlock categoryRowNotes
-  , _categoryItems = items
-  , _categoryItemsDeleted = itemsDeleted
-  , _categoryEnabledSections = categoryRowSelections
-  }
+categoryRowToCategory
+  :: "items" :! [Item]
+  -> "itemsDeleted" :! [Item]
+  -> CategoryRow
+  -> Category
+categoryRowToCategory
+  (arg #items -> items)
+  (arg #itemsDeleted -> itemsDeleted)
+  CategoryRow{..}
+  =
+  Category
+    { _categoryUid = categoryRowUid
+    , _categoryTitle = categoryRowTitle
+    , _categoryCreated = categoryRowCreated
+    , _categoryGroup_ = categoryRowGroup
+    , _categoryStatus = categoryRowStatus
+    , _categoryNotes = toMarkdownBlock categoryRowNotes
+    , _categoryItems = items
+    , _categoryItemsDeleted = itemsDeleted
+    , _categoryEnabledSections = categoryRowSelections
+    }
 
 -- | Convert Category to CategoryRow.
 categoryToRowCategory :: Category -> CategoryRow
@@ -131,7 +140,9 @@ itemRowToItem
   (arg #proDeletedTraits -> proDeletedTraits)
   (arg #conTraits -> conTraits)
   (arg #conDeletedTraits -> conDeletedTraits)
-  ItemRow{..} = Item
+  ItemRow{..}
+  =
+  Item
     { _itemUid = itemRowUid
     , _itemName = itemRowName
     , _itemCreated = itemRowCreated
@@ -173,11 +184,22 @@ traitRowToTrait TraitRow{..} = Trait
   }
 
 -- Convert Trait to TraitRow
-traitToTraitRow :: Uid Item -> "deleted" :! Bool -> "traitType" :! TraitType -> Trait -> TraitRow
-traitToTraitRow itemId (arg #deleted -> deleted) (arg #traitType -> traitType) Trait{..} = TraitRow
-  { traitRowUid = _traitUid
-  , traitRowContent = toText $ show _traitContent
-  , traitRowDeleted = deleted
-  , traitRowType = traitType
-  , traitRowItemUid = itemId
-  }
+traitToTraitRow
+  :: Uid Item
+  -> "deleted" :! Bool
+  -> "traitType" :! TraitType
+  -> Trait
+  -> TraitRow
+traitToTraitRow
+  itemId
+  (arg #deleted -> deleted)
+  (arg #traitType -> traitType)
+  Trait{..}
+  =
+  TraitRow
+    { traitRowUid = _traitUid
+    , traitRowContent = toText $ show _traitContent
+    , traitRowDeleted = deleted
+    , traitRowType = traitType
+    , traitRowItemUid = itemId
+    }
