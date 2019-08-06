@@ -96,7 +96,7 @@ getDeletedTraitRowsByItem itemId (arg #traitType -> traitType) = do
         SELECT uid, content, deleted, type_, item_uid
         FROM traits
         WHERE item_uid = $1
-          AND deleted = True
+          AND deleted = true
           AND type_ = ($2 :: trait_type)
         |]
       encoder = contrazip2 uidParam traitTypeParam
@@ -182,7 +182,7 @@ getDeletedItemRowsByCategory catId = do
           )
         FROM items
         WHERE category_uid = $1
-          AND deleted = True
+          AND deleted = true
         |]
       encoder = uidParam
       decoder = HD.rowList itemRowColumns
