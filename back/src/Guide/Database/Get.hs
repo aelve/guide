@@ -68,7 +68,7 @@ getTraitRowMaybe traitId = do
         WHERE uid = $1
         |]
       encoder = uidParam
-      decoder = HD.rowMaybe traitRowColumn
+      decoder = HD.rowMaybe traitRowColumns
   lift $ HT.statement traitId (Statement sql encoder decoder False)
 
 -- | Get an 'TraitRow'.
@@ -100,7 +100,7 @@ getDeletedTraitRowsByItem itemId (arg #traitType -> traitType) = do
           AND type_ = ($2 :: trait_type)
         |]
       encoder = contrazip2 uidParam traitTypeParam
-      decoder = HD.rowList traitRowColumn
+      decoder = HD.rowList traitRowColumns
   lift $ HT.statement (itemId, traitType) (Statement sql encoder decoder False)
 
 -- | Get available traits (they ordered) beloning to an item.
@@ -144,7 +144,7 @@ getItemRowMaybe itemId = do
         WHERE uid = $1
         |]
       encoder = uidParam
-      decoder = HD.rowMaybe itemRowColumn
+      decoder = HD.rowMaybe itemRowColumns
   lift $ HT.statement itemId (Statement sql encoder decoder False)
 
 -- | Get an 'ItemRow'.
@@ -185,7 +185,7 @@ getDeletedItemRowsByCategory catId = do
           AND deleted = True
         |]
       encoder = uidParam
-      decoder = HD.rowList itemRowColumn
+      decoder = HD.rowList itemRowColumns
   lift $ HT.statement catId (Statement sql encoder decoder False)
 
 -- Get available ItemRows belonging to a category.
@@ -240,7 +240,7 @@ getCategoryRowMaybe catId = do
         WHERE uid = $1
         |]
       encoder = uidParam
-      decoder = HD.rowMaybe categoryRowColumn
+      decoder = HD.rowMaybe categoryRowColumns
   lift $ HT.statement catId (Statement sql encoder decoder False)
 
 -- | Get a 'CategoryRow'.

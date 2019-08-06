@@ -42,15 +42,15 @@ module Guide.Database.Convert
 
        -- * 'CategoryRow'
        , categoryRowParams
-       , categoryRowColumn
+       , categoryRowColumns
 
        -- * 'ItemRow'
        , itemRowParams
-       , itemRowColumn
+       , itemRowColumns
 
        -- * 'TraitRow'
        , traitRowParams
-       , traitRowColumn
+       , traitRowColumns
        ) where
 
 
@@ -266,8 +266,8 @@ categoryRowParams =
   (categoryRowItemOrder >$< uidsParam)
 
 -- | Get a 'CategoryRow' from query.
-categoryRowColumn :: HD.Row CategoryRow
-categoryRowColumn = do
+categoryRowColumns :: HD.Row CategoryRow
+categoryRowColumns = do
   categoryRowUid <- uidColumn
   categoryRowTitle <- textColumn
   categoryRowCreated <- timestamptzColumn
@@ -299,8 +299,8 @@ itemRowParams =
   (itemRowConsOrder >$< uidsParam)
 
 -- | Get a 'ItemRow' from query.
-itemRowColumn :: HD.Row ItemRow
-itemRowColumn = do
+itemRowColumns :: HD.Row ItemRow
+itemRowColumns = do
   itemRowUid <- uidColumn
   itemRowName <- textColumn
   itemRowCreated <- timestamptzColumn
@@ -329,8 +329,8 @@ traitRowParams =
   (traitRowItemUid >$< uidParam)
 
 -- | Get a 'TraitRow' from query.
-traitRowColumn :: HD.Row TraitRow
-traitRowColumn = do
+traitRowColumns :: HD.Row TraitRow
+traitRowColumns = do
   traitRowUid <- uidColumn
   traitRowContent <- textColumn
   traitRowDeleted <- boolColumn
