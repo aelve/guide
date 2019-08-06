@@ -267,15 +267,16 @@ categoryRowParams =
 
 -- | Get a 'CategoryRow' from query.
 categoryRowColumn :: HD.Row CategoryRow
-categoryRowColumn = CategoryRow
-  <$> uidColumn
-  <*> textColumn
-  <*> timestamptzColumn
-  <*> textColumn
-  <*> categoryStatusColumn
-  <*> textColumn
-  <*> itemSectionSetColumn
-  <*> uidsColumn
+categoryRowColumn = do
+  categoryRowUid <- uidColumn
+  categoryRowTitle <- textColumn
+  categoryRowCreated <- timestamptzColumn
+  categoryRowGroup <- textColumn
+  categoryRowStatus <- categoryStatusColumn
+  categoryRowNotes <- textColumn
+  categoryRowSelections <- itemSectionSetColumn
+  categoryRowItemOrder <- uidsColumn
+  pure CategoryRow{..}
 
 ----------------------------------------------------------------------------
 -- ItemRow
@@ -299,19 +300,20 @@ itemRowParams =
 
 -- | Get a 'ItemRow' from query.
 itemRowColumn :: HD.Row ItemRow
-itemRowColumn = ItemRow
-  <$> uidColumn
-  <*> textColumn
-  <*> timestamptzColumn
-  <*> textColumnNullable
-  <*> textColumnNullable
-  <*> textColumn
-  <*> textColumn
-  <*> textColumn
-  <*> boolColumn
-  <*> uidColumn
-  <*> uidsColumn
-  <*> uidsColumn
+itemRowColumn = do
+  itemRowUid <- uidColumn
+  itemRowName <- textColumn
+  itemRowCreated <- timestamptzColumn
+  itemRowLink <- textColumnNullable
+  itemRowHackage <- textColumnNullable
+  itemRowSummary <- textColumn
+  itemRowEcosystem <- textColumn
+  itemRowNotes <- textColumn
+  itemRowDeleted <- boolColumn
+  itemRowCategoryUid <- uidColumn
+  itemRowProsOrder <- uidsColumn
+  itemRowConsOrder <- uidsColumn
+  pure ItemRow{..}
 
 ----------------------------------------------------------------------------
 -- TraitRow
@@ -328,9 +330,10 @@ traitRowParams =
 
 -- | Get a 'TraitRow' from query.
 traitRowColumn :: HD.Row TraitRow
-traitRowColumn = TraitRow
-  <$> uidColumn
-  <*> textColumn
-  <*> boolColumn
-  <*> traitTypeColumn
-  <*> uidColumn
+traitRowColumn = do
+  traitRowUid <- uidColumn
+  traitRowContent <- textColumn
+  traitRowDeleted <- boolColumn
+  traitRowType <- traitTypeColumn
+  traitRowItemUid <- uidColumn
+  pure TraitRow{..}
