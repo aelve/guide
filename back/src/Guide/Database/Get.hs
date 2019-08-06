@@ -71,7 +71,7 @@ getTraitRowMaybe traitId = do
       decoder = HD.rowMaybe traitRowColumns
   lift $ HT.statement traitId (Statement sql encoder decoder False)
 
--- | Get an 'TraitRow'.
+-- | Get a 'TraitRow'.
 --
 -- Traits marked as deleted will still be returned if they physically exist
 -- in the database.
