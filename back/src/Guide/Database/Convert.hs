@@ -255,15 +255,15 @@ uidsColumn = HD.column $ HD.nonNullable uidsDecoder
 
 -- | Pass a 'CategoryRow' to query.
 categoryRowParams :: HE.Params CategoryRow
-categoryRowParams =
-  (categoryRowUid >$< uidParam) <>
-  (categoryRowTitle >$< textParam) <>
-  (categoryRowCreated >$< timestamptzParam) <>
-  (categoryRowGroup >$< textParam) <>
-  (categoryRowStatus >$< categoryStatusParam) <>
-  (categoryRowNotes >$< textParam) <>
-  (categoryRowSelections >$< itemSectionSetParam) <>
-  (categoryRowItemOrder >$< uidsParam)
+categoryRowParams
+  =  (categoryRowUid >$< uidParam)
+  <> (categoryRowTitle >$< textParam)
+  <> (categoryRowCreated >$< timestamptzParam)
+  <> (categoryRowGroup >$< textParam)
+  <> (categoryRowStatus >$< categoryStatusParam)
+  <> (categoryRowNotes >$< textParam)
+  <> (categoryRowSelections >$< itemSectionSetParam)
+  <> (categoryRowItemOrder >$< uidsParam)
 
 -- | Get a 'CategoryRow' from query.
 categoryRowColumns :: HD.Row CategoryRow

@@ -126,7 +126,7 @@ getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let sql = [r|
         SELECT
-          ( uid
+            uid
           , name
           , created
           , link
@@ -138,7 +138,6 @@ getItemRowMaybe itemId = do
           , category_uid
           , pros_order
           , cons_order
-          )
         FROM items
         WHERE uid = $1
         |]
@@ -166,7 +165,7 @@ getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transactio
 getDeletedItemRowsByCategory catId = do
   let sql = [r|
         SELECT
-          ( uid
+            uid
           , name
           , created
           , link
@@ -178,7 +177,6 @@ getDeletedItemRowsByCategory catId = do
           , category_uid
           , pros_order
           , cons_order
-          )
         FROM items
         WHERE category_uid = $1
           AND deleted = true
@@ -226,7 +224,7 @@ getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe 
 getCategoryRowMaybe catId = do
   let sql = [r|
         SELECT
-          ( uid
+            uid
           , title
           , created
           , group_
@@ -234,7 +232,6 @@ getCategoryRowMaybe catId = do
           , notes
           , enabled_sections
           , items_order
-          )
         FROM categories
         WHERE uid = $1
         |]
@@ -329,8 +326,10 @@ getTest = do
   -- print items
   -- catM <- runTransactionExceptT conn Read (getCategoryRowMaybe "category1111")
   -- print catM
-  cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
+
+  cat <- runTransactionExceptT conn Read (getCategoryRowMaybe $ Uid "category1111" )
   print cat
+
   -- mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "item11112222")
   -- print mCatId
   -- catIds <- runTransactionExceptT conn Read getCategoryIds
