@@ -43,12 +43,12 @@ import Guide.Utils (Uid (..))
 
 -- | Insert category to database.
 addCategory
-  :: Uid Category       -- ^ New category's id
-  -> "title" :! Text    -- ^ Title
-  -> "group" :! Text    -- ^ Group
-  -> UTCTime            -- ^ Creation time
+  :: Uid Category          -- ^ New category's id
+  -> "title" :! Text       -- ^ Title
+  -> "group" :! Text       -- ^ Group
+  -> "created" :! UTCTime  -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addCategory catId (arg #title -> title) (arg #group -> group_) created = do
+addCategory catId (arg #title -> title) (arg #group -> group_) (arg #created -> created) = do
   let sql = [r|
         INSERT INTO categories
           ( uid
@@ -85,12 +85,12 @@ addCategory catId (arg #title -> title) (arg #group -> group_) created = do
 --
 -- Item added to '_categoryItems' by default.
 addItem
-  :: Uid Category       -- ^ Category id
-  -> Uid Item           -- ^ New item's id
-  -> "name" :! Text     -- ^ Name
-  -> UTCTime            -- ^ Creation time
+  :: Uid Category          -- ^ Category id
+  -> Uid Item              -- ^ New item's id
+  -> "name" :! Text        -- ^ Name
+  -> "created" :! UTCTime  -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addItem catId itemId (arg #name -> name) created = do
+addItem catId itemId (arg #name -> name) (arg #created -> created) = do
   let sql = [r|
         INSERT INTO items
           ( uid
@@ -167,14 +167,14 @@ testAdd :: IO ()
 testAdd = do
   conn <- connect
   time <- getCurrentTime
-  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") time)
+  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") (#created time))
   cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   print cat
 
-  runTransactionExceptT conn Write (addItem "category1111" "item11112222" (#name "addedItem") time)
+  runTransactionExceptT conn Write (addItem "category1111" "item11112222" (#name "addedItem") (#created time))
   item1 <- runTransactionExceptT conn Read (getItemRow "item11112222")
   print item1
-  runTransactionExceptT conn Write (addItem "category1111" "item22223333" (#name "addedItem") time)
+  runTransactionExceptT conn Write (addItem "category1111" "item22223333" (#name "addedItem") (#created time))
   item2 <- runTransactionExceptT conn Read (getItemRow "item22223333")
   print item2
 
