@@ -72,7 +72,7 @@ getSchemaVersion = do
       VALUES ('main', null)
       ON CONFLICT DO NOTHING;
     |]
-  let sql = "SELECT (version) FROM schema_version WHERE name = 'main'"
+  let sql = "SELECT version FROM schema_version WHERE name = 'main'"
       encoder = HE.noParams
       decoder = HD.singleRow (HD.column (HD.nullable HD.int4))
   HS.statement () (Statement sql encoder decoder False)
