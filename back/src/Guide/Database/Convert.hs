@@ -284,19 +284,19 @@ categoryRowColumns = do
 
 -- | Pass a 'ItemRow' to query.
 itemRowParams :: HE.Params ItemRow
-itemRowParams =
-  (itemRowUid >$< uidParam) <>
-  (itemRowName >$< textParam) <>
-  (itemRowCreated >$< timestamptzParam) <>
-  (itemRowLink >$< textParamNullable) <>
-  (itemRowHackage >$< textParamNullable) <>
-  (itemRowSummary >$< textParam) <>
-  (itemRowEcosystem >$< textParam) <>
-  (itemRowNotes >$< textParam) <>
-  (itemRowDeleted >$< boolParam) <>
-  (itemRowCategoryUid >$< uidParam) <>
-  (itemRowProsOrder >$< uidsParam) <>
-  (itemRowConsOrder >$< uidsParam)
+itemRowParams
+  =  (itemRowUid >$< uidParam)
+  <> (itemRowName >$< textParam)
+  <> (itemRowCreated >$< timestamptzParam)
+  <> (itemRowLink >$< textParamNullable)
+  <> (itemRowHackage >$< textParamNullable)
+  <> (itemRowSummary >$< textParam)
+  <> (itemRowEcosystem >$< textParam)
+  <> (itemRowNotes >$< textParam)
+  <> (itemRowDeleted >$< boolParam)
+  <> (itemRowCategoryUid >$< uidParam)
+  <> (itemRowProsOrder >$< uidsParam)
+  <> (itemRowConsOrder >$< uidsParam)
 
 -- | Get a 'ItemRow' from query.
 itemRowColumns :: HD.Row ItemRow
@@ -321,12 +321,12 @@ itemRowColumns = do
 
 -- | Pass a 'TraitRow' to query.
 traitRowParams :: HE.Params TraitRow
-traitRowParams =
-  (traitRowUid >$< uidParam) <>
-  (traitRowContent >$< textParam) <>
-  (traitRowDeleted >$< boolParam) <>
-  (traitRowType >$< traitTypeParam) <>
-  (traitRowItemUid >$< uidParam)
+traitRowParams
+  =  (traitRowUid >$< uidParam)
+  <> (traitRowContent >$< textParam)
+  <> (traitRowDeleted >$< boolParam)
+  <> (traitRowType >$< traitTypeParam)
+  <> (traitRowItemUid >$< uidParam)
 
 -- | Get a 'TraitRow' from query.
 traitRowColumns :: HD.Row TraitRow
