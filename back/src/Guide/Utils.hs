@@ -62,6 +62,8 @@ module Guide.Utils
 
   -- * Template Haskell
   dumpSplices,
+  exposeFields,
+  exposeFieldsPrefixed,
 
   -- * STM
   liftSTM,
@@ -90,6 +92,7 @@ import Web.Spock as Spock
 import Data.SafeCopy
 -- Template Haskell
 import Language.Haskell.TH
+import Language.Haskell.TH.Datatype
 -- needed for parsing urls
 import Network.HTTP.Types (Query, parseQuery)
 
@@ -504,6 +507,24 @@ dumpSplices x = do
   let code = lines (pprint ds)
   reportWarning ("\n" ++ unlines (map ("    " ++) code))
   return ds
+
+exposeFields :: Name -> PatQ
+exposeFields recordConstructor = do
+  cons <- reifyConstructor recordConstructor
+  case constructorVariant cons of
+    RecordConstructor fields ->
+      conP recordConstructor (map (varP . mkName . nameBase) fields)
+    _ -> fail $
+      "Expected " ++ show recordConstructor ++ " to be a record constructor"
+
+exposeFieldsPrefixed :: String -> Name -> PatQ
+exposeFieldsPrefixed prefix recordConstructor = do
+  cons <- reifyConstructor recordConstructor
+  case constructorVariant cons of
+    RecordConstructor fields ->
+      conP recordConstructor (map (varP . mkName . (prefix <>) . nameBase) fields)
+    _ -> fail $
+      "Expected " ++ show recordConstructor ++ " to be a record constructor"
 
 ----------------------------------------------------------------------------
 -- STM

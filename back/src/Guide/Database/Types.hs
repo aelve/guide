@@ -44,10 +44,15 @@ data DatabaseError
   = ItemNotFound (Uid Item)
   | CategoryNotFound (Uid Category)
   | TraitNotFound (Uid Trait)
-  | ItemAlreadyInCategory (Uid Category) (Uid Item)
-  | TraitAlreadyInItem (Uid Item) (Uid Trait)
-  | ItemNotInCategory (Uid Category) (Uid Item)
-  | TraitNotInItem (Uid Item) (Uid Trait)
+  | CategoryRowUpdateNotAllowed
+      { deCategoryId :: Uid Category
+      , deFieldName :: Text }
+  | ItemRowUpdateNotAllowed
+      { deItemId :: Uid Item
+      , deFieldName :: Text }
+  | TraitRowUpdateNotAllowed
+      { deTraitId :: Uid Trait
+      , deFieldName :: Text }
   deriving Show
 
 -- | Category intermediary type.

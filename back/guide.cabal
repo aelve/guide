@@ -181,6 +181,7 @@ library
                      , swagger2
                      , template-haskell
                      , text
+                     , th-abstraction
                      , time >= 1.5
                      , transformers
                      , uniplate

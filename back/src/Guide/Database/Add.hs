@@ -31,7 +31,7 @@ import qualified Hasql.Transaction as HT
 import Guide.Database.Connection (connect, runTransactionExceptT)
 import Guide.Database.Convert
 import Guide.Database.Get
-import Guide.Database.Set (addItemIdToCategory, addTraitIdToItem)
+import Guide.Database.Set
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
@@ -123,10 +123,11 @@ addItem catId itemId (arg #name -> name) (arg #created -> created) = do
       , itemRowDeleted = False
       , itemRowCategoryUid = catId
       , itemRowProsOrder = []
-      , itemRowConsOrder = [] }
+      , itemRowConsOrder = []
+      }
     (Statement sql encoder decoder False)
-  -- Adds itemId to category's items_order list.
-  addItemIdToCategory catId itemId
+  modifyCategoryRow catId $
+    _categoryRowItemsOrder %~ (++ [itemId])
 
 ----------------------------------------------------------------------------
 -- addTrait
@@ -157,7 +158,13 @@ addTrait itemId traitId traitType (arg #content -> content) = do
       , traitRowItemUid = itemId
       }
     (Statement sql encoder decoder False)
-  addTraitIdToItem itemId traitId traitType
+  case traitType of
+    TraitTypePro ->
+      modifyItemRow itemId $
+        _itemRowProsOrder %~ (++ [traitId])
+    TraitTypeCon ->
+      modifyItemRow itemId $
+        _itemRowConsOrder %~ (++ [traitId])
 
 
 -- Sandbox
