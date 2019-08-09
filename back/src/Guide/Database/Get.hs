@@ -190,7 +190,7 @@ getDeletedItemRowsByCategory catId = do
 -- Returns item rows sorted by order.
 getItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
 getItemRowsByCategory catId = do
-  itemUids <- categoryRowItemOrder <$> getCategoryRow catId
+  itemUids <- categoryRowItemsOrder <$> getCategoryRow catId
   traverse getItemRow itemUids
 
 -- | Get item id by trait.

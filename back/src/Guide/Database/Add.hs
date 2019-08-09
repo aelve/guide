@@ -66,15 +66,15 @@ addCategory catId (arg #title -> title) (arg #group -> group_) (arg #created -> 
       decoder = HD.noResult
   lift $ HT.statement
     CategoryRow
-     { categoryRowUid = catId
-     , categoryRowTitle = title
-     , categoryRowCreated = created
-     , categoryRowGroup = group_
-     , categoryRowStatus = CategoryWIP
-     , categoryRowNotes = ""
-     , categoryRowSelections = Set.empty
-     , categoryRowItemOrder = []
-     }
+      { categoryRowUid = catId
+      , categoryRowTitle = title
+      , categoryRowCreated = created
+      , categoryRowGroup = group_
+      , categoryRowStatus = CategoryWIP
+      , categoryRowNotes = ""
+      , categoryRowEnabledSections = Set.empty
+      , categoryRowItemsOrder = []
+      }
     (Statement sql encoder decoder False)
 
 ----------------------------------------------------------------------------

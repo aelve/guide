@@ -46,14 +46,14 @@ data DatabaseError
 
 -- | Category intermediary type.
 data CategoryRow = CategoryRow
-  { categoryRowUid        :: Uid Category
-  , categoryRowTitle      :: Text
-  , categoryRowCreated    :: UTCTime
-  , categoryRowGroup      :: Text
-  , categoryRowStatus     :: CategoryStatus
-  , categoryRowNotes      :: Text
-  , categoryRowSelections :: Set ItemSection
-  , categoryRowItemOrder  :: [Uid Item]
+  { categoryRowUid             :: Uid Category
+  , categoryRowTitle           :: Text
+  , categoryRowCreated         :: UTCTime
+  , categoryRowGroup           :: Text
+  , categoryRowStatus          :: CategoryStatus
+  , categoryRowNotes           :: Text
+  , categoryRowEnabledSections :: Set ItemSection
+  , categoryRowItemsOrder      :: [Uid Item]
   } deriving Show
 
 -- | Item intermediary type.
@@ -108,7 +108,7 @@ categoryRowToCategory
     , _categoryNotes = toMarkdownBlock categoryRowNotes
     , _categoryItems = items
     , _categoryItemsDeleted = itemsDeleted
-    , _categoryEnabledSections = categoryRowSelections
+    , _categoryEnabledSections = categoryRowEnabledSections
     }
 
 -- | Convert Category to CategoryRow.
@@ -119,9 +119,9 @@ categoryToRowCategory Category {..} = CategoryRow
   , categoryRowCreated = _categoryCreated
   , categoryRowGroup = _categoryGroup_
   , categoryRowStatus = _categoryStatus
-  , categoryRowNotes = toText $ show _categoryNotes
-  , categoryRowSelections = _categoryEnabledSections
-  , categoryRowItemOrder = map _itemUid _categoryItems
+  , categoryRowNotes = toText $ show _categoryNotes -- TODO fix!
+  , categoryRowEnabledSections = _categoryEnabledSections
+  , categoryRowItemsOrder = map _itemUid _categoryItems
   }
 
 -- | Convert ItemRow to Item.

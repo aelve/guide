@@ -262,8 +262,8 @@ categoryRowParams
   <> (categoryRowGroup >$< textParam)
   <> (categoryRowStatus >$< categoryStatusParam)
   <> (categoryRowNotes >$< textParam)
-  <> (categoryRowSelections >$< itemSectionSetParam)
-  <> (categoryRowItemOrder >$< uidsParam)
+  <> (categoryRowEnabledSections >$< itemSectionSetParam)
+  <> (categoryRowItemsOrder >$< uidsParam)
 
 -- | Get a 'CategoryRow' from query.
 categoryRowColumns :: HD.Row CategoryRow
@@ -274,8 +274,8 @@ categoryRowColumns = do
   categoryRowGroup <- textColumn
   categoryRowStatus <- categoryStatusColumn
   categoryRowNotes <- textColumn
-  categoryRowSelections <- itemSectionSetColumn
-  categoryRowItemOrder <- uidsColumn
+  categoryRowEnabledSections <- itemSectionSetColumn
+  categoryRowItemsOrder <- uidsColumn
   pure CategoryRow{..}
 
 ----------------------------------------------------------------------------
