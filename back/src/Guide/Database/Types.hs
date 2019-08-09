@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -12,6 +13,10 @@ module Guide.Database.Types
        , CategoryRow (..)
        , ItemRow (..)
        , TraitRow (..)
+       -- ** Lenses
+       , CategoryRowLenses (..)
+       , ItemRowLenses (..)
+       , TraitRowLenses (..)
 
        -- * Type convertions
        , categoryRowToCategory
@@ -26,6 +31,7 @@ module Guide.Database.Types
 import Imports
 
 import Named
+import Language.Haskell.TH (nameBase, mkName)
 
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline)
 import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
@@ -56,6 +62,14 @@ data CategoryRow = CategoryRow
   , categoryRowItemsOrder      :: [Uid Item]
   } deriving Show
 
+-- TODO move to utils
+makeLensesWith
+  (classyRules
+     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
+     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
+                                , mkName ('_':nameBase n))))
+  ''CategoryRow
+
 -- | Item intermediary type.
 data ItemRow = ItemRow
   { itemRowUid         :: Uid Item
@@ -72,6 +86,14 @@ data ItemRow = ItemRow
   , itemRowConsOrder   :: [Uid Trait]
   } deriving Show
 
+-- TODO move to utils
+makeLensesWith
+  (classyRules
+     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
+     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
+                                , mkName ('_':nameBase n))))
+  ''ItemRow
+
 -- | Trait intermediary type.
 data TraitRow = TraitRow
   { traitRowUid     :: Uid Trait
@@ -80,6 +102,14 @@ data TraitRow = TraitRow
   , traitRowType    :: TraitType
   , traitRowItemUid :: Uid Item
   } deriving Show
+
+-- TODO move to utils
+makeLensesWith
+  (classyRules
+     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
+     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
+                                , mkName ('_':nameBase n))))
+  ''TraitRow
 
 ----------------------------------------------------------------------------
 -- Convertions between types
