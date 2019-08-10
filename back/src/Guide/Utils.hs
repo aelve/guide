@@ -62,8 +62,8 @@ module Guide.Utils
 
   -- * Template Haskell
   dumpSplices,
-  exposeFields,
-  exposeFieldsPrefixed,
+  fields,
+  fieldsPrefixed,
 
   -- * STM
   liftSTM,
@@ -510,36 +510,35 @@ dumpSplices x = do
 
 -- | Put all fields of a record constructor into scope.
 --
--- @f $(exposeFields 'Foo) = ...@ is equivalent to @f Foo{..}@, but the
--- compiler will warn on all unused fields. Thus 'exposeFields' brings
--- safety whenever you want to guarantee that a certain function uses all
--- fields of @Foo@.
+-- @f $(fields 'Foo) = ...@ is equivalent to @f Foo{..}@, but the compiler
+-- will warn on all unused fields. Thus 'fields' brings safety whenever you
+-- want to guarantee that a certain function uses all fields of @Foo@.
 --
 -- Usage examples include @ToJSON@ instances and various encoders in
 -- general:
 --
 -- @
 -- instance ToJSON Foo where
---   toJSON $(exposeFields 'Foo) = ...
+--   toJSON $(fields 'Foo) = ...
 -- @
-exposeFields :: Name -> PatQ
-exposeFields recordConstructor = do
+fields :: Name -> PatQ
+fields recordConstructor = do
   cons <- reifyConstructor recordConstructor
   case constructorVariant cons of
-    RecordConstructor fields ->
-      conP recordConstructor (map (varP . mkName . nameBase) fields)
+    RecordConstructor recordFields ->
+      conP recordConstructor (map (varP . mkName . nameBase) recordFields)
     _ -> fail $
       "Expected " ++ show recordConstructor ++ " to be a record constructor"
 
--- | Like 'exposeFields', but prefixes all fields with the given prefix.
+-- | Like 'fields', but prefixes all fields with the given prefix.
 --
 -- Useful if you need to put fields from more than one record into scope.
-exposeFieldsPrefixed :: String -> Name -> PatQ
-exposeFieldsPrefixed prefix recordConstructor = do
+fieldsPrefixed :: String -> Name -> PatQ
+fieldsPrefixed prefix recordConstructor = do
   cons <- reifyConstructor recordConstructor
   case constructorVariant cons of
-    RecordConstructor fields ->
-      conP recordConstructor (map (varP . mkName . (prefix <>) . nameBase) fields)
+    RecordConstructor recordFields ->
+      conP recordConstructor (map (varP . mkName . (prefix <>) . nameBase) recordFields)
     _ -> fail $
       "Expected " ++ show recordConstructor ++ " to be a record constructor"
 

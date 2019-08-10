@@ -36,7 +36,7 @@ import Guide.Database.Convert
 import Guide.Database.Get
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
-import Guide.Utils (Uid (..), exposeFieldsPrefixed)
+import Guide.Utils (Uid (..), fieldsPrefixed)
 
 
 ----------------------------------------------------------------------------
@@ -61,8 +61,8 @@ modifyCategoryRow catId f = do
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
-  let $(exposeFieldsPrefixed "old_" 'CategoryRow) = row
-      $(exposeFieldsPrefixed "new_" 'CategoryRow) = f row
+  let $(fieldsPrefixed "old_" 'CategoryRow) = row
+      $(fieldsPrefixed "new_" 'CategoryRow) = f row
 
   -- Updating uid is not allowed
   when (old_categoryRowUid /= new_categoryRowUid) $
@@ -159,8 +159,8 @@ modifyItemRow itemId f = do
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
-  let $(exposeFieldsPrefixed "old_" 'ItemRow) = row
-      $(exposeFieldsPrefixed "new_" 'ItemRow) = f row
+  let $(fieldsPrefixed "old_" 'ItemRow) = row
+      $(fieldsPrefixed "new_" 'ItemRow) = f row
 
   -- Updating uid is not allowed
   when (old_itemRowUid /= new_itemRowUid) $
@@ -291,8 +291,8 @@ modifyTraitRow catId f = do
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
-  let $(exposeFieldsPrefixed "old_" 'TraitRow) = row
-      $(exposeFieldsPrefixed "new_" 'TraitRow) = f row
+  let $(fieldsPrefixed "old_" 'TraitRow) = row
+      $(fieldsPrefixed "new_" 'TraitRow) = f row
 
   -- Updating uid is not allowed
   when (old_traitRowUid /= new_traitRowUid) $
