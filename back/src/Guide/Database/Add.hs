@@ -24,7 +24,6 @@ import Hasql.Transaction.Sessions (Mode (..))
 import Named
 import Text.RawString.QQ (r)
 
-import qualified Data.Set as Set
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
@@ -33,7 +32,7 @@ import Guide.Database.Convert
 import Guide.Database.Get
 import Guide.Database.Set
 import Guide.Database.Types
-import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..))
+import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..), ItemSection)
 import Guide.Utils (Uid (..))
 
 
@@ -44,11 +43,21 @@ import Guide.Utils (Uid (..))
 -- | Insert category to database.
 addCategory
   :: Uid Category          -- ^ New category's id
-  -> "title" :! Text       -- ^ Title
-  -> "group" :! Text       -- ^ Group
-  -> "created" :! UTCTime  -- ^ Creation time
+  -> "title" :! Text
+  -> "group" :! Text
+  -> "created" :! UTCTime
+  -> "status" :! CategoryStatus
+  -> "enabledSections" :! Set ItemSection
   -> ExceptT DatabaseError Transaction ()
-addCategory catId (arg #title -> title) (arg #group -> group_) (arg #created -> created) = do
+addCategory
+  catId
+  (arg #title -> title)
+  (arg #group -> group_)
+  (arg #created -> created)
+  (arg #status -> status)
+  (arg #enabledSections -> enabledSections)
+  =
+  do
   let sql = [r|
         INSERT INTO categories
           ( uid
@@ -70,9 +79,9 @@ addCategory catId (arg #title -> title) (arg #group -> group_) (arg #created -> 
       , categoryRowTitle = title
       , categoryRowCreated = created
       , categoryRowGroup = group_
-      , categoryRowStatus = CategoryWIP
+      , categoryRowStatus = status
       , categoryRowNotes = ""
-      , categoryRowEnabledSections = Set.empty
+      , categoryRowEnabledSections = enabledSections
       , categoryRowItemsOrder = []
       }
     (Statement sql encoder decoder False)
@@ -174,7 +183,7 @@ testAdd :: IO ()
 testAdd = do
   conn <- connect
   time <- getCurrentTime
-  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") (#created time))
+  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") (#created time) (#status CategoryWIP) (#enabledSections mempty))
   cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
   print cat
 
