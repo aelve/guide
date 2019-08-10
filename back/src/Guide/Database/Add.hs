@@ -20,16 +20,13 @@ import Imports
 
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Hasql.Transaction.Sessions (Mode (..))
 import Named
 import Text.RawString.QQ (r)
 
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Connection (connect, runTransactionExceptT)
 import Guide.Database.Convert
-import Guide.Database.Get
 import Guide.Database.Set
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..), ItemSection)
@@ -174,49 +171,3 @@ addTrait itemId traitId traitType (arg #content -> content) = do
     TraitTypeCon ->
       modifyItemRow itemId $
         _itemRowConsOrder %~ (++ [traitId])
-
-
--- Sandbox
-
--- Test add functions
-testAdd :: IO ()
-testAdd = do
-  conn <- connect
-  time <- getCurrentTime
-  runTransactionExceptT conn Write (addCategory "category1111" (#title "addedCat") (#group "groupCat") (#created time) (#status CategoryWIP) (#enabledSections mempty))
-  cat <- runTransactionExceptT conn Read (getCategoryRow "category1111")
-  print cat
-
-  runTransactionExceptT conn Write (addItem "category1111" "item11112222" (#name "addedItem") (#created time))
-  item1 <- runTransactionExceptT conn Read (getItemRow "item11112222")
-  print item1
-  runTransactionExceptT conn Write (addItem "category1111" "item22223333" (#name "addedItem") (#created time))
-  item2 <- runTransactionExceptT conn Read (getItemRow "item22223333")
-  print item2
-
-
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1111" TraitTypePro (#content "content Pro 1"))
-  traitP11 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro1111")
-  print traitP11
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitPro1122" TraitTypePro (#content "content Pro 2"))
-  traitP12 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro1122")
-  print traitP12
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1111" TraitTypeCon (#content "content Con 1"))
-  traitC11 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon1111")
-  print traitC11
-  runTransactionExceptT conn Write (addTrait "item11112222" "traitCon1122" TraitTypeCon (#content "content Con 2"))
-  traitC12 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon1122")
-  print traitC12
-
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2222" TraitTypePro (#content "content Pro 1"))
-  traitP21 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro2222")
-  print traitP21
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitPro2233" TraitTypePro (#content "content Pro 2"))
-  traitP22 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitPro2233")
-  print traitP22
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2222" TraitTypeCon (#content "content Con 1"))
-  traitC21 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon2222")
-  print traitC21
-  runTransactionExceptT conn Write (addTrait "item22223333" "traitCon2233" TraitTypeCon (#content "content Con 2"))
-  traitC22 <- runTransactionExceptT conn Read (getTraitRowMaybe "traitCon2233")
-  print traitC22
