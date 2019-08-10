@@ -37,14 +37,12 @@ import Imports
 import Contravariant.Extras.Contrazip (contrazip2)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Hasql.Transaction.Sessions (Mode (Read))
 import Text.RawString.QQ (r)
 
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Connection (connect, runTransactionExceptT)
 import Guide.Database.Convert
 import Guide.Database.Types
 import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
@@ -301,38 +299,3 @@ getCategoryRows :: ExceptT DatabaseError Transaction [CategoryRow]
 getCategoryRows = do
   catIds <- getCategoryIds
   traverse getCategoryRow catIds
-
-
--- Sandbox
-
--- | Just to test queries
-getTest :: IO ()
-getTest = do
-  conn <- connect
-  -- mTrait <- runTransactionExceptT conn Read (getTraitRowMaybe "trait1112222")
-  -- print mTrait
-  -- traits <- runTransactionExceptT conn Read $
-  --   getTraitRowsByItem "item11112222" (#deleted False) Pro
-  -- print traits
-  -- mItem <- runTransactionExceptT conn Read (getItemRowMaybe "item11112222")
-  -- print mItem
-  -- item <- runTransactionExceptT conn Read (getItemRow "item11112222")
-  -- print item
-  -- -- wrong uid
-  -- -- itemErr <- runTransactionExceptT conn Read (getItemByItemId "wrong1234567")
-  -- -- print itemErr
-  -- items <- runTransactionExceptT conn Read $
-  --   getItemsByCategory "category1111" (#deleted False)
-  -- print items
-  -- catM <- runTransactionExceptT conn Read (getCategoryRowMaybe "category1111")
-  -- print catM
-
-  cat <- runTransactionExceptT conn Read (getCategoryRowMaybe $ Uid "category1111" )
-  print cat
-
-  -- mCatId <- runTransactionExceptT conn Read (getCategoryIdByItemMaybe "item11112222")
-  -- print mCatId
-  -- catIds <- runTransactionExceptT conn Read getCategoryIds
-  -- print catIds
-  -- cats <- runTransactionExceptT conn Read getCategoryRows
-  -- print cats
