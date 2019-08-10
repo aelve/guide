@@ -74,7 +74,7 @@ renderItemForFeed
   => Category -> Item -> HtmlT m ()
 renderItemForFeed category item = do
   h1_ $ renderItemTitle item
-  unless (markdownNull (itemSummary item)) $
+  unless (markdownBlockSource (itemSummary item) == "") $
     toHtml (itemSummary item)
   when (ItemProsConsSection `elem` categoryEnabledSections category) $ do
     h2_ "Pros"
@@ -82,11 +82,11 @@ renderItemForFeed category item = do
     h2_ "Cons"
     ul_ $ mapM_ (p_ . li_ . toHtml . traitContent) (itemCons item)
   when (ItemEcosystemSection `elem` categoryEnabledSections category) $ do
-    unless (markdownNull (itemEcosystem item)) $ do
+    unless (markdownBlockSource (itemEcosystem item) == "") $ do
       h2_ "Ecosystem"
       toHtml (itemEcosystem item)
   -- TODO: include .notes-like style here? otherwise the headers are too big
-  unless (markdownNull (itemNotes item)) $ do
+  unless (markdownTreeSource (itemNotes item) == "") $ do
     h2_ "Notes"
     toHtml (itemNotes item)
 
@@ -134,7 +134,7 @@ renderItemEcosystem item =
                     `JS.selectChildren`
                     JS.selectClass "editor"]
       div_ [class_ "notes-like"] $ do
-        unless (markdownNull (itemEcosystem item)) $
+        unless (markdownBlockSource (itemEcosystem item) == "") $
           toHtml (itemEcosystem item)
 
     section "editing" [] $ do
@@ -147,7 +147,7 @@ renderItemEcosystem item =
         3 -- rows
         (itemEcosystem item)
         (\val -> JS.withThis JS.submitItemEcosystem
-          (this, itemUid item, item ^. _itemEcosystem . mdSource, val))
+          (this, itemUid item, markdownBlockSource (itemEcosystem item), val))
         (JS.withThis JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"
 
@@ -249,10 +249,10 @@ renderItemNotes category item = do
                 -- start happening and then it's better to be prepared.
                 fullLink = mkCategoryLink category <> "#" <> id'
             a_ [href_ fullLink, onclick_ handler] $
-              toHtmlRaw (markdownInlineMdHtml hMd)
+              toHtmlRaw (markdownInlineHtml hMd)
             renderTree children
     let renderTOC = do
-          let toc = item ^. _itemNotes . mdTOC
+          let toc = markdownTreeTOC (itemNotes item)
           div_ [class_ "notes-toc"] $ do
             if null toc
               then p_ (emptySpan "1.5em" >> "<notes are empty>")
@@ -265,9 +265,9 @@ renderItemNotes category item = do
 
     section "expanded" [noScriptShown] $ do
       textareaUid <- randomLongUid
-      contents <- if markdownNull (itemNotes item)
+      contents <- if markdownTreeSource (itemNotes item) == ""
         then liftIO $ T.readFile "static/item-notes-template.md"
-        else return (item ^. _itemNotes . mdSource)
+        else return (markdownTreeSource (itemNotes item))
       let buttons = do
             textButton "collapse notes" $
               JS.switchSection (this, "collapsed" :: Text)
@@ -278,7 +278,7 @@ renderItemNotes category item = do
                    this, JS.selectUid editingSectionUid,
                    textareaUid,
                    -- See Note [blurb diffing]
-                   markdownNull (itemNotes item),
+                   markdownTreeSource (itemNotes item) == "",
                    contents,
                    itemUid item) <>
               JS.switchSection (this, "editing" :: Text) <>
@@ -287,10 +287,10 @@ renderItemNotes category item = do
       buttons
       renderTOC
       div_ [class_ "notes-like"] $ do
-        if markdownNull (itemNotes item)
+        if markdownTreeSource (itemNotes item) == ""
           then p_ "add something!"
           else toHtml (itemNotes item)
-      unless (markdownNull (itemNotes item)) $
+      unless (markdownTreeSource (itemNotes item) == "") $
         buttons
       -- TODO: [easy] the lower “hide notes” should scroll back to item when
       -- the notes are closed (but don't scroll if it's already visible after

@@ -25,7 +25,7 @@ import Guide.Markdown
 tests :: Spec
 tests = describe "Markdown" $ do
   allMarkdowns $ \convert -> do
-    it "has mdSource filled accurately" $ do
+    it "has the source filled accurately" $ do
       for_ mdBlockExamples $ \s ->
         s `shouldBe` fst (convert s)
     it "only has allowed tags" $ do
@@ -110,7 +110,7 @@ tests = describe "Markdown" $ do
           headingMD = MD.Node Nothing (TEXT "foo") []
           foo2MD    = MD.Node (Just (PosInfo 7 1 7 1)) PARAGRAPH
                               [MD.Node Nothing (TEXT "y") []]
-      (toMarkdownTree "i-" s ^. mdTree) `shouldBe` Document {
+      markdownTreeStructure (toMarkdownTree "i-" s) `shouldBe` Document {
         prefaceAnn = "<p>x</p>\n",
         preface    = WithSource "x\n\n" [prefaceMD],
         sections   = [
@@ -130,7 +130,7 @@ tests = describe "Markdown" $ do
                          subForest = [] }]}]}
     it "has a correct TOC" $ do
       let s = "x\n\n# foo\n\n## foo\n\ny"
-      (toMarkdownTree "i-" s ^. mdTOC) `shouldBe` [
+      markdownTreeTOC (toMarkdownTree "i-" s) `shouldBe` [
         Node {rootLabel = Heading (toMarkdownInline "# foo\n\n") "i-foo",
               subForest = [
                  Node {rootLabel = Heading (toMarkdownInline "## foo\n\n") "i-foo_",
@@ -145,15 +145,15 @@ htmlToText = toText . renderText . toHtml
 allMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 allMarkdowns f = do
   describe "inline MD" $
-    f ((view mdSource &&& htmlToText) . toMarkdownInline)
+    f ((markdownInlineSource &&& htmlToText) . toMarkdownInline)
   blockMarkdowns f
 
 blockMarkdowns :: ((Text -> (Text, Text)) -> Spec) -> Spec
 blockMarkdowns f = do
   describe "block MD" $
-    f ((view mdSource &&& htmlToText) . toMarkdownBlock)
+    f ((markdownBlockSource &&& htmlToText) . toMarkdownBlock)
   describe "block+toc MD" $
-    f ((view mdSource &&& htmlToText) . toMarkdownTree "")
+    f ((markdownTreeSource &&& htmlToText) . toMarkdownTree "")
 
 mdInlineExamples :: [Text]
 mdInlineExamples = [

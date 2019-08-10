@@ -118,7 +118,7 @@ setMethods = do
   Spock.post (setRoute <//> categoryVar <//> "notes") $ \catId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (_categoryNotes.mdSource) <$> dbQuery (GetCategory catId)
+    modified <- markdownBlockSource . categoryNotes <$> dbQuery (GetCategory catId)
     if modified == original
       then do
         (edit, category) <- dbUpdate (SetCategoryNotes catId content')
@@ -161,7 +161,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "description") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (_itemSummary.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownBlockSource . itemSummary <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemSummary itemId content')
@@ -176,7 +176,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (_itemEcosystem.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownBlockSource . itemEcosystem <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
@@ -191,7 +191,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "notes") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (_itemNotes.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownTreeSource . itemNotes <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemNotes itemId content')
@@ -207,7 +207,8 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (_traitContent.mdSource) <$> dbQuery (GetTrait itemId traitId)
+    modified <- markdownInlineSource . traitContent <$>
+      dbQuery (GetTrait itemId traitId)
     if modified == original
       then do
         (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')

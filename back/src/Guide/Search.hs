@@ -50,7 +50,7 @@ search query gs =
     sortByRank [(SRItemEcosystem cat item, rank)
                  | cat  <- categories gs
                  , item <- categoryItems cat
-                 , let rank = match query (item ^. _itemEcosystem . mdSource)
+                 , let rank = match query (markdownBlockSource (itemEcosystem item))
                  , rank > 0 ]
   where
     sortByRank :: [(a, Int)] -> [a]

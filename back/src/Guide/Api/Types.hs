@@ -693,7 +693,7 @@ toCItemFull $(fields 'Item) = CItemFull
   , cifEcosystem   = toCMarkdown itemEcosystem
   , cifNotes       = toCMarkdown itemNotes
   , cifLink        = itemLink
-  , cifToc         = map toCTocHeading (markdownTreeMdTOC itemNotes)
+  , cifToc         = map toCTocHeading (markdownTreeTOC itemNotes)
   }
   where
     -- Ignored fields
@@ -753,22 +753,33 @@ instance ToSchema CMarkdown where
 class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMarkdown MarkdownInline where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
-    , cmdHtml = toText (md^.mdHtml)
+  toCMarkdown $(fields 'MarkdownInline) = CMarkdown
+    { cmdText = markdownInlineSource
+    , cmdHtml = toText markdownInlineHtml
     }
+    where
+      -- Ignored fields
+      _ = markdownInlineMarkdown
 
 instance ToCMarkdown MarkdownBlock where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
-    , cmdHtml = toText (md^.mdHtml)
+  toCMarkdown $(fields 'MarkdownBlock) = CMarkdown
+    { cmdText = markdownBlockSource
+    , cmdHtml = toText markdownBlockHtml
     }
+    where
+      -- Ignored fields
+      _ = markdownBlockMarkdown
 
 instance ToCMarkdown MarkdownTree where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
+  toCMarkdown md@($(fields 'MarkdownTree)) = CMarkdown
+    { cmdText = markdownTreeSource
     , cmdHtml = toText . renderText $ toHtml md
     }
+    where
+      -- Ignored fields
+      _ = markdownTreeStructure
+      _ = markdownTreeTOC
+      _ = markdownTreeIdPrefix
 
 ----------------------------------------------------------------------------
 -- CTocHeading
@@ -797,7 +808,7 @@ instance ToSchema CTocHeading where
 -- | 'toCTocHeading' converts a table of contents into the format expected by the frontend.
 toCTocHeading :: Tree Heading -> CTocHeading
 toCTocHeading $(fields 'Node) = CTocHeading
-  { cthContent     = toCMarkdown $ headingMd rootLabel
+  { cthContent     = toCMarkdown $ headingMarkdown rootLabel
   , cthSlug        = headingSlug rootLabel
   , cthSubheadings = map toCTocHeading subForest
   }
@@ -942,7 +953,7 @@ toCSearchResult (SRCategory cat) =
         -- is about).
         --
         -- TODO: just extract the first paragraph, not the preface.
-        extractPreface $ toMarkdownTree "" $ view mdSource (categoryNotes cat)
+        extractPreface $ toMarkdownTree "" $ markdownBlockSource (categoryNotes cat)
     }
 toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem

@@ -431,7 +431,7 @@ setCategoryGroup catId group' = do
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . _categoryNotes <<.= toMarkdownBlock notes'
-  let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdSource) notes'
+  let edit = Edit'SetCategoryNotes catId (markdownBlockSource oldNotes) notes'
   (edit,) <$> use (categoryById catId)
 
 setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (Edit, Category)
@@ -474,23 +474,21 @@ setItemSummary itemId description' = do
   oldDescr <- itemById itemId . _itemSummary <<.=
                 toMarkdownBlock description'
   let edit = Edit'SetItemSummary itemId
-               (oldDescr ^. mdSource) description'
+               (markdownBlockSource oldDescr) description'
   (edit,) <$> use (itemById itemId)
 
 setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
-  oldNotes <- itemById itemId . _itemNotes <<.=
-                toMarkdownTree pref notes'
-  let edit = Edit'SetItemNotes itemId (oldNotes ^. mdSource) notes'
+  oldNotes <- itemById itemId . _itemNotes <<.= toMarkdownTree pref notes'
+  let edit = Edit'SetItemNotes itemId (markdownTreeSource oldNotes) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
-  oldEcosystem <- itemById itemId . _itemEcosystem <<.=
-                    toMarkdownBlock ecosystem'
+  oldEcosystem <- itemById itemId . _itemEcosystem <<.= toMarkdownBlock ecosystem'
   let edit = Edit'SetItemEcosystem itemId
-               (oldEcosystem ^. mdSource) ecosystem'
+               (markdownBlockSource oldEcosystem) ecosystem'
   (edit,) <$> use (itemById itemId)
 
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
@@ -498,7 +496,7 @@ setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . _traitContent <<.=
                   toMarkdownInline content'
   let edit = Edit'SetTraitContent itemId traitId
-               (oldContent ^. mdSource) content'
+               (markdownInlineSource oldContent) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
 
 -- delete

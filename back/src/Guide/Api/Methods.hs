@@ -66,7 +66,7 @@ createCategory title' group' =
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
 setCategoryNotes catId $(fields 'CTextEdit) =
   logHandler "setCategoryNotes" [attr "catId" catId] $ do
-    serverModified <- markdownBlockMdSource . categoryNotes <$> getCategoryOrFail catId
+    serverModified <- markdownBlockSource . categoryNotes <$> getCategoryOrFail catId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetCategoryNotes catId cteModified)
     pure NoContent
@@ -140,7 +140,7 @@ setItemInfo itemId $(fields 'CItemInfoEdit) =
 setItemSummary :: Uid Item -> CTextEdit -> Guider NoContent
 setItemSummary itemId $(fields 'CTextEdit) =
   logHandler "setItemSummary" [attr "itemId" itemId] $ do
-    serverModified <- markdownBlockMdSource . itemSummary <$> getItemOrFail itemId
+    serverModified <- markdownBlockSource . itemSummary <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemSummary itemId cteModified)
     pure NoContent
@@ -149,7 +149,7 @@ setItemSummary itemId $(fields 'CTextEdit) =
 setItemEcosystem :: Uid Item -> CTextEdit -> Guider NoContent
 setItemEcosystem itemId $(fields 'CTextEdit) =
   logHandler "setItemEcosystem" [attr "itemId" itemId] $ do
-    serverModified <- markdownBlockMdSource . itemEcosystem <$> getItemOrFail itemId
+    serverModified <- markdownBlockSource . itemEcosystem <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemEcosystem itemId cteModified)
     pure NoContent
@@ -158,7 +158,7 @@ setItemEcosystem itemId $(fields 'CTextEdit) =
 setItemNotes :: Uid Item -> CTextEdit -> Guider NoContent
 setItemNotes itemId $(fields 'CTextEdit) =
   logHandler "setItemNotes" [attr "itemId" itemId] $ do
-    serverModified <- markdownTreeMdSource . itemNotes <$> getItemOrFail itemId
+    serverModified <- markdownTreeSource . itemNotes <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemNotes itemId cteModified)
     pure NoContent
@@ -205,7 +205,7 @@ createTrait itemId $(fields 'CCreateTrait) =
 setTrait :: Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
 setTrait itemId traitId $(fields 'CTextEdit) =
   logHandler "setTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
-    serverModified <- markdownInlineMdSource . traitContent <$> getTraitOrFail itemId traitId
+    serverModified <- markdownInlineSource . traitContent <$> getTraitOrFail itemId traitId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId cteModified)
     pure NoContent

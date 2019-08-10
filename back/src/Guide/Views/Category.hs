@@ -158,7 +158,7 @@ renderCategoryNotes category =
   in div_ [id_ thisId, class_ "category-notes"] $ do
     section "normal" [shown, noScriptShown] $ do
       div_ [class_ "notes-like"] $ do
-        if markdownNull (categoryNotes category)
+        if markdownBlockSource (categoryNotes category) == ""
           then p_ "write something here!"
           else toHtml (categoryNotes category)
       textButton "edit description" $
@@ -168,7 +168,7 @@ renderCategoryNotes category =
                     JS.selectClass "editor"]
 
     section "editing" [] $ do
-      contents <- if markdownNull (categoryNotes category)
+      contents <- if markdownBlockSource (categoryNotes category) == ""
         then liftIO $ toMarkdownBlock <$>
                T.readFile "static/category-notes-template.md"
         else return (categoryNotes category)
@@ -176,6 +176,9 @@ renderCategoryNotes category =
         10 -- rows
         contents
         (\val -> JS.withThis JS.submitCategoryNotes
-          (this, categoryUid category, category ^. _categoryNotes . mdSource, val))
+          (this,
+           categoryUid category,
+           markdownBlockSource (categoryNotes category),
+           val))
         (JS.withThis JS.switchSection (this, "normal" :: Text))
         "or press Ctrl+Enter to save"

@@ -195,7 +195,7 @@ markdownEditor
   -> JS             -- ^ “Cancel” handler
   -> Text           -- ^ Instruction (e.g. “press Ctrl+Enter to save”)
   -> HtmlT m ()
-markdownEditor rows (view mdSource -> src) submit cancel instr = do
+markdownEditor rows (markdownBlockSource -> src) submit cancel instr = do
   editorUid <- randomLongUid
   term "a-editor" [uid_ editorUid,
                    vBind "init-content" src,
@@ -216,7 +216,7 @@ smallMarkdownEditor
   -> Text           -- ^ Instruction (e.g. “press Enter to add”)
   -> Maybe Text     -- ^ Placeholder
   -> HtmlT m ()
-smallMarkdownEditor rows (view mdSource -> src) submit mbCancel instr mbPlaceholder = do
+smallMarkdownEditor rows (markdownInlineSource -> src) submit mbCancel instr mbPlaceholder = do
   editorUid <- randomLongUid
   term "a-editor-mini" ([uid_ editorUid,
                          vBind "init-content" src,
