@@ -35,7 +35,7 @@ import Named
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline)
 import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
                          TraitType)
-import Guide.Utils (Uid (..), makeClassWithLenses)
+import Guide.Utils (Uid (..), makeClassWithLenses, fields)
 
 
 -- | Custom datatype errors for database
@@ -108,6 +108,10 @@ makeClassWithLenses ''TraitRow
 --
 -- | To fetch items (they have an order) use 'getItemRowsByCategory' from 'Get' module.
 -- | To fetch deleted items use 'getDeletedItemRowsByCategory' from 'Get' module
+--
+-- TODO: somehow handle the case when item IDs don't match the @itemsOrder@?
+--
+-- TODO: use 'fields' for pattern-matching.
 categoryRowToCategory
   :: "items" :! [Item]
   -> "itemsDeleted" :! [Item]
@@ -132,7 +136,7 @@ categoryRowToCategory
 
 -- | Convert Category to CategoryRow.
 categoryToRowCategory :: Category -> CategoryRow
-categoryToRowCategory Category {..} = CategoryRow
+categoryToRowCategory $(fields 'Category) = CategoryRow
   { categoryRowUid = _categoryUid
   , categoryRowTitle = _categoryTitle
   , categoryRowCreated = _categoryCreated
@@ -180,7 +184,7 @@ itemRowToItem
 
 -- | Convert Item to ItemRow.
 itemToRowItem :: Uid Category -> "deleted" :! Bool -> Item -> ItemRow
-itemToRowItem catId (arg #deleted -> deleted) Item{..} = ItemRow
+itemToRowItem catId (arg #deleted -> deleted) $(fields 'Item) = ItemRow
   { itemRowUid = _itemUid
   , itemRowName = _itemName
   , itemRowCreated = _itemCreated
@@ -209,7 +213,7 @@ traitToTraitRow
   -> TraitType
   -> Trait
   -> TraitRow
-traitToTraitRow itemId (arg #deleted -> deleted) traitType Trait{..} =
+traitToTraitRow itemId (arg #deleted -> deleted) traitType $(fields 'Trait) =
   TraitRow
     { traitRowUid = _traitUid
     , traitRowContent = toText $ show _traitContent

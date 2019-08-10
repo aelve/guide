@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -69,7 +70,7 @@ import Guide.Api.Utils
 import Guide.Markdown
 import Guide.Search
 import Guide.Types.Core as G
-import Guide.Utils (Uid (..), Url)
+import Guide.Utils (Uid (..), Url, fields)
 
 import qualified Data.Aeson as A
 import Data.Swagger as S
@@ -454,7 +455,7 @@ instance ToSchema CCategoryInfo where
 
 -- | Factory to create a 'CCategoryInfo' from a 'Category'
 toCCategoryInfo :: Category -> CCategoryInfo
-toCCategoryInfo Category{..} = CCategoryInfo
+toCCategoryInfo $(fields 'Category) = CCategoryInfo
   { cciId      = _categoryUid
   , cciTitle   = _categoryTitle
   , cciCreated = _categoryCreated
@@ -497,7 +498,7 @@ instance ToSchema CCategoryFull where
 
 -- | Factory to create a 'CCategoryFull' from a 'Category'
 toCCategoryFull :: Category -> CCategoryFull
-toCCategoryFull Category{..} = CCategoryFull
+toCCategoryFull $(fields 'Category) = CCategoryFull
   { ccfId          = _categoryUid
   , ccfTitle       = _categoryTitle
   , ccfGroup       = _categoryGroup_
@@ -571,7 +572,7 @@ instance ToSchema CItemInfo where
 
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
-toCItemInfo Item{..} = CItemInfo
+toCItemInfo $(fields 'Item) = CItemInfo
   { ciiId          = _itemUid
   , ciiCreated     = _itemCreated
   , ciiName        = _itemName
@@ -662,7 +663,7 @@ instance ToSchema CItemFull where
 
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
-toCItemFull Item{..} = CItemFull
+toCItemFull $(fields 'Item) = CItemFull
   { cifId          = _itemUid
   , cifName        = _itemName
   , cifCreated     = _itemCreated
@@ -773,7 +774,7 @@ instance ToSchema CTocHeading where
 
 -- | 'toCTocHeading' converts a table of contents into the format expected by the frontend.
 toCTocHeading :: Tree Heading -> CTocHeading
-toCTocHeading Node{..} = CTocHeading
+toCTocHeading $(fields 'Node) = CTocHeading
   { cthContent     = toCMarkdown $ headingMd rootLabel
   , cthSlug        = headingSlug rootLabel
   , cthSubheadings = map toCTocHeading subForest

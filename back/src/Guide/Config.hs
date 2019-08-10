@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | Server config. For instance, the admin password is stored here, as well
 -- as the base url (for correct link generation in feeds).
@@ -74,6 +75,8 @@ data Config = Config {
   }
   deriving (Eq, Show)
 
+$(pure [])
+
 -- | Default instance: no base URL, no Google token, empty password, no
 -- discussion link.
 instance Default Config where
@@ -111,7 +114,7 @@ instance FromJSON Config where
     return Config{..}
 
 instance ToJSON Config where
-  toJSON Config{..} = object [
+  toJSON $(fields 'Config) = object [
     "base-url"        .= _baseUrl,
     "google-token"    .= _googleToken,
     "admin-password"  .= _adminPassword,

@@ -277,7 +277,7 @@ deriveSafeCopySorted 1 'base ''PublicDB
 
 -- | Converts 'GlobalState' to 'PublicDB' type stripping private data.
 toPublicDB :: GlobalState -> PublicDB
-toPublicDB GlobalState{..} =
+toPublicDB $(fields 'GlobalState) =
   PublicDB {
     publicCategories        = _categories,
     publicCategoriesDeleted = _categoriesDeleted,
@@ -289,7 +289,7 @@ toPublicDB GlobalState{..} =
 -- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
 -- default values.
 fromPublicDB :: PublicDB -> GlobalState
-fromPublicDB PublicDB{..} =
+fromPublicDB $(fields 'PublicDB) =
   GlobalState {
     _categories        = publicCategories,
     _categoriesDeleted = publicCategoriesDeleted,

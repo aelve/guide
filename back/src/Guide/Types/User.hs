@@ -93,7 +93,7 @@ deriveSafeCopySorted 0 'base ''PublicUser
 
 -- | Converts 'User' to 'PublicUser' type.
 userToPublic :: User -> PublicUser
-userToPublic User{..} =
+userToPublic $(fields 'User) =
   PublicUser {
     publicUserID      = _userID,
     publicUserName    = _userName,
@@ -103,7 +103,7 @@ userToPublic User{..} =
 
 -- | Converts 'PublicUser' to 'User' filling password with Nothing.
 publicUserToUser :: PublicUser -> User
-publicUserToUser PublicUser{..} =
+publicUserToUser $(fields 'PublicUser) =
   User {
     _userID       = publicUserID,
     _userName     = publicUserName,
