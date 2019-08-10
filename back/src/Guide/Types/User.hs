@@ -5,16 +5,12 @@
 -- | A type for users. Currently unused.
 module Guide.Types.User
 (
-  User,
-    userID,
-    userName,
-    userEmail,
-    userPassword,
-    userIsAdmin,
+  User(..),
+  UserLenses(..),
   makeUser,
   verifyUser,
   canCreateUser,
-  PublicUser,
+  PublicUser(..),
   userToPublic,
   publicUserToUser
 )
@@ -34,20 +30,20 @@ import Guide.Utils
 
 data User = User {
   -- | Unique, pseudorandom identifier for user.
-  _userID       :: Uid User,
+  userID       :: Uid User,
   -- | Unique username for user.
-  _userName     :: Text,
+  userName     :: Text,
   -- | Unique email address for user.
-  _userEmail    :: Text,
+  userEmail    :: Text,
   -- | Scrypt generated password field, contains salt + hash.
-  _userPassword :: Maybe ByteString,
+  userPassword :: Maybe ByteString,
   -- | Flag set if user is an administrator.
-  _userIsAdmin  :: Bool
+  userIsAdmin  :: Bool
   }
   deriving (Show)
 
 deriveSafeCopySorted 0 'base ''User
-makeLenses ''User
+makeClassWithLenses ''User
 
 -- | Creates a user object with an SCrypt encrypted password.
 makeUser :: MonadIO m => Text -> Text -> ByteString -> m User
@@ -55,29 +51,29 @@ makeUser username email password = do
   encPass <- liftIO $ encryptPassIO' (Pass password)
   userid <- randomLongUid
   return User {
-    _userID = userid,
-    _userName = username,
-    _userEmail = email,
-    _userPassword = Just $ getEncryptedPass encPass,
-    _userIsAdmin = False }
+    userID = userid,
+    userName = username,
+    userEmail = email,
+    userPassword = Just $ getEncryptedPass encPass,
+    userIsAdmin = False }
 
 -- | Verifies a given password corresponds to a user's encrypted password.
 verifyUser :: User -> ByteString -> Bool
 verifyUser user password =
-  case user ^. userPassword of
+  case userPassword user of
     Just encPass -> verifyPass' (Pass password) (EncryptedPass encPass)
     Nothing      -> False
 
 -- | Looks at two users, and returns true if all unique fields are different.
 canCreateUser :: User -> User -> Bool
-canCreateUser userFoo userBar =
-  all (\f -> f userFoo userBar) fieldTests
-    where
-      fieldNotEq field a b = a ^. field /= b ^. field
-      fieldTests = [
-        fieldNotEq userID,
-        fieldNotEq userName,
-        fieldNotEq userEmail ]
+canCreateUser $(fieldsPrefixed "a_" 'User) $(fieldsPrefixed "b_" 'User) =
+  a_userID /= b_userID &&
+  a_userName /= b_userName &&
+  a_userEmail /= b_userEmail
+  where
+    -- Ignored fields
+    _ = (a_userIsAdmin, b_userIsAdmin)
+    _ = (a_userPassword, b_userPassword)
 
 -- | 'PublicUser' contains all safe User data.
 -- Removed from 'User':
@@ -95,19 +91,22 @@ deriveSafeCopySorted 0 'base ''PublicUser
 userToPublic :: User -> PublicUser
 userToPublic $(fields 'User) =
   PublicUser {
-    publicUserID      = _userID,
-    publicUserName    = _userName,
-    publicUserEmail   = _userEmail,
-    publicUserIsAdmin = _userIsAdmin
+    publicUserID      = userID,
+    publicUserName    = userName,
+    publicUserEmail   = userEmail,
+    publicUserIsAdmin = userIsAdmin
   }
+  where
+    -- Ignored fields
+    _ = userPassword
 
 -- | Converts 'PublicUser' to 'User' filling password with Nothing.
 publicUserToUser :: PublicUser -> User
 publicUserToUser $(fields 'PublicUser) =
   User {
-    _userID       = publicUserID,
-    _userName     = publicUserName,
-    _userEmail    = publicUserEmail,
-    _userPassword = Nothing,
-    _userIsAdmin  = publicUserIsAdmin
+    userID       = publicUserID,
+    userName     = publicUserName,
+    userEmail    = publicUserEmail,
+    userPassword = Nothing,
+    userIsAdmin  = publicUserIsAdmin
   }

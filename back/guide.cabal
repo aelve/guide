@@ -215,6 +215,7 @@ library
                      , InstanceSigs
                      , DerivingStrategies
                      , TemplateHaskellQuotes
+                     , ScopedTypeVariables
 
 test-suite tests
   main-is:             Main.hs

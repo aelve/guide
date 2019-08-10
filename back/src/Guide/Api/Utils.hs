@@ -48,13 +48,11 @@ import qualified Data.HashMap.Strict.InsOrd as InsOrd
 
 -- | Nice JSON options.
 --
--- @ciConsDeleted@ becomes @cons_deleted@. Underscores at the end are
--- dropped (useful for fields like @categoryGroup_@).
+-- @ciConsDeleted@ becomes @cons_deleted@.
 jsonOptions :: Options
-jsonOptions = defaultOptions{ fieldLabelModifier = camelTo2 '_' . trim }
-  where
-    trim :: String -> String
-    trim = dropWhileEnd (== '_') . dropWhile (not . isUpper)
+jsonOptions = defaultOptions
+  { fieldLabelModifier = camelTo2 '_' . dropWhile (not . isUpper)
+  }
 
 -- | Swagger schema-generating options that match 'jsonOptions'.
 schemaOptions :: SchemaOptions

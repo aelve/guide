@@ -19,11 +19,8 @@ module Guide.State
 
   -- * type of global state
   GlobalState(..),
-    categories,
-    categoriesDeleted,
-    pendingEdits,
-    editIdCounter,
-    findCategoryByItem,
+  GlobalStateLenses(..),
+  findCategoryByItem,
   emptyState,
 
   -- * acid-state methods
@@ -180,42 +177,42 @@ Guide.hs
 
 emptyState :: GlobalState
 emptyState = GlobalState {
-  _categories = [],
-  _categoriesDeleted = [],
-  _pendingEdits = [],
-  _editIdCounter = 0,
-  _sessionStore = M.empty,
-  _users = M.empty,
-  _dirty = True }
+  categories = [],
+  categoriesDeleted = [],
+  pendingEdits = [],
+  editIdCounter = 0,
+  sessionStore = M.empty,
+  users = M.empty,
+  dirty = True }
 
 data GlobalState = GlobalState {
-  _categories        :: [Category],
-  _categoriesDeleted :: [Category],
+  categories        :: [Category],
+  categoriesDeleted :: [Category],
   -- | Pending edits, newest first
-  _pendingEdits      :: [(Edit, EditDetails)],
+  pendingEdits      :: [(Edit, EditDetails)],
   -- | ID of next edit that will be made
-  _editIdCounter     :: Int,
+  editIdCounter     :: Int,
   -- | Sessions
-  _sessionStore      :: Map SessionId GuideSession,
+  sessionStore      :: Map SessionId GuideSession,
   -- | Users
-  _users             :: Map (Uid User) User,
+  users             :: Map (Uid User) User,
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
-  _dirty             :: Bool }
+  dirty             :: Bool }
   deriving (Show)
 
 deriveSafeCopySorted 9 'extension ''GlobalState
-makeLenses ''GlobalState
+makeClassWithLenses ''GlobalState
 
 changelog ''GlobalState (Current 9, Past 8) [
   -- TODO: it's silly that we have to reference 'Action' and keep it in the
   -- codebase even though we have no use for 'Action' anymore
-  Removed "_actions" [t|[(Action, ActionDetails)]|]
+  Removed "actions" [t|[(Action, ActionDetails)]|]
   ]
 deriveSafeCopySorted 8 'extension ''GlobalState_v8
 
 changelog ''GlobalState (Past 8, Past 7) [
-  Added "_sessionStore" [hs|M.empty|],
-  Added "_users" [hs|M.empty|]
+  Added "sessionStore" [hs|M.empty|],
+  Added "users" [hs|M.empty|]
   ]
 deriveSafeCopySorted 7 'base ''GlobalState_v7
 
@@ -227,8 +224,8 @@ traitById traitId = singular $
 
 maybeTraitById :: Uid Trait -> Traversal' Item Trait
 maybeTraitById traitId =
-  (pros.each . filtered (hasUid traitId)) `failing`
-  (cons.each . filtered (hasUid traitId))
+  (_itemPros . each . filtered ((== traitId) . traitUid)) `failing`
+  (_itemCons . each . filtered ((== traitId) . traitUid))
 
 categoryById :: Uid Category -> Lens' GlobalState Category
 categoryById catId = singular $
@@ -237,7 +234,7 @@ categoryById catId = singular $
          toString (uidToText catId))
 
 maybeCategoryById :: Uid Category -> Traversal' GlobalState Category
-maybeCategoryById catId = categories.each . filtered (hasUid catId)
+maybeCategoryById catId = _categories . each . filtered ((== catId) . categoryUid)
 
 itemById :: Uid Item -> Lens' GlobalState Item
 itemById itemId = singular $
@@ -246,15 +243,16 @@ itemById itemId = singular $
          toString (uidToText itemId))
 
 maybeItemById :: Uid Item -> Traversal' GlobalState Item
-maybeItemById itemId = categories.each . items.each . filtered (hasUid itemId)
+maybeItemById itemId =
+  _categories . each . _categoryItems . each . filtered ((== itemId) . itemUid)
 
 findCategoryByItem :: Uid Item -> GlobalState -> Category
 findCategoryByItem itemId s =
-  fromMaybe (error err) (find hasItem (s^.categories))
+  fromMaybe (error err) (find hasItem (categories s))
   where
     err = "findCategoryByItem: couldn't find category with item with uid " ++
           toString (uidToText itemId)
-    hasItem category = itemId `elem` (category^..items.each.uid)
+    hasItem category = itemId `elem` (category ^.. _categoryItems . each . _itemUid)
 
 -- | 'PublicDB' contains all safe data from 'GlobalState'.
 -- Difference from 'GlobalState':
@@ -279,25 +277,28 @@ deriveSafeCopySorted 1 'base ''PublicDB
 toPublicDB :: GlobalState -> PublicDB
 toPublicDB $(fields 'GlobalState) =
   PublicDB {
-    publicCategories        = _categories,
-    publicCategoriesDeleted = _categoriesDeleted,
-    publicPendingEdits      = _pendingEdits,
-    publicEditIdCounter     = _editIdCounter,
-    publicUsers             = fmap userToPublic _users
+    publicCategories        = categories,
+    publicCategoriesDeleted = categoriesDeleted,
+    publicPendingEdits      = pendingEdits,
+    publicEditIdCounter     = editIdCounter,
+    publicUsers             = fmap userToPublic users
   }
+  where
+    -- Ignored fields
+    _ = (dirty, sessionStore)
 
 -- | Converts 'PublicDB' to 'GlobalState' type filling in non-existing data with
 -- default values.
 fromPublicDB :: PublicDB -> GlobalState
 fromPublicDB $(fields 'PublicDB) =
   GlobalState {
-    _categories        = publicCategories,
-    _categoriesDeleted = publicCategoriesDeleted,
-    _pendingEdits      = publicPendingEdits,
-    _editIdCounter     = publicEditIdCounter,
-    _sessionStore      = M.empty,
-    _users             = fmap publicUserToUser publicUsers,
-    _dirty             = True
+    categories        = publicCategories,
+    categoriesDeleted = publicCategoriesDeleted,
+    pendingEdits      = publicPendingEdits,
+    editIdCounter     = publicEditIdCounter,
+    sessionStore      = M.empty,
+    users             = fmap publicUserToUser publicUsers,
+    dirty             = True
   }
 
 -- get
@@ -306,7 +307,7 @@ getGlobalState :: Acid.Query GlobalState GlobalState
 getGlobalState = view id
 
 getCategories :: Acid.Query GlobalState [Category]
-getCategories = view categories
+getCategories = view _categories
 
 getCategory :: Uid Category -> Acid.Query GlobalState Category
 getCategory uid' = view (categoryById uid')
@@ -342,19 +343,19 @@ addCategory
   -> Acid.Update GlobalState (Edit, Category)
 addCategory catId title' group' created' = do
   let newCategory = Category {
-        _categoryUid = catId,
-        _categoryTitle = title',
-        _categoryGroup_ = group',
-        _categoryEnabledSections = S.fromList [
+        categoryUid = catId,
+        categoryTitle = title',
+        categoryGroup = group',
+        categoryEnabledSections = S.fromList [
             ItemProsConsSection,
             ItemEcosystemSection,
             ItemNotesSection ],
-        _categoryCreated = created',
-        _categoryStatus = CategoryStub,
-        _categoryNotes = toMarkdownBlock "",
-        _categoryItems = [],
-        _categoryItemsDeleted = [] }
-  categories %= (newCategory :)
+        categoryCreated = created',
+        categoryStatus = CategoryStub,
+        categoryNotes = toMarkdownBlock "",
+        categoryItems = [],
+        categoryItemsDeleted = [] }
+  _categories %= (newCategory :)
   let edit = Edit'AddCategory catId title' group'
   return (edit, newCategory)
 
@@ -366,20 +367,20 @@ addItem
   -> Acid.Update GlobalState (Edit, Item)
 addItem catId itemId name' created' = do
   let newItem = Item {
-        _itemUid         = itemId,
-        _itemName        = name',
-        _itemCreated     = created',
-        _itemHackage     = Nothing,
-        _itemSummary     = toMarkdownBlock "",
-        _itemPros        = [],
-        _itemProsDeleted = [],
-        _itemCons        = [],
-        _itemConsDeleted = [],
-        _itemEcosystem   = toMarkdownBlock "",
-        _itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
-                           in  toMarkdownTree pref "",
-        _itemLink        = Nothing}
-  categoryById catId . items %= (++ [newItem])
+        itemUid         = itemId,
+        itemName        = name',
+        itemCreated     = created',
+        itemHackage     = Nothing,
+        itemSummary     = toMarkdownBlock "",
+        itemPros        = [],
+        itemProsDeleted = [],
+        itemCons        = [],
+        itemConsDeleted = [],
+        itemEcosystem   = toMarkdownBlock "",
+        itemNotes       = let pref = "item-notes-" <> uidToText itemId <> "-"
+                          in  toMarkdownTree pref "",
+        itemLink        = Nothing}
+  categoryById catId . _categoryItems %= (++ [newItem])
   let edit = Edit'AddItem catId itemId name'
   return (edit, newItem)
 
@@ -390,7 +391,7 @@ addPro
   -> Acid.Update GlobalState (Edit, Trait)
 addPro itemId traitId text' = do
   let newTrait = Trait traitId (toMarkdownInline text')
-  itemById itemId . pros %= (++ [newTrait])
+  itemById itemId . _itemPros %= (++ [newTrait])
   let edit = Edit'AddPro itemId traitId text'
   return (edit, newTrait)
 
@@ -401,7 +402,7 @@ addCon
   -> Acid.Update GlobalState (Edit, Trait)
 addCon itemId traitId text' = do
   let newTrait = Trait traitId (toMarkdownInline text')
-  itemById itemId . cons %= (++ [newTrait])
+  itemById itemId . _itemCons %= (++ [newTrait])
   let edit = Edit'AddCon itemId traitId text'
   return (edit, newTrait)
 
@@ -417,25 +418,25 @@ setGlobalState = (id .=)
 
 setCategoryTitle :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryTitle catId title' = do
-  oldTitle <- categoryById catId . title <<.= title'
+  oldTitle <- categoryById catId . _categoryTitle <<.= title'
   let edit = Edit'SetCategoryTitle catId oldTitle title'
   (edit,) <$> use (categoryById catId)
 
 setCategoryGroup :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryGroup catId group' = do
-  oldGroup <- categoryById catId . group_ <<.= group'
+  oldGroup <- categoryById catId . _categoryGroup <<.= group'
   let edit = Edit'SetCategoryGroup catId oldGroup group'
   (edit,) <$> use (categoryById catId)
 
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
-  oldNotes <- categoryById catId . notes <<.= toMarkdownBlock notes'
+  oldNotes <- categoryById catId . _categoryNotes <<.= toMarkdownBlock notes'
   let edit = Edit'SetCategoryNotes catId (oldNotes ^. mdSource) notes'
   (edit,) <$> use (categoryById catId)
 
 setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (Edit, Category)
 setCategoryStatus catId status' = do
-  oldStatus <- categoryById catId . status <<.= status'
+  oldStatus <- categoryById catId . _categoryStatus <<.= status'
   let edit = Edit'SetCategoryStatus catId oldStatus status'
   (edit,) <$> use (categoryById catId)
 
@@ -445,32 +446,32 @@ changeCategoryEnabledSections
   -> Set ItemSection     -- ^ Sections to disable
   -> Acid.Update GlobalState (Edit, Category)
 changeCategoryEnabledSections catId toEnable toDisable = do
-  categoryById catId . enabledSections %= \sections ->
+  categoryById catId . _categoryEnabledSections %= \sections ->
     (sections <> toEnable) S.\\ toDisable
   let edit = Edit'ChangeCategoryEnabledSections catId toEnable toDisable
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemName itemId name' = do
-  oldName <- itemById itemId . name <<.= name'
+  oldName <- itemById itemId . _itemName <<.= name'
   let edit = Edit'SetItemName itemId oldName name'
   (edit,) <$> use (itemById itemId)
 
 setItemLink :: Uid Item -> Maybe Url -> Acid.Update GlobalState (Edit, Item)
 setItemLink itemId link' = do
-  oldLink <- itemById itemId . link <<.= link'
+  oldLink <- itemById itemId . _itemLink <<.= link'
   let edit = Edit'SetItemLink itemId oldLink link'
   (edit,) <$> use (itemById itemId)
 
 setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemHackage itemId hackage' = do
-    oldName <- itemById itemId . hackage <<.= hackage'
+    oldName <- itemById itemId . _itemHackage <<.= hackage'
     let edit = Edit'SetItemHackage itemId oldName hackage'
     (edit,) <$> use (itemById itemId)
 
 setItemSummary :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemSummary itemId description' = do
-  oldDescr <- itemById itemId . summary <<.=
+  oldDescr <- itemById itemId . _itemSummary <<.=
                 toMarkdownBlock description'
   let edit = Edit'SetItemSummary itemId
                (oldDescr ^. mdSource) description'
@@ -479,14 +480,14 @@ setItemSummary itemId description' = do
 setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
-  oldNotes <- itemById itemId . notes <<.=
+  oldNotes <- itemById itemId . _itemNotes <<.=
                 toMarkdownTree pref notes'
   let edit = Edit'SetItemNotes itemId (oldNotes ^. mdSource) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
-  oldEcosystem <- itemById itemId . ecosystem <<.=
+  oldEcosystem <- itemById itemId . _itemEcosystem <<.=
                     toMarkdownBlock ecosystem'
   let edit = Edit'SetItemEcosystem itemId
                (oldEcosystem ^. mdSource) ecosystem'
@@ -494,7 +495,7 @@ setItemEcosystem itemId ecosystem' = do
 
 setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edit, Trait)
 setTraitContent itemId traitId content' = do
-  oldContent <- itemById itemId . traitById traitId . content <<.=
+  oldContent <- itemById itemId . traitById traitId . _traitContent <<.=
                   toMarkdownInline content'
   let edit = Edit'SetTraitContent itemId traitId
                (oldContent ^. mdSource) content'
@@ -508,17 +509,17 @@ deleteCategory catId = do
   case mbCategory of
     Nothing       -> return (Left "category not found")
     Just category -> do
-      mbCategoryPos <- findIndex (hasUid catId) <$> use categories
+      mbCategoryPos <- findIndex ((== catId) . categoryUid) <$> use _categories
       case mbCategoryPos of
         Nothing          -> return (Left "category not found")
         Just categoryPos -> do
-          categories %= deleteAt categoryPos
-          categoriesDeleted %= (category:)
+          _categories %= deleteAt categoryPos
+          _categoriesDeleted %= (category:)
           return (Right (Edit'DeleteCategory catId categoryPos))
 
 deleteItem :: Uid Item -> Acid.Update GlobalState (Either String Edit)
 deleteItem itemId = do
-  catId <- view uid . findCategoryByItem itemId <$> get
+  catId <- categoryUid . findCategoryByItem itemId <$> get
   let categoryLens :: Lens' GlobalState Category
       categoryLens = categoryById catId
   let itemLens :: Lens' GlobalState Item
@@ -527,12 +528,12 @@ deleteItem itemId = do
   case mbItem of
     Nothing   -> return (Left "item not found")
     Just item -> do
-      allItems <- use (categoryLens.items)
-      case findIndex (hasUid itemId) allItems of
+      allItems <- use (categoryLens . _categoryItems)
+      case findIndex ((== itemId) . itemUid) allItems of
         Nothing      -> return (Left "item not found")
         Just itemPos -> do
-          categoryLens.items        %= deleteAt itemPos
-          categoryLens.itemsDeleted %= (item:)
+          categoryLens . _categoryItems        %= deleteAt itemPos
+          categoryLens . _categoryItemsDeleted %= (item:)
           return (Right (Edit'DeleteItem itemId itemPos))
 
 deleteTrait :: Uid Item -> Uid Trait -> Acid.Update GlobalState (Either String Edit)
@@ -545,27 +546,31 @@ deleteTrait itemId traitId = do
     Just item -> do
       -- Determine whether the trait is a pro or a con, and proceed
       -- accordingly
-      case (find (hasUid traitId) (item^.pros),
-            find (hasUid traitId) (item^.cons)) of
+      case (find ((== traitId) . traitUid) (itemPros item),
+            find ((== traitId) . traitUid) (itemCons item)) of
         -- It's in neither group, which means it was deleted. Do nothing.
         (Nothing, Nothing) -> return (Left "trait not found")
         -- It's a pro
         (Just trait, _) -> do
-          mbTraitPos <- findIndex (hasUid traitId) <$> use (itemLens.pros)
+          mbTraitPos <-
+            findIndex ((== traitId) . traitUid) <$>
+            use (itemLens . _itemPros)
           case mbTraitPos of
             Nothing       -> return (Left "trait not found")
             Just traitPos -> do
-              itemLens.pros        %= deleteAt traitPos
-              itemLens.prosDeleted %= (trait:)
+              itemLens . _itemPros        %= deleteAt traitPos
+              itemLens . _itemProsDeleted %= (trait:)
               return (Right (Edit'DeleteTrait itemId traitId traitPos))
         -- It's a con
         (_, Just trait) -> do
-          mbTraitPos <- findIndex (hasUid traitId) <$> use (itemLens.cons)
+          mbTraitPos <-
+            findIndex ((== traitId) . traitUid) <$>
+            use (itemLens . _itemCons)
           case mbTraitPos of
             Nothing       -> return (Left "trait not found")
             Just traitPos -> do
-              itemLens.cons        %= deleteAt traitPos
-              itemLens.consDeleted %= (trait:)
+              itemLens . _itemCons        %= deleteAt traitPos
+              itemLens . _itemConsDeleted %= (trait:)
               return (Right (Edit'DeleteTrait itemId traitId traitPos))
 
 -- other methods
@@ -576,8 +581,8 @@ moveItem
   -> Acid.Update GlobalState Edit
 moveItem itemId up = do
   let move = if up then moveUp else moveDown
-  catId <- view uid . findCategoryByItem itemId <$> get
-  categoryById catId . items %= move (hasUid itemId)
+  catId <- categoryUid . findCategoryByItem itemId <$> get
+  categoryById catId . _categoryItems %= move ((== itemId) . itemUid)
   return (Edit'MoveItem itemId up)
 
 moveTrait
@@ -590,67 +595,67 @@ moveTrait itemId traitId up = do
   -- The trait is only going to be present in one of the lists so let's do it
   -- in each list because we're too lazy to figure out whether it's a pro or
   -- a con
-  itemById itemId . pros %= move (hasUid traitId)
-  itemById itemId . cons %= move (hasUid traitId)
+  itemById itemId . _itemPros %= move ((== traitId) . traitUid)
+  itemById itemId . _itemCons %= move ((== traitId) . traitUid)
   return (Edit'MoveTrait itemId traitId up)
 
 restoreCategory :: Uid Category -> Int -> Acid.Update GlobalState (Either String ())
 restoreCategory catId pos = do
-  deleted <- use categoriesDeleted
-  case find (hasUid catId) deleted of
+  deleted <- use _categoriesDeleted
+  case find ((== catId) . categoryUid) deleted of
     Nothing -> return (Left "category not found in deleted categories")
     Just category -> do
-      categoriesDeleted %= deleteFirst (hasUid catId)
-      categories        %= insertOrAppend pos category
+      _categoriesDeleted %= deleteFirst ((== catId) . categoryUid)
+      _categories        %= insertOrAppend pos category
       return (Right ())
 
 restoreItem :: Uid Item -> Int -> Acid.Update GlobalState (Either String ())
 restoreItem itemId pos = do
-  let ourCategory = any (hasUid itemId) . view itemsDeleted
-  allCategories <- use (categories <> categoriesDeleted)
+  let ourCategory = any ((== itemId) . itemUid) . categoryItemsDeleted
+  allCategories <- use (_categories <> _categoriesDeleted)
   case find ourCategory allCategories of
     Nothing -> return (Left "item not found in deleted items")
     Just category -> do
-      let item = fromJust (find (hasUid itemId) (category^.itemsDeleted))
+      let item = fromJust (find ((== itemId) . itemUid) (categoryItemsDeleted category))
       let category' = category
-            & itemsDeleted %~ deleteFirst (hasUid itemId)
-            & items        %~ insertOrAppend pos item
-      categories        . each . filtered ourCategory .= category'
-      categoriesDeleted . each . filtered ourCategory .= category'
+            & _categoryItemsDeleted %~ deleteFirst ((== itemId) . itemUid)
+            & _categoryItems        %~ insertOrAppend pos item
+      _categories        . each . filtered ourCategory .= category'
+      _categoriesDeleted . each . filtered ourCategory .= category'
       return (Right ())
 
 restoreTrait :: Uid Item -> Uid Trait -> Int -> Acid.Update GlobalState (Either String ())
 restoreTrait itemId traitId pos = do
-  let getItems = view (items <> itemsDeleted)
-      ourCategory = any (hasUid itemId) . getItems
-  allCategories <- use (categories <> categoriesDeleted)
+  let getItems = view (_categoryItems <> _categoryItemsDeleted)
+      ourCategory = any ((== itemId) . itemUid) . getItems
+  allCategories <- use (_categories <> _categoriesDeleted)
   case find ourCategory allCategories of
     Nothing -> return (Left "item -that the trait belongs to- not found")
     Just category -> do
-      let item = fromJust (find (hasUid itemId) (getItems category))
-      case (find (hasUid traitId) (item^.prosDeleted),
-            find (hasUid traitId) (item^.consDeleted)) of
+      let item = fromJust (find ((== itemId) . itemUid) (getItems category))
+      case (find ((== traitId) . traitUid) (itemProsDeleted item),
+            find ((== traitId) . traitUid) (itemConsDeleted item)) of
         (Nothing, Nothing) ->
           return (Left "trait not found in deleted traits")
         (Just trait, _) -> do
           let item' = item
-                & prosDeleted %~ deleteFirst (hasUid traitId)
-                & pros        %~ insertOrAppend pos trait
+                & _itemProsDeleted %~ deleteFirst ((== traitId) . traitUid)
+                & _itemPros        %~ insertOrAppend pos trait
           let category' = category
-                & items        . each . filtered (hasUid itemId) .~ item'
-                & itemsDeleted . each . filtered (hasUid itemId) .~ item'
-          categories        . each . filtered ourCategory .= category'
-          categoriesDeleted . each . filtered ourCategory .= category'
+                & _categoryItems        . each . filtered ((== itemId) . itemUid) .~ item'
+                & _categoryItemsDeleted . each . filtered ((== itemId) . itemUid) .~ item'
+          _categories        . each . filtered ourCategory .= category'
+          _categoriesDeleted . each . filtered ourCategory .= category'
           return (Right ())
         (_, Just trait) -> do
           let item' = item
-                & consDeleted %~ deleteFirst (hasUid traitId)
-                & cons        %~ insertOrAppend pos trait
+                & _itemConsDeleted %~ deleteFirst ((== traitId) . traitUid)
+                & _itemCons        %~ insertOrAppend pos trait
           let category' = category
-                & items        . each . filtered (hasUid itemId) .~ item'
-                & itemsDeleted . each . filtered (hasUid itemId) .~ item'
-          categories        . each . filtered ourCategory .= category'
-          categoriesDeleted . each . filtered ourCategory .= category'
+                & _categoryItems        . each . filtered ((== itemId) . itemUid) .~ item'
+                & _categoryItemsDeleted . each . filtered ((== itemId) . itemUid) .~ item'
+          _categories        . each . filtered ourCategory .= category'
+          _categoriesDeleted . each . filtered ourCategory .= category'
           return (Right ())
 
 -- TODO: maybe have a single list of traits with pro/con being signified by
@@ -659,7 +664,7 @@ restoreTrait itemId traitId pos = do
 
 getEdit :: Int -> Acid.Query GlobalState (Edit, EditDetails)
 getEdit n = do
-  edits <- view pendingEdits
+  edits <- view _pendingEdits
   case find ((== n) . editId . snd) edits of
     Nothing   -> error ("no edit with id " ++ show n)
     Just edit -> return edit
@@ -670,7 +675,7 @@ getEdits
   -> Int            -- ^ Id of earliest edit
   -> Acid.Query GlobalState [(Edit, EditDetails)]
 getEdits m n =
-  filter (\(_, d) -> n <= editId d && editId d <= m) <$> view pendingEdits
+  filter (\(_, d) -> n <= editId d && editId d <= m) <$> view _pendingEdits
 
 -- | The edit won't be registered if it's vacuous (see 'isVacuousEdit').
 registerEdit
@@ -679,21 +684,21 @@ registerEdit
   -> UTCTime
   -> Acid.Update GlobalState ()
 registerEdit ed ip date = do
-  id' <- use editIdCounter
+  id' <- use _editIdCounter
   let details = EditDetails {
         editIP   = ip,
         editDate = date,
         editId   = id' }
-  pendingEdits %= ((ed, details):)
-  editIdCounter += 1
+  _pendingEdits %= ((ed, details):)
+  _editIdCounter += 1
 
 removePendingEdit :: Int -> Acid.Update GlobalState (Edit, EditDetails)
 removePendingEdit n = do
-  edits <- use pendingEdits
+  edits <- use _pendingEdits
   case find ((== n) . editId . snd) edits of
     Nothing   -> error ("no edit with id " ++ show n)
     Just edit -> do
-      pendingEdits %= deleteFirst ((== n) . editId . snd)
+      _pendingEdits %= deleteFirst ((== n) . editId . snd)
       return edit
 
 removePendingEdits
@@ -701,51 +706,51 @@ removePendingEdits
   -> Int            -- ^ Id of earliest edit
   -> Acid.Update GlobalState ()
 removePendingEdits m n = do
-  pendingEdits %= filter (\(_, d) -> editId d < n || m < editId d)
+  _pendingEdits %= filter (\(_, d) -> editId d < n || m < editId d)
 
 setDirty :: Acid.Update GlobalState ()
-setDirty = dirty .= True
+setDirty = _dirty .= True
 
 unsetDirty :: Acid.Update GlobalState Bool
-unsetDirty = dirty <<.= False
+unsetDirty = _dirty <<.= False
 
 -- | Retrieves a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 loadSession :: SessionId -> Acid.Query GlobalState (Maybe GuideSession)
-loadSession key = view (sessionStore . at key)
+loadSession key = view (_sessionStore . at key)
 
 -- | Stores a session object.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 storeSession :: GuideSession -> Acid.Update GlobalState ()
 storeSession sess = do
-  sessionStore %= M.insert (sess ^. sess_id) sess
+  _sessionStore %= M.insert (sess ^. sess_id) sess
   setDirty
 
 -- | Deletes a session by 'SessionID'.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 deleteSession :: SessionId -> Acid.Update GlobalState ()
 deleteSession key = do
-  sessionStore %= M.delete key
+  _sessionStore %= M.delete key
   setDirty
 
 -- | Retrieves all sessions.
 -- Note: This utilizes a "wrapper" around Spock.Session, 'GuideSession'.
 getSessions :: Acid.Query GlobalState [GuideSession]
 getSessions = do
-  m <- view sessionStore
+  m <- view _sessionStore
   return . map snd $ M.toList m
 
 -- | Retrieves a user by their unique identifier.
 getUser :: Uid User -> Acid.Query GlobalState (Maybe User)
-getUser key = view (users . at key)
+getUser key = view (_users . at key)
 
 -- | Creates a user, maintaining unique constraints on certain fields.
 createUser :: User -> Acid.Update GlobalState Bool
 createUser user = do
-  m <- toList <$> use users
-  if all (canCreateUser user) (m ^.. each)
+  m :: [User] <- toList <$> use _users
+  if all (canCreateUser user) m
   then do
-    users %= M.insert (user ^. userID) user
+    _users %= M.insert (userID user) user
     return True
   else
     return False
@@ -753,21 +758,21 @@ createUser user = do
 -- | Remove a user completely. Unsets all user sessions with this user ID.
 deleteUser :: Uid User -> Acid.Update GlobalState ()
 deleteUser key = do
-  users %= M.delete key
+  _users %= M.delete key
   logoutUserGlobally key
   setDirty
 
 deleteAllUsers :: Acid.Update GlobalState ()
 deleteAllUsers = do
-  mapM_ logoutUserGlobally . M.keys =<< use users
-  users .= mempty
+  mapM_ logoutUserGlobally . M.keys =<< use _users
+  _users .= mempty
   setDirty
 
 -- | Given an email address and a password, return the user if it exists
 -- and the password is correct.
 loginUser :: Text -> ByteString -> Acid.Query GlobalState (Either String User)
 loginUser email password = do
-  matches <- filter (\u -> u ^. userEmail == email) . toList <$> view users
+  matches <- filter (\u -> userEmail u == email) . toList <$> view _users
   case matches of
     [user] ->
       if verifyUser user password
@@ -779,14 +784,14 @@ loginUser email password = do
 -- | Global logout of all of a user's active sessions
 logoutUserGlobally :: Uid User -> Acid.Update GlobalState ()
 logoutUserGlobally key = do
-  sessions <- use sessionStore
+  sessions <- use _sessionStore
   for_ (M.toList sessions) $ \(sessID, sess) -> do
     when ((sess ^. sess_data.sessionUserID) == Just key) $ do
-      sessionStore . ix sessID . sess_data . sessionUserID .= Nothing
+      _sessionStore . ix sessID . sess_data . sessionUserID .= Nothing
 
 -- | Retrieve all users with the 'userIsAdmin' field set to True.
 getAdminUsers :: Acid.Query GlobalState [User]
-getAdminUsers = filter (^. userIsAdmin) . toList <$> view users
+getAdminUsers = filter userIsAdmin . toList <$> view _users
 
 -- | Populate the database with info from the public DB.
 importPublicDB :: PublicDB -> Acid.Update GlobalState ()

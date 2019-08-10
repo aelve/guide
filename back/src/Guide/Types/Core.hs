@@ -13,43 +13,20 @@
 -- The whole site is a list of categories ('Category'). Categories have
 -- items ('Item') in them. Items have some sections (fields inside of
 -- 'Item'), as well as traits ('Trait').
---
--- It is recommended to use lenses to access fields of various types. All
--- those lenses are exported from this module. Some lenses (like 'uid' and
--- 'name') are overloaded and can be used with many types.
 module Guide.Types.Core
 (
   Trait(..),
+  TraitLenses(..),
   TraitType (..),
   ItemKind(..),
     hackageName,
   ItemSection(..),
   Item(..),
-    pros,
-    prosDeleted,
-    cons,
-    consDeleted,
-    ecosystem,
-    hackage,
-    link,
+  ItemLenses(..),
   CategoryStatus(..),
   Category(..),
-    title,
-    group_,
-    status,
-    enabledSections,
-    items,
-    itemsDeleted,
-    categorySlug,
-
-  -- * Overloaded things
-  uid,
-  hasUid,
-  content,
-  name,
-  summary,
-  notes,
-  created,
+  CategoryLenses(..),
+  categorySlug,
 )
 where
 
@@ -86,19 +63,19 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 
 -- | A trait (pro or con). Traits are stored in items.
 data Trait = Trait {
-  _traitUid     :: Uid Trait,
-  _traitContent :: MarkdownInline }
+  traitUid     :: Uid Trait,
+  traitContent :: MarkdownInline }
   deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 4 'extension ''Trait
-makeFields ''Trait
+makeClassWithLenses ''Trait
 
 changelog ''Trait (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance A.ToJSON Trait where
   toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "_trait") }
+    A.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
 
 -- | ADT for trait type. Traits can be pros (positive traits) and cons
 -- (negative traits).
@@ -156,7 +133,7 @@ instance Migrate ItemKind where
   migrate Other_v2       = Other
 
 -- | Different kinds of sections inside items. This type is only used for
--- '_categoryEnabledSections'.
+-- 'categoryEnabledSections'.
 data ItemSection
   = ItemProsConsSection
   | ItemEcosystemSection
@@ -176,39 +153,39 @@ instance A.FromJSON ItemSection where
 
 -- | An item (usually a library). Items are stored in categories.
 data Item = Item {
-  _itemUid         :: Uid Item,        -- ^ Item ID
-  _itemName        :: Text,            -- ^ Item title
-  _itemCreated     :: UTCTime,         -- ^ When the item was created
-  _itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
-  _itemSummary     :: MarkdownBlock,   -- ^ Item summary
-  _itemPros        :: [Trait],         -- ^ Pros (positive traits)
-  _itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
-                                       --   it'd be easy to restore them)
-  _itemCons        :: [Trait],         -- ^ Cons (negative traits)
-  _itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
-  _itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
-  _itemNotes       :: MarkdownTree,    -- ^ The notes section
-  _itemLink        :: Maybe Url        -- ^ Link to homepage or something
+  itemUid         :: Uid Item,        -- ^ Item ID
+  itemName        :: Text,            -- ^ Item title
+  itemCreated     :: UTCTime,         -- ^ When the item was created
+  itemHackage     :: Maybe Text,      -- ^ Package name on Hackage
+  itemSummary     :: MarkdownBlock,   -- ^ Item summary
+  itemPros        :: [Trait],         -- ^ Pros (positive traits)
+  itemProsDeleted :: [Trait],         -- ^ Deleted pros go here (so that
+                                      --   it'd be easy to restore them)
+  itemCons        :: [Trait],         -- ^ Cons (negative traits)
+  itemConsDeleted :: [Trait],         -- ^ Deleted cons go here
+  itemEcosystem   :: MarkdownBlock,   -- ^ The ecosystem section
+  itemNotes       :: MarkdownTree,    -- ^ The notes section
+  itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
   deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 13 'extension ''Item
-makeFields ''Item
+makeClassWithLenses ''Item
 
 changelog ''Item (Current 13, Past 12)
-  [Removed "_itemGroup_"  [t|Maybe Text|] ]
+  [Removed "itemGroup_"  [t|Maybe Text|] ]
 deriveSafeCopySorted 12 'extension ''Item_v12
 
 changelog ''Item (Past 12, Past 11)
-  [Removed "_itemKind"  [t|ItemKind|],
-   Added "_itemHackage" [hs|
-     case _itemKind of
+  [Removed "itemKind"  [t|ItemKind|],
+   Added "itemHackage" [hs|
+     case itemKind of
        Library m -> m
        Tool m -> m
        Other -> Nothing |],
-   Removed "_itemDescription" [t|MarkdownBlock|],
-   Added "_itemSummary" [hs|
-     _itemDescription |] ]
+   Removed "itemDescription" [t|MarkdownBlock|],
+   Added "itemSummary" [hs|
+     itemDescription |] ]
 deriveSafeCopySorted 11 'extension ''Item_v11
 
 changelog ''Item (Past 11, Past 10) []
@@ -216,7 +193,7 @@ deriveSafeCopySorted 10 'base ''Item_v10
 
 instance A.ToJSON Item where
   toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "_item") }
+    A.fieldLabelModifier = over _head toLower . drop (T.length "item") }
 
 ----------------------------------------------------------------------------
 -- Category
@@ -254,45 +231,45 @@ instance Migrate CategoryStatus where
 
 -- | A category
 data Category = Category {
-  _categoryUid             :: Uid Category,
-  _categoryTitle           :: Text,
+  categoryUid             :: Uid Category,
+  categoryTitle           :: Text,
   -- | When the category was created
-  _categoryCreated         :: UTCTime,
+  categoryCreated         :: UTCTime,
   -- | The “grandcategory” of the category (“meta”, “basics”, etc)
-  _categoryGroup_          :: Text,
-  _categoryStatus          :: CategoryStatus,
-  _categoryNotes           :: MarkdownBlock,
+  categoryGroup           :: Text,
+  categoryStatus          :: CategoryStatus,
+  categoryNotes           :: MarkdownBlock,
   -- | Items stored in the category
-  _categoryItems           :: [Item],
+  categoryItems           :: [Item],
   -- | Items that were deleted from the category. We keep them here to make
   -- it easier to restore them
-  _categoryItemsDeleted    :: [Item],
+  categoryItemsDeleted    :: [Item],
   -- | Enabled sections in this category. E.g, if this set contains
   -- 'ItemNotesSection', then notes will be shown for each item
-  _categoryEnabledSections :: Set ItemSection
+  categoryEnabledSections :: Set ItemSection
   }
   deriving (Show, Generic, Data)
 
 deriveSafeCopySorted 12 'extension ''Category
-makeFields ''Category
+makeClassWithLenses ''Category
 
 changelog ''Category (Current 12, Past 11)
-  [Removed "_categoryGroups" [t|Map Text Hue|] ]
+  [Removed "categoryGroups" [t|Map Text Hue|] ]
 deriveSafeCopySorted 11 'extension ''Category_v11
 
 changelog ''Category (Past 11, Past 10)
-  [Removed "_categoryProsConsEnabled"  [t|Bool|],
-   Removed "_categoryEcosystemEnabled" [t|Bool|],
-   Removed "_categoryNotesEnabled"     [t|Bool|],
-   Added   "_categoryEnabledSections"  [hs|
+  [Removed "categoryProsConsEnabled"  [t|Bool|],
+   Removed "categoryEcosystemEnabled" [t|Bool|],
+   Removed "categoryNotesEnabled"     [t|Bool|],
+   Added   "categoryEnabledSections"  [hs|
      S.fromList $ concat
-       [ [ItemProsConsSection  | _categoryProsConsEnabled]
-       , [ItemEcosystemSection | _categoryEcosystemEnabled]
-       , [ItemNotesSection     | _categoryNotesEnabled] ] |] ]
+       [ [ItemProsConsSection  | categoryProsConsEnabled]
+       , [ItemEcosystemSection | categoryEcosystemEnabled]
+       , [ItemNotesSection     | categoryNotesEnabled] ] |] ]
 deriveSafeCopySorted 10 'extension ''Category_v10
 
 changelog ''Category (Past 10, Past 9)
-  [Added "_categoryNotesEnabled" [hs|True|]]
+  [Added "categoryNotesEnabled" [hs|True|]]
 deriveSafeCopySorted 9 'extension ''Category_v9
 
 changelog ''Category (Past 9, Past 8) []
@@ -300,19 +277,11 @@ deriveSafeCopySorted 8 'base ''Category_v8
 
 instance A.ToJSON Category where
   toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "_category") }
+    A.fieldLabelModifier = over _head toLower . drop (T.length "category") }
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be
 -- @performance-optimization-t3c9hwzo@.
 categorySlug :: Category -> Text
 categorySlug category =
-  format "{}-{}" (makeSlug (category^.title)) (category^.uid)
-
-----------------------------------------------------------------------------
--- Utils
-----------------------------------------------------------------------------
-
--- | A useful predicate; @hasUid x@ compares given object's UID with @x@.
-hasUid :: HasUid a (Uid u) => Uid u -> a -> Bool
-hasUid u x = x^.uid == u
+  format "{}-{}" (makeSlug (categoryTitle category)) (categoryUid category)

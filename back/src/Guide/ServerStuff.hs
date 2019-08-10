@@ -108,64 +108,64 @@ undoEdit (Edit'AddPro itemId traitId _) = do
 undoEdit (Edit'AddCon itemId traitId _) = do
   void <$> dbUpdate (DeleteTrait itemId traitId)
 undoEdit (Edit'SetCategoryTitle catId old new) = do
-  now <- view title <$> dbQuery (GetCategory catId)
+  now <- categoryTitle <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "title has been changed further")
     else Right () <$ dbUpdate (SetCategoryTitle catId old)
 undoEdit (Edit'SetCategoryGroup catId old new) = do
-  now <- view group_ <$> dbQuery (GetCategory catId)
+  now <- categoryGroup <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "group has been changed further")
     else Right () <$ dbUpdate (SetCategoryGroup catId old)
 undoEdit (Edit'SetCategoryStatus catId old new) = do
-  now <- view status <$> dbQuery (GetCategory catId)
+  now <- categoryStatus <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "status has been changed further")
     else Right () <$ dbUpdate (SetCategoryStatus catId old)
 undoEdit (Edit'ChangeCategoryEnabledSections catId toEnable toDisable) = do
-  enabledNow <- view enabledSections <$> dbQuery (GetCategory catId)
+  enabledNow <- categoryEnabledSections <$> dbQuery (GetCategory catId)
   if any (`elem` enabledNow) toDisable || any (`notElem` enabledNow) toEnable
     then return (Left "enabled-sections has been changed further")
     else Right () <$ dbUpdate (ChangeCategoryEnabledSections catId toDisable toEnable)
 undoEdit (Edit'SetCategoryNotes catId old new) = do
-  now <- view (notes.mdSource) <$> dbQuery (GetCategory catId)
+  now <- view (_categoryNotes . mdSource) <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetCategoryNotes catId old)
 undoEdit (Edit'SetItemName itemId old new) = do
-  now <- view name <$> dbQuery (GetItem itemId)
+  now <- itemName <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "name has been changed further")
     else Right () <$ dbUpdate (SetItemName itemId old)
 undoEdit (Edit'SetItemLink itemId old new) = do
-  now <- view link <$> dbQuery (GetItem itemId)
+  now <- itemLink <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "link has been changed further")
     else Right () <$ dbUpdate (SetItemLink itemId old)
 undoEdit (Edit'SetItemGroup _ _ _) = do
   return (Left "groups are not supported anymore")
 undoEdit (Edit'SetItemHackage itemId old new) = do
-  now <- view hackage <$> dbQuery (GetItem itemId)
+  now <- itemHackage <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "Hackage name has been changed further")
     else Right () <$ dbUpdate (SetItemHackage itemId old)
 undoEdit (Edit'SetItemSummary itemId old new) = do
-  now <- view (summary.mdSource) <$> dbQuery (GetItem itemId)
+  now <- view (_itemSummary . mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "description has been changed further")
     else Right () <$ dbUpdate (SetItemSummary itemId old)
 undoEdit (Edit'SetItemNotes itemId old new) = do
-  now <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
+  now <- view (_itemNotes . mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetItemNotes itemId old)
 undoEdit (Edit'SetItemEcosystem itemId old new) = do
-  now <- view (ecosystem.mdSource) <$> dbQuery (GetItem itemId)
+  now <- view (_itemEcosystem . mdSource) <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
 undoEdit (Edit'SetTraitContent itemId traitId old new) = do
-  now <- view (content.mdSource) <$> dbQuery (GetTrait itemId traitId)
+  now <- view (_traitContent . mdSource) <$> dbQuery (GetTrait itemId traitId)
   if now /= new
     then return (Left "trait has been changed further")
     else Right () <$ dbUpdate (SetTraitContent itemId traitId old)

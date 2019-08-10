@@ -37,20 +37,20 @@ search :: Text -> GlobalState -> [SearchResult]
 search query gs =
     -- category titles
     sortByRank [(SRCategory cat, rank)
-                 | cat <- gs^.categories
-                 , let rank = match query (cat^.title)
+                 | cat <- categories gs
+                 , let rank = match query (categoryTitle cat)
                  , rank > 0 ] ++
     -- item names
     sortByRank [(SRItem cat item, rank)
-                 | cat  <- gs^.categories
-                 , item <- cat^.items
-                 , let rank = match query (item^.name)
+                 | cat  <- categories gs
+                 , item <- categoryItems cat
+                 , let rank = match query (itemName item)
                  , rank > 0 ] ++
     -- item ecosystems
     sortByRank [(SRItemEcosystem cat item, rank)
-                 | cat  <- gs^.categories
-                 , item <- cat^.items
-                 , let rank = match query (item^.ecosystem.mdSource)
+                 | cat  <- categories gs
+                 , item <- categoryItems cat
+                 , let rank = match query (item ^. _itemEcosystem . mdSource)
                  , rank > 0 ]
   where
     sortByRank :: [(a, Int)] -> [a]

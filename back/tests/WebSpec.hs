@@ -507,13 +507,13 @@ run :: FilePath -> Spec -> IO ()
 run logFile ts = do
   -- Config to run spock server.
   let config = def {
-        _baseUrl       = "/",
-        _googleToken   = "some-google-token",
-        _adminPassword = "123",
-        _discussLink   = Just "http://discuss.link",
-        _cors          = False,
-        _logToStderr   = False,
-        _logToFile     = Just logFile
+        baseUrl       = "/",
+        googleToken   = "some-google-token",
+        adminPassword = "123",
+        discussLink   = Just "http://discuss.link",
+        cors          = False,
+        logToStderr   = False,
+        logToFile     = Just logFile
         }
   -- Prepere resources.
   let prepare = do

@@ -25,6 +25,7 @@ import Data.Vector (Vector)
 
 import Guide.Diff.Merge (merge)
 import Guide.Diff.Tokenize (tokenize)
+import Guide.Utils (makeClassWithLenses)
 
 import qualified Data.Patch as PV
 import qualified Data.Vector as V
@@ -45,9 +46,7 @@ data DiffChunk
   | Plain   Text      -- ^ This part should be rendered as not modified
   deriving (Eq, Show)
 
-flip makeLensesFor ''Diff
-  [ ("diffContextAbove", "_diffContextAbove")
-  , ("diffContextBelow", "_diffContextBelow") ]
+makeClassWithLenses ''Diff
 
 diff
   :: Text    -- ^ Original text

@@ -123,29 +123,32 @@ categoryRowToCategory
   CategoryRow{..}
   =
   Category
-    { _categoryUid = categoryRowUid
-    , _categoryTitle = categoryRowTitle
-    , _categoryCreated = categoryRowCreated
-    , _categoryGroup_ = categoryRowGroup
-    , _categoryStatus = categoryRowStatus
-    , _categoryNotes = toMarkdownBlock categoryRowNotes
-    , _categoryItems = items
-    , _categoryItemsDeleted = itemsDeleted
-    , _categoryEnabledSections = categoryRowEnabledSections
+    { categoryUid = categoryRowUid
+    , categoryTitle = categoryRowTitle
+    , categoryCreated = categoryRowCreated
+    , categoryGroup = categoryRowGroup
+    , categoryStatus = categoryRowStatus
+    , categoryNotes = toMarkdownBlock categoryRowNotes
+    , categoryItems = items
+    , categoryItemsDeleted = itemsDeleted
+    , categoryEnabledSections = categoryRowEnabledSections
     }
 
 -- | Convert Category to CategoryRow.
 categoryToRowCategory :: Category -> CategoryRow
 categoryToRowCategory $(fields 'Category) = CategoryRow
-  { categoryRowUid = _categoryUid
-  , categoryRowTitle = _categoryTitle
-  , categoryRowCreated = _categoryCreated
-  , categoryRowGroup = _categoryGroup_
-  , categoryRowStatus = _categoryStatus
-  , categoryRowNotes = toText $ show _categoryNotes -- TODO fix!
-  , categoryRowEnabledSections = _categoryEnabledSections
-  , categoryRowItemsOrder = map _itemUid _categoryItems
+  { categoryRowUid = categoryUid
+  , categoryRowTitle = categoryTitle
+  , categoryRowCreated = categoryCreated
+  , categoryRowGroup = categoryGroup
+  , categoryRowStatus = categoryStatus
+  , categoryRowNotes = toText $ show categoryNotes -- TODO fix!
+  , categoryRowEnabledSections = categoryEnabledSections
+  , categoryRowItemsOrder = map itemUid categoryItems
   }
+  where
+    -- Ignored fields
+    _ = categoryItemsDeleted
 
 -- | Convert ItemRow to Item.
 --
@@ -166,18 +169,18 @@ itemRowToItem
   ItemRow{..}
   =
   Item
-    { _itemUid = itemRowUid
-    , _itemName = itemRowName
-    , _itemCreated = itemRowCreated
-    , _itemHackage = itemRowHackage
-    , _itemSummary = toMarkdownBlock itemRowSummary
-    , _itemPros = proTraits
-    , _itemProsDeleted = proDeletedTraits
-    , _itemCons = conTraits
-    , _itemConsDeleted = conDeletedTraits
-    , _itemEcosystem = toMarkdownBlock itemRowEcosystem
-    , _itemNotes = toMarkdownTree prefix itemRowNotes
-    , _itemLink = itemRowLink
+    { itemUid = itemRowUid
+    , itemName = itemRowName
+    , itemCreated = itemRowCreated
+    , itemHackage = itemRowHackage
+    , itemSummary = toMarkdownBlock itemRowSummary
+    , itemPros = proTraits
+    , itemProsDeleted = proDeletedTraits
+    , itemCons = conTraits
+    , itemConsDeleted = conDeletedTraits
+    , itemEcosystem = toMarkdownBlock itemRowEcosystem
+    , itemNotes = toMarkdownTree prefix itemRowNotes
+    , itemLink = itemRowLink
     }
   where
     prefix = "item-notes-" <> uidToText itemRowUid <> "-"
@@ -185,25 +188,28 @@ itemRowToItem
 -- | Convert Item to ItemRow.
 itemToRowItem :: Uid Category -> "deleted" :! Bool -> Item -> ItemRow
 itemToRowItem catId (arg #deleted -> deleted) $(fields 'Item) = ItemRow
-  { itemRowUid = _itemUid
-  , itemRowName = _itemName
-  , itemRowCreated = _itemCreated
-  , itemRowLink = _itemLink
-  , itemRowHackage = _itemHackage
-  , itemRowSummary = toText $ show _itemSummary
-  , itemRowEcosystem = toText $ show _itemEcosystem
-  , itemRowNotes = toText $ show _itemNotes
+  { itemRowUid = itemUid
+  , itemRowName = itemName
+  , itemRowCreated = itemCreated
+  , itemRowLink = itemLink
+  , itemRowHackage = itemHackage
+  , itemRowSummary = toText $ show itemSummary -- TODO fix
+  , itemRowEcosystem = toText $ show itemEcosystem -- TODO fix
+  , itemRowNotes = toText $ show itemNotes -- TODO fix
   , itemRowDeleted = deleted
   , itemRowCategoryUid = catId
-  , itemRowProsOrder = map _traitUid _itemPros
-  , itemRowConsOrder = map _traitUid _itemCons
+  , itemRowProsOrder = map traitUid itemPros
+  , itemRowConsOrder = map traitUid itemCons
   }
+  where
+    -- Ignored fields
+    _ = (itemConsDeleted, itemProsDeleted)
 
 -- | Convert TraitRow to Trait.
 traitRowToTrait :: TraitRow -> Trait
 traitRowToTrait TraitRow{..} = Trait
-  { _traitUid = traitRowUid
-  , _traitContent = toMarkdownInline traitRowContent
+  { traitUid = traitRowUid
+  , traitContent = toMarkdownInline traitRowContent
   }
 
 -- Convert Trait to TraitRow
@@ -215,8 +221,8 @@ traitToTraitRow
   -> TraitRow
 traitToTraitRow itemId (arg #deleted -> deleted) traitType $(fields 'Trait) =
   TraitRow
-    { traitRowUid = _traitUid
-    , traitRowContent = toText $ show _traitContent
+    { traitRowUid = traitUid
+    , traitRowContent = toText $ show traitContent  -- TODO fix
     , traitRowDeleted = deleted
     , traitRowType = traitType
     , traitRowItemUid = itemId

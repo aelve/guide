@@ -53,7 +53,7 @@ loginView user = do
   div_ $ do
     -- TODO: Make nicer.
     "You are registered and logged in as "
-    toHtml (user ^. userName)
+    toHtml (userName user)
 
 renderLogin :: (MonadIO m, MonadReader Config m) => HtmlT m () -> HtmlT m ()
 renderLogin content = do

@@ -211,8 +211,8 @@ ekgMetrics logger Config{..} db ekgId =
       itemGauge <- EKG.getGauge "db.items" ekg
       void $ async $ forever $ do
         globalState <- Acid.query db GetGlobalState
-        let allCategories = globalState^.categories
-        let allItems = allCategories^..each.items.each
+        let allCategories = categories globalState
+        let allItems = allCategories ^.. each . _categoryItems . each
         EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
         EKG.Gauge.set itemGauge (fromIntegral (length allItems))
         threadDelay (1000000 * 60)
@@ -350,7 +350,7 @@ loginAction = do
         LoginUser loginEmail (toByteString loginUserPassword)
       case loginAttempt of
         Right user -> do
-          modifySession (sessionUserID ?~ (user ^. userID))
+          modifySession (sessionUserID ?~ userID user)
           Spock.redirect "/"
         -- TODO: *properly* show error message/validation of input
         Left err -> do
@@ -377,7 +377,7 @@ signupAction = do
       success <- dbUpdate $ CreateUser user
       if success
         then do
-          modifySession (sessionUserID ?~ (user ^. userID))
+          modifySession (sessionUserID ?~ userID user)
           Spock.redirect ""
         else do
           formHtml <- protectForm registerFormView v
@@ -398,7 +398,7 @@ adminHook :: ListContains n User xs => GuideAction (HVect xs) (HVect (IsAdmin ':
 adminHook = do
   oldCtx <- getContext
   let user = findFirst oldCtx
-  if user ^. userIsAdmin
+  if userIsAdmin user
     then return (IsAdmin :&: oldCtx)
     else Spock.text "Not authorized."
 
@@ -437,4 +437,4 @@ createAdminUser = do
   dbUpdate DeleteAllUsers
   pass <- toByteString . _adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
-  void $ dbUpdate $ CreateUser (user & userIsAdmin .~ True)
+  void $ dbUpdate $ CreateUser (user & _userIsAdmin .~ True)

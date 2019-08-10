@@ -19,8 +19,8 @@ module Guide.Views.Utils
   selectedIf,
   checkedIf,
   hiddenIf,
-  categoryLink,
-  itemLink,
+  mkCategoryLink,
+  mkItemLink,
 
   -- * HTML components
   button,
@@ -239,17 +239,17 @@ thisNode = do
   return (JS.selectParent (JS.selectUid uid'))
 
 itemNodeId :: Item -> Text
-itemNodeId item = format "item-{}" (item^.uid)
+itemNodeId item = format "item-{}" (itemUid item)
 
 categoryNodeId :: Category -> Text
-categoryNodeId category = format "category-{}" (category^.uid)
+categoryNodeId category = format "category-{}" (categoryUid category)
 
 -- TODO: another absolute link to get rid of [absolute-links]
-categoryLink :: Category -> Url
-categoryLink category = format "/haskell/{}" (categorySlug category)
+mkCategoryLink :: Category -> Url
+mkCategoryLink category = format "/haskell/{}" (categorySlug category)
 
-itemLink :: Category -> Item -> Url
-itemLink category item =
+mkItemLink :: Category -> Item -> Url
+mkItemLink category item =
   format "/haskell/{}#{}" (categorySlug category) (itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.
