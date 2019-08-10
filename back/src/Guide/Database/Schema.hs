@@ -47,8 +47,15 @@ setupDatabase = do
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
   let schemaVersion = fromMaybe (-1) mbSchemaVersion
-  for_ migrations $ \(migrationVersion, migration) ->
-    when (migrationVersion > schemaVersion) $ do
+  let neededMigrations =
+        filter
+          (\(migrationVersion, _) -> migrationVersion > schemaVersion)
+          migrations
+  if null neededMigrations then
+    putStrLn "Schema is up to date."
+  else do
+    putStrLn "Schema is not up to date, running migrations."
+    for_ neededMigrations $ \(migrationVersion, migration) -> do
       format "Migration {}: " migrationVersion
       runSession conn (migration >> setSchemaVersion migrationVersion)
       formatLn "done."
