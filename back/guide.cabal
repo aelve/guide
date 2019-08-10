@@ -57,10 +57,12 @@ library
       Guide.Api.Utils
       Guide.Api.Guider
     Guide.Database
+      Guide.Database.Add
       Guide.Database.Connection
       Guide.Database.Convert
       Guide.Database.Get
       Guide.Database.Schema
+      Guide.Database.Set
       Guide.Database.Types
     Guide.Logger
       Guide.Logger.Types
@@ -134,6 +136,7 @@ library
                      , hashable
                      , haskell-src-meta
                      , hasql
+                     , postgresql-binary == 0.12.1.3
                      , hasql-transaction
                      , http-api-data
                      , http-client
@@ -178,6 +181,7 @@ library
                      , swagger2
                      , template-haskell
                      , text
+                     , th-abstraction
                      , time >= 1.5
                      , transformers
                      , uniplate

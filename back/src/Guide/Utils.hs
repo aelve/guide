@@ -16,6 +16,7 @@
 module Guide.Utils
 (
   -- * Lists
+  Direction (..),
   moveUp,
   moveDown,
   deleteFirst,
@@ -61,6 +62,9 @@ module Guide.Utils
 
   -- * Template Haskell
   dumpSplices,
+  fields,
+  fieldsPrefixed,
+  makeClassWithLenses,
 
   -- * STM
   liftSTM,
@@ -89,6 +93,7 @@ import Web.Spock as Spock
 import Data.SafeCopy
 -- Template Haskell
 import Language.Haskell.TH
+import Language.Haskell.TH.Datatype
 -- needed for parsing urls
 import Network.HTTP.Types (Query, parseQuery)
 
@@ -113,6 +118,10 @@ import qualified Network.URI as URI
 ----------------------------------------------------------------------------
 -- Lists
 ----------------------------------------------------------------------------
+
+-- | Datatype is to point the direction for either items or traits
+data Direction = MoveUp | MoveDown
+  deriving Eq
 
 -- | Move the -1st element that satisfies the predicate- up.
 moveUp :: (a -> Bool) -> [a] -> [a]
@@ -499,6 +508,84 @@ dumpSplices x = do
   let code = lines (pprint ds)
   reportWarning ("\n" ++ unlines (map ("    " ++) code))
   return ds
+
+-- | Put all fields of a record constructor into scope.
+--
+-- @f $(fields 'Foo) = ...@ is equivalent to @f Foo{..}@, but the compiler
+-- will warn on all unused fields. Thus 'fields' brings safety whenever you
+-- want to guarantee that a certain function uses all fields of @Foo@.
+--
+-- Usage examples include @ToJSON@ instances and various encoders in
+-- general:
+--
+-- @
+-- instance ToJSON Foo where
+--   toJSON $(fields 'Foo) = ...
+-- @
+fields :: Name -> PatQ
+fields recordConstructor = do
+  cons <- reifyConstructor recordConstructor
+  case constructorVariant cons of
+    RecordConstructor recordFields ->
+      conP recordConstructor (map (varP . mkName . nameBase) recordFields)
+    _ -> fail $
+      "Expected " ++ show recordConstructor ++ " to be a record constructor"
+
+-- | Like 'fields', but prefixes all fields with the given prefix.
+--
+-- Useful if you need to put fields from more than one record into scope.
+fieldsPrefixed :: String -> Name -> PatQ
+fieldsPrefixed prefix recordConstructor = do
+  cons <- reifyConstructor recordConstructor
+  case constructorVariant cons of
+    RecordConstructor recordFields ->
+      conP recordConstructor (map (varP . mkName . (prefix <>) . nameBase) recordFields)
+    _ -> fail $
+      "Expected " ++ show recordConstructor ++ " to be a record constructor"
+
+-- | Make a class with lenses for a record.
+--
+-- This works almost like 'Control.Lens.makeClassy_', but names the class
+-- and the "main" lens differently. It's convenient when you want to export
+-- all lenses for a type.
+--
+-- For example, assume the following data type:
+--
+-- @
+-- data User = User
+--   { name :: Text
+--   , age :: Int }
+--
+-- makeClassWithLenses ''User
+-- @
+--
+-- This will generate a class called @UserLenses@ containing lenses for all
+-- fields. Conveniently, you will be able to export those lenses by
+-- exporting just @UserLenses (..)@.
+--
+-- For reference, the generated class will look as follows:
+--
+-- @
+-- class UserLenses c where
+--   \_User :: Lens' c User
+--
+--   \_name :: Lens' c Text
+--   \_name = \_User . \_name
+--
+--   \_age :: Lens' c Int
+--   \_age = \_User . \_age
+--
+-- instance UserLenses User where
+--   \_User = id
+--   \_name f (User name age) = (\name' -> User name' age) \<$\> f name
+--   \_age f (User name age) = (\age' -> User name age') \<$\> f age
+-- @
+makeClassWithLenses :: Name -> DecsQ
+makeClassWithLenses = makeLensesWith
+  (classyRules
+     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
+     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
+                                , mkName ('_':nameBase n))))
 
 ----------------------------------------------------------------------------
 -- STM

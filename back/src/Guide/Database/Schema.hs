@@ -12,12 +12,12 @@ where
 import Imports
 
 import Hasql.Session (Session)
-import Text.RawString.QQ
 import Hasql.Statement (Statement (..))
+import Text.RawString.QQ
 
-import qualified Hasql.Session as HS
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
+import qualified Hasql.Session as HS
 
 import Guide.Database.Connection (connect, runSession)
 
@@ -47,8 +47,15 @@ setupDatabase = do
     Nothing -> formatLn "No schema found. Creating tables and running all migrations."
     Just v  -> formatLn "Schema version is {}." v
   let schemaVersion = fromMaybe (-1) mbSchemaVersion
-  for_ migrations $ \(migrationVersion, migration) ->
-    when (migrationVersion > schemaVersion) $ do
+  let neededMigrations =
+        filter
+          (\(migrationVersion, _) -> migrationVersion > schemaVersion)
+          migrations
+  if null neededMigrations then
+    putStrLn "Schema is up to date."
+  else do
+    putStrLn "Schema is not up to date, running migrations."
+    for_ neededMigrations $ \(migrationVersion, migration) -> do
       format "Migration {}: " migrationVersion
       runSession conn (migration >> setSchemaVersion migrationVersion)
       formatLn "done."
@@ -72,7 +79,7 @@ getSchemaVersion = do
       VALUES ('main', null)
       ON CONFLICT DO NOTHING;
     |]
-  let sql = "SELECT (version) FROM schema_version WHERE name = 'main'"
+  let sql = "SELECT version FROM schema_version WHERE name = 'main'"
       encoder = HE.noParams
       decoder = HD.singleRow (HD.column (HD.nullable HD.int4))
   HS.statement () (Statement sql encoder decoder False)
@@ -114,7 +121,6 @@ v0_createTableTraits = HS.sql [r|
     uid text PRIMARY KEY,           -- Unique trait ID
     content text NOT NULL,          -- Trait content as Markdown
     deleted boolean                 -- Whether the trait is deleted
-      DEFAULT false
       NOT NULL,
     type_ trait_type NOT NULL,      -- Trait type (pro or con)
     item_uid text                   -- Item that the trait belongs to
@@ -136,11 +142,15 @@ v0_createTableItems = HS.sql [r|
     ecosystem text NOT NULL,        -- The ecosystem section
     notes text NOT NULL,            -- The notes section
     deleted boolean                 -- Whether the item is deleted
-      DEFAULT false
       NOT NULL,
     category_uid text               -- Category that the item belongs to
       REFERENCES categories (uid)
-      ON DELETE CASCADE
+      ON DELETE CASCADE,
+    pros_order text[]               -- Uids of item's pro traits; this list specifies
+      NOT NULL,                     --   in what order they should be displayed, and
+                                    --   is necessary to allow moving traits up and down
+    cons_order text[]               -- Uids of item's con traits
+      NOT NULL
   );
   |]
 
@@ -152,11 +162,15 @@ v0_createTableCategories = HS.sql [r|
     title text NOT NULL,            -- Category title
     created timestamptz NOT NULL,   -- When the category was created
     group_ text NOT NULL,           -- "Grandcategory"
-    status_ text NOT NULL,          -- Category status ("in progress", etc); the list of
+    status text NOT NULL,           -- Category status ("in progress", etc); the list of
                                     --   possible statuses is defined by backend
     notes text NOT NULL,            -- Category notes as Markdown
     enabled_sections text[]         -- Item sections to show to users; the list of
-      NOT NULL                      --   possible section names is defined by backend
+      NOT NULL,                     --   possible section names is defined by backend
+    items_order text[]              -- Uids of items in the category; this list
+      NOT NULL                      --   specifies in what order they should be
+                                    --   displayed, and is necessary to allow moving
+                                    --   items up and down
   );
   |]
 
