@@ -31,12 +31,11 @@ module Guide.Database.Types
 import Imports
 
 import Named
-import Language.Haskell.TH (nameBase, mkName)
 
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline)
 import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
                          TraitType)
-import Guide.Utils (Uid (..))
+import Guide.Utils (Uid (..), makeClassWithLenses)
 
 
 -- | Custom datatype errors for database
@@ -67,13 +66,8 @@ data CategoryRow = CategoryRow
   , categoryRowItemsOrder      :: [Uid Item]
   } deriving Show
 
--- TODO move to utils
-makeLensesWith
-  (classyRules
-     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
-     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
-                                , mkName ('_':nameBase n))))
-  ''CategoryRow
+-- | Make CategoryRowLenses Class to use lenses with this type.
+makeClassWithLenses ''CategoryRow
 
 -- | Item intermediary type.
 data ItemRow = ItemRow
@@ -91,13 +85,8 @@ data ItemRow = ItemRow
   , itemRowConsOrder   :: [Uid Trait]
   } deriving Show
 
--- TODO move to utils
-makeLensesWith
-  (classyRules
-     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
-     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
-                                , mkName ('_':nameBase n))))
-  ''ItemRow
+-- | Make ItemRowLenses Class to use lenses with this type.
+makeClassWithLenses ''ItemRow
 
 -- | Trait intermediary type.
 data TraitRow = TraitRow
@@ -108,13 +97,8 @@ data TraitRow = TraitRow
   , traitRowItemUid :: Uid Item
   } deriving Show
 
--- TODO move to utils
-makeLensesWith
-  (classyRules
-     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
-     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
-                                , mkName ('_':nameBase n))))
-  ''TraitRow
+-- | Make TraitRowLenses Class to use lenses with this type.
+makeClassWithLenses ''TraitRow
 
 ----------------------------------------------------------------------------
 -- Convertions between types

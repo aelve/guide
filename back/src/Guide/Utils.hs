@@ -64,6 +64,7 @@ module Guide.Utils
   dumpSplices,
   fields,
   fieldsPrefixed,
+  makeClassWithLenses,
 
   -- * STM
   liftSTM,
@@ -541,6 +542,16 @@ fieldsPrefixed prefix recordConstructor = do
       conP recordConstructor (map (varP . mkName . (prefix <>) . nameBase) recordFields)
     _ -> fail $
       "Expected " ++ show recordConstructor ++ " to be a record constructor"
+
+-- | Make Class with lenses for given Name.
+--
+-- It prepare data type to be used with Lenses.
+makeClassWithLenses :: Name -> DecsQ
+makeClassWithLenses = makeLensesWith
+  (classyRules
+     & lensField .~ (\_ _ n -> [TopName (mkName ('_':nameBase n))])
+     & lensClass .~ (\n -> Just ( mkName (nameBase n ++ "Lenses")
+                                , mkName ('_':nameBase n))))
 
 ----------------------------------------------------------------------------
 -- STM
