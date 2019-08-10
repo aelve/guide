@@ -543,9 +543,43 @@ fieldsPrefixed prefix recordConstructor = do
     _ -> fail $
       "Expected " ++ show recordConstructor ++ " to be a record constructor"
 
--- | Make Class with lenses for given Name.
+-- | Make a class with lenses for a record.
 --
--- It prepare data type to be used with Lenses.
+-- This works almost like 'Control.Lens.makeClassy_', but names the class
+-- and the "main" lens differently. It's convenient when you want to export
+-- all lenses for a type.
+--
+-- For example, assume the following data type:
+--
+-- @
+-- data User = User
+--   { name :: Text
+--   , age :: Int }
+--
+-- makeClassWithLenses ''User
+-- @
+--
+-- This will generate a class called @UserLenses@ containing lenses for all
+-- fields. Conveniently, you will be able to export those lenses by
+-- exporting just @UserLenses (..)@.
+--
+-- For reference, the generated class will look as follows:
+--
+-- @
+-- class UserLenses c where
+--   \_User :: Lens' c User
+--
+--   \_name :: Lens' c Text
+--   \_name = \_User . \_name
+--
+--   \_age :: Lens' c Int
+--   \_age = \_User . \_age
+--
+-- instance UserLenses User where
+--   \_User = id
+--   \_name f (User name age) = (\name' -> User name' age) \<$\> f name
+--   \_age f (User name age) = (\age' -> User name age') \<$\> f age
+-- @
 makeClassWithLenses :: Name -> DecsQ
 makeClassWithLenses = makeLensesWith
   (classyRules
