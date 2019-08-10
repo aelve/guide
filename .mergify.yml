@@ -1,0 +1,12 @@
+# Automatically merge approved PRs with passing CI: https://mergify.io/
+
+pull_request_rules:
+  - name: Automatic merge for approved PRs with passing CI
+    conditions:
+      - status-success=continuous-integration/travis-ci/pr
+      - status-success=continuous-integration/travis-ci/push
+      - status-success=DeepScan
+      - "#approved-reviews-by>=1"
+    actions:
+      merge:
+        method: squash
