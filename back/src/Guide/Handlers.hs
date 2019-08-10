@@ -286,7 +286,7 @@ otherMethods = do
 
   -- # Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
-  baseUrl <- (// "haskell") . _baseUrl <$> getConfig
+  baseUrl <- (// "haskell") . baseUrl <$> getConfig
 
   -- Feed for items in a category
   Spock.get (feedRoute <//> categoryVar) $ \catId -> do

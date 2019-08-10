@@ -521,9 +521,9 @@ wrapPage pageTitle' page = doctypehtml_ $ do
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
     link_ [rel_ "icon", href_ "/favicon.ico"]
-    googleToken <- _googleToken <$> lift ask
-    unless (T.null googleToken) $
-      meta_ [name_ "google-site-verification", content_ googleToken]
+    token <- googleToken <$> lift ask
+    unless (T.null token) $
+      meta_ [name_ "google-site-verification", content_ token]
     -- Report all Javascript errors with alerts
     script_ [text|
       window.onerror = function (msg, url, lineNo, columnNo, error) {

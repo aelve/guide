@@ -32,46 +32,46 @@ import qualified Data.ByteString.Lazy as BSL
 data Config = Config {
   -- | URL where the site is deployed. Used for generating feeds (which
   -- require absolute URLs).
-  _baseUrl :: Url,
+  baseUrl :: Url,
 
   -- | Google site verification token. Will be inserted into all pages.
-  _googleToken :: Text,
+  googleToken :: Text,
 
   -- | Password for the admin user.
-  _adminPassword :: Text,
+  adminPassword :: Text,
 
   -- | Link to a place to discuss the site. Will be placed in the header
-  _discussLink :: Maybe Url,
+  discussLink :: Maybe Url,
 
   -- | Link to Matomo to gather analytics about user actions. Format of the
   -- link shoud be like <http://localhost:8081/piwik.php>.
-  _matomoLink :: Maybe Url,
+  matomoLink :: Maybe Url,
 
   -- | Port for serving the main site (old backend and frontend).
-  _portMain :: Int,
+  portMain :: Int,
 
   -- | Port for serving the API.
-  _portApi :: Int,
+  portApi :: Int,
 
   -- | Port for serving EKG stats.
-  _portEkg :: Int,
+  portEkg :: Int,
 
   -- | CORS switch on/off.
-  _cors :: Bool,
+  cors :: Bool,
 
   -- | EKG switch on/off.
-  _ekg :: Bool,
+  ekg :: Bool,
 
   -- | Whether to log to @stderr@.
-  _logToStderr :: Bool,
+  logToStderr :: Bool,
 
   -- | Whether to log to a file. Can be turned on together with
-  -- '_logToStderr'.
-  _logToFile :: Maybe FilePath,
+  -- 'logToStderr'.
+  logToFile :: Maybe FilePath,
 
   -- | A formatting string for log timestamps. For the description of
   -- available formatters, see 'formatTime'.
-  _logTimeFormat :: String
+  logTimeFormat :: String
   }
   deriving (Eq, Show)
 
@@ -81,53 +81,53 @@ $(pure [])
 -- discussion link.
 instance Default Config where
   def = Config {
-    _baseUrl       = "/",
-    _googleToken   = "",
-    _adminPassword = "",
-    _discussLink   = Nothing,
-    _matomoLink    = Nothing,
-    _portMain      = 8080,
-    _portApi       = 4400,
-    _portEkg       = 5050,
-    _cors          = False,
-    _ekg           = False,
-    _logToStderr   = True,
-    _logToFile     = Nothing,
-    _logTimeFormat = "%F %T UTC"
+    baseUrl       = "/",
+    googleToken   = "",
+    adminPassword = "",
+    discussLink   = Nothing,
+    matomoLink    = Nothing,
+    portMain      = 8080,
+    portApi       = 4400,
+    portEkg       = 5050,
+    cors          = False,
+    ekg           = False,
+    logToStderr   = True,
+    logToFile     = Nothing,
+    logTimeFormat = "%F %T UTC"
     }
 
 instance FromJSON Config where
   parseJSON = withObject "config" $ \o -> do
-    _baseUrl       <- o .:? "base-url"        .!= _baseUrl def
-    _googleToken   <- o .:? "google-token"    .!= _googleToken def
-    _adminPassword <- o .:? "admin-password"  .!= _adminPassword def
-    _discussLink   <- o .:? "discuss-link"    .!= _discussLink def
-    _matomoLink    <- o .:? "matomo-link"     .!= _matomoLink def
-    _portMain      <- o .:? "port-main"       .!= _portMain def
-    _portApi       <- o .:? "port-api"        .!= _portApi def
-    _portEkg       <- o .:? "port-ekg"        .!= _portEkg def
-    _cors          <- o .:? "cors"            .!= _cors def
-    _ekg           <- o .:? "ekg"             .!= _ekg def
-    _logToStderr   <- o .:? "log-to-stderr"   .!= _logToStderr def
-    _logToFile     <- o .:? "log-to-file"     .!= _logToFile def
-    _logTimeFormat <- o .:? "log-time-format" .!= _logTimeFormat def
+    baseUrl       <- o .:? "base-url"        .!= baseUrl def
+    googleToken   <- o .:? "google-token"    .!= googleToken def
+    adminPassword <- o .:? "admin-password"  .!= adminPassword def
+    discussLink   <- o .:? "discuss-link"    .!= discussLink def
+    matomoLink    <- o .:? "matomo-link"     .!= matomoLink def
+    portMain      <- o .:? "port-main"       .!= portMain def
+    portApi       <- o .:? "port-api"        .!= portApi def
+    portEkg       <- o .:? "port-ekg"        .!= portEkg def
+    cors          <- o .:? "cors"            .!= cors def
+    ekg           <- o .:? "ekg"             .!= ekg def
+    logToStderr   <- o .:? "log-to-stderr"   .!= logToStderr def
+    logToFile     <- o .:? "log-to-file"     .!= logToFile def
+    logTimeFormat <- o .:? "log-time-format" .!= logTimeFormat def
     return Config{..}
 
 instance ToJSON Config where
   toJSON $(fields 'Config) = object [
-    "base-url"        .= _baseUrl,
-    "google-token"    .= _googleToken,
-    "admin-password"  .= _adminPassword,
-    "discuss-link"    .= _discussLink,
-    "matomo-link"     .= _matomoLink,
-    "port-main"       .= _portMain,
-    "port-api"        .= _portApi,
-    "port-ekg"        .= _portEkg,
-    "cors"            .= _cors,
-    "ekg"             .= _ekg,
-    "log-to-stderr"   .= _logToStderr,
-    "log-to-file"     .= _logToFile,
-    "log-time-format" .= _logTimeFormat
+    "base-url"        .= baseUrl,
+    "google-token"    .= googleToken,
+    "admin-password"  .= adminPassword,
+    "discuss-link"    .= discussLink,
+    "matomo-link"     .= matomoLink,
+    "port-main"       .= portMain,
+    "port-api"        .= portApi,
+    "port-ekg"        .= portEkg,
+    "cors"            .= cors,
+    "ekg"             .= ekg,
+    "log-to-stderr"   .= logToStderr,
+    "log-to-file"     .= logToFile,
+    "log-time-format" .= logTimeFormat
     ]
 
 -- | Read config from @config.json@ (creating a default config if the file

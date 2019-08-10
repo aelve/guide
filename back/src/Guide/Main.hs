@@ -160,7 +160,7 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
   ekgId <- newIORef Nothing
   workFinished <- newEmptyMVar
   let finishWork = do
-        when _ekg $ do
+        when ekg $ do
           -- Killing EKG has to be done last, because of
           -- <https://github.com/tibbe/ekg/issues/62>
           logDebugIO logger "Killing EKG"
@@ -200,15 +200,15 @@ ekgMetrics
   -> IORef (Maybe ThreadId)
   -> IO (Maybe EKG.WaiMetrics)
 ekgMetrics logger Config{..} db ekgId =
-  if _ekg
+  if ekg
     then do
-      ekg <- do
-        logDebugIO logger $ format "EKG is running on port {}" _portEkg
-        EKG.forkServer "localhost" _portEkg
-      writeIORef ekgId (Just (EKG.serverThreadId ekg))
-      waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekg)
-      categoryGauge <- EKG.getGauge "db.categories" ekg
-      itemGauge <- EKG.getGauge "db.items" ekg
+      ekgServer <- do
+        logDebugIO logger $ format "EKG is running on port {}" portEkg
+        EKG.forkServer "localhost" portEkg
+      writeIORef ekgId (Just (EKG.serverThreadId ekgServer))
+      waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekgServer)
+      categoryGauge <- EKG.getGauge "db.categories" ekgServer
+      itemGauge <- EKG.getGauge "db.items" ekgServer
       void $ async $ forever $ do
         globalState <- Acid.query db GetGlobalState
         let allCategories = categories globalState
@@ -242,8 +242,8 @@ runOldServer logger config@Config{..} db mWaiMetrics = do
       spc_maxRequestSize = Just (1024*1024),
       spc_csrfProtection = True,
       spc_sessionCfg = sessionCfg }
-  logDebugIO logger $ format "Spock is running on port {}" _portMain
-  runSpockNoBanner _portMain $ spock spockConfig $ guideApp mWaiMetrics
+  logDebugIO logger $ format "Spock is running on port {}" portMain
+  runSpockNoBanner portMain $ spock spockConfig $ guideApp mWaiMetrics
 
 -- TODO: Fix indentation after rebasing.
 guideApp :: Maybe EKG.WaiMetrics -> GuideApp ()
@@ -435,6 +435,6 @@ installTerminationCatcher thread = void $ do
 createAdminUser :: GuideApp ()
 createAdminUser = do
   dbUpdate DeleteAllUsers
-  pass <- toByteString . _adminPassword <$> getConfig
+  pass <- toByteString . adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & _userIsAdmin .~ True)

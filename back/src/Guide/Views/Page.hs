@@ -128,7 +128,7 @@ headTagDef page = do
   meta_ [name_ "viewport",
           content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
   link_ [rel_ "icon", href_ "/favicon.ico"]
-  googleToken <- _googleToken <$> lift ask
+  googleToken <- googleToken <$> lift ask
   unless (T.null googleToken) $
     meta_ [name_ "google-site-verification", content_ googleToken]
   -- Report all Javascript errors with alerts
