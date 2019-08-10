@@ -508,6 +508,20 @@ dumpSplices x = do
   reportWarning ("\n" ++ unlines (map ("    " ++) code))
   return ds
 
+-- | Put all fields of a record constructor into scope.
+--
+-- @f $(exposeFields 'Foo) = ...@ is equivalent to @f Foo{..}@, but the
+-- compiler will warn on all unused fields. Thus 'exposeFields' brings
+-- safety whenever you want to guarantee that a certain function uses all
+-- fields of @Foo@.
+--
+-- Usage examples include @ToJSON@ instances and various encoders in
+-- general:
+--
+-- @
+-- instance ToJSON Foo where
+--   toJSON $(exposeFields 'Foo) = ...
+-- @
 exposeFields :: Name -> PatQ
 exposeFields recordConstructor = do
   cons <- reifyConstructor recordConstructor
@@ -517,6 +531,9 @@ exposeFields recordConstructor = do
     _ -> fail $
       "Expected " ++ show recordConstructor ++ " to be a record constructor"
 
+-- | Like 'exposeFields', but prefixes all fields with the given prefix.
+--
+-- Useful if you need to put fields from more than one record into scope.
 exposeFieldsPrefixed :: String -> Name -> PatQ
 exposeFieldsPrefixed prefix recordConstructor = do
   cons <- reifyConstructor recordConstructor
