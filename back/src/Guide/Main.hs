@@ -67,9 +67,6 @@ import Guide.Views.Utils (getCSS, getCsrfHeader, getJS, protectForm)
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Network.Wai.Metrics as EKG
-import qualified System.Metrics.Gauge as EKG.Gauge
-import qualified System.Remote.Monitoring as EKG
 import qualified Web.Spock as Spock
 
 
@@ -153,33 +150,18 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
         createCheckpointAndClose' db
         logDebugIO logger "PublicDB imported to GlobalState"
         exitSuccess
-  -- When we run in GHCi and we exit the main thread, the EKG thread (that
-  -- runs the localhost:5050 server which provides statistics) may keep
-  -- running. This makes running this in GHCi annoying, because you have to
-  -- restart GHCi before every run. So, we kill the thread in the finaliser.
-  ekgId <- newIORef Nothing
-  workFinished <- newEmptyMVar
-  let finishWork = do
-        when ekg $ do
-          -- Killing EKG has to be done last, because of
-          -- <https://github.com/tibbe/ekg/issues/62>
-          logDebugIO logger "Killing EKG"
-          mapM_ killThread =<< readIORef ekgId
-        putMVar workFinished ()
   installTerminationCatcher =<< myThreadId
-  workAsync <- async $ withDB finishWork $ \db -> do
+  workAsync <- async $ withDB (pure ()) $ \db -> do
     hSetBuffering stdout NoBuffering
-    -- Run EKG metrics
-    mWaiMetrics <- ekgMetrics logger config db ekgId
     -- Run checkpoints creator, new and old server concurrently.
     mapConcurrently_ id
       [ checkPoint db
       , runNewApi logger config db
-      , runOldServer logger config db mWaiMetrics
+      , runOldServer logger config db
       ]
-  -- Hold processes running and finish when exit or exception.
+  -- Hold processes running and finish on exit or exception.
   forever (threadDelay (1000000 * 60))
-    `finally` (cancel workAsync >> takeMVar workFinished)
+    `finally` cancel workAsync
 
 -- Create a checkpoint every six hours. Note: if nothing was changed, the
 -- checkpoint won't be created, which saves us some space.
@@ -192,36 +174,9 @@ checkPoint db = forever $ do
 runNewApi :: Logger -> Config -> AcidState GlobalState -> IO ()
 runNewApi logger = runApiServer (pushLogger "api" logger)
 
--- Run EKG metrics.
-ekgMetrics
-  :: Logger
-  -> Config
-  -> DB
-  -> IORef (Maybe ThreadId)
-  -> IO (Maybe EKG.WaiMetrics)
-ekgMetrics logger Config{..} db ekgId =
-  if ekg
-    then do
-      ekgServer <- do
-        logDebugIO logger $ format "EKG is running on port {}" portEkg
-        EKG.forkServer "localhost" portEkg
-      writeIORef ekgId (Just (EKG.serverThreadId ekgServer))
-      waiMetrics <- EKG.registerWaiMetrics (EKG.serverMetricStore ekgServer)
-      categoryGauge <- EKG.getGauge "db.categories" ekgServer
-      itemGauge <- EKG.getGauge "db.items" ekgServer
-      void $ async $ forever $ do
-        globalState <- Acid.query db GetGlobalState
-        let allCategories = categories globalState
-        let allItems = allCategories ^.. each . _categoryItems . each
-        EKG.Gauge.set categoryGauge (fromIntegral (length allCategories))
-        EKG.Gauge.set itemGauge (fromIntegral (length allItems))
-        threadDelay (1000000 * 60)
-      pure (Just waiMetrics)
-    else pure Nothing
-
 -- Run the Spock (old server).
-runOldServer :: Logger -> Config -> DB -> Maybe EKG.WaiMetrics -> IO ()
-runOldServer logger config@Config{..} db mWaiMetrics = do
+runOldServer :: Logger -> Config -> DB -> IO ()
+runOldServer logger config@Config{..} db = do
   let serverState = ServerState {
         _config = config,
         _db     = db }
@@ -243,16 +198,15 @@ runOldServer logger config@Config{..} db mWaiMetrics = do
       spc_csrfProtection = True,
       spc_sessionCfg = sessionCfg }
   logDebugIO logger $ format "Spock is running on port {}" portMain
-  runSpockNoBanner portMain $ spock spockConfig $ guideApp mWaiMetrics
+  runSpockNoBanner portMain $ spock spockConfig guideApp
 
 -- TODO: Fix indentation after rebasing.
-guideApp :: Maybe EKG.WaiMetrics -> GuideApp ()
-guideApp waiMetrics = do
+guideApp :: GuideApp ()
+guideApp = do
     createAdminUser  -- TODO: perhaps it needs to be inside of “prehook
                      -- initHook”? (I don't actually know what “prehook
                      -- initHook” does, feel free to edit.)
     prehook initHook $ do
-      mapM_ (middleware . EKG.metrics) waiMetrics
       middleware (staticPolicy (addBase "static"))
       -- Javascript
       Spock.get "/js.js" $ do

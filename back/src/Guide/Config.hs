@@ -53,14 +53,8 @@ data Config = Config {
   -- | Port for serving the API.
   portApi :: Int,
 
-  -- | Port for serving EKG stats.
-  portEkg :: Int,
-
   -- | CORS switch on/off.
   cors :: Bool,
-
-  -- | EKG switch on/off.
-  ekg :: Bool,
 
   -- | Whether to log to @stderr@.
   logToStderr :: Bool,
@@ -88,9 +82,7 @@ instance Default Config where
     matomoLink    = Nothing,
     portMain      = 8080,
     portApi       = 4400,
-    portEkg       = 5050,
     cors          = False,
-    ekg           = False,
     logToStderr   = True,
     logToFile     = Nothing,
     logTimeFormat = "%F %T UTC"
@@ -105,9 +97,7 @@ instance FromJSON Config where
     matomoLink    <- o .:? "matomo-link"     .!= matomoLink def
     portMain      <- o .:? "port-main"       .!= portMain def
     portApi       <- o .:? "port-api"        .!= portApi def
-    portEkg       <- o .:? "port-ekg"        .!= portEkg def
     cors          <- o .:? "cors"            .!= cors def
-    ekg           <- o .:? "ekg"             .!= ekg def
     logToStderr   <- o .:? "log-to-stderr"   .!= logToStderr def
     logToFile     <- o .:? "log-to-file"     .!= logToFile def
     logTimeFormat <- o .:? "log-time-format" .!= logTimeFormat def
@@ -122,9 +112,7 @@ instance ToJSON Config where
     "matomo-link"     .= matomoLink,
     "port-main"       .= portMain,
     "port-api"        .= portApi,
-    "port-ekg"        .= portEkg,
     "cors"            .= cors,
-    "ekg"             .= ekg,
     "log-to-stderr"   .= logToStderr,
     "log-to-file"     .= logToFile,
     "log-time-format" .= logTimeFormat

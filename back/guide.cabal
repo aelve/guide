@@ -123,8 +123,6 @@ library
                      , di-monad
                      , digestive-functors
                      , directory >= 1.2
-                     , ekg
-                     , ekg-core
                      , exceptions
                      , extra
                      , feed == 1.0.*
@@ -189,7 +187,6 @@ library
                      , vector
                      , wai
                      , wai-cors
-                     , wai-middleware-metrics
                      , wai-middleware-static
                      , warp
                      , xml-conduit
