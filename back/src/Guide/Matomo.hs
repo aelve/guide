@@ -60,7 +60,7 @@ postMatomo Matomo{..} = push "postMatomo" $ do
     action_name = Just (BS.intercalate "/" ["Haskell", "Edit", showConstructor mTag])
     showConstructor :: Edit -> ByteString
     showConstructor = toByteString
-      . drop (length ("Edit'" :: String))
+      . drop (length ("Edit" :: String))
       . takeWhile (not . isSpace)
       . show
     piwik :: Url -> String

@@ -53,7 +53,7 @@ import Data.SafeCopy
 import Guide.Utils
 
 import qualified CMark as MD
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -312,17 +312,17 @@ instance Show MarkdownTree where
   show = show . markdownTreeSource
 deriving instance Show Heading
 
-instance A.ToJSON MarkdownInline where
-  toJSON md = A.object [
-    "text" A..= markdownInlineSource md,
-    "html" A..= toText (markdownInlineHtml md) ]
-instance A.ToJSON MarkdownBlock where
-  toJSON md = A.object [
-    "text" A..= markdownBlockSource md,
-    "html" A..= toText (markdownBlockHtml md) ]
-instance A.ToJSON MarkdownTree where
-  toJSON md = A.object [
-    "text" A..= markdownTreeSource md ]
+instance Aeson.ToJSON MarkdownInline where
+  toJSON md = Aeson.object [
+    "text" Aeson..= markdownInlineSource md,
+    "html" Aeson..= toText (markdownInlineHtml md) ]
+instance Aeson.ToJSON MarkdownBlock where
+  toJSON md = Aeson.object [
+    "text" Aeson..= markdownBlockSource md,
+    "html" Aeson..= toText (markdownBlockHtml md) ]
+instance Aeson.ToJSON MarkdownTree where
+  toJSON md = Aeson.object [
+    "text" Aeson..= markdownTreeSource md ]
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml

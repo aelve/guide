@@ -9,8 +9,7 @@ module ApiSpec (tests) where
 import Imports hiding ((.=))
 
 import Data.Aeson
-import qualified Data.ByteString.Char8 as S8
-import qualified Data.Yaml             as Yaml
+import qualified Data.Yaml as Yaml
 import Network.HTTP.Simple
 import Control.Monad.Catch
 import Network.HTTP.Types.Status
@@ -299,7 +298,7 @@ runRequest request = do
   pure (getResponseStatus response, getResponseBody response)
 
 newtype Path   = Path String
-newtype Method = Method S8.ByteString
+newtype Method = Method ByteString
 
 makeRequest :: MonadThrow m => Path -> Method -> m Request
 makeRequest (Path path) (Method method) = do

@@ -41,7 +41,7 @@ import Guide.Markdown
 import Guide.Types.Hue
 import Guide.Utils
 
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 import qualified Data.Set as S
 import qualified Data.Text as T
 
@@ -73,9 +73,9 @@ makeClassWithLenses ''Trait
 changelog ''Trait (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''Trait_v3
 
-instance A.ToJSON Trait where
-  toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
+instance Aeson.ToJSON Trait where
+  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
+    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
 
 -- | ADT for trait type. Traits can be pros (positive traits) and cons
 -- (negative traits).
@@ -100,21 +100,21 @@ hackageName f (Library x) = Library <$> f x
 hackageName f (Tool x)    = Tool <$> f x
 hackageName _ Other       = pure Other
 
-instance A.ToJSON ItemKind where
-  toJSON (Library x) = A.object [
-    "tag"      A..= ("Library" :: Text),
-    "contents" A..= x ]
-  toJSON (Tool x) = A.object [
-    "tag"      A..= ("Tool" :: Text),
-    "contents" A..= x ]
-  toJSON Other = A.object [
-    "tag"      A..= ("Other" :: Text) ]
+instance Aeson.ToJSON ItemKind where
+  toJSON (Library x) = Aeson.object [
+    "tag"      Aeson..= ("Library" :: Text),
+    "contents" Aeson..= x ]
+  toJSON (Tool x) = Aeson.object [
+    "tag"      Aeson..= ("Tool" :: Text),
+    "contents" Aeson..= x ]
+  toJSON Other = Aeson.object [
+    "tag"      Aeson..= ("Other" :: Text) ]
 
-instance A.FromJSON ItemKind where
-  parseJSON = A.withObject "ItemKind" $ \o ->
-      o A..: "tag" >>= \case
-        ("Library" :: Text) -> Library <$> o A..: "contents"
-        "Tool"    -> Tool <$> o A..: "contents"
+instance Aeson.FromJSON ItemKind where
+  parseJSON = Aeson.withObject "ItemKind" $ \o ->
+      o Aeson..: "tag" >>= \case
+        ("Library" :: Text) -> Library <$> o Aeson..: "contents"
+        "Tool"    -> Tool <$> o Aeson..: "contents"
         "Other"   -> pure Other
         tag       -> fail ("unknown tag " ++ show tag)
 
@@ -142,11 +142,11 @@ data ItemSection
 
 deriveSafeCopySimple 0 'base ''ItemSection
 
-instance A.ToJSON ItemSection where
-  toJSON = A.genericToJSON A.defaultOptions
+instance Aeson.ToJSON ItemSection where
+  toJSON = Aeson.genericToJSON Aeson.defaultOptions
 
-instance A.FromJSON ItemSection where
-  parseJSON = A.genericParseJSON A.defaultOptions
+instance Aeson.FromJSON ItemSection where
+  parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
 
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
@@ -191,9 +191,9 @@ deriveSafeCopySorted 11 'extension ''Item_v11
 changelog ''Item (Past 11, Past 10) []
 deriveSafeCopySorted 10 'base ''Item_v10
 
-instance A.ToJSON Item where
-  toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "item") }
+instance Aeson.ToJSON Item where
+  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
+    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "item") }
 
 ----------------------------------------------------------------------------
 -- Category
@@ -208,11 +208,11 @@ data CategoryStatus
 
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
-instance A.ToJSON CategoryStatus where
-  toJSON = A.genericToJSON A.defaultOptions
+instance Aeson.ToJSON CategoryStatus where
+  toJSON = Aeson.genericToJSON Aeson.defaultOptions
 
-instance A.FromJSON CategoryStatus where
-  parseJSON = A.genericParseJSON A.defaultOptions
+instance Aeson.FromJSON CategoryStatus where
+  parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
 
 data CategoryStatus_v1
   = CategoryStub_v1
@@ -275,9 +275,9 @@ deriveSafeCopySorted 9 'extension ''Category_v9
 changelog ''Category (Past 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8
 
-instance A.ToJSON Category where
-  toJSON = A.genericToJSON A.defaultOptions {
-    A.fieldLabelModifier = over _head toLower . drop (T.length "category") }
+instance Aeson.ToJSON Category where
+  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
+    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "category") }
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be

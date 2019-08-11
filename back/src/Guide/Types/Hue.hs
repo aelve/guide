@@ -21,7 +21,7 @@ import Imports
 
 import Data.SafeCopy hiding (kind)
 
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 
 
 data Hue = NoHue | Hue Int
@@ -29,9 +29,9 @@ data Hue = NoHue | Hue Int
 
 deriveSafeCopySimple 1 'extension ''Hue
 
-instance A.ToJSON Hue where
-  toJSON NoHue   = A.toJSON (0 :: Int)
-  toJSON (Hue n) = A.toJSON n
+instance Aeson.ToJSON Hue where
+  toJSON NoHue   = Aeson.toJSON (0 :: Int)
+  toJSON (Hue n) = Aeson.toJSON n
 
 data Hue_v0 = NoHue_v0 | Hue_v0 Int
 

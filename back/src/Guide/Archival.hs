@@ -21,7 +21,7 @@ import Network.HTTP.Client
 import Guide.Utils
 
 -- JSON
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 
 -- | Get status of a link on archive.org.
 --
@@ -35,8 +35,8 @@ getArchivalStatus manager lnk =
     fromJsonWith responseParser . responseBody <$!> httpLbs req manager
   where
     waybackUrl = "http://archive.org/wayback/available"
-    responseParser = A.withObject "archive.org response" $
-        (A..: "archived_snapshots") >=> (A..: "closest")
+    responseParser = Aeson.withObject "archive.org response" $
+        (Aeson..: "archived_snapshots") >=> (Aeson..: "closest")
 
 data ArchivalStatus = ArchivalStatus {
   asAvailable :: Bool,     -- ^ Whether the link is available
@@ -52,11 +52,11 @@ data ArchivalStatus = ArchivalStatus {
 -- , "available": true
 -- , "url": "http://web.archive.org/web/20170819042701/http://example.com"
 -- , "timestamp": "20170819042701" }
-instance A.FromJSON ArchivalStatus where
-  parseJSON = A.withObject "ArchivalStatus" $ \o -> do
-    asAvailable <- o A..: "available"
-    asUrl       <- o A..: "url"
-    asStatus    <- o A..: "status"
-    asTimestamp <- o A..: "timestamp" >>=
+instance Aeson.FromJSON ArchivalStatus where
+  parseJSON = Aeson.withObject "ArchivalStatus" $ \o -> do
+    asAvailable <- o Aeson..: "available"
+    asUrl       <- o Aeson..: "url"
+    asStatus    <- o Aeson..: "status"
+    asTimestamp <- o Aeson..: "timestamp" >>=
                    parseTimeM True defaultTimeLocale "%Y%m%d%H%M%S"
     pure ArchivalStatus{..}

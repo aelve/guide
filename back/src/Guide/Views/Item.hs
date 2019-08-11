@@ -37,7 +37,7 @@ import Guide.Types.Core
 import Guide.Utils
 import Guide.Views.Utils
 
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 import qualified Data.Text.IO as T
 
 import qualified Guide.JS as JS
@@ -97,8 +97,8 @@ renderItemForFeed category item = do
 -- | Render item's title.
 renderItemTitle :: (MonadIO m) => Item -> HtmlT m ()
 renderItemTitle item =
-  mustache "item-title" $ A.object [
-    "item" A..= item ]
+  mustache "item-title" $ Aeson.object [
+    "item" Aeson..= item ]
 
 -- TODO: warn when a library isn't on Hackage but is supposed to be
 -- TODO: give a link to oldest available docs when the new docs aren't there
@@ -106,16 +106,16 @@ renderItemTitle item =
 -- | Render item info.
 renderItemInfo :: (MonadIO m) => Category -> Item -> HtmlT m ()
 renderItemInfo cat item =
-  mustache "item-info" $ A.object [
-    "category" A..= cat,
-    "item" A..= item,
-    "link_to_item" A..= mkItemLink cat item,
-    "hackage" A..= itemHackage item ]
+  mustache "item-info" $ Aeson.object [
+    "category" Aeson..= cat,
+    "item" Aeson..= item,
+    "link_to_item" Aeson..= mkItemLink cat item,
+    "hackage" Aeson..= itemHackage item ]
 
 -- | Render item description.
 renderItemDescription :: MonadIO m => Item -> HtmlT m ()
 renderItemDescription item = mustache "item-description" $
-                                A.object ["item" A..= item ]
+                                Aeson.object ["item" Aeson..= item ]
 
 -- | Render the “ecosystem” section.
 renderItemEcosystem :: MonadIO m => Item -> HtmlT m ()
@@ -216,10 +216,10 @@ renderItemTraits item = div_ [class_ "item-traits"] $ do
 -- | Render a single trait.
 renderTrait :: MonadIO m => Uid Item -> Trait -> HtmlT m ()
 renderTrait itemUid trait =
-  mustache "trait" $ A.object [
-    "item"  A..= A.object [
-        "uid" A..= itemUid ],
-    "trait" A..= trait ]
+  mustache "trait" $ Aeson.object [
+    "item"  Aeson..= Aeson.object [
+        "uid" Aeson..= itemUid ],
+    "trait" Aeson..= trait ]
 
 -- | Render the “notes” section.
 renderItemNotes :: MonadIO m => Category -> Item -> HtmlT m ()

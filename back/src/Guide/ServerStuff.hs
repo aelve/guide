@@ -99,85 +99,85 @@ addEdit ed = do
 -- been deleted; this should change.
 undoEdit :: (MonadIO m, HasSpock m, SpockState m ~ ServerState)
          => Edit -> m (Either String ())
-undoEdit (Edit'AddCategory catId _ _) = do
+undoEdit (EditAddCategory catId _ _) = do
   void <$> dbUpdate (DeleteCategory catId)
-undoEdit (Edit'AddItem _catId itemId _) = do
+undoEdit (EditAddItem _catId itemId _) = do
   void <$> dbUpdate (DeleteItem itemId)
-undoEdit (Edit'AddPro itemId traitId _) = do
+undoEdit (EditAddPro itemId traitId _) = do
   void <$> dbUpdate (DeleteTrait itemId traitId)
-undoEdit (Edit'AddCon itemId traitId _) = do
+undoEdit (EditAddCon itemId traitId _) = do
   void <$> dbUpdate (DeleteTrait itemId traitId)
-undoEdit (Edit'SetCategoryTitle catId old new) = do
+undoEdit (EditSetCategoryTitle catId old new) = do
   now <- categoryTitle <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "title has been changed further")
     else Right () <$ dbUpdate (SetCategoryTitle catId old)
-undoEdit (Edit'SetCategoryGroup catId old new) = do
+undoEdit (EditSetCategoryGroup catId old new) = do
   now <- categoryGroup <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "group has been changed further")
     else Right () <$ dbUpdate (SetCategoryGroup catId old)
-undoEdit (Edit'SetCategoryStatus catId old new) = do
+undoEdit (EditSetCategoryStatus catId old new) = do
   now <- categoryStatus <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "status has been changed further")
     else Right () <$ dbUpdate (SetCategoryStatus catId old)
-undoEdit (Edit'ChangeCategoryEnabledSections catId toEnable toDisable) = do
+undoEdit (EditChangeCategoryEnabledSections catId toEnable toDisable) = do
   enabledNow <- categoryEnabledSections <$> dbQuery (GetCategory catId)
   if any (`elem` enabledNow) toDisable || any (`notElem` enabledNow) toEnable
     then return (Left "enabled-sections has been changed further")
     else Right () <$ dbUpdate (ChangeCategoryEnabledSections catId toDisable toEnable)
-undoEdit (Edit'SetCategoryNotes catId old new) = do
+undoEdit (EditSetCategoryNotes catId old new) = do
   now <- markdownBlockSource . categoryNotes <$> dbQuery (GetCategory catId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetCategoryNotes catId old)
-undoEdit (Edit'SetItemName itemId old new) = do
+undoEdit (EditSetItemName itemId old new) = do
   now <- itemName <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "name has been changed further")
     else Right () <$ dbUpdate (SetItemName itemId old)
-undoEdit (Edit'SetItemLink itemId old new) = do
+undoEdit (EditSetItemLink itemId old new) = do
   now <- itemLink <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "link has been changed further")
     else Right () <$ dbUpdate (SetItemLink itemId old)
-undoEdit (Edit'SetItemGroup _ _ _) = do
+undoEdit EditSetItemGroup{} = do
   return (Left "groups are not supported anymore")
-undoEdit (Edit'SetItemHackage itemId old new) = do
+undoEdit (EditSetItemHackage itemId old new) = do
   now <- itemHackage <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "Hackage name has been changed further")
     else Right () <$ dbUpdate (SetItemHackage itemId old)
-undoEdit (Edit'SetItemSummary itemId old new) = do
+undoEdit (EditSetItemSummary itemId old new) = do
   now <- markdownBlockSource . itemSummary <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "description has been changed further")
     else Right () <$ dbUpdate (SetItemSummary itemId old)
-undoEdit (Edit'SetItemNotes itemId old new) = do
+undoEdit (EditSetItemNotes itemId old new) = do
   now <- markdownTreeSource . itemNotes <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "notes have been changed further")
     else Right () <$ dbUpdate (SetItemNotes itemId old)
-undoEdit (Edit'SetItemEcosystem itemId old new) = do
+undoEdit (EditSetItemEcosystem itemId old new) = do
   now <- markdownBlockSource . itemEcosystem <$> dbQuery (GetItem itemId)
   if now /= new
     then return (Left "ecosystem has been changed further")
     else Right () <$ dbUpdate (SetItemEcosystem itemId old)
-undoEdit (Edit'SetTraitContent itemId traitId old new) = do
+undoEdit (EditSetTraitContent itemId traitId old new) = do
   now <- markdownInlineSource . traitContent <$> dbQuery (GetTrait itemId traitId)
   if now /= new
     then return (Left "trait has been changed further")
     else Right () <$ dbUpdate (SetTraitContent itemId traitId old)
-undoEdit (Edit'DeleteCategory catId pos) = do
+undoEdit (EditDeleteCategory catId pos) = do
   dbUpdate (RestoreCategory catId pos)
-undoEdit (Edit'DeleteItem itemId pos) = do
+undoEdit (EditDeleteItem itemId pos) = do
   dbUpdate (RestoreItem itemId pos)
-undoEdit (Edit'DeleteTrait itemId traitId pos) = do
+undoEdit (EditDeleteTrait itemId traitId pos) = do
   dbUpdate (RestoreTrait itemId traitId pos)
-undoEdit (Edit'MoveItem itemId direction) = do
+undoEdit (EditMoveItem itemId direction) = do
   Right () <$ dbUpdate (MoveItem itemId (not direction))
-undoEdit (Edit'MoveTrait itemId traitId direction) = do
+undoEdit (EditMoveTrait itemId traitId direction) = do
   Right () <$ dbUpdate (MoveTrait itemId traitId (not direction))
 
 ----------------------------------------------------------------------------
