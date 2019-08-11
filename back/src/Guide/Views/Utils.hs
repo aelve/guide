@@ -89,8 +89,8 @@ import Guide.Utils
 
 import Guide.Views.Utils.Input
 
-import qualified Data.Aeson as A
-import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy.Char8 as BSLC
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map as M
 import qualified Data.Semigroup as Semigroup
@@ -280,16 +280,16 @@ TODO: warn about how one shouldn't write @foo("{{bar}}")@ in templates,
 because a newline in 'bar' directly after the quote will mess things
 up. Write @foo({{{%js bar}}})@ instead.
 -}
-mustache :: MonadIO m => PName -> A.Value -> HtmlT m ()
+mustache :: MonadIO m => PName -> Aeson.Value -> HtmlT m ()
 mustache f v = do
   let functions = M.fromList [
-        ("selectIf", \[x] -> if x == A.Bool True
-            then return (A.String "selected")
-            else return A.Null),
-        ("js", \[x] -> return $ A.String (toJson x)),
+        ("selectIf", \[x] -> if x == Aeson.Bool True
+            then return (Aeson.String "selected")
+            else return Aeson.Null),
+        ("js", \[x] -> return $ Aeson.String (toJson x)),
         ("trace", \xs -> do
-            mapM_ (BS.putStrLn . toJsonPretty) xs
-            return A.Null) ]
+            mapM_ (BSLC.putStrLn . toJsonPretty) xs
+            return Aeson.Null) ]
   widgets <- readWidgets
   let templates = [(tname, t) | (HTML_ tname, t) <- widgets]
   when (null templates) $

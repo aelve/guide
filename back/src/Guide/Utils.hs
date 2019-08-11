@@ -97,11 +97,11 @@ import Language.Haskell.TH.Datatype
 -- needed for parsing urls
 import Network.HTTP.Types (Query, parseQuery)
 
-import qualified Data.Aeson as A
-import qualified Data.Aeson.Encode.Pretty as A
-import qualified Data.Aeson.Internal as A
-import qualified Data.Aeson.Text as A
-import qualified Data.Aeson.Types as A
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Encode.Pretty as Aeson
+import qualified Data.Aeson.Internal as Aeson
+import qualified Data.Aeson.Text as Aeson
+import qualified Data.Aeson.Types as Aeson
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.XML.Types as XML
@@ -320,11 +320,11 @@ newtype Uid a = Uid {uidToText :: Text}
 instance Show (Uid a) where
   show (Uid a) = show a
 
-instance A.ToJSON (Uid a) where
-  toJSON = A.toJSON . uidToText
+instance Aeson.ToJSON (Uid a) where
+  toJSON = Aeson.toJSON . uidToText
 
-instance A.FromJSON (Uid a) where
-  parseJSON a = Uid <$> A.parseJSON a
+instance Aeson.FromJSON (Uid a) where
+  parseJSON a = Uid <$> Aeson.parseJSON a
 
 -- This instance is written manually because otherwise it produces a warning:
 --     • Redundant constraint: SafeCopy a
@@ -391,49 +391,49 @@ uid_ = id_ . uidToText
 
 class AsJson s where
   -- | Parse JSON using the default JSON instance.
-  fromJson :: A.FromJSON a => s -> Either String a
-  fromJson = fromJsonWith A.parseJSON
+  fromJson :: Aeson.FromJSON a => s -> Either String a
+  fromJson = fromJsonWith Aeson.parseJSON
 
   -- | Parse JSON using a custom parser.
-  fromJsonWith :: (A.Value -> A.Parser a) -> s -> Either String a
+  fromJsonWith :: (Aeson.Value -> Aeson.Parser a) -> s -> Either String a
   fromJsonWith p s = do
     v <- fromJson s
-    case A.iparse p v of
-      A.IError path err -> Left (A.formatError path err)
-      A.ISuccess res    -> Right res
+    case Aeson.iparse p v of
+      Aeson.IError path err -> Left (Aeson.formatError path err)
+      Aeson.ISuccess res    -> Right res
 
   -- | Convert a value to JSON.
-  toJson :: A.ToJSON a => a -> s
+  toJson :: Aeson.ToJSON a => a -> s
 
   -- | Convert a value to pretty-printed JSON.
-  toJsonPretty :: A.ToJSON a => a -> s
+  toJsonPretty :: Aeson.ToJSON a => a -> s
 
 instance AsJson ByteString where
-  fromJson = A.eitherDecodeStrict
-  toJson = toByteString . A.encode
-  toJsonPretty = toByteString . A.encodePretty
+  fromJson = Aeson.eitherDecodeStrict
+  toJson = toByteString . Aeson.encode
+  toJsonPretty = toByteString . Aeson.encodePretty
 
 instance AsJson LByteString where
-  fromJson = A.eitherDecode
-  toJson = A.encode
-  toJsonPretty = A.encodePretty
+  fromJson = Aeson.eitherDecode
+  toJson = Aeson.encode
+  toJsonPretty = Aeson.encodePretty
 
 instance AsJson Text where
-  fromJson = A.eitherDecode . toLByteString
-  toJson = toText . A.encodeToLazyText
-  toJsonPretty = toText . A.encodePrettyToTextBuilder
+  fromJson = Aeson.eitherDecode . toLByteString
+  toJson = toText . Aeson.encodeToLazyText
+  toJsonPretty = toText . Aeson.encodePrettyToTextBuilder
 
 instance AsJson LText where
-  fromJson = A.eitherDecode . toLByteString
-  toJson = A.encodeToLazyText
-  toJsonPretty = toLText . A.encodePrettyToTextBuilder
+  fromJson = Aeson.eitherDecode . toLByteString
+  toJson = Aeson.encodeToLazyText
+  toJsonPretty = toLText . Aeson.encodePrettyToTextBuilder
 
-instance AsJson A.Value where
-  fromJsonWith p v = case A.iparse p v of
-    A.IError path err -> Left (A.formatError path err)
-    A.ISuccess res    -> Right res
-  toJson = A.toJSON
-  toJsonPretty = A.toJSON
+instance AsJson Aeson.Value where
+  fromJsonWith p v = case Aeson.iparse p v of
+    Aeson.IError path err -> Left (Aeson.formatError path err)
+    Aeson.ISuccess res    -> Right res
+  toJson = Aeson.toJSON
+  toJsonPretty = Aeson.toJSON
 
 ----------------------------------------------------------------------------
 -- Lucid

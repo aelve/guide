@@ -57,7 +57,7 @@ import Guide.Utils
 import Guide.Views.Utils
 
 import qualified CMark as MD
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
@@ -582,8 +582,8 @@ wrapPage pageTitle' page = doctypehtml_ $ do
 -- | Render the search box.
 renderSearch :: (MonadIO m) => Maybe Text -> HtmlT m ()
 renderSearch mbSearchQuery =
-  mustache "search" $ A.object [
-    "query" A..= mbSearchQuery ]
+  mustache "search" $ Aeson.object [
+    "query" Aeson..= mbSearchQuery ]
 
 -- | Render list of categories on the main page (the one with category groups
 -- and categories in it).

@@ -1,5 +1,32 @@
+# Help Hlint parse our code
 - arguments:
     - -XTypeApplications
+
+# Force qualified imports to be imported consistently.
+- modules:
+    # Common modules from the Haskell ecosystem. The chosen abbreviations
+    # are the most common or almost the most common, as per Hackage stats.
+    # For consistency, Data.ByteString and Data.ByteString.Lazy are
+    # abbreviated as BS and BSL respectively, even though B and BL are
+    # somewhat more common.
+    - { name: Data.ByteString, as: BS }
+    - { name: Data.ByteString.Lazy, as: BSL }
+    - { name: Data.ByteString.Char8, as: BSC }
+    - { name: Data.ByteString.Lazy.Char8, as: BSLC }
+    - { name: Data.Text, as: T }
+    - { name: Data.Text.Lazy, as: TL }
+    - { name: Data.HashMap.Strict, as: HM }
+    - { name: Data.HashMap.Lazy, as: HML }
+    # Less common modules deserve longer names.
+    - { name: Data.Aeson, as: Aeson }
+    - { name: Data.Yaml, as: Yaml }
+    - { name: Data.List.NonEmpty, as: NonEmpty }
+
+# Forbid '-XCPP', which is poorly supported by code formatting tools. If a
+# need to use '-XCPP' arises in the future, it should be contained within a
+# single module named 'Compat'.
+- extensions:
+    - { name: CPP, within: [] }
 
 # Hints we don't like
 - ignore: {name: 'Redundant do'}

@@ -46,6 +46,10 @@ import Fmt as X
 -- Call stack
 import GHC.Stack as X (HasCallStack)
 
+-- Don't let HLint complain about Data.ByteString being imported as
+-- something other than "BS" (and so on for other modules)
+{-# ANN module "HLint: ignore Avoid restricted qualification" #-}
+
 -- | Short type for lazy ByteString
 type LByteString = BSL.ByteString
 -- | Short type for lazy Text

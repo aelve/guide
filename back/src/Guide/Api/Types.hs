@@ -72,7 +72,7 @@ import Guide.Search
 import Guide.Types.Core as G
 import Guide.Utils (Uid (..), Url, fields)
 
-import qualified Data.Aeson as A
+import qualified Data.Aeson as Aeson
 import Data.Swagger as S
 
 ----------------------------------------------------------------------------
@@ -320,13 +320,13 @@ instance ToSchema CTraitType where
           other -> error ("CTraitType schema: unknown value " <> show other)
       }
 
-instance A.ToJSON CTraitType where
+instance Aeson.ToJSON CTraitType where
   toJSON = \case
     CPro -> "Pro"
     CCon -> "Con"
 
-instance A.FromJSON CTraitType where
-  parseJSON = A.withText "CTraitType" $ \case
+instance Aeson.FromJSON CTraitType where
+  parseJSON = Aeson.withText "CTraitType" $ \case
     "Pro" -> pure CPro
     "Con" -> pure CCon
     other -> fail ("unknown trait type " <> show other)
@@ -347,13 +347,13 @@ instance ToSchema CDirection where
         other -> error ("CDirection schema: unknown value " <> show other)
     }
 
-instance A.ToJSON CDirection where
+instance Aeson.ToJSON CDirection where
   toJSON = \case
     DirectionUp -> "up"
     DirectionDown -> "down"
 
-instance A.FromJSON CDirection where
-  parseJSON = A.withText "CDirection" $ \case
+instance Aeson.FromJSON CDirection where
+  parseJSON = Aeson.withText "CDirection" $ \case
     "up" -> pure DirectionUp
     "down" -> pure DirectionDown
     other -> fail ("unknown direction " <> show other)
@@ -369,11 +369,11 @@ data CCreateItem = CCreateItem
   , cciLink    :: Maybe Url
   } deriving (Show, Generic)
 
-instance A.ToJSON CCreateItem where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CCreateItem where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CCreateItem where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CCreateItem where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CCreateItem where
   declareNamedSchema p = do
@@ -395,11 +395,11 @@ data CCreateTrait = CCreateTrait
   , cctContent :: Text
   } deriving (Show, Generic)
 
-instance A.ToJSON CCreateTrait where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CCreateTrait where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CCreateTrait where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CCreateTrait where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CCreateTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -413,11 +413,11 @@ data CMove = CMove
   { cmDirection :: CDirection
   } deriving (Show, Eq, Generic)
 
-instance A.ToJSON CMove where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CMove where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CMove where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CMove where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CMove where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -437,11 +437,11 @@ data CCategoryInfo = CCategoryInfo
   }
   deriving (Show, Generic)
 
-instance A.ToJSON CCategoryInfo where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CCategoryInfo where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CCategoryInfo where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CCategoryInfo where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryInfo where
   declareNamedSchema p = do
@@ -487,11 +487,11 @@ data CCategoryFull = CCategoryFull
   }
   deriving (Show, Generic)
 
-instance A.ToJSON CCategoryFull where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CCategoryFull where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CCategoryFull where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CCategoryFull where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryFull where
   declareNamedSchema p = do
@@ -533,11 +533,11 @@ data CCategoryInfoEdit = CCategoryInfoEdit
     }
     deriving (Show, Generic)
 
-instance A.ToJSON CCategoryInfoEdit where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CCategoryInfoEdit where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CCategoryInfoEdit where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CCategoryInfoEdit where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CCategoryInfoEdit where
   declareNamedSchema p = do
@@ -567,8 +567,8 @@ data CItemInfo = CItemInfo
   , ciiLink    :: Maybe Url
   } deriving (Show, Generic)
 
-instance A.ToJSON CItemInfo where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CItemInfo where
+  toJSON = Aeson.genericToJSON jsonOptions
 
 instance ToSchema CItemInfo where
   declareNamedSchema p = do
@@ -612,18 +612,18 @@ data CItemInfoEdit = CItemInfoEdit
   } deriving (Show, Generic)
 
 -- Manual instances because we want special behavior for Maybe
-instance A.ToJSON CItemInfoEdit where
-  toJSON ciie = A.object $ catMaybes
-    [ ("name"    A..=) <$> ciieName ciie
-    , ("hackage" A..=) <$> ciieHackage ciie
-    , ("link"    A..=) <$> ciieLink ciie
+instance Aeson.ToJSON CItemInfoEdit where
+  toJSON ciie = Aeson.object $ catMaybes
+    [ ("name"    Aeson..=) <$> ciieName ciie
+    , ("hackage" Aeson..=) <$> ciieHackage ciie
+    , ("link"    Aeson..=) <$> ciieLink ciie
     ]
 
-instance A.FromJSON CItemInfoEdit where
-  parseJSON = A.withObject "CItemInfoEdit" $ \o -> do
-    ciieName'    <- o A..:! "name"
-    ciieHackage' <- o A..:! "hackage"
-    ciieLink'    <- o A..:! "link"
+instance Aeson.FromJSON CItemInfoEdit where
+  parseJSON = Aeson.withObject "CItemInfoEdit" $ \o -> do
+    ciieName'    <- o Aeson..:! "name"
+    ciieHackage' <- o Aeson..:! "hackage"
+    ciieLink'    <- o Aeson..:! "link"
     return CItemInfoEdit
       { ciieName    = ciieName'
       , ciieHackage = ciieHackage'
@@ -659,11 +659,11 @@ data CItemFull = CItemFull
   , cifToc         :: [CTocHeading]
   } deriving (Show, Generic)
 
-instance A.ToJSON CItemFull where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CItemFull where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CItemFull where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CItemFull where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CItemFull where
   declareNamedSchema p = do
@@ -709,11 +709,11 @@ data CTrait = CTrait
   , ctContent :: CMarkdown
   } deriving (Show, Generic)
 
-instance A.ToJSON CTrait where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CTrait where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CTrait where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CTrait where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CTrait where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -735,11 +735,11 @@ data CMarkdown = CMarkdown
   , cmdHtml :: Text
   } deriving (Show, Generic)
 
-instance A.ToJSON CMarkdown where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CMarkdown where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CMarkdown where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CMarkdown where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CMarkdown where
   declareNamedSchema p = do
@@ -792,11 +792,11 @@ data CTocHeading = CTocHeading
   , cthSubheadings :: [CTocHeading]
   } deriving (Show, Generic)
 
-instance A.ToJSON CTocHeading where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CTocHeading where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CTocHeading where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CTocHeading where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CTocHeading where
   declareNamedSchema p = do
@@ -823,11 +823,11 @@ data CTextEdit = CTextEdit
   , cteModified :: Text
   } deriving (Show, Generic)
 
-instance A.ToJSON CTextEdit where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CTextEdit where
+  toJSON = Aeson.genericToJSON jsonOptions
 
-instance A.FromJSON CTextEdit where
-  parseJSON = A.genericParseJSON jsonOptions
+instance Aeson.FromJSON CTextEdit where
+  parseJSON = Aeson.genericParseJSON jsonOptions
 
 instance ToSchema CTextEdit where
   declareNamedSchema p = do
@@ -850,8 +850,8 @@ data CMergeConflict = CMergeConflict
   , cmcMerged         :: Text
   } deriving (Eq, Show, Generic)
 
-instance A.ToJSON CMergeConflict where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CMergeConflict where
+  toJSON = Aeson.genericToJSON jsonOptions
 
 instance ToSchema CMergeConflict where
   declareNamedSchema p = do
@@ -877,15 +877,15 @@ data CSearchResult
   | CSRItemResult CSRItem
   deriving (Show, Generic)
 
-instance A.ToJSON CSearchResult where
+instance Aeson.ToJSON CSearchResult where
   toJSON = \case
-    CSRCategoryResult cat -> A.object
-      [ "tag" A..= ("Category" :: Text)
-      , "contents" A..= cat
+    CSRCategoryResult cat -> Aeson.object
+      [ "tag" Aeson..= ("Category" :: Text)
+      , "contents" Aeson..= cat
       ]
-    CSRItemResult item -> A.object
-      [ "tag" A..= ("Item" :: Text)
-      , "contents" A..= item
+    CSRItemResult item -> Aeson.object
+      [ "tag" Aeson..= ("Item" :: Text)
+      , "contents" Aeson..= item
       ]
 
 instance ToSchema CSearchResult where
@@ -910,8 +910,8 @@ data CSRCategory = CSRCategory
   , csrcDescription :: CMarkdown
   } deriving (Show, Generic)
 
-instance A.ToJSON CSRCategory where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CSRCategory where
+  toJSON = Aeson.genericToJSON jsonOptions
 
 instance ToSchema CSRCategory where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
@@ -928,8 +928,8 @@ data CSRItem = CSRItem
   , csriEcosystem   :: Maybe CMarkdown
   } deriving (Show, Generic)
 
-instance A.ToJSON CSRItem where
-  toJSON = A.genericToJSON jsonOptions
+instance Aeson.ToJSON CSRItem where
+  toJSON = Aeson.genericToJSON jsonOptions
 
 instance ToSchema CSRItem where
   declareNamedSchema = genericDeclareNamedSchema schemaOptions
