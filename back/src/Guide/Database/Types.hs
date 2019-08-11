@@ -32,7 +32,7 @@ import Imports
 
 import Named
 
-import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline)
+import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline, markdownBlockSource, markdownTreeSource, markdownInlineSource)
 import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
                          TraitType)
 import Guide.Utils (Uid (..), makeClassWithLenses, fields)
@@ -142,7 +142,7 @@ categoryToRowCategory $(fields 'Category) = CategoryRow
   , categoryRowCreated = categoryCreated
   , categoryRowGroup = categoryGroup
   , categoryRowStatus = categoryStatus
-  , categoryRowNotes = toText $ show categoryNotes -- TODO fix!
+  , categoryRowNotes = markdownBlockSource categoryNotes
   , categoryRowEnabledSections = categoryEnabledSections
   , categoryRowItemsOrder = map itemUid categoryItems
   }
@@ -193,9 +193,9 @@ itemToRowItem catId (arg #deleted -> deleted) $(fields 'Item) = ItemRow
   , itemRowCreated = itemCreated
   , itemRowLink = itemLink
   , itemRowHackage = itemHackage
-  , itemRowSummary = toText $ show itemSummary -- TODO fix
-  , itemRowEcosystem = toText $ show itemEcosystem -- TODO fix
-  , itemRowNotes = toText $ show itemNotes -- TODO fix
+  , itemRowSummary = markdownBlockSource itemSummary
+  , itemRowEcosystem = markdownBlockSource itemEcosystem
+  , itemRowNotes = markdownTreeSource itemNotes
   , itemRowDeleted = deleted
   , itemRowCategoryUid = catId
   , itemRowProsOrder = map traitUid itemPros
@@ -222,7 +222,7 @@ traitToTraitRow
 traitToTraitRow itemId (arg #deleted -> deleted) traitType $(fields 'Trait) =
   TraitRow
     { traitRowUid = traitUid
-    , traitRowContent = toText $ show traitContent  -- TODO fix
+    , traitRowContent = markdownInlineSource traitContent
     , traitRowDeleted = deleted
     , traitRowType = traitType
     , traitRowItemUid = itemId
