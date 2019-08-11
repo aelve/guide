@@ -212,7 +212,7 @@ renderAdmin globalState = do
     button "Create checkpoint" [uid_ buttonUid] $
       JS.createCheckpoint [JS.selectUid buttonUid]
     div_ [id_ "edits"] $
-      renderEdits globalState (map (,Nothing) (globalState ^. pendingEdits))
+      renderEdits globalState (map (,Nothing) (pendingEdits globalState))
 
 -- | Group edits by IP and render them.
 renderEdits
@@ -267,44 +267,45 @@ renderEdit globalState edit = do
       quote a = "“" *> a <* "”"
   -- We're searching for everything (items/categories) both in normal lists
   -- and in lists of deleted things. Just in case.
-  let allCategories = globalState^.categories ++
-                      globalState^.categoriesDeleted
-  let findCategory catId = fromMaybe err (find (hasUid catId) allCategories)
+  let allCategories = categories globalState ++
+                      categoriesDeleted globalState
+  let findCategory catId = fromMaybe err (find ((== catId) . categoryUid) allCategories)
         where
           err = error ("renderEdit: couldn't find category with uid = " ++
                        toString (uidToText catId))
   let findItem itemId = (category, item)
         where
-          getItems = view (items <> itemsDeleted)
-          ourCategory = any (hasUid itemId) . getItems
+          getItems = view (_categoryItems <> _categoryItemsDeleted)
+          ourCategory = any ((== itemId) . itemUid) . getItems
           err = error ("renderEdit: couldn't find item with uid = " ++
                        toString (uidToText itemId))
           category = fromMaybe err (find ourCategory allCategories)
-          item = fromJust (find (hasUid itemId) (getItems category))
+          item = fromJust (find ((== itemId) . itemUid) (getItems category))
   let findTrait itemId traitId = (category, item, trait)
         where
           (category, item) = findItem itemId
-          getTraits = view (cons <> consDeleted <> pros <> prosDeleted)
+          getTraits = view (_itemCons <> _itemConsDeleted <>
+                            _itemPros <> _itemProsDeleted)
           err = error ("renderEdit: couldn't find trait with uid = " ++
                        toString (uidToText traitId))
-          trait = fromMaybe err (find (hasUid traitId) (getTraits item))
+          trait = fromMaybe err (find ((== traitId) . traitUid) (getTraits item))
 
   let printCategory catId = do
         let category = findCategory catId
-        quote $ a_ [href_ (categoryLink category)] $
-          toHtml (category ^. title)
+        quote $ a_ [href_ (mkCategoryLink category)] $
+          toHtml (categoryTitle category)
   let printItem itemId = do
         let (category, item) = findItem itemId
-        quote $ a_ [href_ (itemLink category item)] $
-          toHtml (item ^. name)
+        quote $ a_ [href_ (mkItemLink category item)] $
+          toHtml (itemName item)
   let printCategoryWithItems catId = do
         let category = findCategory catId
-        quote $ toHtml (category ^. title)
-        let catItems = category ^. items
+        quote $ toHtml (categoryTitle category)
+        let catItems = categoryItems category
         toHtml $ " with " ++ show (length catItems) ++ " items:"
         ul_ $
           for_ catItems $ \item ->
-            li_ $ toHtml (item ^. name)
+            li_ $ toHtml (itemName item)
 
   case edit of
     -- Add
@@ -385,7 +386,7 @@ renderEdit globalState edit = do
     Edit'SetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ (if T.null oldContent then "added" else "changed") >>
            " trait of item " >> printItem itemId >>
-           " from category " >> printCategory (findItem itemId ^. _1.uid)
+           " from category " >> printCategory (findItem itemId ^. _1 . _categoryUid)
       renderDiff oldContent newContent
 
     -- Delete
@@ -393,12 +394,12 @@ renderEdit globalState edit = do
       "deleted category " >> printCategoryWithItems catId
     Edit'DeleteItem itemId _pos -> p_ $ do
       let (category, item) = findItem itemId
-      "deleted item " >> quote (toHtml (item^.name))
-      " from category " >> quote (toHtml (category^.title))
+      "deleted item " >> quote (toHtml (itemName item))
+      " from category " >> quote (toHtml (categoryTitle category))
     Edit'DeleteTrait itemId traitId _pos -> do
       let (_, item, trait) = findTrait itemId traitId
-      p_ $ "deleted trait from item " >> quote (toHtml (item^.name))
-      pre_ $ code_ $ toHtml $ trait^.content
+      p_ $ "deleted trait from item " >> quote (toHtml (itemName item))
+      pre_ $ code_ $ toHtml $ traitContent trait
 
     -- Other
     Edit'MoveItem itemId direction -> p_ $ do
@@ -406,9 +407,9 @@ renderEdit globalState edit = do
       if direction then " up" else " down"
     Edit'MoveTrait itemId traitId direction -> do
       let (_, item, trait) = findTrait itemId traitId
-      p_ $ "moved trait of item " >> quote (toHtml (item^.name)) >>
+      p_ $ "moved trait of item " >> quote (toHtml (itemName item)) >>
            if direction then " up" else " down"
-      pre_ $ code_ $ toHtml $ trait^.content
+      pre_ $ code_ $ toHtml $ traitContent trait
 
 renderDiff :: Monad m => Text -> Text -> HtmlT m ()
 renderDiff old new =
@@ -473,7 +474,7 @@ renderHaskellRoot globalState mbSearchQuery =
       autocomplete_ "off",
       onEnter $ JS.addCategoryAndRedirect [inputValue] ]
     case mbSearchQuery of
-      Nothing     -> renderCategoryList (globalState^.categories)
+      Nothing     -> renderCategoryList (categories globalState)
       Just query' -> renderSearchResults (search query' globalState)
     -- TODO: maybe add a button like “give me random category that is
     -- unfinished”
@@ -483,7 +484,7 @@ renderCategoryPage
   :: (MonadIO m, MonadReader Config m)
   => Category -> HtmlT m ()
 renderCategoryPage category = do
-  wrapPage (category^.title <> " – Haskell – Aelve Guide") $ do
+  wrapPage (categoryTitle category <> " – Haskell – Aelve Guide") $ do
     onPageLoad $ JS.expandHash ()
     haskellHeader
     renderNoScriptWarning
@@ -520,9 +521,9 @@ wrapPage pageTitle' page = doctypehtml_ $ do
     meta_ [name_ "viewport",
            content_ "width=device-width, initial-scale=1.0, user-scalable=yes"]
     link_ [rel_ "icon", href_ "/favicon.ico"]
-    googleToken <- _googleToken <$> lift ask
-    unless (T.null googleToken) $
-      meta_ [name_ "google-site-verification", content_ googleToken]
+    token <- googleToken <$> lift ask
+    unless (T.null token) $
+      meta_ [name_ "google-site-verification", content_ token]
     -- Report all Javascript errors with alerts
     script_ [text|
       window.onerror = function (msg, url, lineNo, columnNo, error) {
@@ -590,35 +591,35 @@ renderSearch mbSearchQuery =
 renderCategoryList :: forall m. MonadIO m => [Category] -> HtmlT m ()
 renderCategoryList allCats =
   div_ [id_ "categories"] $
-    for_ (groupWith (view group_) allCats) $ \catsInGroup ->
+    for_ (groupWith categoryGroup allCats) $ \catsInGroup ->
       div_ [class_ "category-group"] $ do
         -- Grandcategory name
-        h2_ $ toHtml (catsInGroup^?!_head.group_)
+        h2_ $ toHtml (categoryGroup (head catsInGroup))
         -- Finished categories
-        do let cats = filter ((== CategoryFinished) . view status) catsInGroup
+        do let cats = filter ((== CategoryFinished) . categoryStatus) catsInGroup
            unless (null cats) $
              div_ [class_ "categories-finished"] $ do
-               mapM_ mkCategoryLink cats
+               mapM_ mkCategoryLinkHtml cats
         -- In-progress categories, separated with commas
-        do let cats = filter ((== CategoryWIP) . view status) catsInGroup
+        do let cats = filter ((== CategoryWIP) . categoryStatus) catsInGroup
            unless (null cats) $
              div_ [class_ "categories-wip"] $ do
                h3_ "In progress"
                p_ $ sequence_ $ intersperse ", " $
-                 map mkCategoryLink cats
+                 map mkCategoryLinkHtml cats
         -- Stub categories, separated with commas
-        do let cats = filter ((== CategoryStub) . view status) catsInGroup
+        do let cats = filter ((== CategoryStub) . categoryStatus) catsInGroup
            unless (null cats) $
              div_ [class_ "categories-stub"] $ do
                h3_ "To be written"
                p_ $ sequence_ $ intersperse ", " $
-                 map mkCategoryLink cats
+                 map mkCategoryLinkHtml cats
   where
     -- TODO: this link shouldn't be absolute [absolute-links]
-    mkCategoryLink :: Category -> HtmlT m ()
-    mkCategoryLink category =
-      a_ [class_ "category-link", href_ (categoryLink category)] $
-        toHtml (category^.title)
+    mkCategoryLinkHtml :: Category -> HtmlT m ()
+    mkCategoryLinkHtml category =
+      a_ [class_ "category-link", href_ (mkCategoryLink category)] $
+        toHtml (categoryTitle category)
 
 -- | Render a <div> with search results.
 renderSearchResults :: Monad m => [SearchResult] -> HtmlT m ()
@@ -632,27 +633,29 @@ renderSearchResult r = do
   div_ [class_ "search-result"] $
     case r of
       SRCategory cat -> do
-        a_ [class_ "category-link", href_ (categoryLink cat)] $
-          toHtml (cat^.title)
+        a_ [class_ "category-link", href_ (mkCategoryLink cat)] $
+          toHtml (categoryTitle cat)
         div_ [class_ "category-description notes-like"] $
-          toHtml (extractPreface $ toMarkdownTree "" $ cat^.notes.mdSource)
+          toHtml $ extractPreface $
+            toMarkdownTree "" $
+            markdownBlockSource (categoryNotes cat)
       SRItem cat item -> do
-        a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
-          toHtml (cat^.title)
+        a_ [class_ "category-link in-item-sr", href_ (mkCategoryLink cat)] $
+          toHtml (categoryTitle cat)
         span_ [class_ "breadcrumb"] "»"
-        a_ [class_ "item-link", href_ (itemLink cat item)] $
-          toHtml (item^.name)
+        a_ [class_ "item-link", href_ (mkItemLink cat item)] $
+          toHtml (itemName item)
         div_ [class_ "description notes-like"] $
-          toHtml (item^.summary)
+          toHtml (itemSummary item)
       SRItemEcosystem cat item -> do
-        a_ [class_ "category-link in-item-sr", href_ (categoryLink cat)] $
-          toHtml (cat^.title)
+        a_ [class_ "category-link in-item-sr", href_ (mkCategoryLink cat)] $
+          toHtml (categoryTitle cat)
         span_ [class_ "breadcrumb"] "»"
-        a_ [class_ "item-link", href_ (itemLink cat item)] $
-          toHtml (item^.name)
+        a_ [class_ "item-link", href_ (mkItemLink cat item)] $
+          toHtml (itemName item)
         span_ [class_ "item-link-addition"] "'s ecosystem"
         div_ [class_ "ecosystem notes-like"] $
-          toHtml (item^.ecosystem)
+          toHtml (itemEcosystem item)
 
 {- Note [enabled sections]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -820,24 +823,24 @@ renderArchivalStatus = \case
 -- | Find all links in content, along with a human-readable description of
 -- where each link is located.
 findLinks :: GlobalState -> [(Url, Text)]
-findLinks = concatMap findLinksCategory . view categories
+findLinks = concatMap findLinksCategory . view _categories
 
 -- | Find all links in a single category.
 findLinksCategory :: Category -> [(Url, Text)]
 findLinksCategory cat =
-  [(url, cat^.title <> " (category notes)")
-      | url <- findLinksMD (cat^.notes)] ++
-  [(url, cat^.title <> " / " <> item^.name)
-      | item <- cat^.items
+  [(url, categoryTitle cat <> " (category notes)")
+      | url <- findLinksMD (categoryNotes cat)] ++
+  [(url, categoryTitle cat <> " / " <> itemName item)
+      | item <- categoryItems cat
       , url  <- findLinksItem item]
 
 -- | Find all links in a single item.
 findLinksItem :: Item -> [Url]
-findLinksItem item = findLinksMD item' ++ maybeToList (item^.link)
+findLinksItem item = findLinksMD item' ++ maybeToList (itemLink item)
   where
     -- we don't want to find any links in deleted traits
-    item' = item & prosDeleted .~ []
-                 & consDeleted .~ []
+    item' = item & _itemProsDeleted .~ []
+                 & _itemConsDeleted .~ []
 
 -- | Find all Markdown links in /any/ structure, using generics.
 findLinksMD :: Data a => a -> [Url]

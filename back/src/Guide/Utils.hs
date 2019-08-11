@@ -515,6 +515,15 @@ dumpSplices x = do
 -- will warn on all unused fields. Thus 'fields' brings safety whenever you
 -- want to guarantee that a certain function uses all fields of @Foo@.
 --
+-- To explicitly ignore a field, match it against @_@:
+--
+-- @
+-- f $(fields 'Foo) = ...
+--   where
+--     -- Ignored fields
+--     _ = (fooUselessField1, fooUselessField2)
+-- @
+--
 -- Usage examples include @ToJSON@ instances and various encoders in
 -- general:
 --

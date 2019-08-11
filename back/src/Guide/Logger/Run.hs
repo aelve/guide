@@ -41,11 +41,11 @@ withLogger :: Config -> (Logger -> IO ()) -> IO ()
 withLogger Config{..} act = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
   let logLvl = fromMaybe Debug (readMaybe =<< logLvlEnv)
-  mbWithFile _logToFile AppendMode $ \logFileHandle -> do
+  mbWithFile logToFile AppendMode $ \logFileHandle -> do
     let logHandler logLine@(Di.Core.Log _ lvl _ _) =
           when (lvl >= logLvl) $ do
-            let formattedLogLine = showLogLine _logTimeFormat logLine
-            when _logToStderr $ sayErr formattedLogLine
+            let formattedLogLine = showLogLine logTimeFormat logLine
+            when logToStderr $ sayErr formattedLogLine
             whenJust logFileHandle $ \h -> hSay h formattedLogLine
     Di.Core.new logHandler $ \logger ->
       act logger `catch` \(e :: SomeException) ->

@@ -41,7 +41,7 @@ data Matomo = Matomo
 postMatomo :: Matomo -> Guider ()
 postMatomo Matomo{..} = push "postMatomo" $ do
     Context Config{..} _ _ <- ask
-    whenJust _matomoLink $ \matomo -> liftIO $
+    whenJust matomoLink $ \matomo -> liftIO $
       void $ async $ do
         manager <- getGlobalManager
         req <- setQueryString

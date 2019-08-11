@@ -19,8 +19,8 @@ module Guide.Views.Utils
   selectedIf,
   checkedIf,
   hiddenIf,
-  categoryLink,
-  itemLink,
+  mkCategoryLink,
+  mkItemLink,
 
   -- * HTML components
   button,
@@ -195,7 +195,7 @@ markdownEditor
   -> JS             -- ^ “Cancel” handler
   -> Text           -- ^ Instruction (e.g. “press Ctrl+Enter to save”)
   -> HtmlT m ()
-markdownEditor rows (view mdSource -> src) submit cancel instr = do
+markdownEditor rows (markdownBlockSource -> src) submit cancel instr = do
   editorUid <- randomLongUid
   term "a-editor" [uid_ editorUid,
                    vBind "init-content" src,
@@ -216,7 +216,7 @@ smallMarkdownEditor
   -> Text           -- ^ Instruction (e.g. “press Enter to add”)
   -> Maybe Text     -- ^ Placeholder
   -> HtmlT m ()
-smallMarkdownEditor rows (view mdSource -> src) submit mbCancel instr mbPlaceholder = do
+smallMarkdownEditor rows (markdownInlineSource -> src) submit mbCancel instr mbPlaceholder = do
   editorUid <- randomLongUid
   term "a-editor-mini" ([uid_ editorUid,
                          vBind "init-content" src,
@@ -239,17 +239,17 @@ thisNode = do
   return (JS.selectParent (JS.selectUid uid'))
 
 itemNodeId :: Item -> Text
-itemNodeId item = format "item-{}" (item^.uid)
+itemNodeId item = format "item-{}" (itemUid item)
 
 categoryNodeId :: Category -> Text
-categoryNodeId category = format "category-{}" (category^.uid)
+categoryNodeId category = format "category-{}" (categoryUid category)
 
 -- TODO: another absolute link to get rid of [absolute-links]
-categoryLink :: Category -> Url
-categoryLink category = format "/haskell/{}" (categorySlug category)
+mkCategoryLink :: Category -> Url
+mkCategoryLink category = format "/haskell/{}" (categorySlug category)
 
-itemLink :: Category -> Item -> Url
-itemLink category item =
+mkItemLink :: Category -> Item -> Url
+mkItemLink category item =
   format "/haskell/{}#{}" (categorySlug category) (itemNodeId item)
 
 -- See Note [show-hide]; wheh changing these, also look at 'JS.switchSection'.

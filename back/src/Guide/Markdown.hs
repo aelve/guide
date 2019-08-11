@@ -13,17 +13,12 @@ module Guide.Markdown
 (
   -- * Types
   MarkdownInline(..),
+  MarkdownInlineLenses(..),
   MarkdownBlock(..),
+  MarkdownBlockLenses(..),
   MarkdownTree(..),
+  MarkdownTreeLenses(..),
   Heading(..),
-
-  -- * Lenses
-  mdHtml,
-  mdSource,
-  mdMarkdown,
-  mdIdPrefix,
-  mdTree,
-  mdTOC,
 
   -- * Converting text to Markdown
   toMarkdownInline,
@@ -32,7 +27,6 @@ module Guide.Markdown
 
   -- * Misc
   renderMD,
-  markdownNull,
   extractPreface,
 )
 where
@@ -66,33 +60,33 @@ import qualified Data.Text as T
 
 
 data MarkdownInline = MarkdownInline {
-  markdownInlineMdSource   :: Text,
-  markdownInlineMdHtml     :: ByteString,
-  markdownInlineMdMarkdown :: ![MD.Node] }
+  markdownInlineSource   :: Text,
+  markdownInlineHtml     :: ByteString,
+  markdownInlineMarkdown :: ![MD.Node] }
   deriving (Generic, Data, Eq)
 
 data MarkdownBlock = MarkdownBlock {
-  markdownBlockMdSource   :: Text,
-  markdownBlockMdHtml     :: ByteString,
-  markdownBlockMdMarkdown :: ![MD.Node] }
+  markdownBlockSource   :: Text,
+  markdownBlockHtml     :: ByteString,
+  markdownBlockMarkdown :: ![MD.Node] }
   deriving (Generic, Data)
 
 data MarkdownTree = MarkdownTree {
-  markdownTreeMdSource   :: Text,
-  markdownTreeMdTree     :: !(Document Text ByteString),
-  markdownTreeMdIdPrefix :: Text,
-  markdownTreeMdTOC      :: Forest Heading }
+  markdownTreeSource    :: Text,
+  markdownTreeStructure :: !(Document Text ByteString),
+  markdownTreeIdPrefix  :: Text,
+  markdownTreeTOC       :: Forest Heading }
   deriving (Generic, Data)
 
 -- | Table-of-contents heading
 data Heading = Heading
-    { headingMd   :: MarkdownInline
+    { headingMarkdown :: MarkdownInline
     , headingSlug :: Text
     } deriving (Generic, Data, Eq)
 
-makeFields ''MarkdownInline
-makeFields ''MarkdownBlock
-makeFields ''MarkdownTree
+makeClassWithLenses ''MarkdownInline
+makeClassWithLenses ''MarkdownBlock
+makeClassWithLenses ''MarkdownTree
 
 parseMD :: Text -> [MD.Node]
 parseMD s =
@@ -149,16 +143,17 @@ stringify = T.concat . map go
 
 -- | Extract everything before the first heading.
 --
--- Note that if you render 'mdSource' of the produced Markdown block, it won't
--- necessarily parse into 'mdHtml' from the same block. It's because rendered
--- Markdown might depend on links that are defined further in the tree.
+-- Note that if you render 'markdownBlockSource' of the produced Markdown
+-- block, it won't necessarily parse into 'markdownBlockHtml' from the same
+-- block. It's because rendered Markdown might depend on links that are
+-- defined further in the tree.
 extractPreface :: MarkdownTree -> MarkdownBlock
-extractPreface = mkBlock . preface . view mdTree
+extractPreface = mkBlock . preface . markdownTreeStructure
   where
     mkBlock x = MarkdownBlock {
-      markdownBlockMdSource   = getSource x,
-      markdownBlockMdHtml     = renderMD (stripSource x),
-      markdownBlockMdMarkdown = stripSource x }
+      markdownBlockSource   = getSource x,
+      markdownBlockHtml     = renderMD (stripSource x),
+      markdownBlockMarkdown = stripSource x }
 
 -- | Flatten Markdown by concatenating all block elements.
 extractInlines :: [MD.Node] -> [MD.Node]
@@ -241,28 +236,28 @@ parseLink = either (Left . show) Right . parse p ""
 
 toMarkdownInline :: Text -> MarkdownInline
 toMarkdownInline s = MarkdownInline {
-  markdownInlineMdSource   = s,
-  markdownInlineMdHtml     = html,
-  markdownInlineMdMarkdown = inlines }
+  markdownInlineSource   = s,
+  markdownInlineHtml     = html,
+  markdownInlineMarkdown = inlines }
   where
     inlines = extractInlines (parseMD s)
     html = renderMD inlines
 
 toMarkdownBlock :: Text -> MarkdownBlock
 toMarkdownBlock s = MarkdownBlock {
-  markdownBlockMdSource   = s,
-  markdownBlockMdHtml     = html,
-  markdownBlockMdMarkdown = doc }
+  markdownBlockSource   = s,
+  markdownBlockHtml     = html,
+  markdownBlockMarkdown = doc }
   where
     doc = parseMD s
     html = renderMD doc
 
 toMarkdownTree :: Text -> Text -> MarkdownTree
 toMarkdownTree idPrefix s = MarkdownTree {
-  markdownTreeMdSource   = s,
-  markdownTreeMdIdPrefix = idPrefix,
-  markdownTreeMdTree     = tree,
-  markdownTreeMdTOC      = toc }
+  markdownTreeSource    = s,
+  markdownTreeIdPrefix  = idPrefix,
+  markdownTreeStructure = tree,
+  markdownTreeTOC       = toc }
   where
     blocks :: [MD.Node]
     blocks = parseMD s
@@ -281,9 +276,9 @@ toMarkdownTree idPrefix s = MarkdownTree {
 
     nodesToMdInline :: WithSource [MD.Node] -> MarkdownInline
     nodesToMdInline (WithSource src nodes) = MarkdownInline
-        { markdownInlineMdSource   = src
-        , markdownInlineMdHtml     = html
-        , markdownInlineMdMarkdown = inlines
+        { markdownInlineSource   = src
+        , markdownInlineHtml     = html
+        , markdownInlineMarkdown = inlines
         }
       where
         inlines = extractInlines nodes
@@ -310,34 +305,34 @@ slugifyDocument slugify doc = doc {
       return sec{headingAnn = slug}
 
 instance Show MarkdownInline where
-  show = show . view mdSource
+  show = show . markdownInlineSource
 instance Show MarkdownBlock where
-  show = show . view mdSource
+  show = show . markdownBlockSource
 instance Show MarkdownTree where
-  show = show . view mdSource
+  show = show . markdownTreeSource
 deriving instance Show Heading
 
 instance A.ToJSON MarkdownInline where
   toJSON md = A.object [
-    "text" A..= (md^.mdSource),
-    "html" A..= toText (md^.mdHtml) ]
+    "text" A..= markdownInlineSource md,
+    "html" A..= toText (markdownInlineHtml md) ]
 instance A.ToJSON MarkdownBlock where
   toJSON md = A.object [
-    "text" A..= (md^.mdSource),
-    "html" A..= toText (md^.mdHtml) ]
+    "text" A..= markdownBlockSource md,
+    "html" A..= toText (markdownBlockHtml md) ]
 instance A.ToJSON MarkdownTree where
   toJSON md = A.object [
-    "text" A..= (md^.mdSource) ]
+    "text" A..= markdownTreeSource md ]
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml
-  toHtml    = toHtmlRaw . view mdHtml
+  toHtml    = toHtmlRaw . markdownInlineHtml
 instance ToHtml MarkdownBlock where
   toHtmlRaw = toHtml
-  toHtml    = toHtmlRaw . view mdHtml
+  toHtml    = toHtmlRaw . markdownBlockHtml
 instance ToHtml MarkdownTree where
   toHtmlRaw = toHtml
-  toHtml    = toHtmlRaw . renderDoc . view mdTree
+  toHtml    = toHtmlRaw . renderDoc . markdownTreeStructure
     where
       renderDoc Document{..} = BS.concat $
         prefaceAnn :
@@ -356,22 +351,18 @@ instance ToHtml MarkdownTree where
 instance SafeCopy MarkdownInline where
   version = 0
   kind = base
-  putCopy = contain . safePut . view mdSource
+  putCopy = contain . safePut . markdownInlineSource
   getCopy = contain $ toMarkdownInline <$> safeGet
 instance SafeCopy MarkdownBlock where
   version = 0
   kind = base
-  putCopy = contain . safePut . view mdSource
+  putCopy = contain . safePut . markdownBlockSource
   getCopy = contain $ toMarkdownBlock <$> safeGet
 instance SafeCopy MarkdownTree where
   version = 0
   kind = base
   putCopy md = contain $ do
-    safePut (md ^. mdIdPrefix)
-    safePut (md ^. mdSource)
+    safePut (markdownTreeIdPrefix md)
+    safePut (markdownTreeSource md)
   getCopy = contain $
     toMarkdownTree <$> safeGet <*> safeGet
-
--- | Is a piece of Markdown empty?
-markdownNull :: HasMdSource a Text => a -> Bool
-markdownNull = T.null . view mdSource

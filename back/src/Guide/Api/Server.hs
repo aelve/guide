@@ -15,7 +15,7 @@ import Imports
 
 import Data.Swagger.Lens hiding (format)
 import Network.Wai (Middleware, Request)
-import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, corsOrigins,
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
 import Servant.API.Generic
@@ -32,6 +32,7 @@ import Guide.State
 
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Data.Acid as Acid
+import qualified Network.Wai.Middleware.Cors as Cors
 
 -- | The type that 'runApiServer' serves.
 type FullApi =
@@ -41,19 +42,19 @@ type FullApi =
 -- | Serve the API on port 4400.
 runApiServer :: Logger -> Config -> Acid.AcidState GlobalState -> IO ()
 runApiServer logger Config{..} db = do
-  logDebugIO logger $ format "API is running on port {}" _portApi
+  logDebugIO logger $ format "API is running on port {}" portApi
   let guideSettings = Warp.defaultSettings
         & Warp.setOnException (logException logger)
-        & Warp.setPort _portApi
+        & Warp.setPort portApi
   Warp.runSettings guideSettings $ corsPolicy $
     serve (Proxy @FullApi) (fullServer db logger Config{..})
   where
     corsPolicy :: Middleware
     corsPolicy =
-        if _cors then cors (const $ Just (policy _portApi))
-        else cors (const Nothing)
-    policy :: Int -> CorsResourcePolicy
-    policy portApi = simpleCorsResourcePolicy
+        if cors then Cors.cors (const $ Just policy)
+        else Cors.cors (const Nothing)
+    policy :: CorsResourcePolicy
+    policy = simpleCorsResourcePolicy
         -- TODO: Add Guide's frontend address (and maybe others resources)
         -- to list of `corsOrigins` to allow CORS requests
         { corsOrigins = Just (

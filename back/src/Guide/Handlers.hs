@@ -101,7 +101,7 @@ setMethods = do
       addEdit edit
     do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
        addEdit edit
-    do oldEnabledSections <- view enabledSections <$> dbQuery (GetCategory catId)
+    do oldEnabledSections <- categoryEnabledSections <$> dbQuery (GetCategory catId)
        let newEnabledSections = S.fromList . concat $
              [ [ItemProsConsSection  | prosConsEnabled']
              , [ItemEcosystemSection | ecosystemEnabled']
@@ -118,7 +118,7 @@ setMethods = do
   Spock.post (setRoute <//> categoryVar <//> "notes") $ \catId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (notes.mdSource) <$> dbQuery (GetCategory catId)
+    modified <- markdownBlockSource . categoryNotes <$> dbQuery (GetCategory catId)
     if modified == original
       then do
         (edit, category) <- dbUpdate (SetCategoryNotes catId content')
@@ -161,7 +161,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "description") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (summary.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownBlockSource . itemSummary <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemSummary itemId content')
@@ -176,7 +176,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "ecosystem") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (ecosystem.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownBlockSource . itemEcosystem <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemEcosystem itemId content')
@@ -191,7 +191,7 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> "notes") $ \itemId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (notes.mdSource) <$> dbQuery (GetItem itemId)
+    modified <- markdownTreeSource . itemNotes <$> dbQuery (GetItem itemId)
     if modified == original
       then do
         (edit, item) <- dbUpdate (SetItemNotes itemId content')
@@ -207,7 +207,8 @@ setMethods = do
   Spock.post (setRoute <//> itemVar <//> traitVar) $ \itemId traitId -> do
     original <- param' "original"
     content' <- param' "content"
-    modified <- view (content.mdSource) <$> dbQuery (GetTrait itemId traitId)
+    modified <- markdownInlineSource . traitContent <$>
+      dbQuery (GetTrait itemId traitId)
     if modified == original
       then do
         (edit, trait) <- dbUpdate (SetTraitContent itemId traitId content')
@@ -286,18 +287,18 @@ otherMethods = do
 
   -- # Feeds
   -- TODO: this link shouldn't be absolute [absolute-links]
-  baseUrl <- (// "haskell") . _baseUrl <$> getConfig
+  baseUrl <- (// "haskell") . baseUrl <$> getConfig
 
   -- Feed for items in a category
   Spock.get (feedRoute <//> categoryVar) $ \catId -> do
     category <- dbQuery (GetCategory catId)
-    let sortedItems = sortBy (flip cmp) (category^.items)
-          where cmp = comparing (^.created) <> comparing (^.uid)
+    let sortedItems = sortBy (flip cmp) (categoryItems category)
+          where cmp = comparing itemCreated <> comparing itemUid
     let route = "feed" <//> categoryVar
-    let feedUrl = baseUrl // Spock.renderRoute route (category^.uid)
-        feedTitle = Atom.TextString (category^.title <> " – Haskell – Aelve Guide")
+    let feedUrl = baseUrl // Spock.renderRoute route (categoryUid category)
+        feedTitle = Atom.TextString (categoryTitle category <> " – Haskell – Aelve Guide")
         feedLastUpdate = case sortedItems of
-          item:_ -> Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)
+          item:_ -> Feed.toFeedDateStringUTC Feed.AtomKind (itemCreated item)
           _      -> ""
     let feedBase = Atom.nullFeed feedUrl feedTitle (toText feedLastUpdate)
     entries <- liftIO $ mapM (itemToFeedEntry baseUrl category) sortedItems
@@ -364,8 +365,8 @@ itemToFeedEntry baseUrl category item = do
     Atom.entryContent = Just (Atom.HTMLContent (toText entryContent)) }
   where
     entryLink = baseUrl //
-                format "{}#item-{}" (categorySlug category) (item^.uid)
+                format "{}#item-{}" (categorySlug category) (itemUid item)
     entryBase = Atom.nullEntry
-      (uidToText (item^.uid))
-      (Atom.TextString (item^.name))
-      (toText (Feed.toFeedDateStringUTC Feed.AtomKind (item^.created)))
+      (uidToText (itemUid item))
+      (Atom.TextString (itemName item))
+      (toText (Feed.toFeedDateStringUTC Feed.AtomKind (itemCreated item)))

@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE NamedFieldPuns      #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -63,23 +64,23 @@ createCategory title' group' =
 
 -- | Edit category's note.
 setCategoryNotes :: Uid Category -> CTextEdit -> Guider NoContent
-setCategoryNotes catId CTextEdit{..} =
+setCategoryNotes catId $(fields 'CTextEdit) =
   logHandler "setCategoryNotes" [attr "catId" catId] $ do
-    serverModified <- markdownBlockMdSource . _categoryNotes <$> getCategoryOrFail catId
+    serverModified <- markdownBlockSource . categoryNotes <$> getCategoryOrFail catId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetCategoryNotes catId cteModified)
     pure NoContent
 
 -- | Edit category's info (title, group, status, sections (pro/con, ecosystem, note)).
 setCategoryInfo :: Uid Category -> CCategoryInfoEdit -> Guider NoContent
-setCategoryInfo catId CCategoryInfoEdit{..} =
+setCategoryInfo catId $(fields 'CCategoryInfoEdit) =
   logHandler "setCategoryInfo" [attr "catId" catId] $ do
     category <- getCategoryOrFail catId
     -- TODO diff and merge
     (editTitle, _) <- dbUpdate $ SetCategoryTitle catId ccieTitle
     (editGroup, _) <- dbUpdate $ SetCategoryGroup catId ccieGroup
     (editStatus, _) <- dbUpdate $ SetCategoryStatus catId ccieStatus
-    let oldEnabledSections = category ^. enabledSections
+    let oldEnabledSections = categoryEnabledSections category
     let newEnabledSections = ccieSections
     (editSection, _) <- dbUpdate $ ChangeCategoryEnabledSections catId
         (newEnabledSections S.\\ oldEnabledSections)
@@ -109,7 +110,7 @@ getItem itemId =
 --
 -- Returns the ID of the created item.
 createItem :: Uid Category -> CCreateItem -> Guider (Uid Item)
-createItem catId CCreateItem{..} =
+createItem catId $(fields 'CCreateItem) =
   logHandler "createItem" [attr "catId" catId, attr "name" cciName] $ do
     _ <- getCategoryOrFail catId
     when (T.null cciName) $
@@ -123,7 +124,7 @@ createItem catId CCreateItem{..} =
 
 -- | Modify item info. Fields that are not present ('Nothing') are not modified.
 setItemInfo :: Uid Item -> CItemInfoEdit -> Guider NoContent
-setItemInfo itemId CItemInfoEdit{..} =
+setItemInfo itemId $(fields 'CItemInfoEdit) =
   logHandler "setItemInfo" [attr "itemId" itemId] $ do
     void $ getItemOrFail itemId
     -- TODO diff and merge
@@ -137,27 +138,27 @@ setItemInfo itemId CItemInfoEdit{..} =
 
 -- | Set item's summary.
 setItemSummary :: Uid Item -> CTextEdit -> Guider NoContent
-setItemSummary itemId CTextEdit{..} =
+setItemSummary itemId $(fields 'CTextEdit) =
   logHandler "setItemSummary" [attr "itemId" itemId] $ do
-    serverModified <- markdownBlockMdSource . _itemSummary <$> getItemOrFail itemId
+    serverModified <- markdownBlockSource . itemSummary <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemSummary itemId cteModified)
     pure NoContent
 
 -- | Set item's ecosystem.
 setItemEcosystem :: Uid Item -> CTextEdit -> Guider NoContent
-setItemEcosystem itemId CTextEdit{..} =
+setItemEcosystem itemId $(fields 'CTextEdit) =
   logHandler "setItemEcosystem" [attr "itemId" itemId] $ do
-    serverModified <- markdownBlockMdSource . _itemEcosystem <$> getItemOrFail itemId
+    serverModified <- markdownBlockSource . itemEcosystem <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemEcosystem itemId cteModified)
     pure NoContent
 
 -- | Set item's notes.
 setItemNotes :: Uid Item -> CTextEdit -> Guider NoContent
-setItemNotes itemId CTextEdit{..} =
+setItemNotes itemId $(fields 'CTextEdit) =
   logHandler "setItemNotes" [attr "itemId" itemId] $ do
-    serverModified <- markdownTreeMdSource . _itemNotes <$> getItemOrFail itemId
+    serverModified <- markdownTreeSource . itemNotes <$> getItemOrFail itemId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetItemNotes itemId cteModified)
     pure NoContent
@@ -172,7 +173,7 @@ deleteItem itemId =
 
 -- | Move item up or down
 moveItem :: Uid Item -> CMove -> Guider NoContent
-moveItem itemId CMove{..} =
+moveItem itemId $(fields 'CMove) =
   logHandler "moveItem" [attr "itemId" itemId] $ do
     void $ getItemOrFail itemId
     addEdit =<< dbUpdate (MoveItem itemId (cmDirection == DirectionUp))
@@ -190,7 +191,7 @@ getTrait itemId traitId =
 
 -- | Create a trait (pro/con).
 createTrait :: Uid Item -> CCreateTrait -> Guider (Uid Trait)
-createTrait itemId CCreateTrait{..} =
+createTrait itemId $(fields 'CCreateTrait) =
   logHandler "createTrait" [attr "itemId" itemId] $ do
     when (T.null cctContent) $
       throwError err400{errReasonPhrase = "'content' can not be empty"}
@@ -202,9 +203,9 @@ createTrait itemId CCreateTrait{..} =
 
 -- | Update the text of a trait (pro/con).
 setTrait :: Uid Item -> Uid Trait -> CTextEdit -> Guider NoContent
-setTrait itemId traitId CTextEdit{..} =
+setTrait itemId traitId $(fields 'CTextEdit) =
   logHandler "setTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
-    serverModified <- markdownInlineMdSource . _traitContent <$> getTraitOrFail itemId traitId
+    serverModified <- markdownInlineSource . traitContent <$> getTraitOrFail itemId traitId
     checkConflict CTextEdit{..} serverModified
     addEdit . fst =<< dbUpdate (SetTraitContent itemId traitId cteModified)
     pure NoContent
@@ -219,7 +220,7 @@ deleteTrait itemId traitId =
 
 -- | Move trait up or down
 moveTrait :: Uid Item -> Uid Trait -> CMove -> Guider NoContent
-moveTrait itemId traitId CMove{..} =
+moveTrait itemId traitId $(fields 'CMove) =
   logHandler "moveTrait" [attr "itemId" itemId, attr "traitId" traitId] $ do
     void $ getTraitOrFail itemId traitId
     addEdit =<< dbUpdate (MoveTrait itemId traitId (cmDirection == DirectionUp))
@@ -299,7 +300,7 @@ getTraitOrFail itemId traitId = do
 
 -- | Checker. When states of database before and after editing is different, fail with a conflict data.
 checkConflict :: CTextEdit -> Text -> Guider ()
-checkConflict CTextEdit{..} serverModified = do
+checkConflict $(fields 'CTextEdit) serverModified = do
   let original = cteOriginal
   let modified = cteModified
   when (original /= serverModified) $ do

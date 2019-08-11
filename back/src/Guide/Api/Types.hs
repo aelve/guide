@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -69,7 +70,7 @@ import Guide.Api.Utils
 import Guide.Markdown
 import Guide.Search
 import Guide.Types.Core as G
-import Guide.Utils (Uid (..), Url)
+import Guide.Utils (Uid (..), Url, fields)
 
 import qualified Data.Aeson as A
 import Data.Swagger as S
@@ -431,7 +432,7 @@ data CCategoryInfo = CCategoryInfo
   { cciId      :: Uid Category
   , cciTitle   :: Text
   , cciCreated :: UTCTime
-  , cciGroup_  :: Text
+  , cciGroup   :: Text
   , cciStatus  :: CategoryStatus
   }
   deriving (Show, Generic)
@@ -454,13 +455,20 @@ instance ToSchema CCategoryInfo where
 
 -- | Factory to create a 'CCategoryInfo' from a 'Category'
 toCCategoryInfo :: Category -> CCategoryInfo
-toCCategoryInfo Category{..} = CCategoryInfo
-  { cciId      = _categoryUid
-  , cciTitle   = _categoryTitle
-  , cciCreated = _categoryCreated
-  , cciGroup_  = _categoryGroup_
-  , cciStatus  = _categoryStatus
+toCCategoryInfo $(fields 'Category) = CCategoryInfo
+  { cciId      = categoryUid
+  , cciTitle   = categoryTitle
+  , cciCreated = categoryCreated
+  , cciGroup   = categoryGroup
+  , cciStatus  = categoryStatus
   }
+  where
+    -- Ignored "heavy" fields
+    _ = categoryItems
+    _ = categoryItemsDeleted
+    _ = categoryNotes
+    -- Not heavy, just not particularly useful metadata
+    _ = categoryEnabledSections
 
 ----------------------------------------------------------------------------
 -- CCategoryFull
@@ -497,15 +505,20 @@ instance ToSchema CCategoryFull where
 
 -- | Factory to create a 'CCategoryFull' from a 'Category'
 toCCategoryFull :: Category -> CCategoryFull
-toCCategoryFull Category{..} = CCategoryFull
-  { ccfId          = _categoryUid
-  , ccfTitle       = _categoryTitle
-  , ccfGroup       = _categoryGroup_
-  , ccfStatus      = _categoryStatus
-  , ccfDescription = toCMarkdown _categoryNotes
-  , ccfSections    = _categoryEnabledSections
-  , ccfItems       = fmap toCItemFull _categoryItems
+toCCategoryFull $(fields 'Category) = CCategoryFull
+  { ccfId          = categoryUid
+  , ccfTitle       = categoryTitle
+  , ccfGroup       = categoryGroup
+  , ccfStatus      = categoryStatus
+  , ccfDescription = toCMarkdown categoryNotes
+  , ccfSections    = categoryEnabledSections
+  , ccfItems       = fmap toCItemFull categoryItems
   }
+  where
+    -- Ignored fields
+    _ = categoryItemsDeleted
+    -- TODO: return creation time
+    _ = categoryCreated
 
 ----------------------------------------------------------------------------
 -- CCategoryInfoEdit
@@ -571,13 +584,20 @@ instance ToSchema CItemInfo where
 
 -- | Factory to create a 'CItemInfo' from an 'Item'
 toCItemInfo :: Item -> CItemInfo
-toCItemInfo Item{..} = CItemInfo
-  { ciiId          = _itemUid
-  , ciiCreated     = _itemCreated
-  , ciiName        = _itemName
-  , ciiHackage     = _itemHackage
-  , ciiLink        = _itemLink
+toCItemInfo $(fields 'Item) = CItemInfo
+  { ciiId          = itemUid
+  , ciiCreated     = itemCreated
+  , ciiName        = itemName
+  , ciiHackage     = itemHackage
+  , ciiLink        = itemLink
   }
+  where
+    -- We don't return "heavy" fields
+    _ = itemNotes
+    _ = itemEcosystem
+    _ = itemSummary
+    _ = (itemCons, itemConsDeleted)
+    _ = (itemPros, itemProsDeleted)
 
 ----------------------------------------------------------------------------
 -- CItemInfoEdit
@@ -662,19 +682,22 @@ instance ToSchema CItemFull where
 
 -- | Factory to create a 'CItemFull' from an 'Item'
 toCItemFull :: Item -> CItemFull
-toCItemFull Item{..} = CItemFull
-  { cifId          = _itemUid
-  , cifName        = _itemName
-  , cifCreated     = _itemCreated
-  , cifHackage     = _itemHackage
-  , cifSummary     = toCMarkdown _itemSummary
-  , cifPros        = fmap toCTrait _itemPros
-  , cifCons        = fmap toCTrait _itemCons
-  , cifEcosystem   = toCMarkdown _itemEcosystem
-  , cifNotes       = toCMarkdown _itemNotes
-  , cifLink        = _itemLink
-  , cifToc         = map toCTocHeading (markdownTreeMdTOC _itemNotes)
+toCItemFull $(fields 'Item) = CItemFull
+  { cifId          = itemUid
+  , cifName        = itemName
+  , cifCreated     = itemCreated
+  , cifHackage     = itemHackage
+  , cifSummary     = toCMarkdown itemSummary
+  , cifPros        = fmap toCTrait itemPros
+  , cifCons        = fmap toCTrait itemCons
+  , cifEcosystem   = toCMarkdown itemEcosystem
+  , cifNotes       = toCMarkdown itemNotes
+  , cifLink        = itemLink
+  , cifToc         = map toCTocHeading (markdownTreeTOC itemNotes)
   }
+  where
+    -- Ignored fields
+    _ = (itemProsDeleted, itemConsDeleted)
 
 ----------------------------------------------------------------------------
 -- CTrait
@@ -697,9 +720,9 @@ instance ToSchema CTrait where
 
 -- | Factory to create a 'CTrait' from a 'Trait'
 toCTrait :: Trait -> CTrait
-toCTrait trait = CTrait
-  { ctId     = trait ^. uid
-  , ctContent = toCMarkdown $ trait ^. content
+toCTrait $(fields 'Trait) = CTrait
+  { ctId      = traitUid
+  , ctContent = toCMarkdown traitContent
   }
 
 ----------------------------------------------------------------------------
@@ -730,22 +753,33 @@ instance ToSchema CMarkdown where
 class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 
 instance ToCMarkdown MarkdownInline where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
-    , cmdHtml = toText (md^.mdHtml)
+  toCMarkdown $(fields 'MarkdownInline) = CMarkdown
+    { cmdText = markdownInlineSource
+    , cmdHtml = toText markdownInlineHtml
     }
+    where
+      -- Ignored fields
+      _ = markdownInlineMarkdown
 
 instance ToCMarkdown MarkdownBlock where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
-    , cmdHtml = toText (md^.mdHtml)
+  toCMarkdown $(fields 'MarkdownBlock) = CMarkdown
+    { cmdText = markdownBlockSource
+    , cmdHtml = toText markdownBlockHtml
     }
+    where
+      -- Ignored fields
+      _ = markdownBlockMarkdown
 
 instance ToCMarkdown MarkdownTree where
-  toCMarkdown md = CMarkdown
-    { cmdText = md^.mdSource
+  toCMarkdown md@($(fields 'MarkdownTree)) = CMarkdown
+    { cmdText = markdownTreeSource
     , cmdHtml = toText . renderText $ toHtml md
     }
+    where
+      -- Ignored fields
+      _ = markdownTreeStructure
+      _ = markdownTreeTOC
+      _ = markdownTreeIdPrefix
 
 ----------------------------------------------------------------------------
 -- CTocHeading
@@ -773,8 +807,8 @@ instance ToSchema CTocHeading where
 
 -- | 'toCTocHeading' converts a table of contents into the format expected by the frontend.
 toCTocHeading :: Tree Heading -> CTocHeading
-toCTocHeading Node{..} = CTocHeading
-  { cthContent     = toCMarkdown $ headingMd rootLabel
+toCTocHeading $(fields 'Node) = CTocHeading
+  { cthContent     = toCMarkdown $ headingMarkdown rootLabel
   , cthSlug        = headingSlug rootLabel
   , cthSubheadings = map toCTocHeading subForest
   }
@@ -919,13 +953,13 @@ toCSearchResult (SRCategory cat) =
         -- is about).
         --
         -- TODO: just extract the first paragraph, not the preface.
-        extractPreface $ toMarkdownTree "" $ cat^.G.notes.mdSource
+        extractPreface $ toMarkdownTree "" $ markdownBlockSource (categoryNotes cat)
     }
 toCSearchResult (SRItem cat item) =
   CSRItemResult $ CSRItem
     { csriCategory    = toCCategoryInfo cat
     , csriInfo        = toCItemInfo item
-    , csriSummary     = Just (toCMarkdown (item ^. G.summary))
+    , csriSummary     = Just (toCMarkdown (itemSummary item))
     , csriEcosystem   = Nothing
     }
 -- TODO: currently if there are matches in both item description and item
@@ -935,7 +969,7 @@ toCSearchResult (SRItemEcosystem cat item) =
     { csriCategory    = toCCategoryInfo cat
     , csriInfo        = toCItemInfo item
     , csriSummary     = Nothing
-    , csriEcosystem   = Just (toCMarkdown (item ^. ecosystem))
+    , csriEcosystem   = Just (toCMarkdown (itemEcosystem item))
     }
 
 ----------------------------------------------------------------------------
