@@ -21,7 +21,7 @@ First install NPM (important!) and `libpq`. Then do:
     $ make back
     $ make back/run
 
-And go to <http://localhost:8080>. The status page is available at <http://localhost:5050>; the admin page, at <http://localhost:8080/admin>.
+And go to <http://localhost:8080>. The admin page is available at <http://localhost:8080/admin>.
 
 # How to install on a server
 
@@ -51,22 +51,6 @@ Make a new subdomain in Apache. For me, it means writing this to `/etc/apache2/s
   ProxyPassReverse / http://0.0.0.0:8080/
 </VirtualHost>
 ~~~
-
-If you want the status page to be available as well, write:
-
-~~~
-<VirtualHost *:80>
-  ServerName guide.aelve.com
-
-  ProxyPreserveHost On
-  ProxyPass /status/ http://0.0.0.0:5050/
-  ProxyPassReverse /status/ http://0.0.0.0:5050/
-  ProxyPass / http://0.0.0.0:8080/
-  ProxyPassReverse / http://0.0.0.0:8080/
-</VirtualHost>
-~~~
-
-(Note that it will only be available at `/status/`, not `/status`.)
 
 Enable the `remoteip` module (this is needed so that the `/admin` page would display actual IPs instead of `127.0.0.1`):
 
