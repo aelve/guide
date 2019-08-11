@@ -356,7 +356,7 @@ addCategory catId title' group' created' = do
         categoryItems = [],
         categoryItemsDeleted = [] }
   _categories %= (newCategory :)
-  let edit = Edit'AddCategory catId title' group'
+  let edit = EditAddCategory catId title' group'
   return (edit, newCategory)
 
 addItem
@@ -381,7 +381,7 @@ addItem catId itemId name' created' = do
                           in  toMarkdownTree pref "",
         itemLink        = Nothing}
   categoryById catId . _categoryItems %= (++ [newItem])
-  let edit = Edit'AddItem catId itemId name'
+  let edit = EditAddItem catId itemId name'
   return (edit, newItem)
 
 addPro
@@ -392,7 +392,7 @@ addPro
 addPro itemId traitId text' = do
   let newTrait = Trait traitId (toMarkdownInline text')
   itemById itemId . _itemPros %= (++ [newTrait])
-  let edit = Edit'AddPro itemId traitId text'
+  let edit = EditAddPro itemId traitId text'
   return (edit, newTrait)
 
 addCon
@@ -403,7 +403,7 @@ addCon
 addCon itemId traitId text' = do
   let newTrait = Trait traitId (toMarkdownInline text')
   itemById itemId . _itemCons %= (++ [newTrait])
-  let edit = Edit'AddCon itemId traitId text'
+  let edit = EditAddCon itemId traitId text'
   return (edit, newTrait)
 
 -- set
@@ -419,25 +419,25 @@ setGlobalState = (id .=)
 setCategoryTitle :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryTitle catId title' = do
   oldTitle <- categoryById catId . _categoryTitle <<.= title'
-  let edit = Edit'SetCategoryTitle catId oldTitle title'
+  let edit = EditSetCategoryTitle catId oldTitle title'
   (edit,) <$> use (categoryById catId)
 
 setCategoryGroup :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryGroup catId group' = do
   oldGroup <- categoryById catId . _categoryGroup <<.= group'
-  let edit = Edit'SetCategoryGroup catId oldGroup group'
+  let edit = EditSetCategoryGroup catId oldGroup group'
   (edit,) <$> use (categoryById catId)
 
 setCategoryNotes :: Uid Category -> Text -> Acid.Update GlobalState (Edit, Category)
 setCategoryNotes catId notes' = do
   oldNotes <- categoryById catId . _categoryNotes <<.= toMarkdownBlock notes'
-  let edit = Edit'SetCategoryNotes catId (markdownBlockSource oldNotes) notes'
+  let edit = EditSetCategoryNotes catId (markdownBlockSource oldNotes) notes'
   (edit,) <$> use (categoryById catId)
 
 setCategoryStatus :: Uid Category -> CategoryStatus -> Acid.Update GlobalState (Edit, Category)
 setCategoryStatus catId status' = do
   oldStatus <- categoryById catId . _categoryStatus <<.= status'
-  let edit = Edit'SetCategoryStatus catId oldStatus status'
+  let edit = EditSetCategoryStatus catId oldStatus status'
   (edit,) <$> use (categoryById catId)
 
 changeCategoryEnabledSections
@@ -448,32 +448,32 @@ changeCategoryEnabledSections
 changeCategoryEnabledSections catId toEnable toDisable = do
   categoryById catId . _categoryEnabledSections %= \sections ->
     (sections <> toEnable) S.\\ toDisable
-  let edit = Edit'ChangeCategoryEnabledSections catId toEnable toDisable
+  let edit = EditChangeCategoryEnabledSections catId toEnable toDisable
   (edit,) <$> use (categoryById catId)
 
 setItemName :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemName itemId name' = do
   oldName <- itemById itemId . _itemName <<.= name'
-  let edit = Edit'SetItemName itemId oldName name'
+  let edit = EditSetItemName itemId oldName name'
   (edit,) <$> use (itemById itemId)
 
 setItemLink :: Uid Item -> Maybe Url -> Acid.Update GlobalState (Edit, Item)
 setItemLink itemId link' = do
   oldLink <- itemById itemId . _itemLink <<.= link'
-  let edit = Edit'SetItemLink itemId oldLink link'
+  let edit = EditSetItemLink itemId oldLink link'
   (edit,) <$> use (itemById itemId)
 
 setItemHackage :: Uid Item -> Maybe Text -> Acid.Update GlobalState (Edit, Item)
 setItemHackage itemId hackage' = do
     oldName <- itemById itemId . _itemHackage <<.= hackage'
-    let edit = Edit'SetItemHackage itemId oldName hackage'
+    let edit = EditSetItemHackage itemId oldName hackage'
     (edit,) <$> use (itemById itemId)
 
 setItemSummary :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemSummary itemId description' = do
   oldDescr <- itemById itemId . _itemSummary <<.=
                 toMarkdownBlock description'
-  let edit = Edit'SetItemSummary itemId
+  let edit = EditSetItemSummary itemId
                (markdownBlockSource oldDescr) description'
   (edit,) <$> use (itemById itemId)
 
@@ -481,13 +481,13 @@ setItemNotes :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemNotes itemId notes' = do
   let pref = "item-notes-" <> uidToText itemId <> "-"
   oldNotes <- itemById itemId . _itemNotes <<.= toMarkdownTree pref notes'
-  let edit = Edit'SetItemNotes itemId (markdownTreeSource oldNotes) notes'
+  let edit = EditSetItemNotes itemId (markdownTreeSource oldNotes) notes'
   (edit,) <$> use (itemById itemId)
 
 setItemEcosystem :: Uid Item -> Text -> Acid.Update GlobalState (Edit, Item)
 setItemEcosystem itemId ecosystem' = do
   oldEcosystem <- itemById itemId . _itemEcosystem <<.= toMarkdownBlock ecosystem'
-  let edit = Edit'SetItemEcosystem itemId
+  let edit = EditSetItemEcosystem itemId
                (markdownBlockSource oldEcosystem) ecosystem'
   (edit,) <$> use (itemById itemId)
 
@@ -495,7 +495,7 @@ setTraitContent :: Uid Item -> Uid Trait -> Text -> Acid.Update GlobalState (Edi
 setTraitContent itemId traitId content' = do
   oldContent <- itemById itemId . traitById traitId . _traitContent <<.=
                   toMarkdownInline content'
-  let edit = Edit'SetTraitContent itemId traitId
+  let edit = EditSetTraitContent itemId traitId
                (markdownInlineSource oldContent) content'
   (edit,) <$> use (itemById itemId . traitById traitId)
 
@@ -513,7 +513,7 @@ deleteCategory catId = do
         Just categoryPos -> do
           _categories %= deleteAt categoryPos
           _categoriesDeleted %= (category:)
-          return (Right (Edit'DeleteCategory catId categoryPos))
+          return (Right (EditDeleteCategory catId categoryPos))
 
 deleteItem :: Uid Item -> Acid.Update GlobalState (Either String Edit)
 deleteItem itemId = do
@@ -532,7 +532,7 @@ deleteItem itemId = do
         Just itemPos -> do
           categoryLens . _categoryItems        %= deleteAt itemPos
           categoryLens . _categoryItemsDeleted %= (item:)
-          return (Right (Edit'DeleteItem itemId itemPos))
+          return (Right (EditDeleteItem itemId itemPos))
 
 deleteTrait :: Uid Item -> Uid Trait -> Acid.Update GlobalState (Either String Edit)
 deleteTrait itemId traitId = do
@@ -558,7 +558,7 @@ deleteTrait itemId traitId = do
             Just traitPos -> do
               itemLens . _itemPros        %= deleteAt traitPos
               itemLens . _itemProsDeleted %= (trait:)
-              return (Right (Edit'DeleteTrait itemId traitId traitPos))
+              return (Right (EditDeleteTrait itemId traitId traitPos))
         -- It's a con
         (_, Just trait) -> do
           mbTraitPos <-
@@ -569,7 +569,7 @@ deleteTrait itemId traitId = do
             Just traitPos -> do
               itemLens . _itemCons        %= deleteAt traitPos
               itemLens . _itemConsDeleted %= (trait:)
-              return (Right (Edit'DeleteTrait itemId traitId traitPos))
+              return (Right (EditDeleteTrait itemId traitId traitPos))
 
 -- other methods
 
@@ -581,7 +581,7 @@ moveItem itemId up = do
   let move = if up then moveUp else moveDown
   catId <- categoryUid . findCategoryByItem itemId <$> get
   categoryById catId . _categoryItems %= move ((== itemId) . itemUid)
-  return (Edit'MoveItem itemId up)
+  return (EditMoveItem itemId up)
 
 moveTrait
   :: Uid Item
@@ -595,7 +595,7 @@ moveTrait itemId traitId up = do
   -- a con
   itemById itemId . _itemPros %= move ((== traitId) . traitUid)
   itemById itemId . _itemCons %= move ((== traitId) . traitUid)
-  return (Edit'MoveTrait itemId traitId up)
+  return (EditMoveTrait itemId traitId up)
 
 restoreCategory :: Uid Category -> Int -> Acid.Update GlobalState (Either String ())
 restoreCategory catId pos = do

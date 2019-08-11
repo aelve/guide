@@ -1,4 +1,3 @@
-{-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
@@ -309,37 +308,37 @@ renderEdit globalState edit = do
 
   case edit of
     -- Add
-    Edit'AddCategory _catId title' group' -> p_ $ do
+    EditAddCategory _catId title' group' -> p_ $ do
       "added category " >> quote (toHtml title')
       " to group " >> quote (toHtml group')
-    Edit'AddItem catId _itemId name' -> p_ $ do
+    EditAddItem catId _itemId name' -> p_ $ do
       "added item " >> printItem _itemId
       " (initially called " >> quote (toHtml name') >> ")"
       " to category " >> printCategory catId
-    Edit'AddPro itemId _traitId content' -> do
+    EditAddPro itemId _traitId content' -> do
       p_ $ "added pro to item " >> printItem itemId
       pre_ $ code_ $ toHtml content'
-    Edit'AddCon itemId _traitId content' -> do
+    EditAddCon itemId _traitId content' -> do
       p_ $ "added con to item " >> printItem itemId
       pre_ $ code_ $ toHtml content'
 
     -- Change category properties
-    Edit'SetCategoryTitle _catId oldTitle newTitle -> p_ $ do
+    EditSetCategoryTitle _catId oldTitle newTitle -> p_ $ do
       "changed title of category " >> quote (toHtml oldTitle)
       " to " >> quote (toHtml newTitle)
-    Edit'SetCategoryGroup catId oldGroup newGroup -> p_ $ do
+    EditSetCategoryGroup catId oldGroup newGroup -> p_ $ do
       "changed group of category " >> printCategory catId
       " from " >> quote (toHtml oldGroup)
       " to "   >> quote (toHtml newGroup)
-    Edit'SetCategoryStatus catId oldStatus newStatus -> p_ $ do
+    EditSetCategoryStatus catId oldStatus newStatus -> p_ $ do
       "changed status of category " >> printCategory catId
       " from " >> quote (toHtml (show oldStatus))
       " to "   >> quote (toHtml (show newStatus))
-    Edit'SetCategoryNotes catId oldNotes newNotes -> do
+    EditSetCategoryNotes catId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of category " >> printCategory catId
       renderDiff oldNotes newNotes
-    Edit'ChangeCategoryEnabledSections catId toEnable toDisable -> do
+    EditChangeCategoryEnabledSections catId toEnable toDisable -> do
       let sectName ItemProsConsSection  = "pros/cons"
           sectName ItemEcosystemSection = "ecosystem"
           sectName ItemNotesSection     = "notes"
@@ -354,58 +353,58 @@ renderEdit globalState edit = do
              " for category " >> printCategory catId
 
     -- Change item properties
-    Edit'SetItemName _itemId oldName newName -> p_ $ do
+    EditSetItemName _itemId oldName newName -> p_ $ do
       "changed name of item " >> quote (toHtml oldName)
       " to " >> quote (toHtml newName)
-    Edit'SetItemLink itemId oldLink newLink -> p_ $ do
+    EditSetItemLink itemId oldLink newLink -> p_ $ do
       "changed link of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldLink))
       " to "   >> code_ (toHtml (show newLink))
-    Edit'SetItemGroup itemId oldGroup newGroup -> p_ $ do
+    EditSetItemGroup itemId oldGroup newGroup -> p_ $ do
       "changed group of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldGroup))
       " to "   >> code_ (toHtml (show newGroup))
-    Edit'SetItemHackage itemId oldHackage newHackage -> p_ $ do
+    EditSetItemHackage itemId oldHackage newHackage -> p_ $ do
       "changed Hackage name of item " >> printItem itemId
       " from " >> code_ (toHtml (show oldHackage))
       " to "   >> code_ (toHtml (show newHackage))
-    Edit'SetItemSummary itemId oldDescr newDescr -> do
+    EditSetItemSummary itemId oldDescr newDescr -> do
       p_ $ (if T.null oldDescr then "added" else "changed") >>
            " description of item " >> printItem itemId
       renderDiff oldDescr newDescr
-    Edit'SetItemNotes itemId oldNotes newNotes -> do
+    EditSetItemNotes itemId oldNotes newNotes -> do
       p_ $ (if T.null oldNotes then "added" else "changed") >>
            " notes of item " >> printItem itemId
       renderDiff oldNotes newNotes
-    Edit'SetItemEcosystem itemId oldEcosystem newEcosystem -> do
+    EditSetItemEcosystem itemId oldEcosystem newEcosystem -> do
       p_ $ (if T.null oldEcosystem then "added" else "changed") >>
            " ecosystem of item " >> printItem itemId
       renderDiff oldEcosystem newEcosystem
 
     -- Change trait properties
-    Edit'SetTraitContent itemId _traitId oldContent newContent -> do
+    EditSetTraitContent itemId _traitId oldContent newContent -> do
       p_ $ (if T.null oldContent then "added" else "changed") >>
            " trait of item " >> printItem itemId >>
            " from category " >> printCategory (findItem itemId ^. _1 . _categoryUid)
       renderDiff oldContent newContent
 
     -- Delete
-    Edit'DeleteCategory catId _pos -> p_ $ do
+    EditDeleteCategory catId _pos -> p_ $ do
       "deleted category " >> printCategoryWithItems catId
-    Edit'DeleteItem itemId _pos -> p_ $ do
+    EditDeleteItem itemId _pos -> p_ $ do
       let (category, item) = findItem itemId
       "deleted item " >> quote (toHtml (itemName item))
       " from category " >> quote (toHtml (categoryTitle category))
-    Edit'DeleteTrait itemId traitId _pos -> do
+    EditDeleteTrait itemId traitId _pos -> do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "deleted trait from item " >> quote (toHtml (itemName item))
       pre_ $ code_ $ toHtml $ traitContent trait
 
     -- Other
-    Edit'MoveItem itemId direction -> p_ $ do
+    EditMoveItem itemId direction -> p_ $ do
       "moved item " >> printItem itemId
       if direction then " up" else " down"
-    Edit'MoveTrait itemId traitId direction -> do
+    EditMoveTrait itemId traitId direction -> do
       let (_, item, trait) = findTrait itemId traitId
       p_ $ "moved trait of item " >> quote (toHtml (itemName item)) >>
            if direction then " up" else " down"

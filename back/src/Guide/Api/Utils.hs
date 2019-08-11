@@ -1,15 +1,14 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Guide.Api.Utils
@@ -103,12 +102,12 @@ instance FromHttpApiData IP where
 instance (HasSwagger api) => HasSwagger (RequestDetails :> api) where
   toSwagger _ = toSwagger (Proxy :: Proxy api)
 
-instance (HasServer api context)
-  => HasServer (RequestDetails :> api) context where
+instance (HasServer api context) => HasServer (RequestDetails :> api) context where
 
   type ServerT (RequestDetails :> api) m = RequestDetails -> ServerT api m
 
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+  hoistServerWithContext _ pc nt s =
+    hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver = route (Proxy :: Proxy api) context $
       subserver `addHeaderCheck` withRequest getRequestDetails
@@ -127,8 +126,9 @@ instance (HasServer api context)
           lookupName headerName = lookup headerName (requestHeaders req)
 
           getHeader :: FromHttpApiData a => NHTH.HeaderName -> Maybe a
-          getHeader headerName = join $
-            (either (\_ -> Nothing) Just) . parseHeader <$> lookupName headerName
+          getHeader headerName =
+            (either (\_ -> Nothing) Just) . parseHeader =<<
+            lookupName headerName
 
           getIp :: Maybe ByteString -> Maybe IP
           getIp mBody = case mBody of

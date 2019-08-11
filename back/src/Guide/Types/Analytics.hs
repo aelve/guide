@@ -39,10 +39,10 @@ import Guide.Utils
 
 
 data Action
-  = Action'MainPageVisit
-  | Action'CategoryVisit (Uid Category)
-  | Action'Search Text
-  | Action'Edit Edit
+  = ActionMainPageVisit
+  | ActionCategoryVisit (Uid Category)
+  | ActionSearch Text
+  | ActionEdit Edit
   deriving (Show)
 
 deriveSafeCopySimple 0 'base ''Action
