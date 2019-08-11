@@ -29,7 +29,6 @@ extra-deps:
 
 # Old versions from LTS 12+ (can and should be upgraded)
 - megaparsec-6.5.0
-- wai-middleware-metrics-0.2.4
 - servant-0.15
 - servant-server-0.15
 
