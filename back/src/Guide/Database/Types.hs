@@ -66,6 +66,9 @@ data CategoryRow = CategoryRow
   , categoryRowItemsOrder      :: [Uid Item]
   } deriving Show
 
+ka_ka :: Int
+ka_ka = undefined
+
 -- | Make CategoryRowLenses Class to use lenses with this type.
 makeClassWithLenses ''CategoryRow
 
