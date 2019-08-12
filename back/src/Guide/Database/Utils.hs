@@ -191,6 +191,12 @@ instance ToPostgres Bool where
 instance FromPostgres Bool where
   fromPostgres = HD.bool
 
+instance ToPostgres Int32 where
+  toPostgres = HE.int4
+
+instance FromPostgres Int32 where
+  fromPostgres = HD.int4
+
 instance ToPostgres Text where
   toPostgres = HE.text
 
