@@ -116,7 +116,6 @@ library
                      , cmark-sections == 0.3.*
                      , containers >= 0.5
                      , contravariant
-                     , contravariant-extras
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
                      , df1

@@ -34,17 +34,15 @@ module Guide.Database.Get
 
 import Imports
 
-import Contravariant.Extras.Contrazip (contrazip2)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Text.RawString.QQ (r)
 
 import qualified Hasql.Decoders as HD
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Convert
 import Guide.Database.Types
+import Guide.Database.Utils
 import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
@@ -59,14 +57,16 @@ import Guide.Utils (Uid (..))
 -- in the database.
 getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitRow)
 getTraitRowMaybe traitId = do
-  let sql = [r|
-        SELECT uid, content, deleted, type_, item_uid
-        FROM traits
-        WHERE uid = $1
+  let statement :: Statement (Identity (Uid Trait)) (Maybe TraitRow)
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowMaybe fromPostgresRow))
+        [r|
+          SELECT uid, content, deleted, type_, item_uid
+          FROM traits
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe traitRowColumns
-  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity traitId) statement
 
 -- | Get a 'TraitRow'.
 --
@@ -89,18 +89,20 @@ getDeletedTraitRowsByItem
   -> TraitType
   -> ExceptT DatabaseError Transaction [TraitRow]
 getDeletedTraitRowsByItem itemId traitType = do
-  let sql = [r|
-        SELECT uid, content, deleted, type_, item_uid
-        FROM traits
-        WHERE item_uid = $1
-          AND deleted = true
-          AND type_ = ($2 :: trait_type)
+  let statement :: Statement (Uid Item, TraitType) [TraitRow]
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowList fromPostgresRow))
+        [r|
+          SELECT uid, content, deleted, type_, item_uid
+          FROM traits
+          WHERE item_uid = $1
+            AND deleted = true
+            AND type_ = ($2 :: trait_type)
         |]
-      encoder = contrazip2 uidParam traitTypeParam
-      decoder = HD.rowList traitRowColumns
-  lift $ HT.statement (itemId, traitType) (Statement sql encoder decoder False)
+  lift $ HT.statement (itemId, traitType) statement
 
--- | Get available traits (they ordered) beloning to an item.
+-- | Get available traits (they ordered) belonging to an item.
 getTraitRowsByItem
   :: Uid Item
   -> TraitType
@@ -122,26 +124,28 @@ getTraitRowsByItem itemId traitType = do
 -- in the database.
 getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
-  let sql = [r|
-        SELECT
-            uid
-          , name
-          , created
-          , link
-          , hackage
-          , summary
-          , ecosystem
-          , notes
-          , deleted
-          , category_uid
-          , pros_order
-          , cons_order
-        FROM items
-        WHERE uid = $1
+  let statement :: Statement (Identity (Uid Item)) (Maybe ItemRow)
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowMaybe fromPostgresRow))
+        [r|
+          SELECT
+              uid
+            , name
+            , created
+            , link
+            , hackage
+            , summary
+            , ecosystem
+            , notes
+            , deleted
+            , category_uid
+            , pros_order
+            , cons_order
+          FROM items
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe itemRowColumns
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity itemId) statement
 
 -- | Get an 'ItemRow'.
 --
@@ -161,27 +165,29 @@ getItemRow itemId = do
 -- Returns item rows without order.
 getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
 getDeletedItemRowsByCategory catId = do
-  let sql = [r|
-        SELECT
-            uid
-          , name
-          , created
-          , link
-          , hackage
-          , summary
-          , ecosystem
-          , notes
-          , deleted
-          , category_uid
-          , pros_order
-          , cons_order
-        FROM items
-        WHERE category_uid = $1
-          AND deleted = true
+  let statement :: Statement (Identity (Uid Category)) [ItemRow]
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowList fromPostgresRow))
+        [r|
+          SELECT
+              uid
+            , name
+            , created
+            , link
+            , hackage
+            , summary
+            , ecosystem
+            , notes
+            , deleted
+            , category_uid
+            , pros_order
+            , cons_order
+          FROM items
+          WHERE category_uid = $1
+            AND deleted = true
         |]
-      encoder = uidParam
-      decoder = HD.rowList itemRowColumns
-  lift $ HT.statement catId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity catId) statement
 
 -- Get available ItemRows belonging to a category.
 --
@@ -194,14 +200,16 @@ getItemRowsByCategory catId = do
 -- | Get item id by trait.
 getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
 getItemIdByTraitMaybe traitId = do
-  let sql = [r|
-        SELECT item_uid
-        FROM traits
-        WHERE uid = $1
+  let statement :: Statement (Identity (Uid Trait)) (Maybe (Uid Item))
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowMaybe fromPostgresColumn))
+        [r|
+          SELECT item_uid
+          FROM traits
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe uidColumn
-  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity traitId) statement
 
 -- | Get item id by trait.
 --
@@ -220,22 +228,24 @@ getItemIdByTrait traitId = do
 -- | Get a 'CategoryRow'.
 getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)
 getCategoryRowMaybe catId = do
-  let sql = [r|
-        SELECT
-            uid
-          , title
-          , created
-          , group_
-          , status
-          , notes
-          , enabled_sections
-          , items_order
-        FROM categories
-        WHERE uid = $1
+  let statement :: Statement (Identity (Uid Category)) (Maybe CategoryRow)
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowMaybe fromPostgresRow))
+        [r|
+          SELECT
+              uid
+            , title
+            , created
+            , group_
+            , status
+            , notes
+            , enabled_sections
+            , items_order
+          FROM categories
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe categoryRowColumns
-  lift $ HT.statement catId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity catId) statement
 
 -- | Get a 'CategoryRow'.
 --
@@ -251,14 +261,16 @@ getCategoryRow catId = do
 getCategoryIdByItemMaybe
   :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
 getCategoryIdByItemMaybe itemId = do
-  let sql = [r|
-        SELECT category_uid
-        FROM items
-        WHERE uid = $1
+  let statement :: Statement (Identity (Uid Item)) (Maybe (Uid Category))
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowMaybe fromPostgresColumn))
+        [r|
+          SELECT category_uid
+          FROM items
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe uidColumn
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  lift $ HT.statement (Identity itemId) statement
 
 -- | Get an ID of the category that an item belongs to.
 --
@@ -286,13 +298,15 @@ getCategoryRowByItemMaybe itemId = do
 -- TODO explain why we store deleted categories at all.
 getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
-  let sql = [r|
-        SELECT uid
-        FROM categories
+  let statement :: Statement () [Uid Category]
+      statement = makeStatement
+        (#prepared False)
+        (#result (HD.rowList fromPostgresColumn))
+        [r|
+          SELECT uid
+          FROM categories
         |]
-      encoder = HE.noParams
-      decoder = HD.rowList uidColumn
-  lift $ HT.statement () (Statement sql encoder decoder False)
+  lift $ HT.statement () statement
 
 -- | Get all category rows.
 getCategoryRows :: ExceptT DatabaseError Transaction [CategoryRow]
