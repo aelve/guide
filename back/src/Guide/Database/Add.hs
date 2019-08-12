@@ -23,12 +23,11 @@ import Hasql.Transaction (Transaction)
 import Named
 import Text.RawString.QQ (r)
 
-import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
 import Guide.Database.Set
 import Guide.Database.Types
-import Guide.Database.Utils (makeStatement)
+import Guide.Database.Utils (execute)
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..), ItemSection)
 import Guide.Utils (Uid (..))
 
@@ -56,7 +55,7 @@ addCategory
   =
   do
   let statement :: Statement CategoryRow ()
-      statement = makeStatement (#result HD.noResult)
+      statement = execute
         [r|
           INSERT INTO categories
             ( uid
@@ -98,7 +97,7 @@ addItem
   -> ExceptT DatabaseError Transaction ()
 addItem catId itemId (arg #name -> name) (arg #created -> created) = do
   let statement :: Statement ItemRow ()
-      statement = makeStatement (#result HD.noResult)
+      statement = execute
         [r|
           INSERT INTO items
             ( uid
@@ -150,7 +149,7 @@ addTrait
   -> ExceptT DatabaseError Transaction ()
 addTrait itemId traitId traitType (arg #content -> content) = do
   let statement :: Statement TraitRow ()
-      statement = makeStatement (#result HD.noResult)
+      statement = execute
         [r|
           INSERT INTO traits (uid, content, deleted, type_, item_uid)
           VALUES ($1,$2,$3,($4 :: trait_type),$5)

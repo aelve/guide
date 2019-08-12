@@ -38,7 +38,6 @@ import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Text.RawString.QQ (r)
 
-import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
 import Guide.Database.Types
@@ -58,8 +57,7 @@ import Guide.Utils (Uid (..))
 getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitRow)
 getTraitRowMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe TraitRow)
-      statement = makeStatement
-        (#result (HD.rowMaybe fromPostgresRow))
+      statement = query
         [r|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
@@ -89,8 +87,7 @@ getDeletedTraitRowsByItem
   -> ExceptT DatabaseError Transaction [TraitRow]
 getDeletedTraitRowsByItem itemId traitType = do
   let statement :: Statement (Uid Item, TraitType) [TraitRow]
-      statement = makeStatement
-        (#result (HD.rowList fromPostgresRow))
+      statement = queryMany
         [r|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
@@ -123,8 +120,7 @@ getTraitRowsByItem itemId traitType = do
 getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe ItemRow)
-      statement = makeStatement
-        (#result (HD.rowMaybe fromPostgresRow))
+      statement = query
         [r|
           SELECT
               uid
@@ -163,8 +159,7 @@ getItemRow itemId = do
 getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
 getDeletedItemRowsByCategory catId = do
   let statement :: Statement (Identity (Uid Category)) [ItemRow]
-      statement = makeStatement
-        (#result (HD.rowList fromPostgresRow))
+      statement = queryMany
         [r|
           SELECT
               uid
@@ -197,8 +192,7 @@ getItemRowsByCategory catId = do
 getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
 getItemIdByTraitMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe (Uid Item))
-      statement = makeStatement
-        (#result (HD.rowMaybe fromPostgresColumn))
+      statement = fmap runIdentity <$> query
         [r|
           SELECT item_uid
           FROM traits
@@ -224,8 +218,7 @@ getItemIdByTrait traitId = do
 getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)
 getCategoryRowMaybe catId = do
   let statement :: Statement (Identity (Uid Category)) (Maybe CategoryRow)
-      statement = makeStatement
-        (#result (HD.rowMaybe fromPostgresRow))
+      statement = query
         [r|
           SELECT
               uid
@@ -256,8 +249,7 @@ getCategoryIdByItemMaybe
   :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
 getCategoryIdByItemMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe (Uid Category))
-      statement = makeStatement
-        (#result (HD.rowMaybe fromPostgresColumn))
+      statement = fmap runIdentity <$> query
         [r|
           SELECT category_uid
           FROM items
@@ -292,8 +284,7 @@ getCategoryRowByItemMaybe itemId = do
 getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
   let statement :: Statement () [Uid Category]
-      statement = makeStatement
-        (#result (HD.rowList fromPostgresColumn))
+      statement = fmap runIdentity <$> queryMany
         [r|
           SELECT uid
           FROM categories

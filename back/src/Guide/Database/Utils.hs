@@ -11,7 +11,9 @@
 module Guide.Database.Utils
 (
   makeStatement,
-  makePreparedStatement,
+  query,
+  queryMany,
+  execute,
   ToPostgres (..),
   FromPostgres (..),
   ToPostgresParam (..),
@@ -40,19 +42,28 @@ import Guide.Utils (Uid (..))
 
 makeStatement
   :: ToPostgresParams a
-  => "result" :! HD.Result b
+  => "prepared" :! Bool
+  -> "result" :! HD.Result b
   -> ByteString
   -> Statement a b
-makeStatement (arg #result -> result) sql =
-  Statement sql toPostgresParams result False
+makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
+  Statement sql toPostgresParams result prepared
 
-makePreparedStatement
-  :: ToPostgresParams a
-  => "result" :! HD.Result b
-  -> ByteString
-  -> Statement a b
-makePreparedStatement (arg #result -> result) sql =
-  Statement sql toPostgresParams result True
+----------------------------------------------------------------------------
+-- Easier versions
+----------------------------------------------------------------------------
+
+-- | Fetch a single row from the database.
+query :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a (Maybe b)
+query = makeStatement (#prepared False) (#result (HD.rowMaybe fromPostgresRow))
+
+-- | Fetch many rows from the database.
+queryMany :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a [b]
+queryMany = makeStatement (#prepared False) (#result (HD.rowList fromPostgresRow))
+
+-- | Execute a query without returning anything.
+execute :: ToPostgresParams a => ByteString -> Statement a ()
+execute = makeStatement (#prepared False) (#result HD.noResult)
 
 ----------------------------------------------------------------------------
 -- Classes
