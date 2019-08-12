@@ -78,42 +78,42 @@ modifyCategoryRow catId f = do
   -- Update title
   when (old_categoryRowTitle /= new_categoryRowTitle) $ do
     let statement :: Statement (Uid Category, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET title = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowTitle) statement
 
   -- Update group
   when (old_categoryRowGroup /= new_categoryRowGroup) $ do
     let statement :: Statement (Uid Category, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET group_ = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowGroup) statement
 
   -- Update status
   when (old_categoryRowStatus /= new_categoryRowStatus) $ do
     let statement :: Statement (Uid Category, CategoryStatus) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET status = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowStatus) statement
 
   -- Update notes
   when (old_categoryRowNotes /= new_categoryRowNotes) $ do
     let statement :: Statement (Uid Category, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET notes = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowNotes) statement
 
   -- Update enabled sections
   when (old_categoryRowEnabledSections /= new_categoryRowEnabledSections) $ do
     let statement :: Statement (Uid Category, Set ItemSection) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET enabled_sections = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowEnabledSections) statement
 
   -- Update item order
   when (old_categoryRowItemsOrder /= new_categoryRowItemsOrder) $ do
     let statement :: Statement (Uid Category, [Uid Item]) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE categories SET items_order = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowItemsOrder) statement
 
@@ -121,7 +121,7 @@ modifyCategoryRow catId f = do
 deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()
 deleteCategory catId = do
   let statement :: Statement (Identity (Uid Category)) ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           DELETE FROM categories
           WHERE uid = $1
@@ -170,70 +170,70 @@ modifyItemRow itemId f = do
   -- Update name
   when (old_itemRowName /= new_itemRowName) $ do
     let statement :: Statement (Uid Item, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET name = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowName) statement
 
   -- Update link
   when (old_itemRowLink /= new_itemRowLink) $ do
     let statement :: Statement (Uid Item, Maybe Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET link = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowLink) statement
 
   -- Update hackage
   when (old_itemRowHackage /= new_itemRowHackage) $ do
     let statement :: Statement (Uid Item, Maybe Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET hackage = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowHackage) statement
 
   -- Update summary
   when (old_itemRowSummary /= new_itemRowSummary) $ do
     let statement :: Statement (Uid Item, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET summary = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowSummary) statement
 
   -- Update ecosystem
   when (old_itemRowEcosystem /= new_itemRowEcosystem) $ do
     let statement :: Statement (Uid Item, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET ecosystem = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowEcosystem) statement
 
   -- Update notes
   when (old_itemRowNotes /= new_itemRowNotes) $ do
     let statement :: Statement (Uid Item, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET notes = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowNotes) statement
 
   -- Update deleted
   when (old_itemRowDeleted /= new_itemRowDeleted) $ do
     let statement :: Statement (Uid Item, Bool) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET deleted = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowDeleted) statement
 
   -- Update categoryUid
   when (old_itemRowCategoryUid /= new_itemRowCategoryUid) $ do
     let statement :: Statement (Uid Item, Uid Category) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET category_uid = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowCategoryUid) statement
 
   -- Update prosOrder
   when (old_itemRowProsOrder /= new_itemRowProsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET pros_order = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowProsOrder) statement
 
   -- Update consOrder
   when (old_itemRowConsOrder /= new_itemRowConsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE items SET cons_order = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowConsOrder) statement
 
@@ -242,7 +242,7 @@ deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItem itemId = do
   catId <- getCategoryIdByItem itemId
   let statement :: Statement (Identity (Uid Item)) ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           DELETE FROM items
           WHERE uid = $1
@@ -287,28 +287,28 @@ modifyTraitRow catId f = do
   -- Update content
   when (old_traitRowContent /= new_traitRowContent) $ do
     let statement :: Statement (Uid Trait, Text) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE traits SET content = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_traitRowContent) statement
 
   -- Update deleted
   when (old_traitRowDeleted /= new_traitRowDeleted) $ do
     let statement :: Statement (Uid Trait, Bool) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE traits SET deleted = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_traitRowDeleted) statement
 
   -- Update type
   when (old_traitRowType /= new_traitRowType) $ do
     let statement :: Statement (Uid Trait, TraitType) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE traits SET type_ = ($2 :: trait_type) WHERE uid = $1|]
     lift $ HT.statement (catId, new_traitRowType) statement
 
   -- Update itemUid
   when (old_traitRowItemUid /= new_traitRowItemUid) $ do
     let statement :: Statement (Uid Trait, Uid Item) ()
-        statement = makeStatement (#prepared False) (#result HD.noResult)
+        statement = makeStatement (#result HD.noResult)
           [r|UPDATE traits SET item_uid = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_traitRowItemUid) statement
 
@@ -318,7 +318,7 @@ deleteTrait traitId = do
   itemId <- getItemIdByTrait traitId
   traitType <- traitRowType <$> getTraitRow traitId
   let statement :: Statement (Identity (Uid Trait)) ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           DELETE FROM traits
           WHERE uid = $1

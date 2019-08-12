@@ -11,6 +11,7 @@
 module Guide.Database.Utils
 (
   makeStatement,
+  makePreparedStatement,
   ToPostgres (..),
   FromPostgres (..),
   ToPostgresParam (..),
@@ -39,12 +40,19 @@ import Guide.Utils (Uid (..))
 
 makeStatement
   :: ToPostgresParams a
-  => "prepared" :! Bool
-  -> "result" :! HD.Result b
+  => "result" :! HD.Result b
   -> ByteString
   -> Statement a b
-makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
-  Statement sql toPostgresParams result prepared
+makeStatement (arg #result -> result) sql =
+  Statement sql toPostgresParams result False
+
+makePreparedStatement
+  :: ToPostgresParams a
+  => "result" :! HD.Result b
+  -> ByteString
+  -> Statement a b
+makePreparedStatement (arg #result -> result) sql =
+  Statement sql toPostgresParams result True
 
 ----------------------------------------------------------------------------
 -- Classes

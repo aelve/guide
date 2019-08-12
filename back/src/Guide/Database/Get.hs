@@ -59,7 +59,6 @@ getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitR
 getTraitRowMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe TraitRow)
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowMaybe fromPostgresRow))
         [r|
           SELECT uid, content, deleted, type_, item_uid
@@ -91,7 +90,6 @@ getDeletedTraitRowsByItem
 getDeletedTraitRowsByItem itemId traitType = do
   let statement :: Statement (Uid Item, TraitType) [TraitRow]
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowList fromPostgresRow))
         [r|
           SELECT uid, content, deleted, type_, item_uid
@@ -126,7 +124,6 @@ getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe ItemRow)
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowMaybe fromPostgresRow))
         [r|
           SELECT
@@ -167,7 +164,6 @@ getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transactio
 getDeletedItemRowsByCategory catId = do
   let statement :: Statement (Identity (Uid Category)) [ItemRow]
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowList fromPostgresRow))
         [r|
           SELECT
@@ -202,7 +198,6 @@ getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (
 getItemIdByTraitMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe (Uid Item))
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowMaybe fromPostgresColumn))
         [r|
           SELECT item_uid
@@ -230,7 +225,6 @@ getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe 
 getCategoryRowMaybe catId = do
   let statement :: Statement (Identity (Uid Category)) (Maybe CategoryRow)
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowMaybe fromPostgresRow))
         [r|
           SELECT
@@ -263,7 +257,6 @@ getCategoryIdByItemMaybe
 getCategoryIdByItemMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe (Uid Category))
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowMaybe fromPostgresColumn))
         [r|
           SELECT category_uid
@@ -300,7 +293,6 @@ getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
   let statement :: Statement () [Uid Category]
       statement = makeStatement
-        (#prepared False)
         (#result (HD.rowList fromPostgresColumn))
         [r|
           SELECT uid

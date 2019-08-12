@@ -56,7 +56,7 @@ addCategory
   =
   do
   let statement :: Statement CategoryRow ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           INSERT INTO categories
             ( uid
@@ -98,7 +98,7 @@ addItem
   -> ExceptT DatabaseError Transaction ()
 addItem catId itemId (arg #name -> name) (arg #created -> created) = do
   let statement :: Statement ItemRow ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           INSERT INTO items
             ( uid
@@ -150,7 +150,7 @@ addTrait
   -> ExceptT DatabaseError Transaction ()
 addTrait itemId traitId traitType (arg #content -> content) = do
   let statement :: Statement TraitRow ()
-      statement = makeStatement (#prepared False) (#result HD.noResult)
+      statement = makeStatement (#result HD.noResult)
         [r|
           INSERT INTO traits (uid, content, deleted, type_, item_uid)
           VALUES ($1,$2,$3,($4 :: trait_type),$5)
