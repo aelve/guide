@@ -21,6 +21,7 @@ import Data.Functor.Contravariant ((>$<))
 import Data.Functor.Contravariant.Divisible (divided, lost, chosen)
 import Generics.Eot
 
+import qualified Data.Set as Set
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
 
@@ -71,21 +72,55 @@ class FromPostgresRow a where
 -- ToPostgresParam
 ----------------------------------------------------------------------------
 
+instance {-# OVERLAPPABLE #-} ToPostgres a => ToPostgresParam a where
+  toPostgresParam = HE.param (HE.nonNullable toPostgres)
+
 instance ToPostgres a => ToPostgresParam (Maybe a) where
   toPostgresParam = HE.param (HE.nullable toPostgres)
 
-instance ToPostgres a => ToPostgresParam a where
-  toPostgresParam = HE.param (HE.nonNullable toPostgres)
+instance ToPostgres a => ToPostgresParam [a] where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
+
+instance ToPostgres a => ToPostgresParam [Maybe a] where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
+
+instance ToPostgres a => ToPostgresParam (Set a) where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
+
+instance ToPostgres a => ToPostgresParam (Set (Maybe a)) where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
 
 ----------------------------------------------------------------------------
 -- FromPostgresColumn
 ----------------------------------------------------------------------------
 
+instance {-# OVERLAPPABLE #-} FromPostgres a => FromPostgresColumn a where
+  fromPostgresColumn = HD.column (HD.nonNullable fromPostgres)
+
 instance FromPostgres a => FromPostgresColumn (Maybe a) where
   fromPostgresColumn = HD.column (HD.nullable fromPostgres)
 
-instance FromPostgres a => FromPostgresColumn a where
-  fromPostgresColumn = HD.column (HD.nonNullable fromPostgres)
+instance FromPostgres a => FromPostgresColumn [a] where
+  fromPostgresColumn =
+    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
+
+instance FromPostgres a => FromPostgresColumn [Maybe a] where
+  fromPostgresColumn =
+    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
+
+instance (Ord a, FromPostgres a) => FromPostgresColumn (Set a) where
+  fromPostgresColumn =
+    Set.fromList <$>
+    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
+
+instance (Ord a, FromPostgres a) => FromPostgresColumn (Set (Maybe a)) where
+  fromPostgresColumn =
+    Set.fromList <$>
+    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
 
 ----------------------------------------------------------------------------
 -- GToPostgresParams
@@ -149,16 +184,16 @@ instance FromPostgres (Uid a) where
 
 -- Note: 'Generic' provides instances for tuples only until 7-tuples
 
-instance (ToPostgres a, ToPostgres b) => ToPostgresParams (a, b)
-instance (ToPostgres a, ToPostgres b, ToPostgres c) => ToPostgresParams (a, b, c)
-instance (ToPostgres a, ToPostgres b, ToPostgres c, ToPostgres d) => ToPostgresParams (a, b, c, d)
-instance (ToPostgres a, ToPostgres b, ToPostgres c, ToPostgres d, ToPostgres e) => ToPostgresParams (a, b, c, d, e)
-instance (ToPostgres a, ToPostgres b, ToPostgres c, ToPostgres d, ToPostgres e, ToPostgres f) => ToPostgresParams (a, b, c, d, e, f)
-instance (ToPostgres a, ToPostgres b, ToPostgres c, ToPostgres d, ToPostgres e, ToPostgres f, ToPostgres g) => ToPostgresParams (a, b, c, d, e, f, g)
+instance (ToPostgresParam a, ToPostgresParam b) => ToPostgresParams (a, b)
+instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c) => ToPostgresParams (a, b, c)
+instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d) => ToPostgresParams (a, b, c, d)
+instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e) => ToPostgresParams (a, b, c, d, e)
+instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e, ToPostgresParam f) => ToPostgresParams (a, b, c, d, e, f)
+instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e, ToPostgresParam f, ToPostgresParam g) => ToPostgresParams (a, b, c, d, e, f, g)
 
-instance (FromPostgres a, FromPostgres b) => FromPostgresRow (a, b)
-instance (FromPostgres a, FromPostgres b, FromPostgres c) => FromPostgresRow (a, b, c)
-instance (FromPostgres a, FromPostgres b, FromPostgres c, FromPostgres d) => FromPostgresRow (a, b, c, d)
-instance (FromPostgres a, FromPostgres b, FromPostgres c, FromPostgres d, FromPostgres e) => FromPostgresRow (a, b, c, d, e)
-instance (FromPostgres a, FromPostgres b, FromPostgres c, FromPostgres d, FromPostgres e, FromPostgres f) => FromPostgresRow (a, b, c, d, e, f)
-instance (FromPostgres a, FromPostgres b, FromPostgres c, FromPostgres d, FromPostgres e, FromPostgres f, FromPostgres g) => FromPostgresRow (a, b, c, d, e, f, g)
+instance (FromPostgresColumn a, FromPostgresColumn b) => FromPostgresRow (a, b)
+instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c) => FromPostgresRow (a, b, c)
+instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d) => FromPostgresRow (a, b, c, d)
+instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d, FromPostgresColumn e) => FromPostgresRow (a, b, c, d, e)
+instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d, FromPostgresColumn e, FromPostgresColumn f) => FromPostgresRow (a, b, c, d, e, f)
+instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d, FromPostgresColumn e, FromPostgresColumn f, FromPostgresColumn g) => FromPostgresRow (a, b, c, d, e, f, g)
