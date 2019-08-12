@@ -36,6 +36,7 @@ import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline, markdo
 import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
                          TraitType)
 import Guide.Utils (Uid (..), makeClassWithLenses, fields)
+import Guide.Database.Utils
 
 
 -- | Custom datatype errors for database
@@ -64,10 +65,13 @@ data CategoryRow = CategoryRow
   , categoryRowNotes           :: Text
   , categoryRowEnabledSections :: Set ItemSection
   , categoryRowItemsOrder      :: [Uid Item]
-  } deriving Show
+  } deriving (Show, Generic)
 
 -- | Make CategoryRowLenses Class to use lenses with this type.
 makeClassWithLenses ''CategoryRow
+
+instance ToPostgresParams CategoryRow
+instance FromPostgresRow CategoryRow
 
 -- | Item intermediary type.
 data ItemRow = ItemRow
@@ -83,10 +87,13 @@ data ItemRow = ItemRow
   , itemRowCategoryUid :: Uid Category
   , itemRowProsOrder   :: [Uid Trait]
   , itemRowConsOrder   :: [Uid Trait]
-  } deriving Show
+  } deriving (Show, Generic)
 
 -- | Make ItemRowLenses Class to use lenses with this type.
 makeClassWithLenses ''ItemRow
+
+instance ToPostgresParams ItemRow
+instance FromPostgresRow ItemRow
 
 -- | Trait intermediary type.
 data TraitRow = TraitRow
@@ -95,10 +102,13 @@ data TraitRow = TraitRow
   , traitRowDeleted :: Bool
   , traitRowType    :: TraitType
   , traitRowItemUid :: Uid Item
-  } deriving Show
+  } deriving (Show, Generic)
 
 -- | Make TraitRowLenses Class to use lenses with this type.
 makeClassWithLenses ''TraitRow
+
+instance ToPostgresParams TraitRow
+instance FromPostgresRow TraitRow
 
 ----------------------------------------------------------------------------
 -- Convertions between types

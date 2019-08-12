@@ -13,6 +13,8 @@ module Guide.Database.Utils
   makeStatement,
   ToPostgres (..),
   FromPostgres (..),
+  ToPostgresParams (..),
+  FromPostgresRow (..),
 )
 where
 
@@ -173,6 +175,12 @@ instance ToPostgres Text where
 
 instance FromPostgres Text where
   fromPostgres = HD.text
+
+instance ToPostgres UTCTime where
+  toPostgres = HE.timestamptz
+
+instance FromPostgres UTCTime where
+  fromPostgres = HD.timestamptz
 
 instance ToPostgres (Uid a) where
   toPostgres = uidToText >$< HE.text

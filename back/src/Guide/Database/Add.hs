@@ -26,9 +26,9 @@ import Text.RawString.QQ (r)
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Convert
 import Guide.Database.Set
 import Guide.Database.Types
+import Guide.Database.Utils (makeStatement)
 import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..), ItemSection)
 import Guide.Utils (Uid (..))
 
@@ -55,21 +55,21 @@ addCategory
   (arg #enabledSections -> enabledSections)
   =
   do
-  let sql = [r|
-        INSERT INTO categories
-          ( uid
-          , title
-          , created
-          , group_
-          , status
-          , notes
-          , enabled_sections
-          , items_order
-          )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+  let statement :: Statement CategoryRow ()
+      statement = makeStatement (#prepared False) (#result HD.noResult)
+        [r|
+          INSERT INTO categories
+            ( uid
+            , title
+            , created
+            , group_
+            , status
+            , notes
+            , enabled_sections
+            , items_order
+            )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         |]
-      encoder = categoryRowParams
-      decoder = HD.noResult
   lift $ HT.statement
     CategoryRow
       { categoryRowUid = catId
@@ -81,7 +81,7 @@ addCategory
       , categoryRowEnabledSections = enabledSections
       , categoryRowItemsOrder = []
       }
-    (Statement sql encoder decoder False)
+    statement
 
 ----------------------------------------------------------------------------
 -- addItem
@@ -97,25 +97,25 @@ addItem
   -> "created" :! UTCTime  -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
 addItem catId itemId (arg #name -> name) (arg #created -> created) = do
-  let sql = [r|
-        INSERT INTO items
-          ( uid
-          , name
-          , created
-          , link
-          , hackage
-          , summary
-          , ecosystem
-          , notes
-          , deleted
-          , category_uid
-          , pros_order
-          , cons_order
-          )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+  let statement :: Statement ItemRow ()
+      statement = makeStatement (#prepared False) (#result HD.noResult)
+        [r|
+          INSERT INTO items
+            ( uid
+            , name
+            , created
+            , link
+            , hackage
+            , summary
+            , ecosystem
+            , notes
+            , deleted
+            , category_uid
+            , pros_order
+            , cons_order
+            )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         |]
-      encoder = itemRowParams
-      decoder = HD.noResult
   lift $ HT.statement
     ItemRow
       { itemRowUid = itemId
@@ -131,7 +131,7 @@ addItem catId itemId (arg #name -> name) (arg #created -> created) = do
       , itemRowProsOrder = []
       , itemRowConsOrder = []
       }
-    (Statement sql encoder decoder False)
+    statement
   modifyCategoryRow catId $
     _categoryRowItemsOrder %~ (++ [itemId])
 
@@ -149,12 +149,12 @@ addTrait
   -> "content" :! Text    -- ^ Trait content
   -> ExceptT DatabaseError Transaction ()
 addTrait itemId traitId traitType (arg #content -> content) = do
-  let sql = [r|
-        INSERT INTO traits (uid, content, deleted, type_, item_uid)
-        VALUES ($1,$2,$3,($4 :: trait_type),$5)
+  let statement :: Statement TraitRow ()
+      statement = makeStatement (#prepared False) (#result HD.noResult)
+        [r|
+          INSERT INTO traits (uid, content, deleted, type_, item_uid)
+          VALUES ($1,$2,$3,($4 :: trait_type),$5)
         |]
-      encoder = traitRowParams
-      decoder = HD.noResult
   lift $ HT.statement
     TraitRow
       { traitRowUid = traitId
@@ -163,7 +163,7 @@ addTrait itemId traitId traitType (arg #content -> content) = do
       , traitRowType = traitType
       , traitRowItemUid = itemId
       }
-    (Statement sql encoder decoder False)
+    statement
   case traitType of
     TraitTypePro ->
       modifyItemRow itemId $
