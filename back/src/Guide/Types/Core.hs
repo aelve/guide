@@ -40,10 +40,13 @@ import Data.SafeCopy.Migrate
 import Guide.Markdown
 import Guide.Types.Hue
 import Guide.Utils
+import Guide.Database.Utils (ToPostgres (..), FromPostgres (..))
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
 
 ----------------------------------------------------------------------------
 -- General notes on code
@@ -81,6 +84,17 @@ instance Aeson.ToJSON Trait where
 -- (negative traits).
 data TraitType = TraitTypePro | TraitTypeCon
   deriving (Eq, Show)
+
+instance ToPostgres TraitType where
+  toPostgres = HE.enum $ \case
+    TraitTypePro -> "pro"
+    TraitTypeCon -> "con"
+
+instance FromPostgres TraitType where
+  fromPostgres = HD.enum $ \case
+    "pro" -> Just TraitTypePro
+    "con" -> Just TraitTypeCon
+    _ -> Nothing
 
 ----------------------------------------------------------------------------
 -- Item
@@ -148,6 +162,19 @@ instance Aeson.ToJSON ItemSection where
 instance Aeson.FromJSON ItemSection where
   parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
 
+instance ToPostgres ItemSection where
+  toPostgres = HE.enum $ \case
+    ItemProsConsSection -> "pros_cons"
+    ItemEcosystemSection -> "ecosystem"
+    ItemNotesSection -> "notes"
+
+instance FromPostgres ItemSection where
+  fromPostgres = HD.enum $ \case
+    "pros_cons" -> Just ItemProsConsSection
+    "ecosystem" -> Just ItemEcosystemSection
+    "notes" -> Just ItemNotesSection
+    _ -> Nothing
+
 -- TODO: add a field like “people to ask on IRC about this library if you
 -- need help”
 
@@ -213,6 +240,19 @@ instance Aeson.ToJSON CategoryStatus where
 
 instance Aeson.FromJSON CategoryStatus where
   parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+instance ToPostgres CategoryStatus where
+  toPostgres = HE.enum $ \case
+    CategoryStub -> "stub"
+    CategoryWIP -> "wip"
+    CategoryFinished -> "finished"
+
+instance FromPostgres CategoryStatus where
+  fromPostgres = HD.enum $ \case
+    "stub" -> Just CategoryStub
+    "wip" -> Just CategoryWIP
+    "finished" -> Just CategoryFinished
+    _ -> Nothing
 
 data CategoryStatus_v1
   = CategoryStub_v1
