@@ -186,6 +186,7 @@ instance FromPostgres (Uid a) where
 
 -- Note: 'Generic' provides instances for tuples only until 7-tuples
 
+instance ToPostgresParam a => ToPostgresParams (Identity a)
 instance (ToPostgresParam a, ToPostgresParam b) => ToPostgresParams (a, b)
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c) => ToPostgresParams (a, b, c)
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d) => ToPostgresParams (a, b, c, d)
@@ -193,6 +194,7 @@ instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresPar
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e, ToPostgresParam f) => ToPostgresParams (a, b, c, d, e, f)
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e, ToPostgresParam f, ToPostgresParam g) => ToPostgresParams (a, b, c, d, e, f, g)
 
+instance FromPostgresColumn a => FromPostgresRow (Identity a)
 instance (FromPostgresColumn a, FromPostgresColumn b) => FromPostgresRow (a, b)
 instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c) => FromPostgresRow (a, b, c)
 instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d) => FromPostgresRow (a, b, c, d)
