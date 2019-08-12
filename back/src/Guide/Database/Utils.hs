@@ -11,6 +11,8 @@
 module Guide.Database.Utils
 (
   makeStatement,
+  ToPostgres (..),
+  FromPostgres (..),
 )
 where
 
