@@ -51,18 +51,20 @@ import Guide.Utils (Uid (..))
 -- Query functions
 ----------------------------------------------------------------------------
 
--- | A general function for creating a 'Statement'.
---
--- Uses 'ToPostgresParams' for encoding, but requires specifying the decoder
--- manually.
+-- | A wrapper around 'Statement' using named parameters.
 makeStatement
-  :: ToPostgresParams a
-  => "prepared" :! Bool  -- ^ Whether the query should be prepared
+  :: "prepared" :! Bool  -- ^ Whether the query should be prepared
+  -> "params" :! HE.Params a  -- ^ How to encode the parameters
   -> "result" :! HD.Result b  -- ^ How to decode the result
   -> ByteString  -- ^ Query
   -> Statement a b
-makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
-  Statement sql toPostgresParams result prepared
+makeStatement
+  (arg #prepared -> prepared)
+  (arg #params -> params)
+  (arg #result -> result)
+  sql
+  =
+  Statement sql params result prepared
 
 -- | Fetch a single row from the database.
 --
@@ -106,6 +108,7 @@ queryRow = QuasiQuoter
   { quoteExp = \s ->
       [|makeStatement
           (#prepared False)
+          (#params toPostgresParams)
           (#result (HD.rowMaybe fromPostgresRow))
           $(stringE s)|]
   , quotePat = error "queryRow: can not be used in patterns"
@@ -122,6 +125,7 @@ queryRows = QuasiQuoter
   { quoteExp = \s ->
       [|makeStatement
           (#prepared False)
+          (#params toPostgresParams)
           (#result (HD.rowList fromPostgresRow))
           $(stringE s)|]
   , quotePat = error "queryRows: can not be used in patterns"
@@ -138,6 +142,7 @@ execute = QuasiQuoter
   { quoteExp = \s ->
       [|makeStatement
           (#prepared False)
+          (#params toPostgresParams)
           (#result HD.noResult)
           $(stringE s)|]
   , quotePat = error "execute: can not be used in patterns"
