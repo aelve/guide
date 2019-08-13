@@ -296,19 +296,28 @@ class ToPostgresParams a where
   -- | Pass a row of parameters to a query.
   toPostgresParams :: HE.Params a
 
+  -- | A default implementation for anything that implements 'Generic'.
   default toPostgresParams :: (HasEot a, GToPostgresParams (Eot a)) => HE.Params a
   toPostgresParams = toEot >$< genericToPostgresParams
 
 class GToPostgresParams a where
+  -- | A generic method to encode data types with one constructor as Hasql
+  -- rows. See
+  -- <https://generics-eot.readthedocs.io/en/stable/tutorial.html#eot-isomorphic-representations>
+  -- to understand its implementation.
   genericToPostgresParams :: HE.Params a
 
+-- An instance for zero fields.
 instance GToPostgresParams () where
   genericToPostgresParams = HE.noParams
 
+-- If we can encode N fields, we can encode N+1 fields.
 instance (ToPostgresParam a, GToPostgresParams b) => GToPostgresParams (a, b) where
   genericToPostgresParams = divided toPostgresParam genericToPostgresParams
 
--- We only support generics for one-constructor types
+-- One-constructor types are represented as @Either a Void@, where @a@ is a
+-- tuple that we already know how to encode thanks to the instances above.
+-- We do not support types with more than one constructor.
 instance GToPostgresParams a => GToPostgresParams (Either a Void) where
   genericToPostgresParams = chosen genericToPostgresParams lost
 
@@ -320,19 +329,28 @@ class FromPostgresRow a where
   -- | Fetch a row of results from a query.
   fromPostgresRow :: HD.Row a
 
+  -- | A default implementation for anything that implements 'Generic'.
   default fromPostgresRow :: (HasEot a, GFromPostgresRow (Eot a)) => HD.Row a
   fromPostgresRow = fromEot <$> genericFromPostgresRow
 
 class GFromPostgresRow a where
+  -- | A generic method to decode data types with one constructor as Hasql
+  -- rows. See
+  -- <https://generics-eot.readthedocs.io/en/stable/tutorial.html#eot-isomorphic-representations>
+  -- to understand its implementation.
   genericFromPostgresRow :: HD.Row a
 
+-- An instance for zero fields.
 instance GFromPostgresRow () where
   genericFromPostgresRow = pure ()
 
+-- If we can encode N fields, we can encode N+1 fields.
 instance (FromPostgresColumn a, GFromPostgresRow b) => GFromPostgresRow (a, b) where
   genericFromPostgresRow = (,) <$> fromPostgresColumn <*> genericFromPostgresRow
 
--- We only support generics for one-constructor types
+-- One-constructor types are represented as @Either a Void@, where @a@ is a
+-- tuple that we already know how to encode thanks to the instances above.
+-- We do not support types with more than one constructor.
 instance GFromPostgresRow a => GFromPostgresRow (Either a Void) where
   genericFromPostgresRow = Left <$> genericFromPostgresRow
 
