@@ -153,6 +153,7 @@ library
                      , network
                      , network-uri
                      , patches-vector
+                     , profunctors
                      , random >= 1.1
                      , raw-strings-qq
                      , reroute

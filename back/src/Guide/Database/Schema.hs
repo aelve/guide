@@ -81,10 +81,12 @@ getSchemaVersion = do
         VALUES ('main', null)
         ON CONFLICT DO NOTHING;
     |]
-  let selectVersion :: Statement () (Maybe (Maybe Int32))
-      selectVersion = fmap runIdentity <$> queryRow
+  let selectVersion :: Statement () (Maybe (SingleColumn (Maybe Int32)))
+      selectVersion = queryRow
         [r|SELECT version FROM schema_version WHERE name = 'main'|]
-  join <$> HS.statement () selectVersion
+  HS.statement () selectVersion >>= \case
+    Just (SingleColumn (Just v)) -> pure (Just v)
+    _ -> pure Nothing
 
 -- | Set schema version.
 --

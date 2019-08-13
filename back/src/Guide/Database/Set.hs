@@ -27,6 +27,7 @@ import Imports
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Text.RawString.QQ (r)
+import Data.Profunctor (lmap)
 
 import qualified Hasql.Transaction as HT
 
@@ -119,13 +120,14 @@ modifyCategoryRow catId f = do
 -- | Delete category completly.
 deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()
 deleteCategory catId = do
-  let statement :: Statement (Identity (Uid Category)) ()
-      statement = execute
+  let statement :: Statement (Uid Category) ()
+      statement =
+        lmap SingleParam $ execute
         [r|
           DELETE FROM categories
           WHERE uid = $1
         |]
-  lift $ HT.statement (Identity catId) statement
+  lift $ HT.statement catId statement
   -- Items belonging to the category will be deleted automatically because
   -- of "ON DELETE CASCADE" in the table schema.
 
@@ -240,13 +242,14 @@ modifyItemRow itemId f = do
 deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItem itemId = do
   catId <- getCategoryIdByItem itemId
-  let statement :: Statement (Identity (Uid Item)) ()
-      statement = execute
+  let statement :: Statement (Uid Item) ()
+      statement =
+        lmap SingleParam $ execute
         [r|
           DELETE FROM items
           WHERE uid = $1
         |]
-  lift $ HT.statement (Identity itemId) statement
+  lift $ HT.statement itemId statement
   modifyCategoryRow catId $
     _categoryRowItemsOrder %~ delete itemId
   -- Traits belonging to the item will be deleted automatically because of
@@ -316,13 +319,14 @@ deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
 deleteTrait traitId = do
   itemId <- getItemIdByTrait traitId
   traitType <- traitRowType <$> getTraitRow traitId
-  let statement :: Statement (Identity (Uid Trait)) ()
-      statement = execute
+  let statement :: Statement (Uid Trait) ()
+      statement =
+        lmap SingleParam $ execute
         [r|
           DELETE FROM traits
           WHERE uid = $1
         |]
-  lift $ HT.statement (Identity traitId) statement
+  lift $ HT.statement traitId statement
   case traitType of
     TraitTypePro ->
       modifyItemRow itemId $
