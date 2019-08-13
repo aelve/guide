@@ -701,8 +701,8 @@ escapeJSString s =
     B.singleton '"' <> quote s <> B.singleton '"'
   where
     quote q = case T.uncons t of
-      Nothing       -> toBuilder h
-      Just (!c, t') -> toBuilder h <> escape c <> quote t'
+      Nothing       -> toTextBuilder h
+      Just (!c, t') -> toTextBuilder h <> escape c <> quote t'
       where
         (h, t) = T.break isEscape q
     -- 'isEscape' doesn't mention \n, \r and \t because they are handled by

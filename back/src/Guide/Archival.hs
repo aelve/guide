@@ -30,7 +30,7 @@ import qualified Data.Aeson as Aeson
 getArchivalStatus :: Manager -> Url -> IO (Either String ArchivalStatus)
 getArchivalStatus manager lnk =
   handle (pure . Left . show @HttpException) $ do
-    req <- setQueryString [("url", Just (toByteString lnk))] <$>
+    req <- setQueryString [("url", Just (toUtf8ByteString lnk))] <$>
                parseRequest waybackUrl
     fromJsonWith responseParser . responseBody <$!> httpLbs req manager
   where

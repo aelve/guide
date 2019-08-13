@@ -98,9 +98,9 @@ renderMD :: [MD.Node] -> ByteString
 renderMD ns
   -- See https://github.com/jgm/cmark/issues/147
   | any isInlineNode ns =
-      toByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
+      toUtf8ByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
   | otherwise =
-      toByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+      toUtf8ByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
@@ -315,11 +315,11 @@ deriving instance Show Heading
 instance Aeson.ToJSON MarkdownInline where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownInlineSource md,
-    "html" Aeson..= toText (markdownInlineHtml md) ]
+    "html" Aeson..= utf8ToText (markdownInlineHtml md) ]
 instance Aeson.ToJSON MarkdownBlock where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownBlockSource md,
-    "html" Aeson..= toText (markdownBlockHtml md) ]
+    "html" Aeson..= utf8ToText (markdownBlockHtml md) ]
 instance Aeson.ToJSON MarkdownTree where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownTreeSource md ]

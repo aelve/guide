@@ -59,7 +59,7 @@ runApiServer logger Config{..} db = do
         -- to list of `corsOrigins` to allow CORS requests
         { corsOrigins = Just (
           [ "http://localhost:3333" -- Guide's frontend running on localhost
-          , toByteString (format "http://localhost:{}" portApi :: Text) -- The /api endpoint
+          , toUtf8ByteString (format "http://localhost:{}" portApi :: Text) -- The /api endpoint
           ], True)
         }
 

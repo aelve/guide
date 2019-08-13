@@ -216,20 +216,20 @@ guideApp = do
               format "guidejs.csrfProtection.enable(\"{}\", \"{}\");"
                      csrfTokenName csrfTokenValue
         js <- getJS
-        Spock.bytes $ toByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
+        Spock.bytes $ toUtf8ByteString (fromJS allJSFunctions <> js <> jqueryCsrfProtection)
       -- CSS
       Spock.get "/highlight.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
-        Spock.bytes $ toByteString (styleToCss pygments)
+        Spock.bytes $ toUtf8ByteString (styleToCss pygments)
       Spock.get "/css.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
-        Spock.bytes $ toByteString css
+        Spock.bytes $ toUtf8ByteString css
       Spock.get "/admin.css" $ do
         setHeader "Content-Type" "text/css; charset=utf-8"
         css <- getCSS
         admincss <- liftIO $ T.readFile "static/admin.css"
-        Spock.bytes $ toByteString (css <> admincss)
+        Spock.bytes $ toUtf8ByteString (css <> admincss)
 
       -- Main page
       Spock.get root $
@@ -301,7 +301,7 @@ loginAction = do
       lucidWithConfig $ renderRegister formHtml
     (v, Just Login {..}) -> do
       loginAttempt <- dbQuery $
-        LoginUser loginEmail (toByteString loginUserPassword)
+        LoginUser loginEmail (toUtf8ByteString loginUserPassword)
       case loginAttempt of
         Right user -> do
           modifySession (sessionUserID ?~ userID user)
@@ -327,7 +327,7 @@ signupAction = do
       lucidWithConfig $ renderRegister formHtml
     (v, Just UserRegistration {..}) -> do
       user <- makeUser registerUserName registerUserEmail
-                       (toByteString registerUserPassword)
+                       (toUtf8ByteString registerUserPassword)
       success <- dbUpdate $ CreateUser user
       if success
         then do
@@ -389,6 +389,6 @@ installTerminationCatcher thread = void $ do
 createAdminUser :: GuideApp ()
 createAdminUser = do
   dbUpdate DeleteAllUsers
-  pass <- toByteString . adminPassword <$> getConfig
+  pass <- toUtf8ByteString . adminPassword <$> getConfig
   user <- makeUser "admin" "admin@guide.aelve.com" pass
   void $ dbUpdate $ CreateUser (user & _userIsAdmin .~ True)
