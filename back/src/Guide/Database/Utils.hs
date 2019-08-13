@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Guide.Database.Utils
 (
@@ -29,7 +30,9 @@ import Named
 import Hasql.Statement
 import Data.Functor.Contravariant ((>$<))
 import Data.Functor.Contravariant.Divisible (divided, lost, chosen)
-import Generics.Eot
+import Generics.Eot (toEot, HasEot(..))
+import Language.Haskell.TH.Quote (QuasiQuoter(..))
+import Language.Haskell.TH (stringE)
 
 import qualified Data.Set as Set
 import qualified Hasql.Encoders as HE
@@ -55,16 +58,47 @@ makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
 ----------------------------------------------------------------------------
 
 -- | Fetch a single row from the database.
-queryRow :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a (Maybe b)
-queryRow = makeStatement (#prepared False) (#result (HD.rowMaybe fromPostgresRow))
+--
+-- Returns @Maybe a@, where @a@ is an instance of 'FromPostgresRow'.
+queryRow :: QuasiQuoter
+queryRow = QuasiQuoter
+  { quoteExp = \s ->
+      [|makeStatement
+          (#prepared False)
+          (#result (HD.rowMaybe fromPostgresRow))
+          $(stringE s)|]
+  , quotePat = error "queryRow: can not be used in patterns"
+  , quoteType = error "queryRow: can not be used in types"
+  , quoteDec = error "queryRow: can not be used in declarations"
+  }
 
 -- | Fetch many rows from the database.
-queryRows :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a [b]
-queryRows = makeStatement (#prepared False) (#result (HD.rowList fromPostgresRow))
+--
+-- Returns @Maybe a@, where @a@ is an instance of 'FromPostgresRow'.
+queryRows :: QuasiQuoter
+queryRows = QuasiQuoter
+  { quoteExp = \s ->
+      [|makeStatement
+          (#prepared False)
+          (#result (HD.rowList fromPostgresRow))
+          $(stringE s)|]
+  , quotePat = error "queryRows: can not be used in patterns"
+  , quoteType = error "queryRows: can not be used in types"
+  , quoteDec = error "queryRows: can not be used in declarations"
+  }
 
 -- | Execute a query without returning anything.
-execute :: ToPostgresParams a => ByteString -> Statement a ()
-execute = makeStatement (#prepared False) (#result HD.noResult)
+execute :: QuasiQuoter
+execute = QuasiQuoter
+  { quoteExp = \s ->
+      [|makeStatement
+          (#prepared False)
+          (#result HD.noResult)
+          $(stringE s)|]
+  , quotePat = error "execute: can not be used in patterns"
+  , quoteType = error "execute: can not be used in types"
+  , quoteDec = error "execute: can not be used in declarations"
+  }
 
 ----------------------------------------------------------------------------
 -- Classes

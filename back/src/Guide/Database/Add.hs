@@ -21,7 +21,6 @@ import Imports
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
 import Named
-import Text.RawString.QQ (r)
 
 import qualified Hasql.Transaction as HT
 
@@ -55,8 +54,8 @@ addCategory
   =
   do
   let statement :: Statement CategoryRow ()
-      statement = execute
-        [r|
+      statement =
+        [execute|
           INSERT INTO categories
             ( uid
             , title
@@ -97,8 +96,8 @@ addItem
   -> ExceptT DatabaseError Transaction ()
 addItem catId itemId (arg #name -> name) (arg #created -> created) = do
   let statement :: Statement ItemRow ()
-      statement = execute
-        [r|
+      statement =
+        [execute|
           INSERT INTO items
             ( uid
             , name
@@ -149,8 +148,8 @@ addTrait
   -> ExceptT DatabaseError Transaction ()
 addTrait itemId traitId traitType (arg #content -> content) = do
   let statement :: Statement TraitRow ()
-      statement = execute
-        [r|
+      statement =
+        [execute|
           INSERT INTO traits (uid, content, deleted, type_, item_uid)
           VALUES ($1,$2,$3,($4 :: trait_type),$5)
         |]

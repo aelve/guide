@@ -13,10 +13,8 @@ import Imports
 
 import Hasql.Session (Session)
 import Hasql.Statement (Statement (..))
-import Text.RawString.QQ
+import Data.Profunctor (lmap)
 
-import qualified Hasql.Decoders as HD
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Session as HS
 
 import Guide.Database.Utils
@@ -71,8 +69,8 @@ setupDatabase = do
 -- If the @schema_version@ table doesn't exist, creates it.
 getSchemaVersion :: Session (Maybe Int32)
 getSchemaVersion = do
-  HS.statement () $ execute
-    [r|
+  HS.statement () $
+    [execute|
       CREATE TABLE IF NOT EXISTS schema_version (
         name text PRIMARY KEY,
         version integer
@@ -82,8 +80,10 @@ getSchemaVersion = do
         ON CONFLICT DO NOTHING;
     |]
   let selectVersion :: Statement () (Maybe (SingleColumn (Maybe Int32)))
-      selectVersion = queryRow
-        [r|SELECT version FROM schema_version WHERE name = 'main'|]
+      selectVersion =
+        [queryRow|
+          SELECT version FROM schema_version WHERE name = 'main'
+        |]
   HS.statement () selectVersion >>= \case
     Just (SingleColumn (Just v)) -> pure (Just v)
     _ -> pure Nothing
@@ -93,10 +93,12 @@ getSchemaVersion = do
 -- Assumes the @schema_version@ table exists.
 setSchemaVersion :: Int32 -> Session ()
 setSchemaVersion version = do
-  let sql = "UPDATE schema_version SET version = $1 WHERE name = 'main'"
-      encoder = HE.param (HE.nullable HE.int4)
-      decoder = HD.noResult
-  HS.statement (Just version) (Statement sql encoder decoder True)
+  let statement :: Statement Int32 ()
+      statement = lmap SingleParam $
+        [execute|
+          UPDATE schema_version SET version = $1 WHERE name = 'main'
+        |]
+  HS.statement version statement
 
 ----------------------------------------------------------------------------
 -- Version 0
@@ -114,15 +116,15 @@ v0 = do
 
 -- | Create an enum type for trait type ("pro" or "con").
 v0_createTypeProCon :: Session ()
-v0_createTypeProCon = HS.statement () $ execute
-  [r|
+v0_createTypeProCon = HS.statement () $
+  [execute|
     CREATE TYPE trait_type AS ENUM ('pro', 'con');
   |]
 
 -- | Create table @traits@, corresponding to 'Guide.Types.Core.Trait'.
 v0_createTableTraits :: Session ()
-v0_createTableTraits = HS.statement () $ execute
-  [r|
+v0_createTableTraits = HS.statement () $
+  [execute|
     CREATE TABLE traits (
       uid text PRIMARY KEY,           -- Unique trait ID
       content text NOT NULL,          -- Trait content as Markdown
@@ -137,8 +139,8 @@ v0_createTableTraits = HS.statement () $ execute
 
 -- | Create table @items@, corresponding to 'Guide.Types.Core.Item'.
 v0_createTableItems :: Session ()
-v0_createTableItems = HS.statement () $ execute
-  [r|
+v0_createTableItems = HS.statement () $
+  [execute|
     CREATE TABLE items (
       uid text PRIMARY KEY,           -- Unique item ID
       name text NOT NULL,             -- Item title
@@ -164,8 +166,8 @@ v0_createTableItems = HS.statement () $ execute
 
 -- | Create table @categories@, corresponding to 'Guide.Types.Core.Category'.
 v0_createTableCategories :: Session ()
-v0_createTableCategories = HS.statement () $ execute
-  [r|
+v0_createTableCategories = HS.statement () $
+  [execute|
     CREATE TABLE categories (
       uid text PRIMARY KEY,           -- Unique category ID
       title text NOT NULL,            -- Category title
@@ -185,8 +187,8 @@ v0_createTableCategories = HS.statement () $ execute
 
 -- | Create table @users@, storing user data.
 v0_createTableUsers :: Session ()
-v0_createTableUsers = HS.statement () $ execute
-  [r|
+v0_createTableUsers = HS.statement () $
+  [execute|
     CREATE TABLE users (
       uid text PRIMARY KEY,           -- Unique user ID
       name text NOT NULL,             -- User name
@@ -201,8 +203,8 @@ v0_createTableUsers = HS.statement () $ execute
 -- | Create table @pending_edits@, storing users' edits and metadata about
 -- them (who made the edit, when, etc).
 v0_createTablePendingEdits :: Session ()
-v0_createTablePendingEdits = HS.statement () $ execute
-  [r|
+v0_createTablePendingEdits = HS.statement () $
+  [execute|
     CREATE TABLE pending_edits (
       uid bigserial PRIMARY KEY,      -- Unique id
       edit json NOT NULL,             -- Edit in JSON format

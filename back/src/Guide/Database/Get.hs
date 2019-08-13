@@ -36,7 +36,6 @@ import Imports
 
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Text.RawString.QQ (r)
 import Data.Profunctor (lmap, rmap, dimap)
 
 import qualified Hasql.Transaction as HT
@@ -58,9 +57,8 @@ import Guide.Utils (Uid (..))
 getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitRow)
 getTraitRowMaybe traitId = do
   let statement :: Statement (Uid Trait) (Maybe TraitRow)
-      statement =
-        lmap SingleParam $ queryRow
-        [r|
+      statement = lmap SingleParam $
+        [queryRow|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
           WHERE uid = $1
@@ -89,8 +87,8 @@ getDeletedTraitRowsByItem
   -> ExceptT DatabaseError Transaction [TraitRow]
 getDeletedTraitRowsByItem itemId traitType = do
   let statement :: Statement (Uid Item, TraitType) [TraitRow]
-      statement = queryRows
-        [r|
+      statement =
+        [queryRows|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
           WHERE item_uid = $1
@@ -122,9 +120,8 @@ getTraitRowsByItem itemId traitType = do
 getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let statement :: Statement (Uid Item) (Maybe ItemRow)
-      statement =
-        lmap SingleParam $ queryRow
-        [r|
+      statement = lmap SingleParam $
+        [queryRow|
           SELECT
               uid
             , name
@@ -163,8 +160,8 @@ getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transactio
 getDeletedItemRowsByCategory catId = do
   let statement :: Statement (Uid Category) [ItemRow]
       statement =
-        lmap SingleParam $ queryRows
-        [r|
+        lmap SingleParam $
+        [queryRows|
           SELECT
               uid
             , name
@@ -196,9 +193,8 @@ getItemRowsByCategory catId = do
 getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
 getItemIdByTraitMaybe traitId = do
   let statement :: Statement (Uid Trait) (Maybe (Uid Item))
-      statement =
-        dimap SingleParam (fmap fromSingleColumn) $ queryRow
-        [r|
+      statement = dimap SingleParam (fmap fromSingleColumn) $
+        [queryRow|
           SELECT item_uid
           FROM traits
           WHERE uid = $1
@@ -223,9 +219,8 @@ getItemIdByTrait traitId = do
 getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)
 getCategoryRowMaybe catId = do
   let statement :: Statement (Uid Category) (Maybe CategoryRow)
-      statement =
-        lmap SingleParam $ queryRow
-        [r|
+      statement = lmap SingleParam $
+        [queryRow|
           SELECT
               uid
             , title
@@ -255,9 +250,8 @@ getCategoryIdByItemMaybe
   :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
 getCategoryIdByItemMaybe itemId = do
   let statement :: Statement (Uid Item) (Maybe (Uid Category))
-      statement =
-        dimap SingleParam (fmap fromSingleColumn) $ queryRow
-        [r|
+      statement = dimap SingleParam (fmap fromSingleColumn) $
+        [queryRow|
           SELECT category_uid
           FROM items
           WHERE uid = $1
@@ -292,8 +286,8 @@ getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
   let statement :: Statement () [Uid Category]
       statement =
-        rmap (map fromSingleColumn) $ queryRows
-        [r|
+        rmap (map fromSingleColumn) $
+        [queryRows|
           SELECT uid
           FROM categories
         |]
