@@ -8,18 +8,25 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 
+-- | Utilities for working with Postgres.
 module Guide.Database.Utils
 (
-  makeStatement,
+  -- * Generic queries
+  -- ** Simple query functions
   queryRow,
   queryRows,
   execute,
+  -- ** General query function
+  makeStatement,
+  -- ** Typeclasses for encoders and decoders
   ToPostgres (..),
   FromPostgres (..),
+  -- ** Row conversion
   ToPostgresParam (..),
   FromPostgresColumn (..),
   ToPostgresParams (..),
   FromPostgresRow (..),
+  -- ** One-element row newtypes
   SingleParam (..),
   SingleColumn (..),
 )
@@ -41,25 +48,59 @@ import qualified Hasql.Decoders as HD
 import Guide.Utils (Uid (..))
 
 ----------------------------------------------------------------------------
--- makeStatement
+-- Query functions
 ----------------------------------------------------------------------------
 
+-- | A general function for creating a 'Statement'.
+--
+-- Uses 'ToPostgresParams' for encoding, but requires specifying the decoder
+-- manually.
 makeStatement
   :: ToPostgresParams a
-  => "prepared" :! Bool
-  -> "result" :! HD.Result b
-  -> ByteString
+  => "prepared" :! Bool  -- ^ Whether the query should be prepared
+  -> "result" :! HD.Result b  -- ^ How to decode the result
+  -> ByteString  -- ^ Query
   -> Statement a b
 makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
   Statement sql toPostgresParams result prepared
 
-----------------------------------------------------------------------------
--- Easier versions
-----------------------------------------------------------------------------
-
 -- | Fetch a single row from the database.
 --
--- Returns @Maybe a@, where @a@ is an instance of 'FromPostgresRow'.
+-- @
+-- statement :: Statement (Uid Trait, Bool) (Maybe (Uid Trait, Text))
+-- statement =
+--   [queryRow|
+--     SELECT uid, content
+--     FROM traits
+--     WHERE uid = $1
+--       AND deleted = $2
+--   |]
+-- @
+--
+-- Uses @'ToPostgresParams' a@ for encoding and @'FromPostgresRow' b@ for
+-- decoding. Returns @Statement a (Maybe b)@.
+--
+-- The resulting 'Statement' can be executed using 'Hasql.Session.statement'
+-- from "Hasql.Session" or 'Hasql.Transaction.statement' from
+-- "Hasql.Transaction".
+--
+-- To pass several parameters to the query or get several columns from the
+-- query, use tuples. To pass only one parameter, use 'SingleParam'. To get
+-- back only one column, use 'SingleColumn'. The following example
+-- demonstrates both:
+--
+-- @
+-- statement :: Statement (Uid Item) (Maybe (Uid Category))
+-- statement = dimap SingleParam (fmap fromSingleColumn) $
+--   [queryRow|
+--     SELECT category_uid
+--     FROM items
+--     WHERE uid = $1
+--   |]
+-- @
+--
+-- See 'Data.Profunctor.lmap', 'Data.Profunctor.rmap',
+-- 'Data.Profunctor.dimap' from "Data.Profunctor".
 queryRow :: QuasiQuoter
 queryRow = QuasiQuoter
   { quoteExp = \s ->
@@ -74,7 +115,8 @@ queryRow = QuasiQuoter
 
 -- | Fetch many rows from the database.
 --
--- Returns @Maybe a@, where @a@ is an instance of 'FromPostgresRow'.
+-- Like 'queryRow', but returns @Statement a [b]@ instead of @Statement a
+-- (Maybe b)@.
 queryRows :: QuasiQuoter
 queryRows = QuasiQuoter
   { quoteExp = \s ->
@@ -88,6 +130,9 @@ queryRows = QuasiQuoter
   }
 
 -- | Execute a query without returning anything.
+--
+-- Like 'queryRow', but returns @Statement a ()@ instead of @Statement a
+-- (Maybe b)@.
 execute :: QuasiQuoter
 execute = QuasiQuoter
   { quoteExp = \s ->
