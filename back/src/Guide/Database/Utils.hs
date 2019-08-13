@@ -53,7 +53,10 @@ import Guide.Utils (Uid (..))
 
 -- | A wrapper around 'Statement' using named parameters.
 makeStatement
-  :: "prepared" :! Bool  -- ^ Whether the query should be prepared
+  :: "prepared" :! Bool  -- ^ Whether the query should be prepared (see
+                         -- <https://www.postgresql.org/docs/current/sql-prepare.html>).
+                         -- Use prepared queries if you perform the same
+                         -- query many times per 'Session', e.g. in a loop.
   -> "params" :! HE.Params a  -- ^ How to encode the parameters
   -> "result" :! HD.Result b  -- ^ How to decode the result
   -> ByteString  -- ^ Query
