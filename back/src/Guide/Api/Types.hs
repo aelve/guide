@@ -755,7 +755,7 @@ class ToCMarkdown md where toCMarkdown :: md -> CMarkdown
 instance ToCMarkdown MarkdownInline where
   toCMarkdown $(fields 'MarkdownInline) = CMarkdown
     { cmdText = markdownInlineSource
-    , cmdHtml = toText markdownInlineHtml
+    , cmdHtml = utf8ToText markdownInlineHtml
     }
     where
       -- Ignored fields
@@ -764,7 +764,7 @@ instance ToCMarkdown MarkdownInline where
 instance ToCMarkdown MarkdownBlock where
   toCMarkdown $(fields 'MarkdownBlock) = CMarkdown
     { cmdText = markdownBlockSource
-    , cmdHtml = toText markdownBlockHtml
+    , cmdHtml = utf8ToText markdownBlockHtml
     }
     where
       -- Ignored fields

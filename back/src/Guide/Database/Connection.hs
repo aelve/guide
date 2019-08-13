@@ -30,7 +30,7 @@ connect :: IO Connection
 connect = do
   HC.acquire connectionSettings >>= \case
     Left Nothing -> error "connect: unknown exception"
-    Left (Just x) -> error ("connect: " ++ toString x)
+    Left (Just x) -> error ("connect: " ++ utf8ToString x)
     Right conn -> pure conn
 
 -- | Connection settings

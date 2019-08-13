@@ -266,7 +266,7 @@ showKeyword kw = " (\"" <> toString kw <> "\")"
 extractQuery :: Url -> Maybe Query
 extractQuery url = getQuery <$> parse url
   where
-    getQuery = parseQuery . toByteString . URI.uriQuery
+    getQuery = parseQuery . toUtf8ByteString . URI.uriQuery
     parse = URI.parseURI . toString
 
 -- TODO: different search engines have different parameters, we should use
@@ -274,7 +274,7 @@ extractQuery url = getQuery <$> parse url
 extractKeyword :: Url -> Maybe Text
 extractKeyword url
   = case extractQuery url of
-      Just query -> toText <$> lookupQuery query
+      Just query -> utf8ToText <$> lookupQuery query
       Nothing    -> Nothing
   where
     lookupQuery :: [(ByteString, Maybe ByteString)] -> Maybe ByteString
@@ -419,14 +419,14 @@ instance AsJson LByteString where
   toJsonPretty = Aeson.encodePretty
 
 instance AsJson Text where
-  fromJson = Aeson.eitherDecode . toLByteString
+  fromJson = Aeson.eitherDecode . toUtf8LazyByteString
   toJson = toText . Aeson.encodeToLazyText
   toJsonPretty = toText . Aeson.encodePrettyToTextBuilder
 
 instance AsJson LText where
-  fromJson = Aeson.eitherDecode . toLByteString
+  fromJson = Aeson.eitherDecode . toUtf8LazyByteString
   toJson = Aeson.encodeToLazyText
-  toJsonPretty = toLText . Aeson.encodePrettyToTextBuilder
+  toJsonPretty = toLazyText . Aeson.encodePrettyToTextBuilder
 
 instance AsJson Aeson.Value where
   fromJsonWith p v = case Aeson.iparse p v of

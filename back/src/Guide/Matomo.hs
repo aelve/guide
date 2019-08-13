@@ -47,9 +47,9 @@ postMatomo Matomo{..} = push "postMatomo" $ do
         req <- setQueryString
           [ ("idsite", Just "1")  -- The ID of the website we're tracking a visit/action for.
           , ("rec", Just "1")  -- Required for tracking, must be set to one.
-          , ("url", toByteString . show <$> mIP) -- The full URL for the current action.
-          , ("ua", toByteString <$> mUA) -- An override value for the User-Agent HTTP header field.
-          , ("urlref", toByteString <$> mReferrer) -- The full HTTP Referrer URL.
+          , ("url", toUtf8ByteString . show <$> mIP) -- The full URL for the current action.
+          , ("ua", toUtf8ByteString <$> mUA) -- An override value for the User-Agent HTTP header field.
+          , ("urlref", toUtf8ByteString <$> mReferrer) -- The full HTTP Referrer URL.
           , ("action_name", action_name) --  The title of the action being tracked.
           ] <$> parseRequest (piwik matomo)
         -- TODO: log if the request to Matomo has failed
@@ -59,7 +59,7 @@ postMatomo Matomo{..} = push "postMatomo" $ do
     action_name :: Maybe ByteString
     action_name = Just (BS.intercalate "/" ["Haskell", "Edit", showConstructor mTag])
     showConstructor :: Edit -> ByteString
-    showConstructor = toByteString
+    showConstructor = toUtf8ByteString
       . drop (length ("Edit" :: String))
       . takeWhile (not . isSpace)
       . show

@@ -135,7 +135,7 @@ instance (HasServer api context) => HasServer (RequestDetails :> api) context wh
             Nothing -> sockAddrToIP $ remoteHost req
             Just ff -> readMaybe (toString ip)
               where
-                addr = T.strip . snd . T.breakOnEnd "," $ toText ff
+                addr = T.strip . snd . T.breakOnEnd "," $ utf8ToText ff
                 ip -- [IPv6]:port
                   | T.take 1 addr == "[" =
                     T.drop 1 (T.takeWhile (/= ']') addr)
