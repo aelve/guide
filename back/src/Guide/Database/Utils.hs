@@ -69,7 +69,7 @@ makeStatement
   =
   Statement sql params result prepared
 
--- | Fetch a single row from the database.
+-- | Create a 'Statement' fetching a single row from the database:
 --
 -- @
 -- statement :: Statement (Uid Trait, Bool) (Maybe (Uid Trait, Text))
@@ -82,17 +82,22 @@ makeStatement
 --   |]
 -- @
 --
--- Uses @'ToPostgresParams' a@ for encoding and @'FromPostgresRow' b@ for
--- decoding. Returns @Statement a (Maybe b)@.
---
 -- The resulting 'Statement' can be executed using 'Hasql.Session.statement'
 -- from "Hasql.Session" or 'Hasql.Transaction.statement' from
--- "Hasql.Transaction".
+-- "Hasql.Transaction". If the query contains @$1, $2, ...@ placeholders,
+-- you will have to fill them:
 --
--- To pass several parameters to the query or get several columns from the
--- query, use tuples. To pass only one parameter, use 'SingleParam'. To get
--- back only one column, use 'SingleColumn'. The following example
--- demonstrates both:
+-- @
+-- fetchItem :: Session (Maybe (Uid Trait, Text))
+-- fetchItem itemId = Hasql.Session.statement (itemId, False) statement
+-- @
+--
+-- 'queryRowMaybe' uses @'ToPostgresParams' a@ for encoding and
+-- @'FromPostgresRow' b@ for decoding. To pass no parameters, use @()@. To
+-- pass several parameters or get several columns from the query, either use
+-- tuples, or write your own row type and derive instances for it. To pass
+-- only one parameter, use 'SingleParam', and to get back only one column,
+-- use 'SingleColumn'. The following example demonstrates both:
 --
 -- @
 -- statement :: Statement (Uid Item) (Maybe (Uid Category))
@@ -119,10 +124,10 @@ queryRowMaybe = QuasiQuoter
   , quoteDec = error "queryRowMaybe: can not be used in declarations"
   }
 
--- | Fetch many rows from the database.
+-- | Create a 'Statement' fetching many rows from the database.
 --
--- Like 'queryRowMaybe', but returns @Statement a [b]@ instead of @Statement a
--- (Maybe b)@.
+-- Like 'queryRowMaybe', but returns @Statement a [b]@ instead of @Statement
+-- a (Maybe b)@.
 queryRows :: QuasiQuoter
 queryRows = QuasiQuoter
   { quoteExp = \sql ->
@@ -136,10 +141,10 @@ queryRows = QuasiQuoter
   , quoteDec = error "queryRows: can not be used in declarations"
   }
 
--- | Execute a query without returning anything.
+-- | Create a 'Statement' that executes a query without returning anything.
 --
--- Like 'queryRowMaybe', but returns @Statement a ()@ instead of @Statement a
--- (Maybe b)@.
+-- Like 'queryRowMaybe', but returns @Statement a ()@ instead of @Statement
+-- a (Maybe b)@.
 execute :: QuasiQuoter
 execute = QuasiQuoter
   { quoteExp = \sql ->
