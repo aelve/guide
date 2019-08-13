@@ -146,124 +146,32 @@ execute = QuasiQuoter
   }
 
 ----------------------------------------------------------------------------
--- Classes
+-- ToPostgres and FromPostgres
 ----------------------------------------------------------------------------
 
 class ToPostgres a where
+  -- | Encode a single value to the Postgres format.
+  --
+  -- If you have a newtype over an existing type supported by 'ToPostgres',
+  -- you can write an instance like this:
+  --
+  -- @
+  -- instance ToPostgres Foo where
+  --   toPostgres = unFoo '>$<' toPostgres
+  -- @
   toPostgres :: HE.Value a
 
 class FromPostgres a where
+  -- | Decode a single value from the Postgres format.
+  --
+  -- If you have a newtype over an existing type supported by
+  -- 'FromPostgres', you can write an instance like this:
+  --
+  -- @
+  -- instance FromPostgres Foo where
+  --   fromPostgres = Foo '<$>' fromPostgres
+  -- @
   fromPostgres :: HD.Value a
-
-class ToPostgresParam a where
-  toPostgresParam :: HE.Params a
-
-class FromPostgresColumn a where
-  fromPostgresColumn :: HD.Row a
-
-class ToPostgresParams a where
-  toPostgresParams :: HE.Params a
-
-  default toPostgresParams :: (HasEot a, GToPostgresParams (Eot a)) => HE.Params a
-  toPostgresParams = toEot @a >$< genericToPostgresParams
-
-class FromPostgresRow a where
-  fromPostgresRow :: HD.Row a
-
-  default fromPostgresRow :: (HasEot a, GFromPostgresRow (Eot a)) => HD.Row a
-  fromPostgresRow = fromEot <$> genericFromPostgresRow
-
-----------------------------------------------------------------------------
--- ToPostgresParam
-----------------------------------------------------------------------------
-
-instance {-# OVERLAPPABLE #-} ToPostgres a => ToPostgresParam a where
-  toPostgresParam = HE.param (HE.nonNullable toPostgres)
-
-instance ToPostgres a => ToPostgresParam (Maybe a) where
-  toPostgresParam = HE.param (HE.nullable toPostgres)
-
-instance ToPostgres a => ToPostgresParam [a] where
-  toPostgresParam =
-    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
-
-instance ToPostgres a => ToPostgresParam [Maybe a] where
-  toPostgresParam =
-    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
-
-instance ToPostgres a => ToPostgresParam (Set a) where
-  toPostgresParam =
-    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
-
-instance ToPostgres a => ToPostgresParam (Set (Maybe a)) where
-  toPostgresParam =
-    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
-
-----------------------------------------------------------------------------
--- FromPostgresColumn
-----------------------------------------------------------------------------
-
-instance {-# OVERLAPPABLE #-} FromPostgres a => FromPostgresColumn a where
-  fromPostgresColumn = HD.column (HD.nonNullable fromPostgres)
-
-instance FromPostgres a => FromPostgresColumn (Maybe a) where
-  fromPostgresColumn = HD.column (HD.nullable fromPostgres)
-
-instance FromPostgres a => FromPostgresColumn [a] where
-  fromPostgresColumn =
-    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
-
-instance FromPostgres a => FromPostgresColumn [Maybe a] where
-  fromPostgresColumn =
-    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
-
-instance (Ord a, FromPostgres a) => FromPostgresColumn (Set a) where
-  fromPostgresColumn =
-    Set.fromList <$>
-    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
-
-instance (Ord a, FromPostgres a) => FromPostgresColumn (Set (Maybe a)) where
-  fromPostgresColumn =
-    Set.fromList <$>
-    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
-
-----------------------------------------------------------------------------
--- GToPostgresParams
-----------------------------------------------------------------------------
-
-class GToPostgresParams a where
-  genericToPostgresParams :: HE.Params a
-
-instance GToPostgresParams () where
-  genericToPostgresParams = HE.noParams
-
-instance (ToPostgresParam a, GToPostgresParams b) => GToPostgresParams (a, b) where
-  genericToPostgresParams = divided toPostgresParam genericToPostgresParams
-
--- We only support generics for one-constructor types
-instance GToPostgresParams a => GToPostgresParams (Either a Void) where
-  genericToPostgresParams = chosen genericToPostgresParams lost
-
-----------------------------------------------------------------------------
--- GFromPostgresRow
-----------------------------------------------------------------------------
-
-class GFromPostgresRow a where
-  genericFromPostgresRow :: HD.Row a
-
-instance GFromPostgresRow () where
-  genericFromPostgresRow = pure ()
-
-instance (FromPostgresColumn a, GFromPostgresRow b) => GFromPostgresRow (a, b) where
-  genericFromPostgresRow = (,) <$> fromPostgresColumn <*> genericFromPostgresRow
-
--- We only support generics for one-constructor types
-instance GFromPostgresRow a => GFromPostgresRow (Either a Void) where
-  genericFromPostgresRow = Left <$> genericFromPostgresRow
-
-----------------------------------------------------------------------------
--- ToPostgres and FromPostgres instances
-----------------------------------------------------------------------------
 
 instance ToPostgres Bool where
   toPostgres = HE.bool
@@ -296,19 +204,154 @@ instance FromPostgres (Uid a) where
   fromPostgres = Uid <$> HD.text
 
 ----------------------------------------------------------------------------
+-- ToPostgresParam
+----------------------------------------------------------------------------
+
+class ToPostgresParam a where
+  -- | Convert a single value to a parameter that can be passed to a query.
+  --
+  -- Unlike 'toPostgres', this function can deal with nullable parameters
+  -- and array parameters, which are not representable as 'HE.Value'.
+  toPostgresParam :: HE.Params a
+
+-- | Non-nullable parameters.
+instance {-# OVERLAPPABLE #-} ToPostgres a => ToPostgresParam a where
+  toPostgresParam = HE.param (HE.nonNullable toPostgres)
+
+-- | Nullable parameters.
+instance ToPostgres a => ToPostgresParam (Maybe a) where
+  toPostgresParam = HE.param (HE.nullable toPostgres)
+
+-- | Arrays of non-nullable values.
+instance ToPostgres a => ToPostgresParam [a] where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
+
+-- | Arrays of nullable values.
+instance ToPostgres a => ToPostgresParam [Maybe a] where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
+
+-- | Sets of non-nullable values, represented as arrays.
+instance ToPostgres a => ToPostgresParam (Set a) where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nonNullable toPostgres)))
+
+-- | Sets of nullable values, represented as arrays.
+instance ToPostgres a => ToPostgresParam (Set (Maybe a)) where
+  toPostgresParam =
+    HE.param (HE.nonNullable (HE.foldableArray (HE.nullable toPostgres)))
+
+----------------------------------------------------------------------------
+-- FromPostgresColumn
+----------------------------------------------------------------------------
+
+class FromPostgresColumn a where
+  -- | Fetch a single column from a row.
+  --
+  -- Unlike 'fromPostgres', this function can deal with nullable columns and
+  -- array columns, which are not representable as 'HD.Value'.
+  fromPostgresColumn :: HD.Row a
+
+-- | Non-nullable columns.
+instance {-# OVERLAPPABLE #-} FromPostgres a => FromPostgresColumn a where
+  fromPostgresColumn = HD.column (HD.nonNullable fromPostgres)
+
+-- | Nullable columns.
+instance FromPostgres a => FromPostgresColumn (Maybe a) where
+  fromPostgresColumn = HD.column (HD.nullable fromPostgres)
+
+-- | Arrays of non-nullable values.
+instance FromPostgres a => FromPostgresColumn [a] where
+  fromPostgresColumn =
+    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
+
+-- | Arrays of nullable values.
+instance FromPostgres a => FromPostgresColumn [Maybe a] where
+  fromPostgresColumn =
+    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
+
+-- | Sets of non-nullable values, represented as arrays.
+instance (Ord a, FromPostgres a) => FromPostgresColumn (Set a) where
+  fromPostgresColumn =
+    Set.fromList <$>
+    HD.column (HD.nonNullable (HD.listArray (HD.nonNullable fromPostgres)))
+
+-- | Sets of nullable values, represented as arrays.
+instance (Ord a, FromPostgres a) => FromPostgresColumn (Set (Maybe a)) where
+  fromPostgresColumn =
+    Set.fromList <$>
+    HD.column (HD.nonNullable (HD.listArray (HD.nullable fromPostgres)))
+
+----------------------------------------------------------------------------
+-- ToPostgresParams
+----------------------------------------------------------------------------
+
+class ToPostgresParams a where
+  -- | Pass a row of parameters to a query.
+  toPostgresParams :: HE.Params a
+
+  default toPostgresParams :: (HasEot a, GToPostgresParams (Eot a)) => HE.Params a
+  toPostgresParams = toEot >$< genericToPostgresParams
+
+class GToPostgresParams a where
+  genericToPostgresParams :: HE.Params a
+
+instance GToPostgresParams () where
+  genericToPostgresParams = HE.noParams
+
+instance (ToPostgresParam a, GToPostgresParams b) => GToPostgresParams (a, b) where
+  genericToPostgresParams = divided toPostgresParam genericToPostgresParams
+
+-- We only support generics for one-constructor types
+instance GToPostgresParams a => GToPostgresParams (Either a Void) where
+  genericToPostgresParams = chosen genericToPostgresParams lost
+
+----------------------------------------------------------------------------
+-- FromPostgresRow
+----------------------------------------------------------------------------
+
+class FromPostgresRow a where
+  -- | Fetch a row of results from a query.
+  fromPostgresRow :: HD.Row a
+
+  default fromPostgresRow :: (HasEot a, GFromPostgresRow (Eot a)) => HD.Row a
+  fromPostgresRow = fromEot <$> genericFromPostgresRow
+
+class GFromPostgresRow a where
+  genericFromPostgresRow :: HD.Row a
+
+instance GFromPostgresRow () where
+  genericFromPostgresRow = pure ()
+
+instance (FromPostgresColumn a, GFromPostgresRow b) => GFromPostgresRow (a, b) where
+  genericFromPostgresRow = (,) <$> fromPostgresColumn <*> genericFromPostgresRow
+
+-- We only support generics for one-constructor types
+instance GFromPostgresRow a => GFromPostgresRow (Either a Void) where
+  genericFromPostgresRow = Left <$> genericFromPostgresRow
+
+----------------------------------------------------------------------------
+-- SingleParam and SingleColumn
+----------------------------------------------------------------------------
+
+newtype SingleParam a = SingleParam { fromSingleParam :: a }
+  deriving (Eq, Ord, Show, Generic)
+
+instance ToPostgresParam a => ToPostgresParams (SingleParam a)
+
+newtype SingleColumn a = SingleColumn { fromSingleColumn :: a }
+  deriving (Eq, Ord, Show, Generic)
+
+instance FromPostgresColumn a => FromPostgresRow (SingleColumn a)
+
+----------------------------------------------------------------------------
 -- Tuples
 ----------------------------------------------------------------------------
 
 -- Note: 'Generic' provides instances for tuples only until 7-tuples
 
-newtype SingleParam a = SingleParam { fromSingleParam :: a }
-  deriving (Eq, Ord, Show, Generic)
-
-newtype SingleColumn a = SingleColumn { fromSingleColumn :: a }
-  deriving (Eq, Ord, Show, Generic)
-
 instance ToPostgresParams ()
-instance ToPostgresParam a => ToPostgresParams (SingleParam a)
 instance (ToPostgresParam a, ToPostgresParam b) => ToPostgresParams (a, b)
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c) => ToPostgresParams (a, b, c)
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d) => ToPostgresParams (a, b, c, d)
@@ -317,7 +360,6 @@ instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresPar
 instance (ToPostgresParam a, ToPostgresParam b, ToPostgresParam c, ToPostgresParam d, ToPostgresParam e, ToPostgresParam f, ToPostgresParam g) => ToPostgresParams (a, b, c, d, e, f, g)
 
 instance FromPostgresRow ()
-instance FromPostgresColumn a => FromPostgresRow (SingleColumn a)
 instance (FromPostgresColumn a, FromPostgresColumn b) => FromPostgresRow (a, b)
 instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c) => FromPostgresRow (a, b, c)
 instance (FromPostgresColumn a, FromPostgresColumn b, FromPostgresColumn c, FromPostgresColumn d) => FromPostgresRow (a, b, c, d)
