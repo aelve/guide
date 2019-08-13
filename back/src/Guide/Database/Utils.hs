@@ -108,12 +108,12 @@ makeStatement
 -- 'Data.Profunctor.dimap' from "Data.Profunctor".
 queryRowMaybe :: QuasiQuoter
 queryRowMaybe = QuasiQuoter
-  { quoteExp = \s ->
+  { quoteExp = \sql ->
       [|makeStatement
           (#prepared False)
           (#params toPostgresParams)
           (#result (HD.rowMaybe fromPostgresRow))
-          $(stringE s)|]
+          $(stringE sql)|]
   , quotePat = error "queryRowMaybe: can not be used in patterns"
   , quoteType = error "queryRowMaybe: can not be used in types"
   , quoteDec = error "queryRowMaybe: can not be used in declarations"
@@ -125,12 +125,12 @@ queryRowMaybe = QuasiQuoter
 -- (Maybe b)@.
 queryRows :: QuasiQuoter
 queryRows = QuasiQuoter
-  { quoteExp = \s ->
+  { quoteExp = \sql ->
       [|makeStatement
           (#prepared False)
           (#params toPostgresParams)
           (#result (HD.rowList fromPostgresRow))
-          $(stringE s)|]
+          $(stringE sql)|]
   , quotePat = error "queryRows: can not be used in patterns"
   , quoteType = error "queryRows: can not be used in types"
   , quoteDec = error "queryRows: can not be used in declarations"
@@ -142,12 +142,12 @@ queryRows = QuasiQuoter
 -- (Maybe b)@.
 execute :: QuasiQuoter
 execute = QuasiQuoter
-  { quoteExp = \s ->
+  { quoteExp = \sql ->
       [|makeStatement
           (#prepared False)
           (#params toPostgresParams)
           (#result HD.noResult)
-          $(stringE s)|]
+          $(stringE sql)|]
   , quotePat = error "execute: can not be used in patterns"
   , quoteType = error "execute: can not be used in types"
   , quoteDec = error "execute: can not be used in declarations"
