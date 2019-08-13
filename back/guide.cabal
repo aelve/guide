@@ -101,7 +101,6 @@ library
         Guide.Views.Utils.Input
     Guide.Routes
     Imports
-    To
   build-depends:       acid-state
                      , aeson
                      , aeson-pretty
@@ -178,6 +177,7 @@ library
                      , text
                      , th-abstraction
                      , time >= 1.5
+                     , to
                      , transformers
                      , uniplate
                      , utf8-string

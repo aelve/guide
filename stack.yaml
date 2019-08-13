@@ -22,6 +22,9 @@ extra-deps:
 - regex-1.0.1.5
 - webdriver-0.9.0.1
 
+# Not on Stackage
+- to-1.0.0
+
 # We want the newest hasql just because
 - hasql-1.4
 - hasql-transaction-0.7.2
