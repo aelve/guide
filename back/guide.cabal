@@ -59,11 +59,11 @@ library
     Guide.Database
       Guide.Database.Add
       Guide.Database.Connection
-      Guide.Database.Convert
       Guide.Database.Get
       Guide.Database.Schema
       Guide.Database.Set
       Guide.Database.Types
+      Guide.Database.Utils
     Guide.Logger
       Guide.Logger.Types
       Guide.Logger.Functions
@@ -114,7 +114,7 @@ library
                      , cmark-highlight == 0.2.*
                      , cmark-sections == 0.3.*
                      , containers >= 0.5
-                     , contravariant-extras
+                     , contravariant
                      , data-default >= 0.5
                      , deepseq >= 1.2.0.0
                      , df1
@@ -130,6 +130,7 @@ library
                      , filepath
                      , fmt
                      , friendly-time == 0.4.*
+                     , generics-eot
                      , hashable
                      , hasql
                      , hasql-transaction
@@ -152,6 +153,7 @@ library
                      , network
                      , network-uri
                      , patches-vector
+                     , profunctors
                      , random >= 1.1
                      , raw-strings-qq
                      , reroute

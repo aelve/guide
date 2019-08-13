@@ -34,17 +34,14 @@ module Guide.Database.Get
 
 import Imports
 
-import Contravariant.Extras.Contrazip (contrazip2)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Text.RawString.QQ (r)
+import Data.Profunctor (lmap, rmap, dimap)
 
-import qualified Hasql.Decoders as HD
-import qualified Hasql.Encoders as HE
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Convert
 import Guide.Database.Types
+import Guide.Database.Utils
 import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
 import Guide.Utils (Uid (..))
 
@@ -59,14 +56,14 @@ import Guide.Utils (Uid (..))
 -- in the database.
 getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitRow)
 getTraitRowMaybe traitId = do
-  let sql = [r|
-        SELECT uid, content, deleted, type_, item_uid
-        FROM traits
-        WHERE uid = $1
+  let statement :: Statement (Uid Trait) (Maybe TraitRow)
+      statement = lmap SingleParam $
+        [queryRowMaybe|
+          SELECT uid, content, deleted, type_, item_uid
+          FROM traits
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe traitRowColumns
-  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  lift $ HT.statement traitId statement
 
 -- | Get a 'TraitRow'.
 --
@@ -89,18 +86,18 @@ getDeletedTraitRowsByItem
   -> TraitType
   -> ExceptT DatabaseError Transaction [TraitRow]
 getDeletedTraitRowsByItem itemId traitType = do
-  let sql = [r|
-        SELECT uid, content, deleted, type_, item_uid
-        FROM traits
-        WHERE item_uid = $1
-          AND deleted = true
-          AND type_ = ($2 :: trait_type)
+  let statement :: Statement (Uid Item, TraitType) [TraitRow]
+      statement =
+        [queryRows|
+          SELECT uid, content, deleted, type_, item_uid
+          FROM traits
+          WHERE item_uid = $1
+            AND deleted = true
+            AND type_ = ($2 :: trait_type)
         |]
-      encoder = contrazip2 uidParam traitTypeParam
-      decoder = HD.rowList traitRowColumns
-  lift $ HT.statement (itemId, traitType) (Statement sql encoder decoder False)
+  lift $ HT.statement (itemId, traitType) statement
 
--- | Get available traits (they ordered) beloning to an item.
+-- | Get available traits (they ordered) belonging to an item.
 getTraitRowsByItem
   :: Uid Item
   -> TraitType
@@ -122,26 +119,26 @@ getTraitRowsByItem itemId traitType = do
 -- in the database.
 getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
-  let sql = [r|
-        SELECT
-            uid
-          , name
-          , created
-          , link
-          , hackage
-          , summary
-          , ecosystem
-          , notes
-          , deleted
-          , category_uid
-          , pros_order
-          , cons_order
-        FROM items
-        WHERE uid = $1
+  let statement :: Statement (Uid Item) (Maybe ItemRow)
+      statement = lmap SingleParam $
+        [queryRowMaybe|
+          SELECT
+              uid
+            , name
+            , created
+            , link
+            , hackage
+            , summary
+            , ecosystem
+            , notes
+            , deleted
+            , category_uid
+            , pros_order
+            , cons_order
+          FROM items
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe itemRowColumns
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  lift $ HT.statement itemId statement
 
 -- | Get an 'ItemRow'.
 --
@@ -161,27 +158,28 @@ getItemRow itemId = do
 -- Returns item rows without order.
 getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
 getDeletedItemRowsByCategory catId = do
-  let sql = [r|
-        SELECT
-            uid
-          , name
-          , created
-          , link
-          , hackage
-          , summary
-          , ecosystem
-          , notes
-          , deleted
-          , category_uid
-          , pros_order
-          , cons_order
-        FROM items
-        WHERE category_uid = $1
-          AND deleted = true
+  let statement :: Statement (Uid Category) [ItemRow]
+      statement =
+        lmap SingleParam $
+        [queryRows|
+          SELECT
+              uid
+            , name
+            , created
+            , link
+            , hackage
+            , summary
+            , ecosystem
+            , notes
+            , deleted
+            , category_uid
+            , pros_order
+            , cons_order
+          FROM items
+          WHERE category_uid = $1
+            AND deleted = true
         |]
-      encoder = uidParam
-      decoder = HD.rowList itemRowColumns
-  lift $ HT.statement catId (Statement sql encoder decoder False)
+  lift $ HT.statement catId statement
 
 -- Get available ItemRows belonging to a category.
 --
@@ -194,14 +192,14 @@ getItemRowsByCategory catId = do
 -- | Get item id by trait.
 getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
 getItemIdByTraitMaybe traitId = do
-  let sql = [r|
-        SELECT item_uid
-        FROM traits
-        WHERE uid = $1
+  let statement :: Statement (Uid Trait) (Maybe (Uid Item))
+      statement = dimap SingleParam (fmap fromSingleColumn) $
+        [queryRowMaybe|
+          SELECT item_uid
+          FROM traits
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe uidColumn
-  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  lift $ HT.statement traitId statement
 
 -- | Get item id by trait.
 --
@@ -220,22 +218,22 @@ getItemIdByTrait traitId = do
 -- | Get a 'CategoryRow'.
 getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)
 getCategoryRowMaybe catId = do
-  let sql = [r|
-        SELECT
-            uid
-          , title
-          , created
-          , group_
-          , status
-          , notes
-          , enabled_sections
-          , items_order
-        FROM categories
-        WHERE uid = $1
+  let statement :: Statement (Uid Category) (Maybe CategoryRow)
+      statement = lmap SingleParam $
+        [queryRowMaybe|
+          SELECT
+              uid
+            , title
+            , created
+            , group_
+            , status
+            , notes
+            , enabled_sections
+            , items_order
+          FROM categories
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe categoryRowColumns
-  lift $ HT.statement catId (Statement sql encoder decoder False)
+  lift $ HT.statement catId statement
 
 -- | Get a 'CategoryRow'.
 --
@@ -251,14 +249,14 @@ getCategoryRow catId = do
 getCategoryIdByItemMaybe
   :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
 getCategoryIdByItemMaybe itemId = do
-  let sql = [r|
-        SELECT category_uid
-        FROM items
-        WHERE uid = $1
+  let statement :: Statement (Uid Item) (Maybe (Uid Category))
+      statement = dimap SingleParam (fmap fromSingleColumn) $
+        [queryRowMaybe|
+          SELECT category_uid
+          FROM items
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.rowMaybe uidColumn
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  lift $ HT.statement itemId statement
 
 -- | Get an ID of the category that an item belongs to.
 --
@@ -286,13 +284,14 @@ getCategoryRowByItemMaybe itemId = do
 -- TODO explain why we store deleted categories at all.
 getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
-  let sql = [r|
-        SELECT uid
-        FROM categories
+  let statement :: Statement () [Uid Category]
+      statement =
+        rmap (map fromSingleColumn) $
+        [queryRows|
+          SELECT uid
+          FROM categories
         |]
-      encoder = HE.noParams
-      decoder = HD.rowList uidColumn
-  lift $ HT.statement () (Statement sql encoder decoder False)
+  lift $ HT.statement () statement
 
 -- | Get all category rows.
 getCategoryRows :: ExceptT DatabaseError Transaction [CategoryRow]

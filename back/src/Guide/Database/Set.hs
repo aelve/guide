@@ -24,18 +24,16 @@ module Guide.Database.Set
 
 import Imports
 
-import Contravariant.Extras.Contrazip (contrazip2)
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Text.RawString.QQ (r)
+import Data.Profunctor (lmap)
 
-import qualified Hasql.Decoders as HD
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Convert
 import Guide.Database.Get
 import Guide.Database.Types
-import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
+import Guide.Database.Utils
+import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..), CategoryStatus (..), ItemSection (..))
 import Guide.Utils (Uid (..), fieldsPrefixed)
 
 
@@ -78,62 +76,51 @@ modifyCategoryRow catId f = do
 
   -- Update title
   when (old_categoryRowTitle /= new_categoryRowTitle) $ do
-    let sql = [r|UPDATE categories SET title = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowTitle)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, Text) ()
+        statement = [execute|UPDATE categories SET title = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowTitle) statement
 
   -- Update group
   when (old_categoryRowGroup /= new_categoryRowGroup) $ do
-    let sql = [r|UPDATE categories SET group_ = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowGroup)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, Text) ()
+        statement = [execute|UPDATE categories SET group_ = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowGroup) statement
 
   -- Update status
   when (old_categoryRowStatus /= new_categoryRowStatus) $ do
-    let sql = [r|UPDATE categories SET status = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam categoryStatusParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowStatus)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, CategoryStatus) ()
+        statement = [execute|UPDATE categories SET status = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowStatus) statement
 
   -- Update notes
   when (old_categoryRowNotes /= new_categoryRowNotes) $ do
-    let sql = [r|UPDATE categories SET notes = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowNotes)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, Text) ()
+        statement = [execute|UPDATE categories SET notes = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowNotes) statement
 
   -- Update enabled sections
   when (old_categoryRowEnabledSections /= new_categoryRowEnabledSections) $ do
-    let sql = [r|UPDATE categories SET enabled_sections = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam itemSectionSetParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowEnabledSections)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, Set ItemSection) ()
+        statement =
+          [execute|UPDATE categories SET enabled_sections = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowEnabledSections) statement
 
   -- Update item order
   when (old_categoryRowItemsOrder /= new_categoryRowItemsOrder) $ do
-    let sql = [r|UPDATE categories SET items_order = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_categoryRowItemsOrder)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Category, [Uid Item]) ()
+        statement = [execute|UPDATE categories SET items_order = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowItemsOrder) statement
 
 -- | Delete category completly.
 deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()
 deleteCategory catId = do
-  let sql = [r|
-        DELETE FROM categories
-        WHERE uid = $1
+  let statement :: Statement (Uid Category) ()
+      statement = lmap SingleParam $
+        [execute|
+          DELETE FROM categories
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.noResult
-  lift $ HT.statement catId (Statement sql encoder decoder False)
+  lift $ HT.statement catId statement
   -- Items belonging to the category will be deleted automatically because
   -- of "ON DELETE CASCADE" in the table schema.
 
@@ -176,94 +163,75 @@ modifyItemRow itemId f = do
 
   -- Update name
   when (old_itemRowName /= new_itemRowName) $ do
-    let sql = [r|UPDATE items SET name = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowName)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Text) ()
+        statement = [execute|UPDATE items SET name = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowName) statement
 
   -- Update link
   when (old_itemRowLink /= new_itemRowLink) $ do
-    let sql = [r|UPDATE items SET link = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParamNullable
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowLink) (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Maybe Text) ()
+        statement = [execute|UPDATE items SET link = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowLink) statement
 
   -- Update hackage
   when (old_itemRowHackage /= new_itemRowHackage) $ do
-    let sql = [r|UPDATE items SET hackage = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParamNullable
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowHackage)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Maybe Text) ()
+        statement = [execute|UPDATE items SET hackage = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowHackage) statement
 
   -- Update summary
   when (old_itemRowSummary /= new_itemRowSummary) $ do
-    let sql = [r|UPDATE items SET summary = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowSummary)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Text) ()
+        statement = [execute|UPDATE items SET summary = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowSummary) statement
 
   -- Update ecosystem
   when (old_itemRowEcosystem /= new_itemRowEcosystem) $ do
-    let sql = [r|UPDATE items SET ecosystem = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowEcosystem)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Text) ()
+        statement = [execute|UPDATE items SET ecosystem = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowEcosystem) statement
 
   -- Update notes
   when (old_itemRowNotes /= new_itemRowNotes) $ do
-    let sql = [r|UPDATE items SET notes = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowNotes)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Text) ()
+        statement = [execute|UPDATE items SET notes = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowNotes) statement
 
   -- Update deleted
   when (old_itemRowDeleted /= new_itemRowDeleted) $ do
-    let sql = [r|UPDATE items SET deleted = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam boolParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowDeleted)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Bool) ()
+        statement = [execute|UPDATE items SET deleted = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowDeleted) statement
 
   -- Update categoryUid
   when (old_itemRowCategoryUid /= new_itemRowCategoryUid) $ do
-    let sql = [r|UPDATE items SET category_uid = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam uidParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowCategoryUid)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, Uid Category) ()
+        statement = [execute|UPDATE items SET category_uid = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowCategoryUid) statement
 
   -- Update prosOrder
   when (old_itemRowProsOrder /= new_itemRowProsOrder) $ do
-    let sql = [r|UPDATE items SET pros_order = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowProsOrder)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, [Uid Trait]) ()
+        statement = [execute|UPDATE items SET pros_order = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowProsOrder) statement
 
   -- Update consOrder
   when (old_itemRowConsOrder /= new_itemRowConsOrder) $ do
-    let sql = [r|UPDATE items SET cons_order = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam uidsParam
-        decoder = HD.noResult
-    lift $ HT.statement (itemId, new_itemRowConsOrder)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Item, [Uid Trait]) ()
+        statement = [execute|UPDATE items SET cons_order = $2 WHERE uid = $1|]
+    lift $ HT.statement (itemId, new_itemRowConsOrder) statement
 
 -- | Delete item completly.
 deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
 deleteItem itemId = do
   catId <- getCategoryIdByItem itemId
-  let sql = [r|
-        DELETE FROM items
-        WHERE uid = $1
+  let statement :: Statement (Uid Item) ()
+      statement = lmap SingleParam $
+        [execute|
+          DELETE FROM items
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.noResult
-  lift $ HT.statement itemId (Statement sql encoder decoder False)
+  lift $ HT.statement itemId statement
   modifyCategoryRow catId $
     _categoryRowItemsOrder %~ delete itemId
   -- Traits belonging to the item will be deleted automatically because of
@@ -302,48 +270,40 @@ modifyTraitRow catId f = do
 
   -- Update content
   when (old_traitRowContent /= new_traitRowContent) $ do
-    let sql = [r|UPDATE traits SET content = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam textParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_traitRowContent)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Trait, Text) ()
+        statement = [execute|UPDATE traits SET content = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_traitRowContent) statement
 
   -- Update deleted
   when (old_traitRowDeleted /= new_traitRowDeleted) $ do
-    let sql = [r|UPDATE traits SET deleted = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam boolParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_traitRowDeleted)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Trait, Bool) ()
+        statement = [execute|UPDATE traits SET deleted = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_traitRowDeleted) statement
 
   -- Update type
   when (old_traitRowType /= new_traitRowType) $ do
-    let sql = [r|UPDATE traits SET type_ = ($2 :: trait_type) WHERE uid = $1|]
-        encoder = contrazip2 uidParam traitTypeParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_traitRowType)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Trait, TraitType) ()
+        statement = [execute|UPDATE traits SET type_ = ($2 :: trait_type) WHERE uid = $1|]
+    lift $ HT.statement (catId, new_traitRowType) statement
 
   -- Update itemUid
   when (old_traitRowItemUid /= new_traitRowItemUid) $ do
-    let sql = [r|UPDATE traits SET item_uid = $2 WHERE uid = $1|]
-        encoder = contrazip2 uidParam uidParam
-        decoder = HD.noResult
-    lift $ HT.statement (catId, new_traitRowItemUid)
-      (Statement sql encoder decoder False)
+    let statement :: Statement (Uid Trait, Uid Item) ()
+        statement = [execute|UPDATE traits SET item_uid = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_traitRowItemUid) statement
 
 -- | Delete trait completly.
 deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
 deleteTrait traitId = do
   itemId <- getItemIdByTrait traitId
   traitType <- traitRowType <$> getTraitRow traitId
-  let sql = [r|
-        DELETE FROM traits
-        WHERE uid = $1
+  let statement :: Statement (Uid Trait) ()
+      statement = lmap SingleParam $
+        [execute|
+          DELETE FROM traits
+          WHERE uid = $1
         |]
-      encoder = uidParam
-      decoder = HD.noResult
-  lift $ HT.statement traitId (Statement sql encoder decoder False)
+  lift $ HT.statement traitId statement
   case traitType of
     TraitTypePro ->
       modifyItemRow itemId $
