@@ -57,7 +57,7 @@ import Guide.Utils (Uid (..))
 getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitRow)
 getTraitRowMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe TraitRow)
-      statement = query
+      statement = queryRow
         [r|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
@@ -87,7 +87,7 @@ getDeletedTraitRowsByItem
   -> ExceptT DatabaseError Transaction [TraitRow]
 getDeletedTraitRowsByItem itemId traitType = do
   let statement :: Statement (Uid Item, TraitType) [TraitRow]
-      statement = queryMany
+      statement = queryRows
         [r|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
@@ -120,7 +120,7 @@ getTraitRowsByItem itemId traitType = do
 getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe ItemRow)
-      statement = query
+      statement = queryRow
         [r|
           SELECT
               uid
@@ -159,7 +159,7 @@ getItemRow itemId = do
 getDeletedItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
 getDeletedItemRowsByCategory catId = do
   let statement :: Statement (Identity (Uid Category)) [ItemRow]
-      statement = queryMany
+      statement = queryRows
         [r|
           SELECT
               uid
@@ -192,7 +192,7 @@ getItemRowsByCategory catId = do
 getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (Uid Item))
 getItemIdByTraitMaybe traitId = do
   let statement :: Statement (Identity (Uid Trait)) (Maybe (Uid Item))
-      statement = fmap runIdentity <$> query
+      statement = fmap runIdentity <$> queryRow
         [r|
           SELECT item_uid
           FROM traits
@@ -218,7 +218,7 @@ getItemIdByTrait traitId = do
 getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)
 getCategoryRowMaybe catId = do
   let statement :: Statement (Identity (Uid Category)) (Maybe CategoryRow)
-      statement = query
+      statement = queryRow
         [r|
           SELECT
               uid
@@ -249,7 +249,7 @@ getCategoryIdByItemMaybe
   :: Uid Item -> ExceptT DatabaseError Transaction (Maybe (Uid Category))
 getCategoryIdByItemMaybe itemId = do
   let statement :: Statement (Identity (Uid Item)) (Maybe (Uid Category))
-      statement = fmap runIdentity <$> query
+      statement = fmap runIdentity <$> queryRow
         [r|
           SELECT category_uid
           FROM items
@@ -284,7 +284,7 @@ getCategoryRowByItemMaybe itemId = do
 getCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 getCategoryIds = do
   let statement :: Statement () [Uid Category]
-      statement = fmap runIdentity <$> queryMany
+      statement = fmap runIdentity <$> queryRows
         [r|
           SELECT uid
           FROM categories

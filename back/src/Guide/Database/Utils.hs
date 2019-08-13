@@ -10,8 +10,8 @@
 module Guide.Database.Utils
 (
   makeStatement,
-  query,
-  queryMany,
+  queryRow,
+  queryRows,
   execute,
   ToPostgres (..),
   FromPostgres (..),
@@ -53,12 +53,12 @@ makeStatement (arg #prepared -> prepared) (arg #result -> result) sql =
 ----------------------------------------------------------------------------
 
 -- | Fetch a single row from the database.
-query :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a (Maybe b)
-query = makeStatement (#prepared False) (#result (HD.rowMaybe fromPostgresRow))
+queryRow :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a (Maybe b)
+queryRow = makeStatement (#prepared False) (#result (HD.rowMaybe fromPostgresRow))
 
 -- | Fetch many rows from the database.
-queryMany :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a [b]
-queryMany = makeStatement (#prepared False) (#result (HD.rowList fromPostgresRow))
+queryRows :: (ToPostgresParams a, FromPostgresRow b) => ByteString -> Statement a [b]
+queryRows = makeStatement (#prepared False) (#result (HD.rowList fromPostgresRow))
 
 -- | Execute a query without returning anything.
 execute :: ToPostgresParams a => ByteString -> Statement a ()

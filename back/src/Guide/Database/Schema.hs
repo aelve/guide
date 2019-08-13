@@ -82,7 +82,7 @@ getSchemaVersion = do
         ON CONFLICT DO NOTHING;
     |]
   let selectVersion :: Statement () (Maybe (Maybe Int32))
-      selectVersion = fmap runIdentity <$> query
+      selectVersion = fmap runIdentity <$> queryRow
         [r|SELECT version FROM schema_version WHERE name = 'main'|]
   join <$> HS.statement () selectVersion
 
