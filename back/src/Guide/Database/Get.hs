@@ -58,7 +58,7 @@ getTraitRowMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe TraitR
 getTraitRowMaybe traitId = do
   let statement :: Statement (Uid Trait) (Maybe TraitRow)
       statement = lmap SingleParam $
-        [queryRow|
+        [queryRowMaybe|
           SELECT uid, content, deleted, type_, item_uid
           FROM traits
           WHERE uid = $1
@@ -121,7 +121,7 @@ getItemRowMaybe :: Uid Item -> ExceptT DatabaseError Transaction (Maybe ItemRow)
 getItemRowMaybe itemId = do
   let statement :: Statement (Uid Item) (Maybe ItemRow)
       statement = lmap SingleParam $
-        [queryRow|
+        [queryRowMaybe|
           SELECT
               uid
             , name
@@ -194,7 +194,7 @@ getItemIdByTraitMaybe :: Uid Trait -> ExceptT DatabaseError Transaction (Maybe (
 getItemIdByTraitMaybe traitId = do
   let statement :: Statement (Uid Trait) (Maybe (Uid Item))
       statement = dimap SingleParam (fmap fromSingleColumn) $
-        [queryRow|
+        [queryRowMaybe|
           SELECT item_uid
           FROM traits
           WHERE uid = $1
@@ -220,7 +220,7 @@ getCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe 
 getCategoryRowMaybe catId = do
   let statement :: Statement (Uid Category) (Maybe CategoryRow)
       statement = lmap SingleParam $
-        [queryRow|
+        [queryRowMaybe|
           SELECT
               uid
             , title
@@ -251,7 +251,7 @@ getCategoryIdByItemMaybe
 getCategoryIdByItemMaybe itemId = do
   let statement :: Statement (Uid Item) (Maybe (Uid Category))
       statement = dimap SingleParam (fmap fromSingleColumn) $
-        [queryRow|
+        [queryRowMaybe|
           SELECT category_uid
           FROM items
           WHERE uid = $1

@@ -13,7 +13,7 @@ module Guide.Database.Utils
 (
   -- * Generic queries
   -- ** Simple query functions
-  queryRow,
+  queryRowMaybe,
   queryRows,
   execute,
   -- ** General query function
@@ -74,7 +74,7 @@ makeStatement
 -- @
 -- statement :: Statement (Uid Trait, Bool) (Maybe (Uid Trait, Text))
 -- statement =
---   [queryRow|
+--   [queryRowMaybe|
 --     SELECT uid, content
 --     FROM traits
 --     WHERE uid = $1
@@ -97,7 +97,7 @@ makeStatement
 -- @
 -- statement :: Statement (Uid Item) (Maybe (Uid Category))
 -- statement = dimap SingleParam (fmap fromSingleColumn) $
---   [queryRow|
+--   [queryRowMaybe|
 --     SELECT category_uid
 --     FROM items
 --     WHERE uid = $1
@@ -106,22 +106,22 @@ makeStatement
 --
 -- See 'Data.Profunctor.lmap', 'Data.Profunctor.rmap',
 -- 'Data.Profunctor.dimap' from "Data.Profunctor".
-queryRow :: QuasiQuoter
-queryRow = QuasiQuoter
+queryRowMaybe :: QuasiQuoter
+queryRowMaybe = QuasiQuoter
   { quoteExp = \s ->
       [|makeStatement
           (#prepared False)
           (#params toPostgresParams)
           (#result (HD.rowMaybe fromPostgresRow))
           $(stringE s)|]
-  , quotePat = error "queryRow: can not be used in patterns"
-  , quoteType = error "queryRow: can not be used in types"
-  , quoteDec = error "queryRow: can not be used in declarations"
+  , quotePat = error "queryRowMaybe: can not be used in patterns"
+  , quoteType = error "queryRowMaybe: can not be used in types"
+  , quoteDec = error "queryRowMaybe: can not be used in declarations"
   }
 
 -- | Fetch many rows from the database.
 --
--- Like 'queryRow', but returns @Statement a [b]@ instead of @Statement a
+-- Like 'queryRowMaybe', but returns @Statement a [b]@ instead of @Statement a
 -- (Maybe b)@.
 queryRows :: QuasiQuoter
 queryRows = QuasiQuoter
@@ -138,7 +138,7 @@ queryRows = QuasiQuoter
 
 -- | Execute a query without returning anything.
 --
--- Like 'queryRow', but returns @Statement a ()@ instead of @Statement a
+-- Like 'queryRowMaybe', but returns @Statement a ()@ instead of @Statement a
 -- (Maybe b)@.
 execute :: QuasiQuoter
 execute = QuasiQuoter

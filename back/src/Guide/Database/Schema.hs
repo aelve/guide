@@ -81,7 +81,7 @@ getSchemaVersion = do
     |]
   let selectVersion :: Statement () (Maybe (SingleColumn (Maybe Int32)))
       selectVersion =
-        [queryRow|
+        [queryRowMaybe|
           SELECT version FROM schema_version WHERE name = 'main'
         |]
   HS.statement () selectVersion >>= \case
