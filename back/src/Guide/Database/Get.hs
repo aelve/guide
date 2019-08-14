@@ -42,7 +42,7 @@ import qualified Hasql.Transaction as HT
 
 import Guide.Database.Types
 import Guide.Database.Utils
-import Guide.Types.Core (Category (..), Item (..), Trait (..), TraitType (..))
+import Guide.Types.Core
 import Guide.Utils (Uid (..))
 
 

@@ -33,8 +33,7 @@ import Imports
 import Named
 
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline, markdownBlockSource, markdownTreeSource, markdownInlineSource)
-import Guide.Types.Core (Category (..), CategoryStatus, Item (..), ItemSection, Trait (..),
-                         TraitType)
+import Guide.Types.Core
 import Guide.Utils (Uid (..), makeClassWithLenses, fields)
 import Guide.Database.Utils
 
