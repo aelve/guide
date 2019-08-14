@@ -179,9 +179,11 @@ v0_createTableCategories = HS.statement () $
       enabled_sections text[]         -- Item sections to show to users; the list of
         NOT NULL,                     --   possible section names is defined by backend
       items_order text[]              -- Uids of items in the category; this list
-        NOT NULL                      --   specifies in what order they should be
+        NOT NULL,                     --   specifies in what order they should be
                                       --   displayed, and is necessary to allow moving
                                       --   items up and down
+      deleted boolean                 -- Whether the category is deleted
+        NOT NULL
     );
   |]
 

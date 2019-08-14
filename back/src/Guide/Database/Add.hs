@@ -65,8 +65,9 @@ addCategory
             , notes
             , enabled_sections
             , items_order
+            , deleted
             )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         |]
   lift $ HT.statement
     CategoryRow
@@ -78,6 +79,7 @@ addCategory
       , categoryRowNotes = ""
       , categoryRowEnabledSections = enabledSections
       , categoryRowItemsOrder = []
+      , categoryRowDeleted = False
       }
     statement
 

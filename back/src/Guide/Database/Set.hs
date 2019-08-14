@@ -111,6 +111,12 @@ modifyCategoryRow catId f = do
         statement = [execute|UPDATE categories SET items_order = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowItemsOrder) statement
 
+  -- Update deleted
+  when (old_categoryRowDeleted /= new_categoryRowDeleted) $ do
+    let statement :: Statement (Uid Category, Bool) ()
+        statement = [execute|UPDATE categories SET deleted = $2 WHERE uid = $1|]
+    lift $ HT.statement (catId, new_categoryRowDeleted) statement
+
 -- | Delete category completly.
 deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()
 deleteCategory catId = do
