@@ -27,7 +27,7 @@ import qualified Hasql.Transaction as HT
 import Guide.Database.Set
 import Guide.Database.Types
 import Guide.Database.Utils (execute)
-import Guide.Types.Core (Category (..), CategoryStatus (..), Item (..), Trait (..), TraitType (..), ItemSection)
+import Guide.Types.Core
 import Guide.Utils (Uid (..))
 
 
