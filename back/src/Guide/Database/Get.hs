@@ -230,6 +230,7 @@ getCategoryRowMaybe catId = do
             , notes
             , enabled_sections
             , items_order
+            , deleted
           FROM categories
           WHERE uid = $1
         |]

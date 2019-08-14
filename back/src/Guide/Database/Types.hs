@@ -65,6 +65,7 @@ data CategoryRow = CategoryRow
   , categoryRowNotes           :: Text
   , categoryRowEnabledSections :: Set ItemSection
   , categoryRowItemsOrder      :: [Uid Item]
+  , categoryRowDeleted         :: Bool
   } deriving (Show, Generic)
 
 -- | Make CategoryRowLenses Class to use lenses with this type.
@@ -145,8 +146,8 @@ categoryRowToCategory
     }
 
 -- | Convert Category to CategoryRow.
-categoryToRowCategory :: Category -> CategoryRow
-categoryToRowCategory $(fields 'Category) = CategoryRow
+categoryToRowCategory :: Category -> "deleted" :! Bool -> CategoryRow
+categoryToRowCategory $(fields 'Category) (arg #deleted -> deleted) = CategoryRow
   { categoryRowUid = categoryUid
   , categoryRowTitle = categoryTitle
   , categoryRowCreated = categoryCreated
@@ -155,6 +156,7 @@ categoryToRowCategory $(fields 'Category) = CategoryRow
   , categoryRowNotes = markdownBlockSource categoryNotes
   , categoryRowEnabledSections = categoryEnabledSections
   , categoryRowItemsOrder = map itemUid categoryItems
+  , categoryRowDeleted = deleted
   }
   where
     -- Ignored fields
