@@ -9,12 +9,12 @@
 --
 -- This module provides two functions that are of interest:
 --
---   * Run 'main' to actually start the server.
---   * Run 'mainWith' to run it with a custom config.
+--   * Run 'runGuide' to actually start the server.
+--   * Run 'main' to run it with a custom config.
 module Guide.Main
 (
   main,
-  mainWith,
+  runGuide,
 )
 where
 
@@ -23,8 +23,6 @@ import Imports
 
 -- Concurrent
 import Control.Concurrent.Async
--- Lists
-import Safe (headDef)
 -- Monads and monad transformers
 import Control.Monad.Morph
 -- Web
@@ -51,10 +49,11 @@ import Data.HVect hiding (length)
 
 import Guide.Api (runApiServer)
 import Guide.App
+import Guide.Cli
 import Guide.Config
 import Guide.Handlers
-import Guide.Logger
 import Guide.JS (JS (..), allJSFunctions)
+import Guide.Logger
 import Guide.Routes (authRoute, haskellRoute)
 import Guide.ServerStuff
 import Guide.Session
@@ -122,34 +121,47 @@ lucidWithConfig x = do
 -- The entry point
 ----------------------------------------------------------------------------
 
--- | Start the site.
-main :: IO ()
-main = mainWith =<< readConfig
+-- | Backend uses command line interface:
+{-
+To see help run command:
+$ guide --help
 
--- | Start the site with a specific 'Config'.
-mainWith :: Config -> IO ()
-mainWith config@Config{..} = withLogger config $ \logger -> do
-  args <- getArgs
-  let option = headDef "" args
-  when (option == "--dry-run") $ do
-    db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
-    logDebugIO logger "loaded the database successfully"
-    closeAcidState db
-    exitSuccess
-  -- USAGE: --load-public <filename>
-  -- loads PublicDB from <filename>, converts it to GlobalState, saves & exits
-  when (option == "--load-public") $ do
-    let path = fromMaybe
-          (error "you haven't provided public DB file name")
-          (args ^? ix 1)
-    (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
-      Left err -> error err
-      Right publicDB -> do
-        db <- openLocalStateFrom "state/" emptyState
-        Acid.update db (ImportPublicDB publicDB)
-        createCheckpointAndClose' db
-        logDebugIO logger "PublicDB imported to GlobalState"
-        exitSuccess
+Guide is wiki
+
+Usage: guide [-v|--version] [COMMAND]
+
+
+Available options:
+  -h,--help                Show this help text
+  -v,--version             Show Guide version
+
+Available commands:
+  run                      Run server
+  dry-run                  Load database and exit
+  load-public              Load PublicDB, create base on it and exit
+
+NOTE:
+Command 'guide' is the same as 'guide run'
+
+-}
+
+-- | Backend runner.
+main :: IO ()
+main = do
+  command <- parseCli
+  config <- readConfig
+  runCommand config command
+
+-- | Choose command from command line.
+runCommand :: Config -> Command -> IO ()
+runCommand config = \case
+  Guide -> runGuide config
+  DryRun -> dryRun config
+  LoadPublic path -> loadPublic path config
+
+-- | Start the site.
+runGuide :: Config -> IO ()
+runGuide config@Config{..} = withLogger config $ \logger -> do
   installTerminationCatcher =<< myThreadId
   workAsync <- async $ withDB (pure ()) $ \db -> do
     hSetBuffering stdout NoBuffering
@@ -162,6 +174,26 @@ mainWith config@Config{..} = withLogger config $ \logger -> do
   -- Hold processes running and finish on exit or exception.
   forever (threadDelay (1000000 * 60))
     `finally` cancel workAsync
+
+-- | Load database and exit.
+dryRun :: Config -> IO ()
+dryRun config = withLogger config $ \logger -> do
+  db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
+  logDebugIO logger "loaded the database successfully"
+  closeAcidState db
+  exitSuccess
+
+-- | Load PublicDB, create base on it and exit.
+loadPublic :: String -> Config -> IO ()
+loadPublic path config = withLogger config $ \logger ->
+  (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
+    Left err -> error err
+    Right publicDB -> do
+      db <- openLocalStateFrom "state/" emptyState
+      Acid.update db (ImportPublicDB publicDB)
+      createCheckpointAndClose' db
+      logDebugIO logger "PublicDB imported to GlobalState"
+      exitSuccess
 
 -- Create a checkpoint every six hours. Note: if nothing was changed, the
 -- checkpoint won't be created, which saves us some space.

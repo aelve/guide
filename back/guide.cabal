@@ -56,6 +56,7 @@ library
       Guide.Api.Error
       Guide.Api.Utils
       Guide.Api.Guider
+    Guide.Cli
     Guide.Database
       Guide.Database.Add
       Guide.Database.Connection
@@ -130,6 +131,7 @@ library
                      , fmt
                      , friendly-time == 0.4.*
                      , generics-eot
+                     , gitrev
                      , hashable
                      , hasql
                      , hasql-transaction
@@ -151,6 +153,7 @@ library
                      , neat-interpolation == 0.3.*
                      , network
                      , network-uri
+                     , optparse-applicative
                      , patches-vector
                      , profunctors
                      , random >= 1.1
@@ -210,6 +213,9 @@ library
                      , DerivingStrategies
                      , TemplateHaskellQuotes
                      , ScopedTypeVariables
+
+  other-modules:       Paths_guide
+  autogen-modules:     Paths_guide
 
 test-suite tests
   main-is:             Main.hs
