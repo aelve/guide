@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
+-- | This module adds command line interface to run server.
+--
+-- See help with 'guide --help' to see available commands.
 module Guide.Cli
        ( Command (..)
        , parseCli
@@ -23,9 +26,9 @@ import qualified Data.Text as T
 
 -- | All available commands
 data Command
-    = Guide               -- run server
-    | DryRun              -- load database and exit
-    | LoadPublic String   -- load PublicDB, create base on it and exit
+    = Guide               -- ^ run server
+    | DryRun              -- ^ load database and exit
+    | LoadPublic String   -- ^ load PublicDB, create base on it and exit
 
 ----------------------------------------------------------------------------
 -- Parsers
@@ -38,7 +41,7 @@ parseCli = execParser
     $ info (helper <*> versionP <*> (pure Guide <|> commandsP))
     $ fullDesc -- <> progDesc "Guide is wiki"
 
--- All possible commands.
+-- | All possible commands.
 commandsP :: Parser Command
 commandsP = subparser
     $  command "run" (info (helper <*> pure Guide) $ progDesc "Run server")
