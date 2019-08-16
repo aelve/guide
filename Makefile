@@ -26,7 +26,7 @@ back/test-db: back
 	mv guide-database back/state
 	(cd back/state && gzip -d *.gz)
 	(cd back/state && git branch -v && git status && ls)
-	stack exec --cwd back -- guide --dry-run
+	stack exec --cwd back -- guide dry-run
 	rm -rf back/state
 	if [ -d back/state-old ]; then mv back/state-old back/state; fi
 
