@@ -6,16 +6,12 @@
 {-# LANGUAGE TypeOperators       #-}
 
 -- | Description : The main module that starts the server.
---
--- This module provides two functions that are of interest:
---
---   * Run 'main' to parse an input and start a command.
---   * Run 'runServer' to actually start the server.
---   * Run 'dryRun' to load database and exit.
---   * Run 'loadPublic' to load PublicDB, create base on it and exit.
 module Guide.Main
 (
+  -- * Main
   main,
+
+  -- * All supported commands
   runServer,
   dryRun,
   loadPublic,
@@ -76,8 +72,8 @@ import qualified Web.Spock as Spock
 {- Note [acid-state]
 ~~~~~~~~~~~~~~~~~~~~
 
-This application doesn't use a database – instead, it uses
-acid-state. Acid-state works as follows:
+Until we are done with migrating to PostgreSQL, this app uses acid-state.
+Acid-state works as follows:
 
   * Everything is stored as Haskell values (in particular, all data is stored
     in 'GlobalState').
@@ -111,33 +107,27 @@ acid-state. Acid-state works as follows:
 
 -}
 
--- TODO: rename GlobalState to DB, and DB to AcidDB
-
-lucidWithConfig
-  :: (MonadIO m, HasSpock (ActionCtxT cxt m),
-      SpockState (ActionCtxT cxt m) ~ ServerState)
-  => HtmlT (ReaderT Config IO) a -> ActionCtxT cxt m a
-lucidWithConfig x = do
-  cfg <- getConfig
-  lucidIO (hoist (flip runReaderT cfg) x)
-
 ----------------------------------------------------------------------------
--- The entry point
+-- Main
 ----------------------------------------------------------------------------
 
 -- | Parse an input and run a command.
 main :: IO ()
 main = do
-  command <- parseCli
+  command <- parseCommandLine
   config <- readConfig
   runCommand config command
 
--- | Switch command.
+-- | Run a specific 'Command' with the given 'Config'.
 runCommand :: Config -> Command -> IO ()
 runCommand config = \case
   RunServer -> runServer config
   DryRun -> dryRun config
   LoadPublic path -> loadPublic config path
+
+----------------------------------------------------------------------------
+-- Commands
+----------------------------------------------------------------------------
 
 -- | Start the server.
 runServer :: Config -> IO ()
@@ -155,7 +145,8 @@ runServer config@Config{..} = withLogger config $ \logger -> do
   forever (threadDelay (1000000 * 60))
     `finally` cancel workAsync
 
--- | Load database and exit.
+-- | Load database from @state/@, check that it can be loaded successfully,
+-- and exit.
 dryRun :: Config -> IO ()
 dryRun config = withLogger config $ \logger -> do
   db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
@@ -163,7 +154,8 @@ dryRun config = withLogger config $ \logger -> do
   closeAcidState db
   exitSuccess
 
--- | Load PublicDB, create base on it and exit.
+-- | Load 'PublicDB' from given file, create acid-state database from it,
+-- and exit.
 loadPublic :: Config -> FilePath -> IO ()
 loadPublic config path = withLogger config $ \logger ->
   (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
@@ -175,18 +167,30 @@ loadPublic config path = withLogger config $ \logger ->
       logDebugIO logger "PublicDB imported to GlobalState"
       exitSuccess
 
--- Create a checkpoint every six hours. Note: if nothing was changed, the
+----------------------------------------------------------------------------
+-- Helpers
+----------------------------------------------------------------------------
+
+lucidWithConfig
+  :: (MonadIO m, HasSpock (ActionCtxT cxt m),
+      SpockState (ActionCtxT cxt m) ~ ServerState)
+  => HtmlT (ReaderT Config IO) a -> ActionCtxT cxt m a
+lucidWithConfig x = do
+  cfg <- getConfig
+  lucidIO (hoist (flip runReaderT cfg) x)
+
+-- | Create a checkpoint every six hours. Note: if nothing was changed, the
 -- checkpoint won't be created, which saves us some space.
 checkPoint :: DB -> IO b
 checkPoint db = forever $ do
   createCheckpoint' db
   threadDelay (1000000 * 3600 * 6)
 
--- Run the API (new server)
+-- | Run the API (new server)
 runNewApi :: Logger -> Config -> AcidState GlobalState -> IO ()
 runNewApi logger = runApiServer (pushLogger "api" logger)
 
--- Run the Spock (old server).
+-- | Run Spock (old server).
 runOldServer :: Logger -> Config -> DB -> IO ()
 runOldServer logger config@Config{..} db = do
   let serverState = ServerState {
@@ -368,7 +372,7 @@ adminHook = do
     then return (IsAdmin :&: oldCtx)
     else Spock.text "Not authorized."
 
--- |Redirect the user to a given path if they are logged in.
+-- | Redirect the user to a given path if they are logged in.
 authRedirect :: Text -> GuideAction ctx a -> GuideAction ctx a
 authRedirect path action = do
   user <- getLoggedInUser

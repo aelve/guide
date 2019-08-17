@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
--- | This module adds command line interface to run server.
+-- | Guide's command line interface.
 --
--- See help with @guide --help@ to see available commands.
+-- Run @guide --help@ to see available commands.
 module Guide.Cli
        ( Command (..)
-       , parseCli
+       , parseCommandLine
        ) where
 
 
@@ -32,7 +32,6 @@ data Command
 -- Parsers
 ----------------------------------------------------------------------------
 
--- | Backend uses command line interface:
 {-
 To see help run command:
 $ guide --help
@@ -62,25 +61,27 @@ Available options:
 
 -}
 
--- | Main parser of the application.
-parseCli :: IO Command
-parseCli = Opt.execParser
-    $ Opt.info (Opt.helper <*> versionP <*> (pure RunServer <|> commandsP))
+-- | Parse the command line of the application.
+--
+-- If no command is supplied, we say the command was 'RunServer'.
+parseCommandLine :: IO Command
+parseCommandLine = Opt.execParser
+    $ Opt.info (Opt.helper <*> versionOption <*> (pure RunServer <|> commandsParser))
     $ Opt.fullDesc
 
 -- | All possible commands.
-commandsP :: Parser Command
-commandsP = Opt.subparser
+commandsParser :: Parser Command
+commandsParser = Opt.subparser
     $  Opt.command "run" (infoP (pure RunServer) "Start server")
     <> Opt.command "dry-run" (infoP (pure DryRun) "Load database and exit")
     <> Opt.command "load-public"
-        (infoP (loadPublic) "Load PublicDB, create base on it and exit")
+         (infoP loadPublicParser "Load PublicDB, create base on it and exit")
   where
     infoP parser desc = Opt.info (Opt.helper <*> parser) $ Opt.progDesc desc
 
--- | Parse filepath of PublicDB.
-loadPublic :: Parser Command
-loadPublic = LoadPublic <$> Opt.strOption
+-- | Parse the arguments of 'LoadPublic'.
+loadPublicParser :: Parser Command
+loadPublicParser = LoadPublic <$> Opt.strOption
     (  Opt.long "path"
     <> Opt.short 'p'
     <> Opt.help "Public DB file name"
@@ -88,18 +89,18 @@ loadPublic = LoadPublic <$> Opt.strOption
     )
 
 -- | Parse version option.
-versionP :: Parser (a -> a)
-versionP = Opt.infoOption guideVersion
+versionOption :: Parser (a -> a)
+versionOption = Opt.infoOption guideVersion
     $ Opt.long "version"
    <> Opt.short 'v'
    <> Opt.help "Show Guide version"
 
--- | Show current guide version in git system
+-- | A message with current Guide version and Git info.
 guideVersion :: String
 guideVersion = T.unpack $ T.intercalate "\n" $
     [sVersion, sHash, sDate] ++ [sDirty | $(gitDirty)]
   where
     sVersion = "Aelve Guide " <> "v" <> T.pack (showVersion version)
-    sHash = " ➤ " <> ("Git revision: " <> $(gitHash))
-    sDate = " ➤ " <> ("Commit date:  " <> $(gitCommitDate))
+    sHash = " ➤ " <> "Git revision: " <> $(gitHash)
+    sDate = " ➤ " <> "Commit date:  " <> $(gitCommitDate)
     sDirty = "There are non-committed files."
