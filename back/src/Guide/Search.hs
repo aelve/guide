@@ -71,4 +71,4 @@ match a b = common (getWords a) (getWords b)
 
 -- | Find how many elements two lists have in common.
 common :: Ord a => [a] -> [a] -> Int
-common a b = S.size (S.intersection (S.fromList a) (S.fromList b))
+common a b = S.size (S.intersection (toSet a) (toSet b))

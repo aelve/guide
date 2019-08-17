@@ -92,7 +92,6 @@ import Guide.Views.Utils.Input
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Map as M
 import qualified Data.Semigroup as Semigroup
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -282,7 +281,7 @@ up. Write @foo({{{%js bar}}})@ instead.
 -}
 mustache :: MonadIO m => PName -> Aeson.Value -> HtmlT m ()
 mustache f v = do
-  let functions = M.fromList [
+  let functions = toMap [
         ("selectIf", \[x] -> if x == Aeson.Bool True
             then return (Aeson.String "selected")
             else return Aeson.Null),

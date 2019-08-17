@@ -23,7 +23,7 @@ extra-deps:
 - webdriver-0.9.0.1
 
 # Not on Stackage
-- to-1.0.0
+- to-1.1.0
 
 # We want the newest hasql just because
 - hasql-1.4

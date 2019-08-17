@@ -346,7 +346,7 @@ addCategory catId title' group' created' = do
         categoryUid = catId,
         categoryTitle = title',
         categoryGroup = group',
-        categoryEnabledSections = S.fromList [
+        categoryEnabledSections = toSet [
             ItemProsConsSection,
             ItemEcosystemSection,
             ItemNotesSection ],
