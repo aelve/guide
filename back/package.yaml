@@ -41,6 +41,9 @@ default-extensions:
 
 library:
   source-dirs: src
+  # You don't need to add modules here, all modules will be exposed automatically.
+  #
+  # exposed-modules:
   dependencies:
   - acid-state
   - aeson
