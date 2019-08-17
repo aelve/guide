@@ -19,27 +19,28 @@ ghc-options:
 # https://github.com/commercialhaskell/stack/issues/3918
 - -optP-Wno-nonportable-include-path
 
+default-extensions:
+- MultiWayIf
+- ViewPatterns
+- RecordWildCards
+- TupleSections
+- LambdaCase
+- RankNTypes
+- MultiParamTypeClasses
+- FunctionalDependencies
+- DeriveFunctor
+- DeriveTraversable
+- DeriveGeneric
+- TypeApplications
+- NoImplicitPrelude
+- ConstraintKinds
+- InstanceSigs
+- DerivingStrategies
+- TemplateHaskellQuotes
+- ScopedTypeVariables
+
 library:
   source-dirs: src
-  default-extensions:
-  - MultiWayIf
-  - ViewPatterns
-  - RecordWildCards
-  - TupleSections
-  - LambdaCase
-  - RankNTypes
-  - MultiParamTypeClasses
-  - FunctionalDependencies
-  - DeriveFunctor
-  - DeriveTraversable
-  - DeriveGeneric
-  - TypeApplications
-  - NoImplicitPrelude
-  - ConstraintKinds
-  - InstanceSigs
-  - DerivingStrategies
-  - TemplateHaskellQuotes
-  - ScopedTypeVariables
   dependencies:
   - acid-state
   - aeson
@@ -149,18 +150,6 @@ tests:
   tests:
     main: Main.hs
     source-dirs: tests
-    default-extensions:
-    - MultiWayIf
-    - ViewPatterns
-    - RecordWildCards
-    - TupleSections
-    - LambdaCase
-    - RankNTypes
-    - MultiParamTypeClasses
-    - FunctionalDependencies
-    - DeriveFunctor
-    - DeriveTraversable
-    - DeriveGeneric
     dependencies:
     - QuickCheck <3
     - aeson
