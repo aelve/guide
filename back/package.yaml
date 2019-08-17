@@ -1,16 +1,16 @@
 name: guide
-version: '1.0'
+version: '1.0.0'
 synopsis: An advanced wiki engine
 description: An advanced wiki engine powering <guide.aelve.com>.
 
 category: Web
 author: Aelve
-maintainer: yom@artyom.me
+maintainer: artyom@aelve.com
 license: BSD3
 
-homepage: http://github.com/aelve/guide
+homepage: https://github.com/aelve/guide
 git: git://github.com/aelve/guide.git
-bug-reports: http://github.com/aelve/guide/issues
+bug-reports: https://github.com/aelve/guide/issues
 
 ghc-options:
 - -Wall
@@ -191,7 +191,9 @@ executables:
     source-dirs: src/site
     ghc-options:
     - -threaded
-    - -with-rtsopts=-T -N
+    # See https://github.com/sol/hpack/issues/182#issuecomment-310434881 for
+    # the explanation of the quoting situation here.
+    - '"-with-rtsopts=-T -N"'
     dependencies:
     - base
     - guide
@@ -240,5 +242,3 @@ tests:
     - temporary
     - webdriver
     - yaml
-
-tested-with: ghc ==8.4
