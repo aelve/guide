@@ -9,12 +9,16 @@
 --
 -- This module provides two functions that are of interest:
 --
+--   * Run 'main' to parse an input and start a command.
 --   * Run 'runGuide' to actually start the server.
---   * Run 'main' to run it with a custom config.
+--   * Run 'dryRun' to load database and exit.
+--   * Run 'loadPublic' to load PublicDB, create base on it and exit.
 module Guide.Main
 (
   main,
-  runGuide,
+  runServer,
+  dryRun,
+  loadPublic,
 )
 where
 
@@ -121,47 +125,23 @@ lucidWithConfig x = do
 -- The entry point
 ----------------------------------------------------------------------------
 
--- | Backend uses command line interface:
-{-
-To see help run command:
-$ guide --help
-
-Guide is wiki
-
-Usage: guide [-v|--version] [COMMAND]
-
-
-Available options:
-  -h,--help                Show this help text
-  -v,--version             Show Guide version
-
-Available commands:
-  run                      Run server
-  dry-run                  Load database and exit
-  load-public              Load PublicDB, create base on it and exit
-
-NOTE:
-Command 'guide' is the same as 'guide run'
-
--}
-
--- | Backend runner.
+-- | Parse an input and run a command.
 main :: IO ()
 main = do
   command <- parseCli
   config <- readConfig
   runCommand config command
 
--- | Choose command from command line.
+-- | Switch command.
 runCommand :: Config -> Command -> IO ()
 runCommand config = \case
-  Guide -> runGuide config
+  RunServer -> runServer config
   DryRun -> dryRun config
-  LoadPublic path -> loadPublic path config
+  LoadPublic path -> loadPublic config path
 
--- | Start the site.
-runGuide :: Config -> IO ()
-runGuide config@Config{..} = withLogger config $ \logger -> do
+-- | Start the server.
+runServer :: Config -> IO ()
+runServer config@Config{..} = withLogger config $ \logger -> do
   installTerminationCatcher =<< myThreadId
   workAsync <- async $ withDB (pure ()) $ \db -> do
     hSetBuffering stdout NoBuffering
@@ -184,8 +164,8 @@ dryRun config = withLogger config $ \logger -> do
   exitSuccess
 
 -- | Load PublicDB, create base on it and exit.
-loadPublic :: String -> Config -> IO ()
-loadPublic path config = withLogger config $ \logger ->
+loadPublic :: Config -> FilePath -> IO ()
+loadPublic config path = withLogger config $ \logger ->
   (Cereal.runGet SafeCopy.safeGet <$> BS.readFile path) >>= \case
     Left err -> error err
     Right publicDB -> do
