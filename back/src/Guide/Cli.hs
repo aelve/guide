@@ -3,7 +3,7 @@
 
 -- | This module adds command line interface to run server.
 --
--- See help with 'guide --help' to see available commands.
+-- See help with @guide --help@ to see available commands.
 module Guide.Cli
        ( Command (..)
        , parseCli
