@@ -10,7 +10,7 @@
 -- This module provides two functions that are of interest:
 --
 --   * Run 'main' to parse an input and start a command.
---   * Run 'runGuide' to actually start the server.
+--   * Run 'runServer' to actually start the server.
 --   * Run 'dryRun' to load database and exit.
 --   * Run 'loadPublic' to load PublicDB, create base on it and exit.
 module Guide.Main
