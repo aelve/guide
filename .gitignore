@@ -24,6 +24,9 @@ cabal.config
 *#
 *.lock
 
+# hpack
+*.cabal
+
 
 # IDE/support
 .idea/
