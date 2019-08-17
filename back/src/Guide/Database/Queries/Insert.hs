@@ -5,16 +5,16 @@
 {-# LANGUAGE TypeOperators     #-}
 
 -- | Insert queries.
-module Guide.Database.Add
-       (
-       -- * Trait
-         addTrait
-       -- * Item
-       , addItem
-       -- * Category
-       , addCategory
-
-       ) where
+module Guide.Database.Queries.Insert
+(
+  -- * Category
+  insertCategory,
+  -- * Item
+  insertItem,
+  -- * Trait
+  insertTrait,
+)
+where
 
 import Imports
 
@@ -24,7 +24,7 @@ import Named
 
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Set
+import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils (execute)
 import Guide.Types.Core
@@ -32,11 +32,11 @@ import Guide.Utils (Uid (..))
 
 
 ----------------------------------------------------------------------------
--- addCategory
+-- Category
 ----------------------------------------------------------------------------
 
--- | Insert category to database.
-addCategory
+-- | Create a category record.
+insertCategory
   :: Uid Category          -- ^ New category's id
   -> "title" :! Text
   -> "group" :! Text
@@ -44,7 +44,7 @@ addCategory
   -> "status" :! CategoryStatus
   -> "enabledSections" :! Set ItemSection
   -> ExceptT DatabaseError Transaction ()
-addCategory
+insertCategory
   catId
   (arg #title -> title)
   (arg #group -> group_)
@@ -84,19 +84,17 @@ addCategory
     statement
 
 ----------------------------------------------------------------------------
--- addItem
+-- Item
 ----------------------------------------------------------------------------
 
--- | Insert item to database.
---
--- Item added to '_categoryItems' by default.
-addItem
+-- | Create an item record. The item will also be added to its category.
+insertItem
   :: Uid Category          -- ^ Category id
   -> Uid Item              -- ^ New item's id
   -> "name" :! Text        -- ^ Name
   -> "created" :! UTCTime  -- ^ Creation time
   -> ExceptT DatabaseError Transaction ()
-addItem catId itemId (arg #name -> name) (arg #created -> created) = do
+insertItem catId itemId (arg #name -> name) (arg #created -> created) = do
   let statement :: Statement ItemRow ()
       statement =
         [execute|
@@ -132,23 +130,22 @@ addItem catId itemId (arg #name -> name) (arg #created -> created) = do
       , itemRowConsOrder = []
       }
     statement
-  modifyCategoryRow catId $
+  updateCategoryRow catId $
     _categoryRowItemsOrder %~ (++ [itemId])
 
 ----------------------------------------------------------------------------
--- addTrait
+-- Trait
 ----------------------------------------------------------------------------
 
--- | Insert trait to database.
---
--- Trait added to '_itemPros' or '_itemCons' by default.
-addTrait
+-- | Create a trait record. The trait will also be added to its item in the
+-- pros or cons section.
+insertTrait
   :: Uid Item             -- ^ Item id
   -> Uid Trait            -- ^ New trait's id
   -> TraitType            -- ^ Pro or Con
   -> "content" :! Text    -- ^ Trait content
   -> ExceptT DatabaseError Transaction ()
-addTrait itemId traitId traitType (arg #content -> content) = do
+insertTrait itemId traitId traitType (arg #content -> content) = do
   let statement :: Statement TraitRow ()
       statement =
         [execute|
@@ -166,8 +163,8 @@ addTrait itemId traitId traitType (arg #content -> content) = do
     statement
   case traitType of
     TraitTypePro ->
-      modifyItemRow itemId $
+      updateItemRow itemId $
         _itemRowProsOrder %~ (++ [traitId])
     TraitTypeCon ->
-      modifyItemRow itemId $
+      updateItemRow itemId $
         _itemRowConsOrder %~ (++ [traitId])
