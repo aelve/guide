@@ -16,6 +16,8 @@ ghc-options:
 - -Wall
 - -Wno-unused-do-bind
 - -Wmissing-export-lists
+# https://github.com/commercialhaskell/stack/issues/3918
+- -optP-Wno-nonportable-include-path
 
 library:
   source-dirs: src
