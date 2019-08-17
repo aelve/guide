@@ -64,7 +64,7 @@ versionP = infoOption guideVersion
 guideVersion :: String
 guideVersion = T.unpack $ T.intercalate "\n" $ [sVersion, sHash, sDate] ++ [sDirty | $(gitDirty)]
   where
-    sVersion = "Guide " <> "v" <> T.pack (showVersion version)
+    sVersion = "Aelve Guide " <> "v" <> T.pack (showVersion version)
     sHash = " ➤ " <> ("Git revision: " <> $(gitHash))
     sDate = " ➤ " <> ("Commit date:  " <> $(gitCommitDate))
     sDirty = "There are non-committed files."
