@@ -530,7 +530,7 @@ run logFile ts = do
         when exold' $ renameDirectory "state-old" "state"
 
   bracket prepare finish $ \_ -> do
-    withAsync (Guide.Main.mainWith config) $ \_ -> hspec ts
+    withAsync (Guide.Main.runServer config) $ \_ -> hspec ts
 
 _site :: IO ()
 _site = run "" $ do
