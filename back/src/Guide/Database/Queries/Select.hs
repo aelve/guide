@@ -206,7 +206,7 @@ selectDeletedItemRowsByCategory catId = do
         |]
   lift $ HT.statement catId statement
 
--- Get available ItemRows belonging to a category.
+-- | Get available ItemRows belonging to a category.
 --
 -- Returns item rows sorted by order.
 selectItemRowsByCategory :: Uid Category -> ExceptT DatabaseError Transaction [ItemRow]
