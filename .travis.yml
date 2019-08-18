@@ -57,6 +57,14 @@ jobs:
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
         - stack --no-terminal build --test --no-run-tests
+        # Regenerate Swagger and push to the same branch
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            stack exec -- guide api-docs > back/swagger.json
+            git add back/swagger.json
+            # Will only push if the commit was created successfully
+            (git commit -m "[skip ci] Regenerate swagger.json" && git push) || true
+          fi
         # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
@@ -65,11 +73,6 @@ jobs:
             docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
             docker push "quay.io/aelve/guide:$BRANCH--back"
           fi
-        # Regenerate Swagger and push to the same branch
-        - stack exec -- guide api-docs > back/swagger.json
-        - git add back/swagger.json
-        - git commit -m "[skip ci] Regenerate swagger.json"
-        - git push
         # Check that no new undocumented definitions are introduced. Our
         # goal is full documented code with ZERO undocumented definitions.
         # This check warns if a commit increases the amount of undocumented
