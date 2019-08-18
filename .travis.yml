@@ -62,7 +62,7 @@ jobs:
         # pipeline also pushed to it)
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
-            git checkout --track "origin/$TRAVIS_BRANCH" && git pull
+            git checkout "$TRAVIS_BRANCH" && git pull
             stack exec -- guide api-docs > back/swagger.json
             git add back/swagger.json
             # Will only push if the commit was created successfully
