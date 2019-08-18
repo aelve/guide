@@ -15,6 +15,7 @@ module Guide.Main
   runServer,
   dryRun,
   loadPublic,
+  apiDocs,
 )
 where
 
@@ -47,7 +48,7 @@ import System.Signal
 -- HVect
 import Data.HVect hiding (length)
 
-import Guide.Api (runApiServer)
+import Guide.Api (runApiServer, apiSwaggerRendered)
 import Guide.App
 import Guide.Cli
 import Guide.Config
@@ -124,6 +125,7 @@ runCommand config = \case
   RunServer -> runServer config
   DryRun -> dryRun config
   LoadPublic path -> loadPublic config path
+  ApiDocs -> apiDocs config
 
 ----------------------------------------------------------------------------
 -- Commands
@@ -166,6 +168,11 @@ loadPublic config path = withLogger config $ \logger ->
       createCheckpointAndClose' db
       logDebugIO logger "PublicDB imported to GlobalState"
       exitSuccess
+
+-- | Dump API docs to the output.
+apiDocs :: Config -> IO ()
+apiDocs config = withLogger config $ \_logger ->
+  T.putStrLn apiSwaggerRendered
 
 ----------------------------------------------------------------------------
 -- Helpers

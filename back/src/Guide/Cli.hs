@@ -24,42 +24,10 @@ import qualified Options.Applicative as Opt
 
 -- | All available commands
 data Command
-    = RunServer             -- ^ run server
-    | DryRun                -- ^ load database and exit
-    | LoadPublic FilePath   -- ^ load PublicDB, create base on it and exit
-
-----------------------------------------------------------------------------
--- Parsers
-----------------------------------------------------------------------------
-
-{-
-To see help run command:
-$ guide --help
-Usage: guide [-v|--version] [COMMAND]
-
-Available options:
-  -h,--help                Show this help text
-  -v,--version             Show Guide version
-
-Available commands:
-  run                      Run server
-  dry-run                  Load database and exit
-  load-public              Load PublicDB, create base on it and exit
-
-NOTE:
-Command 'guide' is the same as 'guide run'
-
-----------------------------------------------------------------------------
-
-$ guide load-public --help
-Usage: guide load-public (-p|--path FILEPATH)
-  Load PublicDB, create base on it and exit
-
-Available options:
-  -h,--help                Show this help text
-  -p,--path FILEPATH       Public DB file name
-
--}
+    = RunServer             -- ^ Run server
+    | DryRun                -- ^ Load database and exit
+    | LoadPublic FilePath   -- ^ Load PublicDB, create base on it and exit
+    | ApiDocs               -- ^ Show docs for the backend API
 
 -- | Parse the command line of the application.
 --
@@ -72,10 +40,14 @@ parseCommandLine = Opt.execParser
 -- | All possible commands.
 commandsParser :: Parser Command
 commandsParser = Opt.subparser
-    $  Opt.command "run" (infoP (pure RunServer) "Start server")
-    <> Opt.command "dry-run" (infoP (pure DryRun) "Load database and exit")
+    $  Opt.command "run"
+         (infoP (pure RunServer) "Start server")
+    <> Opt.command "dry-run"
+         (infoP (pure DryRun) "Load database and exit")
     <> Opt.command "load-public"
          (infoP loadPublicParser "Load PublicDB, create base on it and exit")
+    <> Opt.command "api-docs"
+         (infoP (pure ApiDocs) "Show swagger.json for the backend API")
   where
     infoP parser desc = Opt.info (Opt.helper <*> parser) $ Opt.progDesc desc
 
