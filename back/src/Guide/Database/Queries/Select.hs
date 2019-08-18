@@ -114,9 +114,9 @@ selectCategoryRowByItemMaybe itemId = do
 
 -- | Get a list of available categories' IDs.
 --
--- Includes categories marked as deleted.
---
--- TODO explain why we store deleted categories at all.
+-- Includes categories marked as deleted. See
+-- <https://www.notion.so/aelve/Handling-of-deleted-objects-aa21056f7bdb43d2b635a8f6f93541a3>
+-- for an explanation of why we store deleted objects at all.
 selectCategoryIds :: ExceptT DatabaseError Transaction [Uid Category]
 selectCategoryIds = do
   let statement :: Statement () [Uid Category]
