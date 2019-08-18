@@ -1,0 +1,1212 @@
+config.json doesn't exist, creating it
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "alpha",
+        "title": "Aelve Guide API"
+    },
+    "definitions": {
+        "CategoryStatus": {
+            "type": "string",
+            "enum": [
+                "CategoryStub",
+                "CategoryWIP",
+                "CategoryFinished"
+            ]
+        },
+        "CItemInfoEdit": {
+            "type": "object",
+            "properties": {
+                "hackage": {
+                    "type": "string",
+                    "description": "Package name on Hackage"
+                },
+                "link": {
+                    "type": "string",
+                    "description": "Link to the official site, if exists"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Item name"
+                }
+            }
+        },
+        "TraitID": {
+            "type": "string"
+        },
+        "CMove": {
+            "required": [
+                "direction"
+            ],
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "$ref": "#/definitions/CDirection"
+                }
+            }
+        },
+        "CSRCategory": {
+            "required": [
+                "info",
+                "description"
+            ],
+            "type": "object",
+            "properties": {
+                "description": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "info": {
+                    "$ref": "#/definitions/CCategoryInfo"
+                }
+            }
+        },
+        "CCreateTrait": {
+            "required": [
+                "type",
+                "content"
+            ],
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/CTraitType"
+                }
+            }
+        },
+        "CCategoryFull": {
+            "required": [
+                "id",
+                "title",
+                "group",
+                "status",
+                "description",
+                "sections",
+                "items"
+            ],
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/CategoryStatus"
+                },
+                "group": {
+                    "type": "string",
+                    "description": "Category group ('grandcategory')"
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/CItemFull"
+                    },
+                    "type": "array",
+                    "description": "All items in the category"
+                },
+                "sections": {
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/definitions/ItemSection"
+                    },
+                    "type": "array",
+                    "description": "Enabled item sections"
+                },
+                "id": {
+                    "$ref": "#/definitions/CategoryID"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Category title"
+                },
+                "description": {
+                    "$ref": "#/definitions/CMarkdown"
+                }
+            }
+        },
+        "CItemInfo": {
+            "required": [
+                "id",
+                "created",
+                "name"
+            ],
+            "type": "object",
+            "properties": {
+                "hackage": {
+                    "type": "string",
+                    "description": "Package name on Hackage"
+                },
+                "created": {
+                    "example": "2016-07-22T00:00:00Z",
+                    "format": "yyyy-mm-ddThh:MM:ssZ",
+                    "type": "string",
+                    "description": "When the item was created"
+                },
+                "link": {
+                    "type": "string",
+                    "description": "Link to the official site, if exists"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Item name"
+                },
+                "id": {
+                    "$ref": "#/definitions/ItemID"
+                }
+            }
+        },
+        "ItemID": {
+            "type": "string"
+        },
+        "CTraitType": {
+            "type": "string",
+            "enum": [
+                "Pro",
+                "Con"
+            ]
+        },
+        "CSearchResult": {
+            "minProperties": 1,
+            "maxProperties": 1,
+            "type": "object",
+            "description": "The docs lie. The true schema for this type is an object with two parameters 'tag' and 'contents', where 'tag' is one of keys listed in this doc, and 'contents' is the object.",
+            "properties": {
+                "Category": {
+                    "$ref": "#/definitions/CSRCategory"
+                },
+                "Item": {
+                    "$ref": "#/definitions/CSRItem"
+                }
+            }
+        },
+        "CMarkdown": {
+            "required": [
+                "text",
+                "html"
+            ],
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Markdown source"
+                },
+                "html": {
+                    "type": "string",
+                    "description": "Rendered HTML"
+                }
+            }
+        },
+        "ItemSection": {
+            "type": "string",
+            "enum": [
+                "ItemProsConsSection",
+                "ItemEcosystemSection",
+                "ItemNotesSection"
+            ]
+        },
+        "CSRItem": {
+            "required": [
+                "category",
+                "info"
+            ],
+            "type": "object",
+            "description": "Note: fields `summary` and `ecosystem` will be present only if the match was found in those fields.",
+            "properties": {
+                "ecosystem": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "summary": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "category": {
+                    "$ref": "#/definitions/CCategoryInfo"
+                },
+                "info": {
+                    "$ref": "#/definitions/CItemInfo"
+                }
+            }
+        },
+        "UTCTime": {
+            "example": "2016-07-22T00:00:00Z",
+            "format": "yyyy-mm-ddThh:MM:ssZ",
+            "type": "string"
+        },
+        "CTextEdit": {
+            "required": [
+                "original",
+                "modified"
+            ],
+            "type": "object",
+            "properties": {
+                "modified": {
+                    "type": "string",
+                    "description": "Modified text"
+                },
+                "original": {
+                    "type": "string",
+                    "description": "State of base before editing"
+                }
+            }
+        },
+        "CCreateItem": {
+            "required": [
+                "name"
+            ],
+            "type": "object",
+            "properties": {
+                "hackage": {
+                    "type": "string",
+                    "description": "Package name on Hackage"
+                },
+                "link": {
+                    "type": "string",
+                    "description": "Link to the official site, if exists"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Item name"
+                }
+            }
+        },
+        "CItemFull": {
+            "required": [
+                "id",
+                "name",
+                "created",
+                "summary",
+                "pros",
+                "cons",
+                "ecosystem",
+                "notes",
+                "toc"
+            ],
+            "type": "object",
+            "properties": {
+                "ecosystem": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "summary": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "hackage": {
+                    "type": "string",
+                    "description": "Package name on Hackage"
+                },
+                "created": {
+                    "example": "2016-07-22T00:00:00Z",
+                    "format": "yyyy-mm-ddThh:MM:ssZ",
+                    "type": "string",
+                    "description": "When the item was created"
+                },
+                "link": {
+                    "type": "string",
+                    "description": "Link to the official site, if exists"
+                },
+                "toc": {
+                    "items": {
+                        "$ref": "#/definitions/CTocHeading"
+                    },
+                    "type": "array",
+                    "description": "Table of contents"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Item name"
+                },
+                "id": {
+                    "$ref": "#/definitions/ItemID"
+                },
+                "notes": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "pros": {
+                    "items": {
+                        "$ref": "#/definitions/CTrait"
+                    },
+                    "type": "array",
+                    "description": "Pros (positive traits)"
+                },
+                "cons": {
+                    "items": {
+                        "$ref": "#/definitions/CTrait"
+                    },
+                    "type": "array",
+                    "description": "Cons (negative traits)"
+                }
+            }
+        },
+        "CategoryID": {
+            "type": "string"
+        },
+        "CCategoryInfo": {
+            "required": [
+                "id",
+                "title",
+                "created",
+                "group",
+                "status"
+            ],
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/CategoryStatus"
+                },
+                "group": {
+                    "type": "string",
+                    "description": "Category group ('grandcategory')"
+                },
+                "created": {
+                    "example": "2016-07-22T00:00:00Z",
+                    "format": "yyyy-mm-ddThh:MM:ssZ",
+                    "type": "string",
+                    "description": "When the category was created"
+                },
+                "id": {
+                    "$ref": "#/definitions/CategoryID"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Category title"
+                }
+            }
+        },
+        "CTocHeading": {
+            "required": [
+                "content",
+                "slug",
+                "subheadings"
+            ],
+            "type": "object",
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "In-page anchor for linking"
+                },
+                "content": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "subheadings": {
+                    "items": {
+                        "$ref": "#/definitions/CTocHeading"
+                    },
+                    "type": "array"
+                }
+            }
+        },
+        "CDirection": {
+            "type": "string",
+            "enum": [
+                "up",
+                "down"
+            ]
+        },
+        "CCategoryInfoEdit": {
+            "required": [
+                "title",
+                "group",
+                "status",
+                "sections"
+            ],
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/CategoryStatus"
+                },
+                "group": {
+                    "type": "string",
+                    "description": "Category group ('grandcategory')"
+                },
+                "sections": {
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/definitions/ItemSection"
+                    },
+                    "type": "array",
+                    "description": "Enabled item sections"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Category title"
+                }
+            }
+        },
+        "CTrait": {
+            "required": [
+                "id",
+                "content"
+            ],
+            "type": "object",
+            "properties": {
+                "content": {
+                    "$ref": "#/definitions/CMarkdown"
+                },
+                "id": {
+                    "$ref": "#/definitions/TraitID"
+                }
+            }
+        }
+    },
+    "paths": {
+        "/item/{itemId}/info": {
+            "put": {
+                "summary": "Set item's info",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CItemInfoEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "description": "Note: all fields are optional. If you don't pass a field, it won't be modified. To erase a field, send `null`.",
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/category/{categoryId}/info": {
+            "put": {
+                "summary": "Set category's fields",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Category not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Category ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "categoryId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CCategoryInfoEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "01. Categories"
+                ]
+            }
+        },
+        "/item/{itemId}/summary": {
+            "put": {
+                "summary": "Set item's summary",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "409": {
+                        "description": "Merge conflict occurred"
+                    },
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CTextEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/item/{itemId}/trait/{traitId}": {
+            "get": {
+                "summary": "Get trait by id",
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/CTrait"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "format": "Trait ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "traitId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "03. Item traits"
+                ]
+            },
+            "delete": {
+                "summary": "Delete a trait",
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "format": "Trait ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "traitId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "03. Item traits"
+                ]
+            },
+            "put": {
+                "summary": "Update a trait in the given item",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "409": {
+                        "description": "Merge conflict occurred"
+                    },
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "format": "Trait ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "traitId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CTextEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "03. Item traits"
+                ]
+            }
+        },
+        "/item/{itemId}/ecosystem": {
+            "put": {
+                "summary": "Set item's ecosystem",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "409": {
+                        "description": "Merge conflict occurred"
+                    },
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CTextEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/item/{itemId}": {
+            "get": {
+                "summary": "Get item by id",
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/CItemFull"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            },
+            "delete": {
+                "summary": "Delete an item",
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/category/{categoryId}": {
+            "get": {
+                "summary": "Get contents of a category",
+                "responses": {
+                    "404": {
+                        "description": "Category not found"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/CCategoryFull"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Category ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "categoryId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "01. Categories"
+                ]
+            },
+            "delete": {
+                "summary": "Delete a category",
+                "responses": {
+                    "404": {
+                        "description": "Category not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Category ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "categoryId",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "01. Categories"
+                ]
+            }
+        },
+        "/item/{itemId}/trait": {
+            "post": {
+                "summary": "Create a new trait in the given item",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "400": {
+                        "description": "'content' can not be empty"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/TraitID"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CCreateTrait"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "description": "Returns the ID of the created trait.",
+                "tags": [
+                    "03. Item traits"
+                ]
+            }
+        },
+        "/categories": {
+            "get": {
+                "summary": "Get a list of available categories",
+                "responses": {
+                    "200": {
+                        "schema": {
+                            "items": {
+                                "$ref": "#/definitions/CCategoryInfo"
+                            },
+                            "type": "array"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "description": "Primarily useful for displaying the main page. The returned list is lightweight and doesn't contain categories' contents.",
+                "tags": [
+                    "01. Categories"
+                ]
+            }
+        },
+        "/category": {
+            "post": {
+                "summary": "Create a new category",
+                "responses": {
+                    "400": {
+                        "description": "'title' not provided"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/CategoryID"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "required": true,
+                        "in": "query",
+                        "name": "title",
+                        "type": "string",
+                        "description": "Title of the newly created category"
+                    },
+                    {
+                        "required": true,
+                        "in": "query",
+                        "name": "group",
+                        "type": "string",
+                        "description": "Group to put the category into"
+                    }
+                ],
+                "description": "Returns the ID of the created category.",
+                "tags": [
+                    "01. Categories"
+                ]
+            }
+        },
+        "/item/{itemId}/notes": {
+            "put": {
+                "summary": "Set item's notes",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "409": {
+                        "description": "Merge conflict occurred"
+                    },
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CTextEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/category/{categoryId}/notes": {
+            "put": {
+                "summary": "Edit category's notes",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "409": {
+                        "description": "Merge conflict occurred"
+                    },
+                    "404": {
+                        "description": "Category not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Category ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "categoryId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CTextEdit"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "01. Categories"
+                ]
+            }
+        },
+        "/item/{itemId}/move": {
+            "post": {
+                "summary": "Move item",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CMove"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/item/{itemId}/trait/{traitId}/move": {
+            "post": {
+                "summary": "Move trait",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
+                    },
+                    {
+                        "format": "Trait ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "traitId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CMove"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "tags": [
+                    "03. Item traits"
+                ]
+            }
+        },
+        "/item/{categoryId}": {
+            "post": {
+                "summary": "Create a new item in the given category",
+                "consumes": [
+                    "application/json;charset=utf-8"
+                ],
+                "responses": {
+                    "400": {
+                        "description": "'name' can not be empty"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/ItemID"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "format": "Category ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "categoryId",
+                        "type": "string"
+                    },
+                    {
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CCreateItem"
+                        },
+                        "in": "body",
+                        "name": "body"
+                    }
+                ],
+                "description": "Returns the ID of the created item.",
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/search": {
+            "get": {
+                "summary": "Search categories and items",
+                "responses": {
+                    "400": {
+                        "description": "'query' not provided"
+                    },
+                    "200": {
+                        "schema": {
+                            "items": {
+                                "$ref": "#/definitions/CSearchResult"
+                            },
+                            "type": "array"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "required": true,
+                        "in": "query",
+                        "name": "query",
+                        "type": "string"
+                    }
+                ],
+                "description": "Note: returns at most 100 search results.",
+                "tags": [
+                    "04. Search"
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "01. Categories",
+            "description": "Working with categories."
+        },
+        {
+            "name": "02. Items",
+            "description": "Working with items."
+        },
+        {
+            "name": "03. Item traits",
+            "description": "Working with item traits."
+        },
+        {
+            "name": "04. Search",
+            "description": "Site-wide search."
+        }
+    ]
+}
