@@ -63,7 +63,7 @@ jobs:
             stack exec -- guide api-docs > back/swagger.json
             git add back/swagger.json
             # Will only push if the commit was created successfully
-            (git commit -m "[skip ci] Regenerate swagger.json" && git push "HEAD:$TRAVIS_BRANCH") || true
+            (git commit -m "[skip ci] Regenerate swagger.json" && git push origin "HEAD:$TRAVIS_BRANCH") || true
           fi
         # Upload the Docker image
         - |
