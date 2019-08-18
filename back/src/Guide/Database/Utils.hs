@@ -118,7 +118,7 @@ queryRowMaybe = QuasiQuoter
           (#prepared False)
           (#params toPostgresParams)
           (#result (HD.rowMaybe fromPostgresRow))
-          $(stringE sql)|]
+          (fromString $(stringE sql))|]
   , quotePat = error "queryRowMaybe: can not be used in patterns"
   , quoteType = error "queryRowMaybe: can not be used in types"
   , quoteDec = error "queryRowMaybe: can not be used in declarations"
@@ -135,7 +135,7 @@ queryRows = QuasiQuoter
           (#prepared False)
           (#params toPostgresParams)
           (#result (HD.rowList fromPostgresRow))
-          $(stringE sql)|]
+          (fromString $(stringE sql))|]
   , quotePat = error "queryRows: can not be used in patterns"
   , quoteType = error "queryRows: can not be used in types"
   , quoteDec = error "queryRows: can not be used in declarations"
@@ -152,7 +152,7 @@ execute = QuasiQuoter
           (#prepared False)
           (#params toPostgresParams)
           (#result HD.noResult)
-          $(stringE sql)|]
+          (fromString $(stringE sql))|]
   , quotePat = error "execute: can not be used in patterns"
   , quoteType = error "execute: can not be used in types"
   , quoteDec = error "execute: can not be used in declarations"

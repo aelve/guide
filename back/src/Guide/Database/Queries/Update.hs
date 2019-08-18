@@ -6,31 +6,25 @@
 {-# LANGUAGE TypeOperators     #-}
 
 -- | Update queries.
-module Guide.Database.Set
-       (
-       -- * Category
-         modifyCategoryRow
-       , deleteCategory
-
-       -- * Item
-       , modifyItemRow
-       , deleteItem
-
-       -- * Trait
-       , modifyTraitRow
-       , deleteTrait
-
-       ) where
+module Guide.Database.Queries.Update
+(
+  -- * Category
+  updateCategoryRow,
+  -- * Item
+  updateItemRow,
+  -- * Trait
+  updateTraitRow,
+)
+where
 
 import Imports
 
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Data.Profunctor (lmap)
 
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Get
+import Guide.Database.Queries.Select
 import Guide.Database.Types
 import Guide.Database.Utils
 import Guide.Types.Core
@@ -49,13 +43,13 @@ import Guide.Utils (Uid (..), fieldsPrefixed)
 --
 -- Fields 'categoryRowUid' and 'categoryRowCreated' can not be modified. An
 -- attempt to modify them would result in 'CategoryRowUpdateNotAllowed'.
-modifyCategoryRow
+updateCategoryRow
   :: Uid Category
   -> (CategoryRow -> CategoryRow)
   -> ExceptT DatabaseError Transaction ()
-modifyCategoryRow catId f = do
+updateCategoryRow catId f = do
   -- Fetch the old row
-  row <- getCategoryRow catId
+  row <- selectCategoryRow catId
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
@@ -117,19 +111,6 @@ modifyCategoryRow catId f = do
         statement = [execute|UPDATE categories SET deleted = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_categoryRowDeleted) statement
 
--- | Delete category completly.
-deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()
-deleteCategory catId = do
-  let statement :: Statement (Uid Category) ()
-      statement = lmap SingleParam $
-        [execute|
-          DELETE FROM categories
-          WHERE uid = $1
-        |]
-  lift $ HT.statement catId statement
-  -- Items belonging to the category will be deleted automatically because
-  -- of "ON DELETE CASCADE" in the table schema.
-
 ----------------------------------------------------------------------------
 -- Items
 ----------------------------------------------------------------------------
@@ -142,13 +123,13 @@ deleteCategory catId = do
 --
 -- Fields 'itemRowUid' and 'itemRowCreated' can not be modified. An attempt
 -- to modify them would result in 'ItemRowUpdateNotAllowed'.
-modifyItemRow
+updateItemRow
   :: Uid Item
   -> (ItemRow -> ItemRow)
   -> ExceptT DatabaseError Transaction ()
-modifyItemRow itemId f = do
+updateItemRow itemId f = do
   -- Fetch the old row
-  row <- getItemRow itemId
+  row <- selectItemRow itemId
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
@@ -227,22 +208,6 @@ modifyItemRow itemId f = do
         statement = [execute|UPDATE items SET cons_order = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowConsOrder) statement
 
--- | Delete item completly.
-deleteItem :: Uid Item -> ExceptT DatabaseError Transaction ()
-deleteItem itemId = do
-  catId <- getCategoryIdByItem itemId
-  let statement :: Statement (Uid Item) ()
-      statement = lmap SingleParam $
-        [execute|
-          DELETE FROM items
-          WHERE uid = $1
-        |]
-  lift $ HT.statement itemId statement
-  modifyCategoryRow catId $
-    _categoryRowItemsOrder %~ delete itemId
-  -- Traits belonging to the item will be deleted automatically because of
-  -- "ON DELETE CASCADE" in the table schema.
-
 ----------------------------------------------------------------------------
 -- Traits
 ----------------------------------------------------------------------------
@@ -255,13 +220,13 @@ deleteItem itemId = do
 --
 -- Field 'traitRowUid' can not be modified. An attempt to modify it would
 -- result in 'TraitRowUpdateNotAllowed'.
-modifyTraitRow
+updateTraitRow
   :: Uid Trait
   -> (TraitRow -> TraitRow)
   -> ExceptT DatabaseError Transaction ()
-modifyTraitRow catId f = do
+updateTraitRow catId f = do
   -- Fetch the old row
-  row <- getTraitRow catId
+  row <- selectTraitRow catId
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
@@ -297,23 +262,3 @@ modifyTraitRow catId f = do
     let statement :: Statement (Uid Trait, Uid Item) ()
         statement = [execute|UPDATE traits SET item_uid = $2 WHERE uid = $1|]
     lift $ HT.statement (catId, new_traitRowItemUid) statement
-
--- | Delete trait completly.
-deleteTrait :: Uid Trait -> ExceptT DatabaseError Transaction ()
-deleteTrait traitId = do
-  itemId <- getItemIdByTrait traitId
-  traitType <- traitRowType <$> getTraitRow traitId
-  let statement :: Statement (Uid Trait) ()
-      statement = lmap SingleParam $
-        [execute|
-          DELETE FROM traits
-          WHERE uid = $1
-        |]
-  lift $ HT.statement traitId statement
-  case traitType of
-    TraitTypePro ->
-      modifyItemRow itemId $
-        _itemRowProsOrder %~ delete traitId
-    TraitTypeCon ->
-      modifyItemRow itemId $
-        _itemRowConsOrder %~ delete traitId
