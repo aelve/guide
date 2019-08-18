@@ -116,12 +116,9 @@ instance FromPostgresRow TraitRow
 
 -- | Convert CategoryRow to Category.
 --
--- | To fetch items (they have an order) use 'getItemRowsByCategory' from 'Get' module.
--- | To fetch deleted items use 'getDeletedItemRowsByCategory' from 'Get' module
---
--- TODO: somehow handle the case when item IDs don't match the @itemsOrder@?
---
--- TODO: use 'fields' for pattern-matching.
+-- To fetch items, use @selectItemRowsByCategory@ from
+-- "Guide.Database.Queries.Select". To fetch deleted items, use
+-- @selectDeletedItemRowsByCategory@.
 categoryRowToCategory
   :: "items" :! [Item]
   -> "itemsDeleted" :! [Item]
@@ -130,7 +127,7 @@ categoryRowToCategory
 categoryRowToCategory
   (arg #items -> items)
   (arg #itemsDeleted -> itemsDeleted)
-  CategoryRow{..}
+  $(fields 'CategoryRow)
   =
   Category
     { categoryUid = categoryRowUid
@@ -143,28 +140,37 @@ categoryRowToCategory
     , categoryItemsDeleted = itemsDeleted
     , categoryEnabledSections = categoryRowEnabledSections
     }
+  where
+    -- Ignored fields
+    _ = categoryRowDeleted
+    _ = categoryRowItemsOrder
 
 -- | Convert Category to CategoryRow.
-categoryToRowCategory :: Category -> "deleted" :! Bool -> CategoryRow
-categoryToRowCategory $(fields 'Category) (arg #deleted -> deleted) = CategoryRow
-  { categoryRowUid = categoryUid
-  , categoryRowTitle = categoryTitle
-  , categoryRowCreated = categoryCreated
-  , categoryRowGroup = categoryGroup
-  , categoryRowStatus = categoryStatus
-  , categoryRowNotes = markdownBlockSource categoryNotes
-  , categoryRowEnabledSections = categoryEnabledSections
-  , categoryRowItemsOrder = map itemUid categoryItems
-  , categoryRowDeleted = deleted
-  }
+categoryToRowCategory
+  :: Category
+  -> "deleted" :! Bool
+  -> CategoryRow
+categoryToRowCategory $(fields 'Category) (arg #deleted -> deleted) =
+  CategoryRow
+    { categoryRowUid = categoryUid
+    , categoryRowTitle = categoryTitle
+    , categoryRowCreated = categoryCreated
+    , categoryRowGroup = categoryGroup
+    , categoryRowStatus = categoryStatus
+    , categoryRowNotes = markdownBlockSource categoryNotes
+    , categoryRowEnabledSections = categoryEnabledSections
+    , categoryRowItemsOrder = map itemUid categoryItems
+    , categoryRowDeleted = deleted
+    }
   where
     -- Ignored fields
     _ = categoryItemsDeleted
 
 -- | Convert ItemRow to Item.
 --
--- | To fetch traits (they have an order) use 'getTraitRowsByItem' from 'Get' module.
--- | To fetch deleted traits use 'getDeletedTraitRowsByItem' from 'Get' module
+-- To fetch traits, use @getTraitRowsByItem@ from
+-- "Guide.Database.Queries.Select". To fetch deleted traits, use
+-- @getDeletedTraitRowsByItem@.
 itemRowToItem
   :: "proTraits" :! [Trait]
   -> "proDeletedTraits" :! [Trait]
@@ -177,7 +183,7 @@ itemRowToItem
   (arg #proDeletedTraits -> proDeletedTraits)
   (arg #conTraits -> conTraits)
   (arg #conDeletedTraits -> conDeletedTraits)
-  ItemRow{..}
+  $(fields 'ItemRow)
   =
   Item
     { itemUid = itemRowUid
@@ -195,35 +201,46 @@ itemRowToItem
     }
   where
     prefix = "item-notes-" <> uidToText itemRowUid <> "-"
+    -- Ignored fields
+    _ = (itemRowConsOrder, itemRowProsOrder)
+    _ = itemRowCategoryUid
+    _ = itemRowDeleted
 
 -- | Convert Item to ItemRow.
 itemToRowItem :: Uid Category -> "deleted" :! Bool -> Item -> ItemRow
-itemToRowItem catId (arg #deleted -> deleted) $(fields 'Item) = ItemRow
-  { itemRowUid = itemUid
-  , itemRowName = itemName
-  , itemRowCreated = itemCreated
-  , itemRowLink = itemLink
-  , itemRowHackage = itemHackage
-  , itemRowSummary = markdownBlockSource itemSummary
-  , itemRowEcosystem = markdownBlockSource itemEcosystem
-  , itemRowNotes = markdownTreeSource itemNotes
-  , itemRowDeleted = deleted
-  , itemRowCategoryUid = catId
-  , itemRowProsOrder = map traitUid itemPros
-  , itemRowConsOrder = map traitUid itemCons
-  }
+itemToRowItem catId (arg #deleted -> deleted) $(fields 'Item) =
+  ItemRow
+    { itemRowUid = itemUid
+    , itemRowName = itemName
+    , itemRowCreated = itemCreated
+    , itemRowLink = itemLink
+    , itemRowHackage = itemHackage
+    , itemRowSummary = markdownBlockSource itemSummary
+    , itemRowEcosystem = markdownBlockSource itemEcosystem
+    , itemRowNotes = markdownTreeSource itemNotes
+    , itemRowDeleted = deleted
+    , itemRowCategoryUid = catId
+    , itemRowProsOrder = map traitUid itemPros
+    , itemRowConsOrder = map traitUid itemCons
+    }
   where
     -- Ignored fields
     _ = (itemConsDeleted, itemProsDeleted)
 
 -- | Convert TraitRow to Trait.
 traitRowToTrait :: TraitRow -> Trait
-traitRowToTrait TraitRow{..} = Trait
-  { traitUid = traitRowUid
-  , traitContent = toMarkdownInline traitRowContent
-  }
+traitRowToTrait $(fields 'TraitRow) =
+  Trait
+    { traitUid = traitRowUid
+    , traitContent = toMarkdownInline traitRowContent
+    }
+  where
+    -- Ignored fields
+    _ = traitRowItemUid
+    _ = traitRowType
+    _ = traitRowDeleted
 
--- Convert Trait to TraitRow
+-- | Convert Trait to TraitRow.
 traitToTraitRow
   :: Uid Item
   -> "deleted" :! Bool
