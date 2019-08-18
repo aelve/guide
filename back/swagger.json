@@ -1,4 +1,3 @@
-config.json doesn't exist, creating it
 {
     "swagger": "2.0",
     "info": {
