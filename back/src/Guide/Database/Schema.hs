@@ -36,8 +36,6 @@ migrations =
 -- not create a database if it does not exist yet. You should create the
 -- database manually by doing @CREATE DATABASE guide;@ or run Postgres with
 -- @POSTGRES_DB=guide@ when running when running the app for the first time.
---
--- TODO: check schema hash as well, not just schema version?
 setupDatabase :: IO ()
 setupDatabase = do
   conn <- connect
