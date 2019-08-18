@@ -57,13 +57,17 @@ jobs:
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
         - stack --no-terminal build --test --no-run-tests
-        # Regenerate Swagger and push to the same branch
+        # Regenerate Swagger and push to the same branch, even if the branch
+        # is already ahead (which may happen if the previous build in the
+        # pipeline also pushed to it)
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            git checkout --track "origin/$TRAVIS_BRANCH" && git pull
             stack exec -- guide api-docs > back/swagger.json
             git add back/swagger.json
             # Will only push if the commit was created successfully
-            (git commit -m "[skip ci] Regenerate swagger.json" && git push origin "HEAD:$TRAVIS_BRANCH") || true
+            (git commit -m "[skip ci] Regenerate swagger.json" && git push) || true
+            git checkout "$TRAVIS_COMMIT"
           fi
         # Upload the Docker image
         - |
