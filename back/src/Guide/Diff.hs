@@ -18,17 +18,13 @@ module Guide.Diff
 )
 where
 
--- shared imports
 import Imports
--- Vector
-import Data.Vector (Vector)
 
 import Guide.Diff.Merge (merge)
 import Guide.Diff.Tokenize (tokenize)
 import Guide.Utils (makeClassWithLenses)
 
 import qualified Data.Patch as PV
-import qualified Data.Vector as V
 
 -- | Result of a diff.
 data Diff = Diff {
@@ -53,8 +49,8 @@ diff
   -> Text    -- ^ Edited text
   -> Diff
 diff (tokenize -> orig) (tokenize -> edit) =
-    trimDiff (diffL (PV.hunks diffBA (V.fromList edit')))
-             (diffR (PV.hunks diffAB (V.fromList orig')))
+    trimDiff (diffL (PV.hunks diffBA (toVector edit')))
+             (diffR (PV.hunks diffAB (toVector orig')))
       & _diffContextAbove %~ (prefix <>)
       & _diffContextBelow %~ (<> suffix)
   where
@@ -62,7 +58,7 @@ diff (tokenize -> orig) (tokenize -> edit) =
     -- big unchanged parts in advance helps us
     (prefix, (orig', edit'), suffix) = commonParts orig edit
     -- then we compute orig→edit and edit→orig diffs
-    diffAB = PV.diff (V.fromList orig') (V.fromList edit')
+    diffAB = PV.diff (toVector orig') (toVector edit')
     diffBA = PV.inverse diffAB
 
 -- | Create a diff for the right (edited) part. We only want to highlight
@@ -70,8 +66,8 @@ diff (tokenize -> orig) (tokenize -> edit) =
 diffR :: PV.Hunks Text -> [DiffChunk]
 diffR = removeExtraAdded . concatMap hunkToChunk
   where
-    hunkToChunk (v, PV.Inserted)  = [Added (tconcat v)]
-    hunkToChunk (v, PV.Replaced)  = [Added (tconcat v)]
+    hunkToChunk (v, PV.Inserted)  = [Added (mconcat (toList v))]
+    hunkToChunk (v, PV.Replaced)  = [Added (mconcat (toList v))]
     hunkToChunk (v, PV.Unchanged) = map Plain (toList v)
     -- it's useful to report deleted things as well because then we can mark
     -- them with tiny rectangles like “insert here”
@@ -97,8 +93,8 @@ diffL = removeExtraDeleted . concatMap hunkToChunk
     -- first. When something was “inserted” to original text when going
     -- edit→orig, it actually means that it was deleted from the original
     -- text when going orig→edit, and thus we want to render it as deleted.
-    hunkToChunk (v, PV.Inserted)  = [Deleted (tconcat v)]
-    hunkToChunk (v, PV.Replaced)  = [Deleted (tconcat v)]
+    hunkToChunk (v, PV.Inserted)  = [Deleted (mconcat (toList v))]
+    hunkToChunk (v, PV.Replaced)  = [Deleted (mconcat (toList v))]
     hunkToChunk (v, PV.Unchanged) = map Plain (toList v)
     hunkToChunk (_, PV.Deleted)   = [Deleted ""]
     removeExtraDeleted (Deleted "" : Deleted x : xs) =
@@ -131,9 +127,6 @@ trimDiff a b =
 ----------------------------------------------------------------------------
 -- Utils
 ----------------------------------------------------------------------------
-
-tconcat :: Vector Text -> Text
-tconcat = mconcat . toList
 
 -- | Find longest common prefix
 commonPrefix :: Eq a => [a] -> [a] -> ([a], ([a], [a]))
