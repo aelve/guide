@@ -67,7 +67,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 data Trait = Trait {
   traitUid     :: Uid Trait,
   traitContent :: MarkdownInline }
-  deriving (Show, Generic, Data)
+  deriving (Show, Generic, Data, Eq)
 
 deriveSafeCopySorted 4 'extension ''Trait
 makeClassWithLenses ''Trait
@@ -193,7 +193,7 @@ data Item = Item {
   itemNotes       :: MarkdownTree,    -- ^ The notes section
   itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
-  deriving (Show, Generic, Data)
+  deriving (Generic, Data, Eq, Show)
 
 deriveSafeCopySorted 13 'extension ''Item
 makeClassWithLenses ''Item
@@ -287,7 +287,7 @@ data Category = Category {
   -- 'ItemNotesSection', then notes will be shown for each item
   categoryEnabledSections :: Set ItemSection
   }
-  deriving (Show, Generic, Data)
+  deriving (Generic, Data, Eq, Show)
 
 deriveSafeCopySorted 12 'extension ''Category
 makeClassWithLenses ''Category

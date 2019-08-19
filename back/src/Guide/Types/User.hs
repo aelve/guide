@@ -40,7 +40,7 @@ data User = User {
   -- | Flag set if user is an administrator.
   userIsAdmin  :: Bool
   }
-  deriving (Show)
+  deriving (Eq, Show)
 
 deriveSafeCopySorted 0 'base ''User
 makeClassWithLenses ''User
