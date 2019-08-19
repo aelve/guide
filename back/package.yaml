@@ -38,6 +38,7 @@ default-extensions:
 - DerivingStrategies
 - TemplateHaskellQuotes
 - ScopedTypeVariables
+- OverloadedStrings
 
 library:
   source-dirs: src
