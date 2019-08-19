@@ -13,19 +13,18 @@ where
 
 import Imports
 
-import Data.Swagger.Lens hiding (format)
 import Network.Wai (Middleware, Request)
 import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), corsOrigins,
                                     simpleCorsResourcePolicy)
 import Servant
 import Servant.API.Generic
 import Servant.Server.Generic
-import Servant.Swagger
 import Servant.Swagger.UI
 
 import Guide.Api.Guider
 import Guide.Api.Methods
 import Guide.Api.Types
+import Guide.Api.Docs
 import Guide.Logger
 import Guide.Config
 import Guide.State
@@ -76,11 +75,13 @@ logException logger mbReq ex =
 -- Servant servers
 ----------------------------------------------------------------------------
 
--- Collect API and Swagger server to united 'FullApi'. First takes precedence in case of overlap.
+-- | Collect API and Swagger server to united 'FullApi'. First takes
+-- precedence in case of overlap.
 fullServer :: DB -> Logger -> Config -> Server FullApi
 fullServer db di config = apiServer db di config :<|> docServer
 
--- Collect api out of guiders and convert them to handlers. Type 'type Server api = ServerT api Handler' needed it.
+-- | Collect api out of guiders and convert them to handlers. Type 'type
+-- Server api = ServerT api Handler' needed it.
 apiServer :: DB -> Logger -> Config -> Server Api
 apiServer db di config = do
   requestDetails <- ask
@@ -89,11 +90,7 @@ apiServer db di config = do
 
 -- | A 'Server' for Swagger docs.
 docServer :: Server (SwaggerSchemaUI "api" "swagger.json")
-docServer = swaggerSchemaUIServer doc
-  where
-    doc = toSwagger (Proxy @Api)
-            & info.title   .~ "Aelve Guide API"
-            & info.version .~ "alpha"
+docServer = swaggerSchemaUIServer apiSwaggerDoc
 
 ----------------------------------------------------------------------------
 -- API handlers put together ('Site')

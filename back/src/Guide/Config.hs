@@ -16,11 +16,10 @@ where
 
 import Imports hiding ((.=))
 
--- JSON
 import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty as Aeson hiding (Config)
--- Default
 import Data.Default
+import Say (sayErr)
 
 import Guide.Utils
 
@@ -125,7 +124,7 @@ readConfig = do
   let filename = "config.json"
   exists <- doesFileExist filename
   unless exists $ do
-    putStrLn "config.json doesn't exist, creating it"
+    sayErr "config.json doesn't exist, creating it"
     BSL.writeFile filename (Aeson.encodePretty (def :: Config))
   contents <- toLazyByteString <$> BS.readFile filename
   case Aeson.eitherDecode' contents of
