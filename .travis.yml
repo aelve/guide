@@ -69,11 +69,12 @@ jobs:
         # "missing documentation".
         - stack --no-terminal exec -- ghc-pkg unregister guide
         - stack --no-terminal build --test --no-run-tests --haddock --no-haddock-deps --haddock-arguments='--no-warnings' 2> haddock.log
-        - awk '/\(src\//' haddock.log | awk 'END { print NR }' > undocumented
-        - awk '{ print "undocumented == " $1 }' undocumented
+        - export undocumented=$(awk '/\(src\// {count++} END{print count}' haddock.log)
         - |
-          if [[ `cat undocumented` -gt 251 ]]; then
-            >&2 echo "FAIL: found $(cat undocumented) top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
+          echo "Undocumented definitions: $undocumented"
+        - |
+          if [ $undocumented -gt 251 ]; then
+            >&2 echo "FAIL: found $undocumented top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
             exit 1
           fi
       before_cache:
