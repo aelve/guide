@@ -30,7 +30,6 @@ import Guide.Types
 import Guide.Utils
 import Guide.Views
 
-import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Network.HTTP.Types.Status as HTTP
@@ -102,7 +101,7 @@ setMethods = do
     do (edit, _) <- dbUpdate (SetCategoryStatus catId status')
        addEdit edit
     do oldEnabledSections <- categoryEnabledSections <$> dbQuery (GetCategory catId)
-       let newEnabledSections = S.fromList . concat $
+       let newEnabledSections = toSet . concat $
              [ [ItemProsConsSection  | prosConsEnabled']
              , [ItemEcosystemSection | ecosystemEnabled']
              , [ItemNotesSection     | notesEnabled'] ]
@@ -126,7 +125,7 @@ setMethods = do
         lucidIO $ renderCategoryNotes category
       else do
         setStatus HTTP.status409
-        json $ M.fromList [
+        json $ toMap [
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item info
@@ -169,7 +168,7 @@ setMethods = do
         lucidIO $ renderItemDescription item
       else do
         setStatus HTTP.status409
-        json $ M.fromList [
+        json $ toMap [
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item ecosystem
@@ -184,7 +183,7 @@ setMethods = do
         lucidIO $ renderItemEcosystem item
       else do
         setStatus HTTP.status409
-        json $ M.fromList [
+        json $ toMap [
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Item notes
@@ -200,7 +199,7 @@ setMethods = do
         lucidIO $ renderItemNotes category item
       else do
         setStatus HTTP.status409
-        json $ M.fromList [
+        json $ toMap [
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
   -- Trait
@@ -216,7 +215,7 @@ setMethods = do
         lucidIO $ renderTrait itemId trait
       else do
         setStatus HTTP.status409
-        json $ M.fromList [
+        json $ toMap [
           ("modified" :: Text, modified),
           ("merged" :: Text, merge original content' modified)]
 

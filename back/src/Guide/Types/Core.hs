@@ -43,7 +43,6 @@ import Guide.Utils
 import Guide.Database.Utils (ToPostgres (..), FromPostgres (..))
 
 import qualified Data.Aeson as Aeson
-import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
@@ -302,7 +301,7 @@ changelog ''Category (Past 11, Past 10)
    Removed "categoryEcosystemEnabled" [t|Bool|],
    Removed "categoryNotesEnabled"     [t|Bool|],
    Added   "categoryEnabledSections"  [hs|
-     S.fromList $ concat
+     toSet $ concat
        [ [ItemProsConsSection  | categoryProsConsEnabled]
        , [ItemEcosystemSection | categoryEcosystemEnabled]
        , [ItemNotesSection     | categoryNotesEnabled] ] |] ]

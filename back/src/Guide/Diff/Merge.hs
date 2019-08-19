@@ -13,7 +13,6 @@ import Guide.Diff.Tokenize
 
 import qualified Data.Patch as PV
 import qualified Data.Text as T
-import qualified Data.Vector as V
 
 
 -- | An implementation of a 3-way diff and merge.
@@ -22,9 +21,9 @@ merge
   -> Text    -- ^ Variant A (preferred)
   -> Text    -- ^ Variant B
   -> Text    -- ^ Merged text
-merge (V.fromList . tokenize -> orig)
-      (V.fromList . tokenize -> a)
-      (V.fromList . tokenize -> b) =
+merge (toVector . tokenize -> orig)
+      (toVector . tokenize -> a)
+      (toVector . tokenize -> b) =
     T.concat . toList $ PV.apply (pa <> pb') orig
   where
     -- 1. diff

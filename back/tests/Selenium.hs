@@ -224,12 +224,12 @@ defSelectAll s = filterElems s =<< findElems (ByXPath "//")
 
 defFilterElems :: CanSelect a => a -> [Element] -> WD [Element]
 defFilterElems s es = do
-  ss <- Set.fromList <$> selectAll s
+  ss <- toSet <$> selectAll s
   return (filter (`Set.member` ss) es)
 
 defAnyElem :: CanSelect a => a -> [Element] -> WD Bool
 defAnyElem s es = do
-  ss <- Set.fromList <$> selectAll s
+  ss <- toSet <$> selectAll s
   return (any (`Set.member` ss) es)
 
 {- NOTE [staleness]
@@ -273,8 +273,8 @@ instance CanSelect ComplexSelector where
       (a :& b) -> do
         filterElems b =<< selectAll a
       (a :| b) -> do
-        as <- Set.fromList <$> selectAll a
-        bs <- Set.fromList <$> selectAll b
+        as <- toSet <$> selectAll a
+        bs <- toSet <$> selectAll b
         return (Set.toList (as `Set.union` bs))
       Take  n a -> take n <$> selectAll a
       Index n a -> toListOf (ix n) <$> selectAll a
