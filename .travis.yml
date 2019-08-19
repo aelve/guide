@@ -47,10 +47,31 @@ jobs:
         - curl -sSL https://get.haskellstack.org/ | sh
         # travis_retry works around https://github.com/commercialhaskell/stack/issues/4888
         - travis_retry stack setup
+        # Decrypt the GitHub deploy key (travis_key.enc)
+        - openssl aes-256-cbc -k "$travis_key_password" -d -md sha256 -a -in travis_key.enc -out travis_key
+        - echo "Host github.com" > ~/.ssh/config
+        - echo "  IdentityFile  $(pwd)/travis_key" >> ~/.ssh/config
+        - chmod 400 travis_key
+        - git remote set-url origin git@github.com:aelve/guide.git
       script:
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
         - stack --no-terminal build --test --no-run-tests
+        # Regenerate Swagger and push to the same branch, even if the branch
+        # is already ahead (which may happen if the previous build in the
+        # pipeline also pushed to it)
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            git checkout "$TRAVIS_BRANCH" && git pull
+            stack exec -- guide api-docs > back/swagger.json
+            git add back/swagger.json
+            # Will only push if the commit was created successfully. Note
+            # that we don't use "[skip ci]" in the commit message here
+            # because then Mergify goes "oh, but Travis hasn't passed, so I
+            # shouldn't merge this".
+            (git commit -m "Regenerate swagger.json" && git push) || true
+            git checkout "$TRAVIS_COMMIT"
+          fi
         # Upload the Docker image
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
@@ -113,3 +134,9 @@ jobs:
 notifications:
   slack:
     secure: BgQpUYFmvXrf7HVBP/fefS/8UVwES800+fT+ufgJX8b2HMx2FvaWVsdv3ErKAryLE0B3fwmvforWugTdgLO3kq66YUgSt51SNQOBLkMVGubIoQsgvr3Ernu+Wpw1DyoMkXQH9q9O9rfCIc4IwkQCEHqu5SVRqdOd5px/CHFl/ktTI22JkT8ap/Be53qjlB2U2sWUf4GxYXq0V/gGF6fDwsUwTVKFb14RfSDrOgK5Vlce2GRf3gNr1C/j7A7EHIR/Z+rNd2hvv69cFw6TRc3s39QmP8XPe3SLZPIHTZ8vRveX1SZioMeEy747r5rHd9vylEjxWtVHhvP9fOt693+woXa8ZAl5uVRgB6S4mTWLZ+LAbqhaCmDGJYr9GrrBMoqWvJiMuBX3ZvHptsAc6O2l/fxZQU3otTE++SmHkhbyoDQkcPCjXPDUi/ZlnoLc5zfMAfApcsZZ8b9t47z12H0O4uDZd2YiNPiQJ1iUA6R879LH3pcxPB3RaoWsfXzv/klkKrU/V2K4SXD9j4/bmAFArlig+dar+Dm44L/a3/G7vbU1lQIa1bG0EqB36qgUS3UCkuy2ppti/JTHpkYx7HVF2BipoCjOVvfBl9G8RkvcQIhyuCfOGm7WL1TjrKVMccIEGJKhm7OO6wOZYCBfAI5zILxi8XEJAIvBm9NywhQlwxI=
+
+# travis_key.enc decryption password, see:
+# http://markbucciarelli.com/posts/2019-01-26_how-to-push-to-github-from-travis-ci.html
+env:
+  matrix:
+    secure: RqWbR4JjNKL5+KS6um6R2xKRGMxYO4qxRdI/RFi5oHsjRwKAQPGATb00Zmd84V/jaVb+NOccG1qp0/SNVwAaFf6Yr1MO9aV3GKC0fDFwSffKLdtVO2yx/JHrRYZ2ymrjEkBGug1FMrHFGZsSLaZYsYKx974tBs04xwAmPv6Yby8bZTGJyknbuyIMeSe6XZIkinyKaw/Zay6QC2CtSLoX50gqY2/HX0fVBgWKDNStigH0UEEynSetRYm/PFRcoBwu3XmHW89Y9B0E/zgvnvFuAgMVmZSUZnD9wBRlnFvfC1pUaFZP8Tz2VZhcJ4xTRTq+r3t2IRTNQBIhlQseobQMxoTrv1Y/ZiEmO14CLSwy3yeX5vCiGmCaA3957FqnjTP07svbru/A0qWMyEtuBtpheCVbQSVvMUBnrl0txTMFiBb4dsJ7zWrp3f7RQ8SFB11FwpGv89d+FifOpXN42DWRXjU0fLCPs8S5iKODWkTSQ41vpGXXUoZdaUOUg1y6tZSoc8gs61KlhcDTrBI2ZCJMNY6c6JVE/BOnJrp6zqyKhY2znyJUodEvjPsy9iccmrt0bEZTVshzbW4Q9okQ26usNtwIJoHNDUdifpmMcobb/ATYEr+C7n9ztxRy9AnZLzp6SsCDlfSDDp32fr7762PMk+2jR9w7fMrR/PBMtDXNsYQ=
