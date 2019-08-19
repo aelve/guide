@@ -1,6 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 
 -- | 'Guider' monad with 'Config' to replace servant's 'Handler'.
 module Guide.Api.Guider

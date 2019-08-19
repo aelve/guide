@@ -1,7 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications  #-}
-
-
 -- | Methods for working with archive.org. Right now the admin interface
 -- provides a list of broken links together with links to their archived
 -- copies; in the future we might add automatic archival and automatic link
