@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | Utilities for working with Postgres.
 module Guide.Database.Utils

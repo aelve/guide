@@ -1,6 +1,3 @@
-{-# LANGUAGE TemplateHaskell    #-}
-
-
 -- | Deprecated as of 2019-07-25.
 --
 -- TODO: remove after we have migrated from acid-state.

@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE TemplateHaskell     #-}
 
 
 -- | Core types for content.

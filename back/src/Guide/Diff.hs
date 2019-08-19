@@ -1,6 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
-
-
 -- | Diff- and merge-related things.
 module Guide.Diff
 (

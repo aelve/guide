@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
-
 -- | Guide's command line interface.
 --
 -- Run @guide --help@ to see available commands.

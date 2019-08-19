@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE FlexibleInstances     #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}

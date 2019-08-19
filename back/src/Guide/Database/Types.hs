@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
-
 -- | Types for postgres database
 module Guide.Database.Types
        (

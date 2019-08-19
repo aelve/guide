@@ -1,6 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
-
-
 module Guide.Types.Session
 (
   GuideData (..),

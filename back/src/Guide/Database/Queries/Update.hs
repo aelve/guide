@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
-
 module Guide.Database.Queries.Update
 (
   -- * Category

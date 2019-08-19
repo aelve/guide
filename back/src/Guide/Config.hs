@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 -- | Server config. For instance, the admin password is stored here, as well
 -- as the base url (for correct link generation in feeds).
 module Guide.Config

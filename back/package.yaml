@@ -36,7 +36,6 @@ default-extensions:
 - ConstraintKinds
 - InstanceSigs
 - DerivingStrategies
-- TemplateHaskellQuotes
 - ScopedTypeVariables
 - OverloadedStrings
 - TypeOperators
@@ -54,6 +53,7 @@ default-extensions:
 - DeriveDataTypeable
 - PatternSynonyms
 - NamedFieldPuns
+- TemplateHaskell
 
 library:
   source-dirs: src

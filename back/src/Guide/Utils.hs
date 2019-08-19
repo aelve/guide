@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell            #-}
 
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}

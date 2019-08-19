@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE TemplateHaskell    #-}
 
 
 -- | Everything concerning rendering and processing Markdown.

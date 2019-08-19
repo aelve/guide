@@ -1,6 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
-
 -- | Types for edits.
 --
 -- Every content edit is associated with an 'Edit', which is stored in the
