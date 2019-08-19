@@ -145,6 +145,7 @@ queryRows = QuasiQuoter
 --
 -- Like 'queryRowMaybe', but returns @Statement a ()@ instead of @Statement
 -- a (Maybe b)@.
+-- NOTE: 'execute' consumes only one query at time.
 execute :: QuasiQuoter
 execute = QuasiQuoter
   { quoteExp = \sql ->

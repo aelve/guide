@@ -20,7 +20,8 @@ import Named
 
 import Guide.Database.Connection
 import Guide.Database.Queries.Insert
-import Guide.Database.Schema
+import Guide.Database.Queries.Select
+-- import Guide.Database.Schema
 import Guide.Database.Types
 -- import Guide.Logger (logDebug)
 import Guide.State
@@ -33,11 +34,15 @@ import Guide.Utils (Uid (..))
 loadIntoPostgres :: IO ()
 loadIntoPostgres = do
   withDB (pure ()) $ \db -> do
-    globalState <- dbQuery db GetGlobalState
+    globalState@GlobalState{..} <- dbQuery db GetGlobalState
+    print $ length categories
     -- Load to Postgres
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
     -- Check equality
+    (categoriesDeletedPostgres, categoriesPostgres) <- runTransactionExceptT conn Read getCategories
+    let check = categoriesPostgres == categories && categoriesDeletedPostgres == categoriesDeleted
+    print $ "AcidState == Postgres: " <> show check
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
@@ -45,6 +50,10 @@ dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
 dbQuery db x = do
   -- logDebug $ "dbQuery: " +|| x ||+ ""
   liftIO $ query db x
+
+----------------------------------------------------------------------------
+-- Insert helpers
+----------------------------------------------------------------------------
 
 -- | Insert all categories from AcidState either deleted or not.
 insertCategories :: GlobalState -> ExceptT DatabaseError Transaction ()
@@ -106,3 +115,40 @@ insertTraitsFromItem Item{..} = do
   mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypePro) itemProsDeleted
   mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypeCon) itemCons
   mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypeCon) itemConsDeleted
+
+----------------------------------------------------------------------------
+-- Get helpers
+----------------------------------------------------------------------------
+
+-- | Get all categories and categoriesDeleted.
+getCategories :: ExceptT DatabaseError Transaction ([Category], [Category])
+getCategories = do
+    categoryRowsAll <- selectCategoryRows
+    let (categoryRowsDeleted, categoryRows) = partition categoryRowDeleted categoryRowsAll
+    categories <- traverse getCategoryByRow categoryRows
+    categoriesDeleted <- traverse getCategoryByRow categoryRowsDeleted
+    pure (categories, categoriesDeleted)
+
+-- | Get category by CategoryRow
+getCategoryByRow :: CategoryRow -> ExceptT DatabaseError Transaction Category
+getCategoryByRow categoryRow@CategoryRow{..} = do
+  itemRows <- selectItemRowsByCategory categoryRowUid
+  items <- traverse getItemByRow itemRows
+  itemRowsDeleted <- selectDeletedItemRowsByCategory categoryRowUid
+  itemsDeleted <- traverse getItemByRow itemRowsDeleted
+  pure $ categoryRowToCategory (#items items) (#itemsDeleted itemsDeleted) categoryRow
+
+-- | Get Item by ItemRow
+getItemByRow :: ItemRow -> ExceptT DatabaseError Transaction Item
+getItemByRow itemRow@ItemRow{..} = do
+  proTraitRows <- selectTraitRowsByItem itemRowUid TraitTypePro
+  let proTraits = map traitRowToTrait proTraitRows
+  proDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypePro
+  let proDeletedTraits = map traitRowToTrait proDeletedTraitRows
+  conTraitRows <- selectTraitRowsByItem itemRowUid TraitTypeCon
+  let conTraits = map traitRowToTrait conTraitRows
+  conDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypeCon
+  let conDeletedTraits = map traitRowToTrait conDeletedTraitRows
+  pure $ itemRowToItem (#proTraits proTraits) (#proDeletedTraits proDeletedTraits)
+    (#conTraits conTraits) (#conDeletedTraits conDeletedTraits) itemRow
+
