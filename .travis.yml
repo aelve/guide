@@ -65,8 +65,11 @@ jobs:
             git checkout "$TRAVIS_BRANCH" && git pull
             stack exec -- guide api-docs > back/swagger.json
             git add back/swagger.json
-            # Will only push if the commit was created successfully
-            (git commit -m "[skip ci] Regenerate swagger.json" && git push) || true
+            # Will only push if the commit was created successfully. Note
+            # that we don't use "[skip ci]" in the commit message here
+            # because then Mergify goes "oh, but Travis hasn't passed, so I
+            # shouldn't merge this".
+            (git commit -m "Regenerate swagger.json" && git push) || true
             git checkout "$TRAVIS_COMMIT"
           fi
         # Upload the Docker image
