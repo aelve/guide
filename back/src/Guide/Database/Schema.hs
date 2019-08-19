@@ -1,6 +1,3 @@
-{-# LANGUAGE QuasiQuotes       #-}
-
-
 -- | Schemas to create table for guide database
 module Guide.Database.Schema
 (

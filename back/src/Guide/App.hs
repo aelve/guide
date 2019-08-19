@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies    #-}
-
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 -- | App module defines types used by the Spock framework.

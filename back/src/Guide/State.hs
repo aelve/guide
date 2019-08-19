@@ -1,8 +1,5 @@
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE QuasiQuotes        #-}
-{-# LANGUAGE TypeFamilies       #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell    #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}

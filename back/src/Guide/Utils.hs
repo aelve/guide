@@ -1,9 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE QuasiQuotes                #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
 

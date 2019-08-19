@@ -39,6 +39,21 @@ default-extensions:
 - TemplateHaskellQuotes
 - ScopedTypeVariables
 - OverloadedStrings
+- TypeOperators
+- KindSignatures
+- DataKinds
+- StandaloneDeriving
+- TypeFamilies
+- GADTs
+- DefaultSignatures
+- RoleAnnotations
+- QuasiQuotes
+- DeriveLift
+- PackageImports
+- OverloadedLabels
+- DeriveDataTypeable
+- PatternSynonyms
+- NamedFieldPuns
 
 library:
   source-dirs: src

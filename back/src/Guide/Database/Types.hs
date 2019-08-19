@@ -1,8 +1,4 @@
-{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TypeOperators     #-}
 
 -- | Types for postgres database
 module Guide.Database.Types

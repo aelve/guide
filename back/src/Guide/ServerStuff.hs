@@ -1,6 +1,4 @@
-{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TypeFamilies      #-}
 
 
 -- | Spock state, functions for manipulating it, handler helpers, and so on.

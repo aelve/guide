@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
 
 
 module Guide.Types.Session

@@ -1,6 +1,7 @@
 # Help Hlint parse our code
 - arguments:
     - -XTypeApplications
+    - -XQuasiQuotes
 
 # Force qualified imports to be imported consistently.
 - modules:

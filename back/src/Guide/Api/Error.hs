@@ -1,7 +1,4 @@
-{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
 
 
 module Guide.Api.Error

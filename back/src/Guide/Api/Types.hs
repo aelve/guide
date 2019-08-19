@@ -1,9 +1,5 @@
-{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 

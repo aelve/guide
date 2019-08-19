@@ -1,6 +1,3 @@
-{-# LANGUAGE DataKinds         #-}
-
-
 module Guide.Routes
 (
   addRoute,

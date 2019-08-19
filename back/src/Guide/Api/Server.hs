@@ -1,6 +1,4 @@
-{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TypeOperators     #-}
 
 module Guide.Api.Server
 (

@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE QuasiQuotes         #-}
 
 
 -- | All views and all rendering logic.

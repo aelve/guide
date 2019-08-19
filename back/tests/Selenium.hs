@@ -1,7 +1,5 @@
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE IncoherentInstances #-}
-{-# LANGUAGE StandaloneDeriving  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}  -- for "instance MonadFail WD"
 
