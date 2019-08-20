@@ -125,7 +125,7 @@ data Edit
       editTraitUid  :: Uid Trait,
       editDirection :: Bool }
 
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 deriveSafeCopySimple 9 'extension ''Edit
 
@@ -323,7 +323,7 @@ data EditDetails = EditDetails {
   editIP   :: Maybe IP,
   editDate :: UTCTime,
   editId   :: Int }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 deriveSafeCopySorted 4 'extension ''EditDetails
 

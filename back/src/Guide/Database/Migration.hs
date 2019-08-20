@@ -17,13 +17,14 @@ import Data.Acid (EventResult, EventState, QueryEvent, query)
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
-import System.IO
+-- 'Pretty.Simple' is for visual data analyse
 import Text.Pretty.Simple
+import Data.Generics.Uniplate.Data (transformBis, transformer)
 
 import Guide.Database.Connection
 import Guide.Database.Queries.Insert
 import Guide.Database.Queries.Select
--- import Guide.Database.Schema
+import Guide.Database.Schema
 import Guide.Database.Types
 import Guide.State
 import Guide.Types.Core
@@ -34,26 +35,36 @@ import Guide.Logger
 
 -- | Load categories and deleted categories from acid state to postgres
 -- and check if they are equal.
+--
+-- NOTE: It loads categories and categoriesDeleted fields of GlobalState only.
 loadIntoPostgres :: Config -> IO ()
 loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
   withDB (pure ()) $ \db -> do
-    hSetBuffering stdout NoBuffering
     globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
     logDebugIO logger $ format "length categories {}" (length categories)
+
     -- Upload to Postgres
+
+    setupDatabase
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
+
     -- Download from Postgres
+
     (categoriesPostgres, categoriesDeletedPostgres) <- runTransactionExceptT conn Read getCategories
+
     -- Check equality
-    let checkCat = categoriesPostgres == categories
-    let checkCatDeleted = categoriesDeletedPostgres == categoriesDeleted
+
+    let checkCat = categoriesPostgres == map normalizeUTC categories
+    let checkCatDeleted = categoriesDeletedPostgres == map normalizeUTC categoriesDeleted
+
     logDebugIO logger $ format "Cat: AcidState == Postgres: {}" checkCat
     logDebugIO logger $ format "CatDeleted: AcidState == Postgres: {}" checkCatDeleted
+
     putStrLn "Acid"
-    pPrintNoColor categories
+    pPrintNoColor $ map normalizeUTC categoriesDeleted
     putStrLn "\nPostgres"
-    pPrintNoColor categoriesPostgres
+    pPrintNoColor categoriesDeletedPostgres
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
@@ -61,6 +72,17 @@ dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
 dbQuery logger db x = do
   logDebugIO logger $ "dbQuery: " +|| x ||+ ""
   liftIO $ query db x
+
+-- normalizeUTC :: GlobalState -> GlobalState
+normalizeUTC :: Category -> Category
+normalizeUTC = transformBis [[transformer cutUTCTime]]
+
+cutUTCTime :: UTCTime -> UTCTime
+cutUTCTime UTCTime{..} = UTCTime{utctDay, utctDayTime = utctDayTimeCut}
+  where
+    utctDayTimeCut = picosecondsToDiffTime pico12Cut
+    pico12 = diffTimeToPicoseconds utctDayTime
+    pico12Cut = floor ((fromInteger pico12 / 1000000) :: Double) * 1000000
 
 ----------------------------------------------------------------------------
 -- Insert helpers

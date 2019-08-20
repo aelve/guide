@@ -193,7 +193,7 @@ data GlobalState = GlobalState {
   users             :: Map (Uid User) User,
   -- | The dirty bit (needed to choose whether to make a checkpoint or not)
   dirty             :: Bool }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Data)
 
 deriveSafeCopySorted 9 'extension ''GlobalState
 makeClassWithLenses ''GlobalState
