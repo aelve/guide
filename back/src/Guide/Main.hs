@@ -122,6 +122,7 @@ runCommand config = \case
   DryRun -> dryRun config
   LoadPublic path -> loadPublic config path
   ApiDocs -> apiDocs config
+  LoadIntoPostgres -> loadIntoPostgres config
 
 ----------------------------------------------------------------------------
 -- Commands

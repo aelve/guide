@@ -17,6 +17,7 @@ import Data.Acid (EventResult, EventState, QueryEvent, query)
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
+import System.IO
 
 import Guide.Database.Connection
 import Guide.Database.Queries.Insert
@@ -35,6 +36,7 @@ import Guide.Logger
 loadIntoPostgres :: Config -> IO ()
 loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
   withDB (pure ()) $ \db -> do
+    hSetBuffering stdout NoBuffering
     globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
     logDebugIO logger $ format "length categories {}" (length categories)
     -- print $ length categories
