@@ -95,7 +95,7 @@ updateCategoryRow catId f = do
   when (old_categoryRowItemsOrder /= new_categoryRowItemsOrder) $ do
     let statement :: Statement (Uid Category, [Uid Item]) ()
         statement = [execute|UPDATE categories SET items_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (catId, new_categoryRowItemsOrder) statement
+    lift $ HT.statement (catId, nub new_categoryRowItemsOrder) statement
 
   -- Update deleted
   when (old_categoryRowDeleted /= new_categoryRowDeleted) $ do
@@ -192,13 +192,13 @@ updateItemRow itemId f = do
   when (old_itemRowProsOrder /= new_itemRowProsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
         statement = [execute|UPDATE items SET pros_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (itemId, new_itemRowProsOrder) statement
+    lift $ HT.statement (itemId, nub new_itemRowProsOrder) statement
 
   -- Update consOrder
   when (old_itemRowConsOrder /= new_itemRowConsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
         statement = [execute|UPDATE items SET cons_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (itemId, new_itemRowConsOrder) statement
+    lift $ HT.statement (itemId, nub new_itemRowConsOrder) statement
 
 ----------------------------------------------------------------------------
 -- Traits

@@ -18,6 +18,7 @@ import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
 import System.IO
+import Text.Pretty.Simple
 
 import Guide.Database.Connection
 import Guide.Database.Queries.Insert
@@ -39,14 +40,20 @@ loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
     hSetBuffering stdout NoBuffering
     globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
     logDebugIO logger $ format "length categories {}" (length categories)
-    -- print $ length categories
-    -- Load to Postgres
+    -- Upload to Postgres
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
+    -- Download from Postgres
+    (categoriesPostgres, categoriesDeletedPostgres) <- runTransactionExceptT conn Read getCategories
     -- Check equality
-    (categoriesDeletedPostgres, categoriesPostgres) <- runTransactionExceptT conn Read getCategories
-    let check = categoriesPostgres == categories && categoriesDeletedPostgres == categoriesDeleted
-    logDebugIO logger $ format "AcidState == Postgres: {}" check
+    let checkCat = categoriesPostgres == categories
+    let checkCatDeleted = categoriesDeletedPostgres == categoriesDeleted
+    logDebugIO logger $ format "Cat: AcidState == Postgres: {}" checkCat
+    logDebugIO logger $ format "CatDeleted: AcidState == Postgres: {}" checkCatDeleted
+    putStrLn "Acid"
+    pPrintNoColor categories
+    putStrLn "\nPostgres"
+    pPrintNoColor categoriesPostgres
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
@@ -75,6 +82,20 @@ insertCategoryWhole (arg #deleted -> deleted) category@Category{..} = do
   insertItemFromCategory category
   mapM_ insertTraitsFromItem categoryItems
   mapM_ insertTraitsFromItem categoryItemsDeleted
+
+-- | Insert to postgres all items from Category.
+insertItemFromCategory :: Category -> ExceptT DatabaseError Transaction ()
+insertItemFromCategory Category{..} = do
+  mapM_ (insertItemF categoryUid (#deleted False)) categoryItems
+  mapM_ (insertItemF categoryUid (#deleted True)) categoryItemsDeleted
+
+-- | Insert to postgres all traits from Item.
+insertTraitsFromItem :: Item -> ExceptT DatabaseError Transaction ()
+insertTraitsFromItem Item{..} = do
+  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypePro) itemPros
+  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypePro) itemProsDeleted
+  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypeCon) itemCons
+  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypeCon) itemConsDeleted
 
 -- | Insert category passing 'Category'.
 insertCategoryF
@@ -105,20 +126,6 @@ insertFullTraitF
 insertFullTraitF itemId (arg #deleted -> deleted) traitType trait = do
   let traitRow = traitToTraitRow itemId (#deleted deleted) traitType trait
   insertTraitWithTraitRow traitRow
-
--- | Insert to postgres all items from Category.
-insertItemFromCategory :: Category -> ExceptT DatabaseError Transaction ()
-insertItemFromCategory Category{..} = do
-  mapM_ (insertItemF categoryUid (#deleted False)) categoryItems
-  mapM_ (insertItemF categoryUid (#deleted True)) categoryItemsDeleted
-
--- | Insert to postgres all traits from Item.
-insertTraitsFromItem :: Item -> ExceptT DatabaseError Transaction ()
-insertTraitsFromItem Item{..} = do
-  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypePro) itemPros
-  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypePro) itemProsDeleted
-  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypeCon) itemCons
-  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypeCon) itemConsDeleted
 
 ----------------------------------------------------------------------------
 -- Get helpers

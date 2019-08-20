@@ -114,6 +114,7 @@ library:
   - network-uri
   - optparse-applicative
   - patches-vector
+  - pretty-simple
   - profunctors
   - random >=1.1
   - raw-strings-qq
