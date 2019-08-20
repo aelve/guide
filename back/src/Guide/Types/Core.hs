@@ -283,10 +283,16 @@ data Category = Category {
   }
   deriving (Show, Generic, Data)
 
-deriveSafeCopySorted 12 'extension ''Category
+deriveSafeCopySorted 13 'extension ''Category
 makeClassWithLenses ''Category
 
-changelog ''Category (Current 12, Past 11)
+changelog ''Category (Current 13, Past 12)
+  [Removed "categoryGroup_" [t|Text|]
+  ,Added   "categoryGroup"  [hs|
+     categoryGroup_ |] ]
+deriveSafeCopySorted 12 'extension ''Category_v12
+
+changelog ''Category (Past 12, Past 11)
   [Removed "categoryGroups" [t|Map Text Hue|] ]
 deriveSafeCopySorted 11 'extension ''Category_v11
 
