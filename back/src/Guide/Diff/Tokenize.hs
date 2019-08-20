@@ -1,7 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms   #-}
-
-
 -- | Prepare text for diffing or merging by breaking it into tokens (like
 -- links or Markdown elements).
 module Guide.Diff.Tokenize

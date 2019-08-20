@@ -1,6 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
-
 module Main (main) where
 
 -- Shared imports

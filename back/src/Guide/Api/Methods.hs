@@ -1,9 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE NamedFieldPuns      #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeFamilies        #-}
 
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 

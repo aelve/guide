@@ -1,7 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-
-
 module MergeSpec (tests) where
 
 -- Shared imports

@@ -1,8 +1,4 @@
 {-# LANGUAGE ApplicativeDo     #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TypeOperators     #-}
 
 
 -- | Read-only database queries.

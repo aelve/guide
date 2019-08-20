@@ -1,9 +1,3 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TypeOperators     #-}
-
 -- | Insert queries.
 module Guide.Database.Queries.Insert
 (

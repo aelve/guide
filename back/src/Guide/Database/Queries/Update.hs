@@ -1,11 +1,3 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TypeOperators     #-}
-
--- | Update queries.
 module Guide.Database.Queries.Update
 (
   -- * Category

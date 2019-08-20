@@ -1,8 +1,6 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE QuasiQuotes                #-}
 
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 

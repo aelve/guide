@@ -1,7 +1,3 @@
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TemplateHaskell #-}
-
-
 -- | Types for edits.
 --
 -- Every content edit is associated with an 'Edit', which is stored in the
@@ -254,7 +250,7 @@ instance Migrate Edit_v8 where
       EditAddCategory_v8
         { editCategoryUid_v8 = editCategoryUid_v7 x
         , editCategoryTitle_v8 = editCategoryTitle_v7 x
-        , editCategoryGroup_v8 = toText "Miscellaneous"
+        , editCategoryGroup_v8 = "Miscellaneous"
         } |],
     CopyM "EditAddItem",
     CopyM "EditAddPro",

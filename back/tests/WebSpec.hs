@@ -1,8 +1,5 @@
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE MonoLocalBinds      #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module WebSpec (tests) where

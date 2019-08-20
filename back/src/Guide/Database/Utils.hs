@@ -1,12 +1,7 @@
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | Utilities for working with Postgres.
 module Guide.Database.Utils

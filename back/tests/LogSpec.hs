@@ -1,6 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE QuasiQuotes #-}
-
 -- | Tests for logging of errors.
 module LogSpec (tests) where
 

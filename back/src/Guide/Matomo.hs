@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-
 -- | Functions for interacting with Matomo (<https://matomo.org/>, our web
 -- analytics).
 --

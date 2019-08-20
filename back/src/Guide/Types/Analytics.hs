@@ -1,7 +1,3 @@
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TemplateHaskell #-}
-
-
 -- | Types for analytics.
 --
 --  * We collect information about 'Action's that users perform. An action

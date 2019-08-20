@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-
 -- | Connect to the Guide database.
 module Guide.Database.Connection
        ( connect
