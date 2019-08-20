@@ -18,7 +18,7 @@ import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
 -- 'Pretty.Simple' is for visual data analyse
-import Text.Pretty.Simple
+-- import Text.Pretty.Simple
 import Data.Generics.Uniplate.Data (transformBis, transformer)
 
 import Guide.Database.Connection
@@ -41,30 +41,35 @@ loadIntoPostgres :: Config -> IO ()
 loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
   withDB (pure ()) $ \db -> do
     globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
-    logDebugIO logger $ format "length categories {}" (length categories)
+    postgresLoader logger globalState
+
+postgresLoader :: Logger -> GlobalState -> IO ()
+postgresLoader logger globalState@GlobalState{..} = do
+    -- logDebugIO logger $ format "length categories {}" (length categories)
+    setupDatabase
 
     -- Upload to Postgres
-
-    setupDatabase
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
 
     -- Download from Postgres
-
     (categoriesPostgres, categoriesDeletedPostgres) <- runTransactionExceptT conn Read getCategories
 
     -- Check equality
-
     let checkCat = categoriesPostgres == map normalizeUTC categories
     let checkCatDeleted = categoriesDeletedPostgres == map normalizeUTC categoriesDeleted
 
     logDebugIO logger $ format "Cat: AcidState == Postgres: {}" checkCat
     logDebugIO logger $ format "CatDeleted: AcidState == Postgres: {}" checkCatDeleted
 
-    putStrLn "Acid"
-    pPrintNoColor $ map normalizeUTC categoriesDeleted
-    putStrLn "\nPostgres"
-    pPrintNoColor categoriesDeletedPostgres
+    -- putStrLn "Acid"
+    -- pPrintNoColor $ map normalizeUTC categoriesDeleted
+    -- putStrLn "\nPostgres"
+    -- pPrintNoColor categoriesDeletedPostgres
+
+----------------------------------------------------------------------------
+-- Helpers
+----------------------------------------------------------------------------
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)

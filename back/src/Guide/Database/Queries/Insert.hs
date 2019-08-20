@@ -174,7 +174,7 @@ insertItemWithItemRow itemRow@ItemRow{..} = do
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         |]
   lift $ HT.statement itemRow statement
-  updateCategoryRow itemRowCategoryUid $
+  unless itemRowDeleted $ updateCategoryRow itemRowCategoryUid $
     _categoryRowItemsOrder %~ (++ [itemRowUid])
 
 ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ insertTraitWithTraitRow traitRow@TraitRow{..} = do
           VALUES ($1,$2,$3,($4 :: trait_type),$5)
         |]
   lift $ HT.statement traitRow statement
-  case traitRowType of
+  unless traitRowDeleted $ case traitRowType of
     TraitTypePro ->
       updateItemRow traitRowItemUid $
         _itemRowProsOrder %~ (++ [traitRowUid])
