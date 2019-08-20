@@ -23,32 +23,34 @@ import Guide.Database.Queries.Insert
 import Guide.Database.Queries.Select
 -- import Guide.Database.Schema
 import Guide.Database.Types
--- import Guide.Logger (logDebug)
 import Guide.State
 import Guide.Types.Core
 import Guide.Utils (Uid (..))
+import Guide.Config
+import Guide.Logger
 
 
 -- | Load categories and deleted categories from acid state to postgres
 -- and check if they are equal.
-loadIntoPostgres :: IO ()
-loadIntoPostgres = do
+loadIntoPostgres :: Config -> IO ()
+loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
   withDB (pure ()) $ \db -> do
-    globalState@GlobalState{..} <- dbQuery db GetGlobalState
-    print $ length categories
+    globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
+    logDebugIO logger $ format "length categories {}" (length categories)
+    -- print $ length categories
     -- Load to Postgres
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
     -- Check equality
     (categoriesDeletedPostgres, categoriesPostgres) <- runTransactionExceptT conn Read getCategories
     let check = categoriesPostgres == categories && categoriesDeletedPostgres == categoriesDeleted
-    print $ "AcidState == Postgres: " <> show check
+    logDebugIO logger $ format "AcidState == Postgres: {}" check
 
 -- | Read something from the database.
 dbQuery :: (EventState event ~ GlobalState, QueryEvent event, Show event)
-        => DB -> event -> IO (EventResult event)
-dbQuery db x = do
-  -- logDebug $ "dbQuery: " +|| x ||+ ""
+        => Logger -> DB -> event -> IO (EventResult event)
+dbQuery logger db x = do
+  logDebugIO logger $ "dbQuery: " +|| x ||+ ""
   liftIO $ query db x
 
 ----------------------------------------------------------------------------

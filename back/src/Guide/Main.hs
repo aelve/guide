@@ -58,6 +58,7 @@ import Guide.Types
 import Guide.Utils
 import Guide.Views
 import Guide.Views.Utils (getCSS, getCsrfHeader, getJS, protectForm)
+import Guide.Database.Migration (loadIntoPostgres)
 
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
