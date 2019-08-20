@@ -1,6 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
-
 -- | Imports used in the whole codebase. (All modules import this one
 -- instead of the "Prelude".)
 module Imports
@@ -48,7 +45,7 @@ import GHC.Stack as X (HasCallStack)
 
 -- Don't let HLint complain about Data.ByteString being imported as
 -- something other than "BS" (and so on for other modules)
-{-# ANN module "HLint: ignore Avoid restricted qualification" #-}
+{-# ANN module ("HLint: ignore Avoid restricted qualification" :: String) #-}
 
 -- | Short type for lazy ByteString
 type LByteString = BSL.ByteString

@@ -36,8 +36,24 @@ default-extensions:
 - ConstraintKinds
 - InstanceSigs
 - DerivingStrategies
-- TemplateHaskellQuotes
 - ScopedTypeVariables
+- OverloadedStrings
+- TypeOperators
+- KindSignatures
+- DataKinds
+- StandaloneDeriving
+- TypeFamilies
+- GADTs
+- DefaultSignatures
+- RoleAnnotations
+- QuasiQuotes
+- DeriveLift
+- PackageImports
+- OverloadedLabels
+- DeriveDataTypeable
+- PatternSynonyms
+- NamedFieldPuns
+- TemplateHaskell
 
 library:
   source-dirs: src

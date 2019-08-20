@@ -1,5 +1,3 @@
-{-# LANGUAGE StandaloneDeriving #-}
-
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- for "instance Read Df1.Level"
 
 -- | The logger monad and associated types.

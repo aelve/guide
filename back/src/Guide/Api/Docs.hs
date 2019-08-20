@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- | Rendered documentation for the API.
 module Guide.Api.Docs
 (
