@@ -10,8 +10,6 @@ import Data.Acid (EventResult, EventState, QueryEvent, query)
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
--- 'Pretty.Simple' is for visual data analyse
--- import Text.Pretty.Simple
 import Data.Generics.Uniplate.Data (transformBis, transformer)
 
 import Guide.Database.Connection
@@ -38,7 +36,8 @@ loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
 
 postgresLoader :: Logger -> GlobalState -> IO ()
 postgresLoader logger globalState@GlobalState{..} = do
-    -- logDebugIO logger $ format "length categories {}" (length categories)
+    -- Postgres should be started and 'guide' base created.
+    -- Use docker, for example: https://www.notion.so/aelve/Postgres-26db590f88734f6d83a5318d17b6188e
     setupDatabase
 
     -- Upload to Postgres
@@ -48,17 +47,22 @@ postgresLoader logger globalState@GlobalState{..} = do
     -- Download from Postgres
     (categoriesPostgres, categoriesDeletedPostgres) <- runTransactionExceptT conn Read getCategories
 
-    -- Check equality
-    let checkCat = categoriesPostgres == map normalizeUTC categories
-    let checkCatDeleted = categoriesDeletedPostgres == map normalizeUTC categoriesDeleted
+    -- Prepare data
+    let catNorm = map normalizeUTC categories
+    let catDeletedNorm = map normalizeUTC categoriesDeleted
 
-    logDebugIO logger $ format "Cat: AcidState == Postgres: {}" checkCat
-    logDebugIO logger $ format "CatDeleted: AcidState == Postgres: {}" checkCatDeleted
+    -- Check equality of availiable categories
+    let checkCatLength = length categoriesPostgres == length catNorm
+    let checkCat = sort categoriesPostgres == sort catNorm
 
-    -- putStrLn "Acid"
-    -- pPrintNoColor $ map normalizeUTC categoriesDeleted
-    -- putStrLn "\nPostgres"
-    -- pPrintNoColor categoriesDeletedPostgres
+    -- Check equality of deleted categories
+    let checkCatDeletedLength = length categoriesDeletedPostgres == length catDeletedNorm
+    let checkCatDeleted = sort categoriesDeletedPostgres == sort catDeletedNorm
+
+    logDebugIO logger $ format "Categories length: {}" checkCatLength
+    logDebugIO logger $ format "Categories equality: {}" checkCat
+    logDebugIO logger $ format "Deleted categories length: {}" checkCatDeletedLength
+    logDebugIO logger $ format "Deleted categories equality: {}" checkCatDeleted
 
 ----------------------------------------------------------------------------
 -- Helpers
