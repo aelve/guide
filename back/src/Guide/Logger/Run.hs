@@ -31,10 +31,10 @@ import Guide.Logger.Functions
 --
 -- /Exception handling:/
 --
--- Uncaught exceptions are caught and logged. Since Servant exceptions don't
--- escape Servant, they are logged where they are thrown (see @instance
--- MonadError Guider@). Uncaught Servant exceptions are caught and logged in
--- Warp.
+-- Uncaught exceptions are caught, logged, and rethrown. Since Servant
+-- exceptions don't escape Servant, they are logged where they are thrown
+-- (see @instance MonadError Guider@). Uncaught Servant exceptions are
+-- caught and logged in Warp.
 withLogger :: Config -> (Logger -> IO ()) -> IO ()
 withLogger Config{..} act = do
   logLvlEnv <- lookupEnv "LOG_LEVEL"
@@ -46,8 +46,9 @@ withLogger Config{..} act = do
             when logToStderr $ sayErr formattedLogLine
             whenJust logFileHandle $ \h -> hSay h formattedLogLine
     Di.Core.new logHandler $ \logger ->
-      act logger `catch` \(e :: SomeException) ->
+      act logger `catch` \(e :: SomeException) -> do
         logErrorIO logger ("uncaught exception: "+||e||+"")
+        throwIO e
 
 -- | Pretty-print a log line.
 showLogLine
