@@ -100,7 +100,12 @@ jobs:
           fi
         # Load AcidState to Postgres and check if they are equal
         - docker run --name guide-db -e POSTGRES_PASSWORD=3 -e POSTGRES_DB=guide -p 5432:5432 -d postgres
-        - stack exec --cwd back -- guide load-into-postgres 2> postgres.log
+        - echo "Waiting for postgres..."
+        - while ! nc -z localhost 5432; do
+            sleep 0.1
+          done
+        - echo "PostgreSQL started"
+        - stack exec --cwd back -- guide load-into-postgres > postgres.log
         - cat postgres.log
         - export checkBase=$(awk '/True/ {count++} END{print count}' postgres.log)
         - |
