@@ -149,7 +149,6 @@ dryRun config = withLogger config $ \logger -> do
   db :: DB <- openLocalStateFrom "state/" (error "couldn't load state")
   logDebugIO logger "loaded the database successfully"
   closeAcidState db
-  exitSuccess
 
 -- | Load 'PublicDB' from given file, create acid-state database from it,
 -- and exit.
@@ -162,7 +161,6 @@ loadPublic config path = withLogger config $ \logger ->
       Acid.update db (ImportPublicDB publicDB)
       createCheckpointAndClose' db
       logDebugIO logger "PublicDB imported to GlobalState"
-      exitSuccess
 
 -- | Dump API docs to the output.
 apiDocs :: Config -> IO ()
