@@ -101,7 +101,7 @@ jobs:
             exit 1
           fi
         # Load AcidState to Postgres and check if they are equal
-        - stack exec --cwd back -- guide load-into-postgres > postgres.log
+        - stack exec --cwd back -- guide load-into-postgres 2> postgres.log
         - cat postgres.log
         - export checkBase=$(awk '/True/ {count++} END{print count}' postgres.log)
         - |

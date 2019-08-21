@@ -37,7 +37,7 @@ loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
 postgresLoader :: Logger -> GlobalState -> IO ()
 postgresLoader logger globalState@GlobalState{..} = do
     -- Postgres should be started and 'guide' base created.
-    -- Use docker, for example: https://www.notion.so/aelve/Postgres-26db590f88734f6d83a5318d17b6188e
+    -- For example: https://www.notion.so/aelve/Postgres-26db590f88734f6d83a5318d17b6188e
     setupDatabase
 
     -- Upload to Postgres
