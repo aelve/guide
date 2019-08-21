@@ -12,6 +12,8 @@ where
 import BasePrelude as X hiding (Category, GeneralCategory, Handler, diff, lazy, option)
 -- Conversions
 import To as X
+-- Named arguments
+import Named as X ((:!), arg)
 -- Lists
 import Data.List.Extra as X (dropEnd, takeEnd)
 import Data.List.Index as X

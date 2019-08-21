@@ -23,8 +23,6 @@ module Guide.Database.Types
 
 import Imports
 
-import Named
-
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline, markdownBlockSource, markdownTreeSource, markdownInlineSource)
 import Guide.Types.Core
 import Guide.Utils (Uid (..), makeClassWithLenses, fields)

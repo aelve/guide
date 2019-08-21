@@ -14,7 +14,6 @@ import Imports
 
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Named
 
 import qualified Hasql.Transaction as HT
 
