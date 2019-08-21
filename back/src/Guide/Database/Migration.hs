@@ -37,7 +37,6 @@ loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
 postgresLoader :: Logger -> GlobalState -> IO ()
 postgresLoader logger globalState@GlobalState{..} = do
     -- Postgres should be started and 'guide' base created.
-    -- For example: https://www.notion.so/aelve/Postgres-26db590f88734f6d83a5318d17b6188e
     setupDatabase
 
     -- Upload to Postgres
@@ -45,24 +44,22 @@ postgresLoader logger globalState@GlobalState{..} = do
     runTransactionExceptT conn Write $ insertCategories globalState
 
     -- Download from Postgres
-    (categoriesPostgres, categoriesDeletedPostgres) <- runTransactionExceptT conn Read getCategories
+    (catPosg, catDelPosg) <- runTransactionExceptT conn Read getCategories
 
     -- Prepare data
-    let catNorm = map normalizeUTC categories
-    let catDeletedNorm = map normalizeUTC categoriesDeleted
+    let catAcidNorm = map normalizeUTC categories
+    let catAcidDelNorm = map normalizeUTC categoriesDeleted
 
     -- Check equality of availiable categories
-    let checkCatLength = length categoriesPostgres == length catNorm
-    let checkCat = sort categoriesPostgres == sort catNorm
+    let catLength = length catPosg == length catAcidNorm
+    let cats = sort catPosg == sort catAcidNorm
 
     -- Check equality of deleted categories
-    let checkCatDeletedLength = length categoriesDeletedPostgres == length catDeletedNorm
-    let checkCatDeleted = sort categoriesDeletedPostgres == sort catDeletedNorm
+    let catsDeletedLength = length catDelPosg == length catAcidDelNorm
+    let catsDeleted = sort catDelPosg == sort catAcidDelNorm
 
-    logDebugIO logger $ format "Categories length: {}" checkCatLength
-    logDebugIO logger $ format "Categories equality: {}" checkCat
-    logDebugIO logger $ format "Deleted categories length: {}" checkCatDeletedLength
-    logDebugIO logger $ format "Deleted categories equality: {}" checkCatDeleted
+    let allChecks = and [catLength,cats,catsDeletedLength,catsDeleted]
+    logDebugIO logger $ format "AcidState == Postgres: {}" allChecks
 
 ----------------------------------------------------------------------------
 -- Helpers

@@ -107,7 +107,7 @@ jobs:
         - |
           echo "AcidState == Postgres: $checkBase"
         - |
-          if [ $checkBase -ne 4 ]; then
+          if [ $checkBase -ne 1 ]; then
             >&2 echo "FAIL: Postgres base is not equal to AcidState base."
             exit 1
           fi
