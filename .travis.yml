@@ -54,7 +54,6 @@ jobs:
         - echo "  IdentityFile  $(pwd)/travis_key" >> ~/.ssh/config
         - chmod 400 travis_key
         - git remote set-url origin git@github.com:aelve/guide.git
-        - psql -c 'create database guide;' -U postgres
       script:
         # Build
         - stack --no-terminal build --test --no-run-tests --dependencies-only
@@ -100,17 +99,6 @@ jobs:
             >&2 echo "FAIL: found $undocumented top-level undocumented definitions. The current limit is 251. Please, add Haddock comments to undocumented definitions!"
             exit 1
           fi
-        # Load AcidState to Postgres and check if they are equal
-        - stack exec --cwd back -- guide load-into-postgres 2> postgres.log
-        - cat postgres.log
-        - export checkBase=$(awk '/True/ {count++} END{print count}' postgres.log)
-        - |
-          echo "AcidState == Postgres: $checkBase"
-        - |
-          if [ $checkBase -ne 1 ]; then
-            >&2 echo "FAIL: Postgres base is not equal to AcidState base."
-            exit 1
-          fi
       before_cache:
         - rm -rf $HOME/.stack/programs  #  GHC is faster to install than to cache
 
@@ -131,9 +119,12 @@ jobs:
         - travis_retry wget https://selenium-release.storage.googleapis.com/3.141/selenium-server-standalone-3.141.59.jar -O selenium.jar
         - java -jar selenium.jar 2> /dev/null &
         - sleep 15
+        # Create database
+        - psql -c 'create database guide;' -U postgres
       script:
         - stack --no-terminal test
         - make back/test-db
+        - make back/load-into-postgres
       before_cache:
         - rm -rf $HOME/.stack/programs  # GHC is faster to install than to cache
 

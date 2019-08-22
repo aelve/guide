@@ -283,9 +283,6 @@ data Category = Category {
   }
   deriving (Generic, Data, Eq, Show)
 
-instance Ord Category where
-  compare cat1 cat2 = compare (categoryUid cat1) (categoryUid cat2)
-
 deriveSafeCopySorted 13 'extension ''Category
 makeClassWithLenses ''Category
 

@@ -38,8 +38,8 @@ back/run:
 # Load AcidState base to Postgres and check equality.
 # Postgres should be installed already.
 # 'Guide' base should be created already and clear.
-.PHONY: back/postgres
-back/postgres:
+.PHONY: back/load-into-postgres
+back/load-into-postgres:
 	stack exec --cwd back -- guide load-into-postgres
 
 # Create a Docker image for the backend; will only work on Travis because

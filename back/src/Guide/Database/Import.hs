@@ -1,5 +1,7 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 -- | Module contains all stuff to migrate from AcidState to Postgres.
-module Guide.Database.Migration
+module Guide.Database.Import
        (
         loadIntoPostgres
        ) where
@@ -10,7 +12,7 @@ import Data.Acid (EventResult, EventState, QueryEvent, query)
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
 import Named
-import Data.Generics.Uniplate.Data (transformBis, transformer)
+import Data.Generics.Uniplate.Operations (Biplate, transformBi)
 
 import Guide.Database.Connection
 import Guide.Database.Queries.Insert
@@ -31,35 +33,37 @@ import Guide.Logger
 loadIntoPostgres :: Config -> IO ()
 loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
   withDB (pure ()) $ \db -> do
-    globalState@GlobalState{..} <- dbQuery logger db GetGlobalState
+    globalState <- dbQuery logger db GetGlobalState
     postgresLoader logger globalState
 
 postgresLoader :: Logger -> GlobalState -> IO ()
-postgresLoader logger globalState@GlobalState{..} = do
+postgresLoader logger globalState = do
     -- Postgres should be started and 'guide' base created.
     setupDatabase
-
     -- Upload to Postgres
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
-
     -- Download from Postgres
-    (catPosg, catDelPosg) <- runTransactionExceptT conn Read getCategories
+    (catPostgres, catDeletedPostgres)
+      <- runTransactionExceptT conn Read getCategories
+    -- Check identity of availiable categories
+    let checkedCat =
+          on (==) (sortOn categoryUid) catPostgres (categories globalState)
+    -- Check identity of deleted categories
+    let checkedCatDeleted = on (==) (sortOn categoryUid)
+          catDeletedPostgres (categoriesDeleted globalState)
 
-    -- Prepare data
-    let catAcidNorm = map normalizeUTC categories
-    let catAcidDelNorm = map normalizeUTC categoriesDeleted
-
-    -- Check equality of availiable categories
-    let catLength = length catPosg == length catAcidNorm
-    let cats = sort catPosg == sort catAcidNorm
-
-    -- Check equality of deleted categories
-    let catsDeletedLength = length catDelPosg == length catAcidDelNorm
-    let catsDeleted = sort catDelPosg == sort catAcidDelNorm
-
-    let allChecks = and [catLength,cats,catsDeletedLength,catsDeleted]
-    logDebugIO logger $ format "AcidState == Postgres: {}" allChecks
+    let checked = and [checkedCat,checkedCatDeleted]
+    logDebugIO logger $ format "AcidState == Postgres: {}" checked
+    if checked then pure () else exitFailure
+  where
+    -- Insert all categories from AcidState either deleted or not.
+    -- Categories be normilised before insertion. See 'normalizeUTC'.
+    insertCategories :: GlobalState -> ExceptT DatabaseError Transaction ()
+    insertCategories GlobalState{..} = do
+      mapM_ (insertCategoryWhole (#deleted False) . normalizeUTC) categories
+      mapM_ (insertCategoryWhole (#deleted True) . normalizeUTC)
+        categoriesDeleted
 
 ----------------------------------------------------------------------------
 -- Helpers
@@ -72,26 +76,23 @@ dbQuery logger db x = do
   logDebugIO logger $ "dbQuery: " +|| x ||+ ""
   liftIO $ query db x
 
--- normalizeUTC :: GlobalState -> GlobalState
-normalizeUTC :: Category -> Category
-normalizeUTC = transformBis [[transformer cutUTCTime]]
+-- | Format recursivly all UTCTime fields of Category to Postgres way.
+normalizeUTC :: Biplate Category UTCTime => Category -> Category
+normalizeUTC = transformBi cutUTCTime
 
+-- | Truncate pico up to 6 digits.
+-- | Haskell UTCTime '2019-08-22 09:03:45.736488657 UTC' becomes
+-- | Postgres timestamptz '2019-08-22 09:03:45.736488 UTC'.
 cutUTCTime :: UTCTime -> UTCTime
 cutUTCTime UTCTime{..} = UTCTime{utctDay, utctDayTime = utctDayTimeCut}
   where
     utctDayTimeCut = picosecondsToDiffTime pico12Cut
     pico12 = diffTimeToPicoseconds utctDayTime
-    pico12Cut = floor ((fromInteger pico12 / 1000000) :: Double) * 1000000
+    pico12Cut = truncate ((fromInteger pico12 / 1000000) :: Double) * 1000000
 
 ----------------------------------------------------------------------------
 -- Insert helpers
 ----------------------------------------------------------------------------
-
--- | Insert all categories from AcidState either deleted or not.
-insertCategories :: GlobalState -> ExceptT DatabaseError Transaction ()
-insertCategories GlobalState{..} = do
-  mapM_ (insertCategoryWhole (#deleted False)) categories
-  mapM_ (insertCategoryWhole (#deleted True)) categoriesDeleted
 
 -- | Insert category at whole (with items and traits).
 insertCategoryWhole
@@ -99,52 +100,52 @@ insertCategoryWhole
   -> Category
   -> ExceptT DatabaseError Transaction ()
 insertCategoryWhole (arg #deleted -> deleted) category@Category{..} = do
-  insertCategoryF category (#deleted deleted)
-  insertItemFromCategory category
-  mapM_ insertTraitsFromItem categoryItems
-  mapM_ insertTraitsFromItem categoryItemsDeleted
+  insertCategoryByRow category (#deleted deleted)
+  insertItemsOfCategory category
+  mapM_ insertTraitsOfItem categoryItems
+  mapM_ insertTraitsOfItem categoryItemsDeleted
 
--- | Insert to postgres all items from Category.
-insertItemFromCategory :: Category -> ExceptT DatabaseError Transaction ()
-insertItemFromCategory Category{..} = do
-  mapM_ (insertItemF categoryUid (#deleted False)) categoryItems
-  mapM_ (insertItemF categoryUid (#deleted True)) categoryItemsDeleted
+-- | Insert to postgres all items of Category.
+insertItemsOfCategory :: Category -> ExceptT DatabaseError Transaction ()
+insertItemsOfCategory Category{..} = do
+  mapM_ (insertItemByRow categoryUid (#deleted False)) categoryItems
+  mapM_ (insertItemByRow categoryUid (#deleted True)) categoryItemsDeleted
 
--- | Insert to postgres all traits from Item.
-insertTraitsFromItem :: Item -> ExceptT DatabaseError Transaction ()
-insertTraitsFromItem Item{..} = do
-  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypePro) itemPros
-  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypePro) itemProsDeleted
-  mapM_ (insertFullTraitF itemUid (#deleted False) TraitTypeCon) itemCons
-  mapM_ (insertFullTraitF itemUid (#deleted True) TraitTypeCon) itemConsDeleted
+-- | Insert to postgres all traits of Item.
+insertTraitsOfItem :: Item -> ExceptT DatabaseError Transaction ()
+insertTraitsOfItem Item{..} = do
+  mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypePro) itemPros
+  mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypePro) itemProsDeleted
+  mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypeCon) itemCons
+  mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypeCon) itemConsDeleted
 
 -- | Insert category passing 'Category'.
-insertCategoryF
+insertCategoryByRow
   :: Category
   -> "deleted" :! Bool
   -> ExceptT DatabaseError Transaction ()
-insertCategoryF category (arg #deleted -> deleted) = do
+insertCategoryByRow category (arg #deleted -> deleted) = do
     let categoryRow = categoryToRowCategory category (#deleted deleted)
     insertCategoryWithCategoryRow categoryRow
 
 -- | Insert item passing 'Item'.
-insertItemF
+insertItemByRow
   :: Uid Category
   -> "deleted" :! Bool
   -> Item
   -> ExceptT DatabaseError Transaction ()
-insertItemF catId (arg #deleted -> deleted) item = do
+insertItemByRow catId (arg #deleted -> deleted) item = do
   let itemRow = itemToRowItem catId (#deleted deleted) item
   insertItemWithItemRow itemRow
 
 -- | Insert trait passing 'Trait'.
-insertFullTraitF
+insertTraitByRow
   :: Uid Item
   -> "deleted" :! Bool
   -> TraitType
   -> Trait
   -> ExceptT DatabaseError Transaction ()
-insertFullTraitF itemId (arg #deleted -> deleted) traitType trait = do
+insertTraitByRow itemId (arg #deleted -> deleted) traitType trait = do
   let traitRow = traitToTraitRow itemId (#deleted deleted) traitType trait
   insertTraitWithTraitRow traitRow
 
@@ -156,7 +157,8 @@ insertFullTraitF itemId (arg #deleted -> deleted) traitType trait = do
 getCategories :: ExceptT DatabaseError Transaction ([Category], [Category])
 getCategories = do
     categoryRowsAll <- selectCategoryRows
-    let (categoryRowsDeleted, categoryRows) = partition categoryRowDeleted categoryRowsAll
+    let (categoryRowsDeleted, categoryRows) =
+          partition categoryRowDeleted categoryRowsAll
     categories <- traverse getCategoryByRow categoryRows
     categoriesDeleted <- traverse getCategoryByRow categoryRowsDeleted
     pure (categories, categoriesDeleted)
@@ -168,7 +170,8 @@ getCategoryByRow categoryRow@CategoryRow{..} = do
   items <- traverse getItemByRow itemRows
   itemRowsDeleted <- selectDeletedItemRowsByCategory categoryRowUid
   itemsDeleted <- traverse getItemByRow itemRowsDeleted
-  pure $ categoryRowToCategory (#items items) (#itemsDeleted itemsDeleted) categoryRow
+  pure $ categoryRowToCategory (#items items)
+    (#itemsDeleted itemsDeleted) categoryRow
 
 -- | Get Item by ItemRow
 getItemByRow :: ItemRow -> ExceptT DatabaseError Transaction Item
@@ -181,6 +184,10 @@ getItemByRow itemRow@ItemRow{..} = do
   let conTraits = map traitRowToTrait conTraitRows
   conDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypeCon
   let conDeletedTraits = map traitRowToTrait conDeletedTraitRows
-  pure $ itemRowToItem (#proTraits proTraits) (#proDeletedTraits proDeletedTraits)
-    (#conTraits conTraits) (#conDeletedTraits conDeletedTraits) itemRow
+  pure $ itemRowToItem
+    (#proTraits proTraits)
+    (#proDeletedTraits proDeletedTraits)
+    (#conTraits conTraits)
+    (#conDeletedTraits conDeletedTraits)
+    itemRow
 
