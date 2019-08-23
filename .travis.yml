@@ -8,6 +8,7 @@ addons:
 
 services:
   - xvfb
+  - postgresql
 
 before_install:
   - # start your web application and listen on `localhost`
@@ -118,9 +119,12 @@ jobs:
         - travis_retry wget https://selenium-release.storage.googleapis.com/3.141/selenium-server-standalone-3.141.59.jar -O selenium.jar
         - java -jar selenium.jar 2> /dev/null &
         - sleep 15
+        # Create database
+        - psql -c 'create database guide;' -U postgres
       script:
         - stack --no-terminal test
         - make back/test-db
+        - make back/load-into-postgres
       before_cache:
         - rm -rf $HOME/.stack/programs  # GHC is faster to install than to cache
 

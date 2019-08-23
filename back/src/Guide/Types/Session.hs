@@ -34,7 +34,7 @@ data GuideData = GuideData {
     -- | If logged in, must be a valid userID
     _sessionUserID :: Maybe (Uid User)
   }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 deriveSafeCopySorted 0 'base ''GuideData
 makeLenses ''GuideData
@@ -48,7 +48,7 @@ data GuideSession = GuideSession {
   _sess_csrfToken  :: !Text,
   _sess_validUntil :: !UTCTime,
   _sess_data       :: !GuideData }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 deriveSafeCopySorted 0 'base ''GuideSession
 makeLenses ''GuideSession

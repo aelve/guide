@@ -67,11 +67,13 @@ getSchemaVersion = do
     [execute|
       CREATE TABLE IF NOT EXISTS schema_version (
         name text PRIMARY KEY,
-        version integer
-      );
+        version integer)
+    |]
+  HS.statement () $
+    [execute|
       INSERT INTO schema_version (name, version)
         VALUES ('main', null)
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT DO NOTHING
     |]
   let selectVersion :: Statement () (Maybe (SingleColumn (Maybe Int32)))
       selectVersion =

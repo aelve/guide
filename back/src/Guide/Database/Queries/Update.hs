@@ -95,7 +95,7 @@ updateCategoryRow catId f = do
   when (old_categoryRowItemsOrder /= new_categoryRowItemsOrder) $ do
     let statement :: Statement (Uid Category, [Uid Item]) ()
         statement = [execute|UPDATE categories SET items_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (catId, new_categoryRowItemsOrder) statement
+    lift $ HT.statement (catId, nub new_categoryRowItemsOrder) statement
 
   -- Update deleted
   when (old_categoryRowDeleted /= new_categoryRowDeleted) $ do
@@ -181,6 +181,11 @@ updateItemRow itemId f = do
     let statement :: Statement (Uid Item, Bool) ()
         statement = [execute|UPDATE items SET deleted = $2 WHERE uid = $1|]
     lift $ HT.statement (itemId, new_itemRowDeleted) statement
+    if new_itemRowDeleted
+      then updateCategoryRow new_itemRowCategoryUid $
+        _categoryRowItemsOrder %~ delete itemId
+      else updateCategoryRow new_itemRowCategoryUid $
+        _categoryRowItemsOrder %~ (++ [itemId])
 
   -- Update categoryUid
   when (old_itemRowCategoryUid /= new_itemRowCategoryUid) $ do
@@ -192,13 +197,13 @@ updateItemRow itemId f = do
   when (old_itemRowProsOrder /= new_itemRowProsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
         statement = [execute|UPDATE items SET pros_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (itemId, new_itemRowProsOrder) statement
+    lift $ HT.statement (itemId, nub new_itemRowProsOrder) statement
 
   -- Update consOrder
   when (old_itemRowConsOrder /= new_itemRowConsOrder) $ do
     let statement :: Statement (Uid Item, [Uid Trait]) ()
         statement = [execute|UPDATE items SET cons_order = $2 WHERE uid = $1|]
-    lift $ HT.statement (itemId, new_itemRowConsOrder) statement
+    lift $ HT.statement (itemId, nub new_itemRowConsOrder) statement
 
 ----------------------------------------------------------------------------
 -- Traits
@@ -216,9 +221,9 @@ updateTraitRow
   :: Uid Trait
   -> (TraitRow -> TraitRow)
   -> ExceptT DatabaseError Transaction ()
-updateTraitRow catId f = do
+updateTraitRow traitId f = do
   -- Fetch the old row
-  row <- selectTraitRow catId
+  row <- selectTraitRow traitId
 
   -- Expose all fields of the old and the new row, and make sure that if we
   -- forget to use one of them, the compiler will warn us.
@@ -228,29 +233,44 @@ updateTraitRow catId f = do
   -- Updating uid is not allowed
   when (old_traitRowUid /= new_traitRowUid) $
     throwError TraitRowUpdateNotAllowed
-      { deTraitId = catId
+      { deTraitId = traitId
       , deFieldName = "traitRowUid" }
 
   -- Update content
   when (old_traitRowContent /= new_traitRowContent) $ do
     let statement :: Statement (Uid Trait, Text) ()
         statement = [execute|UPDATE traits SET content = $2 WHERE uid = $1|]
-    lift $ HT.statement (catId, new_traitRowContent) statement
+    lift $ HT.statement (traitId, new_traitRowContent) statement
 
   -- Update deleted
   when (old_traitRowDeleted /= new_traitRowDeleted) $ do
     let statement :: Statement (Uid Trait, Bool) ()
         statement = [execute|UPDATE traits SET deleted = $2 WHERE uid = $1|]
-    lift $ HT.statement (catId, new_traitRowDeleted) statement
+    lift $ HT.statement (traitId, new_traitRowDeleted) statement
+    if new_traitRowDeleted
+      then case new_traitRowType of
+        TraitTypePro ->
+          updateItemRow new_traitRowItemUid $
+            _itemRowProsOrder %~ delete traitId
+        TraitTypeCon ->
+          updateItemRow new_traitRowItemUid $
+            _itemRowConsOrder %~ delete traitId
+      else case new_traitRowType of
+        TraitTypePro ->
+          updateItemRow new_traitRowItemUid $
+            _itemRowProsOrder %~ (++ [traitId])
+        TraitTypeCon ->
+          updateItemRow new_traitRowItemUid $
+            _itemRowConsOrder %~ (++ [traitId])
 
   -- Update type
   when (old_traitRowType /= new_traitRowType) $ do
     let statement :: Statement (Uid Trait, TraitType) ()
         statement = [execute|UPDATE traits SET type_ = ($2 :: trait_type) WHERE uid = $1|]
-    lift $ HT.statement (catId, new_traitRowType) statement
+    lift $ HT.statement (traitId, new_traitRowType) statement
 
   -- Update itemUid
   when (old_traitRowItemUid /= new_traitRowItemUid) $ do
     let statement :: Statement (Uid Trait, Uid Item) ()
         statement = [execute|UPDATE traits SET item_uid = $2 WHERE uid = $1|]
-    lift $ HT.statement (catId, new_traitRowItemUid) statement
+    lift $ HT.statement (traitId, new_traitRowItemUid) statement

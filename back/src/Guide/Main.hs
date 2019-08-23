@@ -58,6 +58,7 @@ import Guide.Types
 import Guide.Utils
 import Guide.Views
 import Guide.Views.Utils (getCSS, getCsrfHeader, getJS, protectForm)
+import Guide.Database.Import (loadIntoPostgres)
 
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
@@ -121,6 +122,7 @@ runCommand config = \case
   DryRun -> dryRun config
   LoadPublic path -> loadPublic config path
   ApiDocs -> apiDocs config
+  LoadIntoPostgres -> loadIntoPostgres config
 
 ----------------------------------------------------------------------------
 -- Commands

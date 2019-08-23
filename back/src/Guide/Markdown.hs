@@ -65,14 +65,14 @@ data MarkdownBlock = MarkdownBlock {
   markdownBlockSource   :: Text,
   markdownBlockHtml     :: ByteString,
   markdownBlockMarkdown :: ![MD.Node] }
-  deriving (Generic, Data)
+  deriving (Generic, Data, Eq)
 
 data MarkdownTree = MarkdownTree {
   markdownTreeSource    :: Text,
   markdownTreeStructure :: !(Document Text ByteString),
   markdownTreeIdPrefix  :: Text,
   markdownTreeTOC       :: Forest Heading }
-  deriving (Generic, Data)
+  deriving (Generic, Data, Eq)
 
 -- | Table-of-contents heading
 data Heading = Heading

@@ -9,6 +9,7 @@ module Guide.Database.Queries.Select
   selectCategoryRowMaybe,
   selectCategoryRows,
   selectCategoryRowByItemMaybe,
+  selectCategoryIds,
   selectCategoryIdByItem,
   selectCategoryIdByItemMaybe,
 

@@ -25,6 +25,7 @@ data Command
     | DryRun                -- ^ Load database and exit
     | LoadPublic FilePath   -- ^ Load PublicDB, create base on it and exit
     | ApiDocs               -- ^ Show docs for the backend API
+    | LoadIntoPostgres      -- ^ Load AcidState to postgres and check equality
 
 -- | Parse the command line of the application.
 --
@@ -45,6 +46,8 @@ commandsParser = Opt.subparser
          (infoP loadPublicParser "Load PublicDB, create base on it and exit")
     <> Opt.command "api-docs"
          (infoP (pure ApiDocs) "Show swagger.json for the backend API")
+    <> Opt.command "load-into-postgres"
+         (infoP (pure LoadIntoPostgres) "Load AcidState to Postgres and check")
   where
     infoP parser desc = Opt.info (Opt.helper <*> parser) $ Opt.progDesc desc
 
