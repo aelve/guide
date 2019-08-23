@@ -24,7 +24,7 @@ import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils (execute)
 import Guide.Types.Core
-import Guide.Utils (Uid (..))
+import Guide.Uid
 
 
 ----------------------------------------------------------------------------

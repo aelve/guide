@@ -22,6 +22,7 @@ import Data.SafeCopy.Migrate
 
 import Guide.Types.Core
 import Guide.Utils
+import Guide.Uid
 
 
 -- | Edits made by users. It should always be possible to undo an edit.

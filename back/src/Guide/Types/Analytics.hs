@@ -29,6 +29,7 @@ import Data.IP
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
+import Guide.Uid
 import Guide.Types.Core
 import Guide.Types.Edit
 import Guide.Utils

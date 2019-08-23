@@ -39,7 +39,7 @@ import qualified Data.Set as Set
 import qualified Hasql.Encoders as HE
 import qualified Hasql.Decoders as HD
 
-import Guide.Utils (Uid (..))
+import Guide.Uid
 
 ----------------------------------------------------------------------------
 -- Query functions

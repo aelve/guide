@@ -55,7 +55,7 @@ import Guide.ServerStuff
 import Guide.Session
 import Guide.State
 import Guide.Types
-import Guide.Utils
+import Guide.Uid
 import Guide.Views
 import Guide.Views.Utils (getCSS, getCsrfHeader, getJS, protectForm)
 import Guide.Database.Import (loadIntoPostgres)

@@ -36,6 +36,7 @@ import Guide.Markdown
 import Guide.State
 import Guide.Types
 import Guide.Utils
+import Guide.Uid
 
 import qualified Web.Spock as Spock
 

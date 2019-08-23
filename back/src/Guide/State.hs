@@ -100,6 +100,7 @@ import Data.SafeCopy.Migrate
 --
 import Web.Spock.Internal.SessionManager (SessionId)
 
+import Guide.Uid
 import Guide.Markdown
 import Guide.Types.Analytics
 import Guide.Types.Core

@@ -20,7 +20,8 @@ import Guide.Database.Queries.Select
 import Guide.Database.Types
 import Guide.Database.Utils
 import Guide.Types.Core
-import Guide.Utils (Uid (..), fieldsPrefixed)
+import Guide.Uid
+import Guide.Utils (fieldsPrefixed)
 
 
 ----------------------------------------------------------------------------

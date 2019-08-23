@@ -20,7 +20,7 @@ import Guide.Database.Schema
 import Guide.Database.Types
 import Guide.State
 import Guide.Types.Core
-import Guide.Utils (Uid (..))
+import Guide.Uid
 import Guide.Config
 import Guide.Logger
 
