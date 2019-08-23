@@ -23,6 +23,7 @@ import Guide.Markdown (MarkdownBlock (..), MarkdownInline (..), MarkdownTree (..
 import Guide.State
 import Guide.Types
 import Guide.Utils
+import Guide.Uid
 
 import qualified Data.Set as S
 import qualified Data.Text as T

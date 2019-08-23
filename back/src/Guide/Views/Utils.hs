@@ -83,6 +83,7 @@ import Guide.JS (JQuerySelector, JS (..))
 import Guide.Markdown
 import Guide.Types
 import Guide.Utils
+import Guide.Uid
 -- import Guide.Config
 -- import Guide.State
 
@@ -195,7 +196,7 @@ markdownEditor
   -> HtmlT m ()
 markdownEditor rows (markdownBlockSource -> src) submit cancel instr = do
   editorUid <- randomLongUid
-  term "a-editor" [uid_ editorUid,
+  term "a-editor" [id_ (uidToText editorUid),
                    vBind "init-content" src,
                    vBind "instruction" instr,
                    vBind "rows" rows,
@@ -216,7 +217,7 @@ smallMarkdownEditor
   -> HtmlT m ()
 smallMarkdownEditor rows (markdownInlineSource -> src) submit mbCancel instr mbPlaceholder = do
   editorUid <- randomLongUid
-  term "a-editor-mini" ([uid_ editorUid,
+  term "a-editor-mini" ([id_ (uidToText editorUid),
                          vBind "init-content" src,
                          vBind "instruction" instr,
                          vBind "rows" rows] ++
@@ -233,7 +234,7 @@ thisNode = do
   uid' <- randomLongUid
   -- If the class name ever changes, fix 'JS.moveNodeUp' and
   -- 'JS.moveNodeDown'.
-  span_ [uid_ uid', class_ "dummy"] mempty
+  span_ [id_ (uidToText uid'), class_ "dummy"] mempty
   return (JS.selectParent (JS.selectUid uid'))
 
 itemNodeId :: Item -> Text

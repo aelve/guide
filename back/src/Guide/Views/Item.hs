@@ -31,8 +31,8 @@ import Lucid hiding (for_)
 import Guide.JS (JS (..))
 import Guide.Markdown
 import Guide.Types.Core
-import Guide.Utils
 import Guide.Views.Utils
+import Guide.Uid
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Text.IO as T
@@ -167,7 +167,7 @@ renderItemTraits item = div_ [class_ "item-traits"] $ do
         -- We can't use 'thisNode' inside <ul> because it creates a <span>
         -- and only <li> elements can be children of <ul>
         listUid <- randomLongUid
-        ul_ [uid_ listUid] $
+        ul_ [id_ (uidToText listUid)] $
           mapM_ (renderTrait (itemUid item)) (itemPros item)
         section "editable" [] $ do
           smallMarkdownEditor
@@ -195,7 +195,7 @@ renderItemTraits item = div_ [class_ "item-traits"] $ do
             [style_ "width:12px;opacity:0.5"] $
             JS.switchSectionsEverywhere (this, "normal" :: Text)
         listUid <- randomLongUid
-        ul_ [uid_ listUid] $
+        ul_ [id_ (uidToText listUid)] $
           mapM_ (renderTrait (itemUid item)) (itemCons item)
         section "editable" [] $ do
           smallMarkdownEditor
@@ -293,5 +293,5 @@ renderItemNotes category item = do
       -- the notes are closed (but don't scroll if it's already visible after
       -- the notes have been hidden)
 
-    section "editing" [uid_ editingSectionUid] $
+    section "editing" [id_ (uidToText editingSectionUid)] $
       return ()

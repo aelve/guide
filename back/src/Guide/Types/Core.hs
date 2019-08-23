@@ -34,6 +34,7 @@ import Data.SafeCopy.Migrate
 import Guide.Markdown
 import Guide.Types.Hue
 import Guide.Utils
+import Guide.Uid
 import Guide.Database.Utils (ToPostgres (..), FromPostgres (..))
 
 import qualified Data.Aeson as Aeson

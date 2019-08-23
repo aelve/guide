@@ -22,7 +22,7 @@ import Data.SafeCopy.Migrate
 import Web.Spock.Internal.SessionManager (SessionId)
 
 import Guide.Types.User
-import Guide.Utils
+import Guide.Uid
 
 import qualified Web.Spock.Internal.SessionManager as Spock
 

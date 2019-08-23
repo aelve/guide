@@ -20,7 +20,7 @@ import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils
 import Guide.Types.Core
-import Guide.Utils (Uid (..))
+import Guide.Uid
 
 -- | Delete a category completly.
 deleteCategory :: Uid Category -> ExceptT DatabaseError Transaction ()

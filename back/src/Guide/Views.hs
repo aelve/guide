@@ -51,6 +51,7 @@ import Guide.State
 import Guide.Types
 import Guide.Utils
 import Guide.Views.Utils
+import Guide.Uid
 
 import qualified CMark as MD
 import qualified Data.Aeson as Aeson
@@ -204,7 +205,7 @@ renderAdmin globalState = do
     script_ $ fromJS $ JS.createAjaxIndicator ()
     h1_ "Miscellaneous"
     buttonUid <- randomLongUid
-    button "Create checkpoint" [uid_ buttonUid] $
+    button "Create checkpoint" [id_ (uidToText buttonUid)] $
       JS.createCheckpoint [JS.selectUid buttonUid]
     div_ [id_ "edits"] $
       renderEdits globalState (map (,Nothing) (pendingEdits globalState))

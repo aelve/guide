@@ -12,7 +12,7 @@ import Network.HTTP.Types.Status
 -- Site
 import Guide.Api.Types
 import Guide.Types.Core
-import Guide.Utils (Uid (..))
+import Guide.Uid
 -- Tests
 import Test.Hspec
 

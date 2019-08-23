@@ -33,13 +33,6 @@ module Guide.Utils
   -- * IP
   sockAddrToIP,
 
-  -- * UID
-  Uid(..),
-  Node,
-  randomShortUid,
-  randomLongUid,
-  uid_,
-
   -- * JSON
   fromJson,
   fromJsonWith,
@@ -300,84 +293,6 @@ sockAddrToIP :: Network.SockAddr -> Maybe IP
 sockAddrToIP (Network.SockAddrInet  _   x)   = Just (IPv4 (fromHostAddress x))
 sockAddrToIP (Network.SockAddrInet6 _ _ x _) = Just (IPv6 (fromHostAddress6 x))
 sockAddrToIP _                               = Nothing
-
-----------------------------------------------------------------------------
--- Uid
-----------------------------------------------------------------------------
-
--- | Unique id, used for many things – categories, items, and anchor ids.
-newtype Uid a = Uid {uidToText :: Text}
-  deriving (Generic, Eq, Ord, Data,
-            ToHttpApiData, FromHttpApiData,
-            Buildable, Hashable)
-
-instance Show (Uid a) where
-  show (Uid a) = show a
-
-instance Aeson.ToJSON (Uid a) where
-  toJSON = Aeson.toJSON . uidToText
-
-instance Aeson.FromJSON (Uid a) where
-  parseJSON a = Uid <$> Aeson.parseJSON a
-
--- This instance is written manually because otherwise it produces a warning:
---     • Redundant constraint: SafeCopy a
---     • In the instance declaration for ‘SafeCopy (Uid a)’
-instance SafeCopy (Uid a) where
-  putCopy = contain . safePut . uidToText
-  getCopy = contain (Uid <$> safeGet)
-  version = 2
-  kind = base
-
-instance IsString (Uid a) where
-  fromString = Uid . toText
-
--- | Generate a random text of given length from characters @a-z@ and digits.
-randomText :: MonadIO m => Int -> m Text
-randomText n = liftIO $ do
-  -- We don't want the 1st char to be a digit. Just in case (I don't really
-  -- have a good reason). Maybe to prevent Javascript from doing automatic
-  -- conversions or something (though it should never happen).
-  x <- randomRIO ('a', 'z')
-  let randomChar = do
-        i <- randomRIO (0, 35)
-        return $ if i < 10 then toEnum (fromEnum '0' + i)
-                           else toEnum (fromEnum 'a' + i - 10)
-  xs <- replicateM (n-1) randomChar
-  return (toText (x:xs))
-
--- For probability tables, see
--- https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
-
--- | Generate a random UID of length 12.
---
--- Probability of collision for
---
---   * a million UIDs: approximately 1e-6
---   * a billion UIDs: approximately 0.25
---
-randomLongUid :: MonadIO m => m (Uid a)
-randomLongUid = Uid <$> randomText 12
-
--- | Generate a random UID of length 8.
---
--- These UIDs are only used for items and categories (because their uids can
--- occur in links and so they should look a bit nicer).
---
--- Probability of collision for
---
---   * a hundred thousand UIDs: approximately 0.5%
---   * a million UIDs: approximately 40%
---
-randomShortUid :: MonadIO m => m (Uid a)
-randomShortUid = Uid <$> randomText 8
-
--- | A marker for Uids that would be used with HTML nodes
-data Node
-
--- | Generate a HTML @id@ attribute from an 'Uid'.
-uid_ :: Uid Node -> Attribute
-uid_ = id_ . uidToText
 
 ----------------------------------------------------------------------------
 -- JSON

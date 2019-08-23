@@ -25,7 +25,8 @@ import Imports
 
 import Guide.Markdown (toMarkdownBlock, toMarkdownTree, toMarkdownInline, markdownBlockSource, markdownTreeSource, markdownInlineSource)
 import Guide.Types.Core
-import Guide.Utils (Uid (..), makeClassWithLenses, fields)
+import Guide.Uid
+import Guide.Utils (makeClassWithLenses, fields)
 import Guide.Database.Utils
 
 

@@ -17,7 +17,7 @@ import Imports
 
 import NeatInterpolation
 
-import Guide.Utils
+import Guide.Uid
 
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.Builder as B
@@ -726,7 +726,7 @@ newtype JQuerySelector = JQuerySelector Text
 selectId :: Text -> JQuerySelector
 selectId x = JQuerySelector $ format "#{}" x
 
-selectUid :: Uid Node -> JQuerySelector
+selectUid :: Uid a -> JQuerySelector
 selectUid x = JQuerySelector $ format "#{}" x
 
 selectClass :: Text -> JQuerySelector

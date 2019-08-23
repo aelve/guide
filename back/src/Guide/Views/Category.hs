@@ -24,9 +24,9 @@ import Lucid hiding (for_)
 
 import Guide.Markdown
 import Guide.Types.Core
-import Guide.Utils
 import Guide.Views.Item
 import Guide.Views.Utils
+import Guide.Uid
 
 import qualified Data.Text.IO as T
 

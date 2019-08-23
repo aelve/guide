@@ -21,6 +21,7 @@ import Data.SafeCopy.Migrate
 -- scrypt
 import Crypto.Scrypt (EncryptedPass (..), Pass (..), encryptPassIO', getEncryptedPass, verifyPass')
 
+import Guide.Uid
 import Guide.Utils
 
 

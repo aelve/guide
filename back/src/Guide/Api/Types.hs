@@ -62,7 +62,8 @@ import Guide.Api.Utils
 import Guide.Markdown
 import Guide.Search
 import Guide.Types.Core as G
-import Guide.Utils (Uid (..), Url, fields)
+import Guide.Uid
+import Guide.Utils (Url, fields)
 
 import qualified Data.Aeson as Aeson
 import Data.Swagger as S
