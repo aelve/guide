@@ -11,7 +11,6 @@ import Imports
 import Data.Acid (EventResult, EventState, QueryEvent, query)
 import Hasql.Transaction (Transaction)
 import Hasql.Transaction.Sessions (Mode (..))
-import Named
 import Data.Generics.Uniplate.Operations (Biplate, transformBi)
 
 import Guide.Database.Connection
@@ -46,22 +45,25 @@ postgresLoader logger globalState = do
     -- Download from Postgres
     (catPostgres, catDeletedPostgres)
       <- runTransactionExceptT conn Read getCategories
-    -- Check identity of availiable categories
+    -- Check identity of available categories
     let checkedCat =
-          on (==) (sortOn categoryUid) catPostgres (categories globalState)
+          sortOn categoryUid catPostgres ==
+          sortOn categoryUid (categories globalState)
     -- Check identity of deleted categories
-    let checkedCatDeleted = on (==) (sortOn categoryUid)
-          catDeletedPostgres (categoriesDeleted globalState)
+    let checkedCatDeleted =
+          sortOn categoryUid catDeletedPostgres ==
+          sortOn categoryUid (categoriesDeleted globalState)
 
-    let checked = and [checkedCat,checkedCatDeleted]
+    let checked = checkedCat && checkedCatDeleted
     logDebugIO logger $ format "AcidState == Postgres: {}" checked
-    if checked then pure () else exitFailure
+    unless checked $ exitFailure
   where
     -- Insert all categories from AcidState either deleted or not.
     -- Categories be normilised before insertion. See 'normalizeUTC'.
     insertCategories :: GlobalState -> ExceptT DatabaseError Transaction ()
     insertCategories GlobalState{..} = do
-      mapM_ (insertCategoryWhole (#deleted False) . normalizeUTC) categories
+      mapM_ (insertCategoryWhole (#deleted False) . normalizeUTC)
+        categories
       mapM_ (insertCategoryWhole (#deleted True) . normalizeUTC)
         categoriesDeleted
 
@@ -190,4 +192,3 @@ getItemByRow itemRow@ItemRow{..} = do
     (#conTraits conTraits)
     (#conDeletedTraits conDeletedTraits)
     itemRow
-
