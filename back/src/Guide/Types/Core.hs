@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 -- | Core types for content.
@@ -63,7 +64,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 data Trait = Trait {
   traitUid     :: Uid Trait,
   traitContent :: MarkdownInline }
-  deriving (Show, Generic, Data, Eq)
+  deriving (Show, Generic, Data, Eq, NFData)
 
 deriveSafeCopySorted 4 'extension ''Trait
 makeClassWithLenses ''Trait
@@ -161,7 +162,7 @@ data ItemSection
   = ItemProsConsSection
   | ItemEcosystemSection
   | ItemNotesSection
-  deriving (Eq, Ord, Show, Generic, Data)
+  deriving (Eq, Ord, Show, Generic, Data, NFData)
 
 deriveSafeCopySimple 0 'base ''ItemSection
 
@@ -203,7 +204,7 @@ data Item = Item {
   itemNotes       :: MarkdownTree,    -- ^ The notes section
   itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
-  deriving (Generic, Data, Eq, Show)
+  deriving (Generic, Data, Eq, Show, NFData)
 
 deriveSafeCopySorted 13 'extension ''Item
 makeClassWithLenses ''Item
@@ -267,7 +268,7 @@ data CategoryStatus
   = CategoryStub                -- ^ “Stub” = just created
   | CategoryWIP                 -- ^ “WIP” = work in progress
   | CategoryFinished            -- ^ “Finished” = complete or nearly complete
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic, Data, NFData)
 
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
@@ -324,7 +325,7 @@ data Category = Category {
   -- 'ItemNotesSection', then notes will be shown for each item
   categoryEnabledSections :: Set ItemSection
   }
-  deriving (Generic, Data, Eq, Show)
+  deriving (Generic, Data, Eq, Show, NFData)
 
 deriveSafeCopySorted 13 'extension ''Category
 makeClassWithLenses ''Category

@@ -60,6 +60,8 @@ library:
   # You don't need to add modules here, all modules will be exposed automatically.
   #
   # exposed-modules:
+  ghc-options:
+    - -O
   dependencies:
   - acid-state
   - aeson
@@ -161,6 +163,7 @@ executables:
     # See https://github.com/sol/hpack/issues/182#issuecomment-310434881 for
     # the explanation of the quoting situation here.
     - '"-with-rtsopts=-T -N"'
+    - -O
     dependencies:
     - base
     - guide
@@ -197,3 +200,17 @@ tests:
     - temporary
     - webdriver
     - yaml
+
+benchmarks:
+  benchmarks:
+    main: Main.hs
+    source-dirs: benchmarks
+    dependencies:
+      - base <5
+      - guide
+      - gauge
+      - hasql
+      - hasql-transaction
+
+    ghc-options:
+    - -O

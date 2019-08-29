@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -64,20 +65,35 @@ data MarkdownInline = MarkdownInline {
   markdownInlineSource   :: Text,
   markdownInlineHtml     :: ByteString,
   markdownInlineMarkdown :: ![MD.Node] }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
 
 data MarkdownBlock = MarkdownBlock {
   markdownBlockSource   :: Text,
   markdownBlockHtml     :: ByteString,
   markdownBlockMarkdown :: ![MD.Node] }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
 
 data MarkdownTree = MarkdownTree {
   markdownTreeSource    :: Text,
   markdownTreeStructure :: !(Document Text ByteString),
   markdownTreeIdPrefix  :: Text,
   markdownTreeTOC       :: Forest Heading }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
+
+deriving instance NFData MD.Node
+deriving instance NFData MD.NodeType
+deriving instance NFData MD.ListAttributes
+deriving instance NFData MD.DelimType
+deriving instance NFData MD.ListType
+deriving instance NFData MD.PosInfo
+deriving instance NFData (WithSource [MD.Node])
+deriving instance (NFData b, NFData t) => NFData (Document t b)
+deriving instance (NFData b, NFData t) => NFData (Section t b)
+deriving instance NFData Heading
+-- instance NFData (Node a f) where
+--   rnf tree = foldl1 (seq . rnf) tree `seq` rnf (measure tree)
+  -- rnf = (`seq` ())
+  -- rnf (Node info nodeType nodes) = Node (rnf info) (rnf nodeType) (map rnf nodes)
 
 -- | Table-of-contents heading
 data Heading = Heading
