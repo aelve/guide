@@ -56,7 +56,7 @@ postgresLoader logger globalState = do
 
     let checked = checkedCat && checkedCatDeleted
     logDebugIO logger $ format "AcidState == Postgres: {}" checked
-    unless checked $ exitFailure
+    unless checked exitFailure
   where
     -- Insert all categories from AcidState either deleted or not.
     -- Categories be normilised before insertion. See 'normalizeUTC'.

@@ -3,6 +3,8 @@ module Guide.Database.Queries.Insert
 (
   -- * Category
   insertCategory,
+  insertCategory2,
+  insertCategoryWithCategory,
   insertCategoryWithCategoryRow,
   -- * Item
   insertItem,
@@ -23,6 +25,7 @@ import qualified Hasql.Transaction as HT
 import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils (execute)
+import Guide.Markdown (toMarkdownBlock)
 import Guide.Types.Core
 import Guide.Uid
 
@@ -99,6 +102,51 @@ insertCategoryWithCategoryRow categoryRow = do
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         |]
   lift $ HT.statement categoryRow statement
+
+insertCategory2
+  :: Uid Category          -- ^ New category's id
+  -> "title" :! Text
+  -> "group" :! Text
+  -> "created" :! UTCTime
+  -> "status" :! CategoryStatus
+  -> "enabledSections" :! Set ItemSection
+  -> ExceptT DatabaseError Transaction ()
+insertCategory2
+  catId
+  (arg #title -> title)
+  (arg #group -> group_)
+  (arg #created -> created)
+  (arg #status -> status)
+  (arg #enabledSections -> enabledSections)
+  =
+  do
+  let category = Category
+        { categoryUid = catId
+        , categoryTitle = title
+        , categoryCreated = created
+        , categoryGroup = group_
+        , categoryStatus = status
+        , categoryNotes = toMarkdownBlock ""
+        , categoryItems = []
+        , categoryItemsDeleted = []
+        , categoryEnabledSections = enabledSections
+        }
+  insertCategoryWithCategory category
+
+-- | Create category passing 'Category'.
+insertCategoryWithCategory :: Category -> ExceptT DatabaseError Transaction ()
+insertCategoryWithCategory category = do
+  let statement :: Statement (Uid Category, Category) ()
+      statement =
+        [execute|
+          INSERT INTO categories
+            ( uid
+            , data
+            )
+          VALUES ($1,$2)
+        |]
+  lift $ HT.statement (categoryUid category, category) statement
+
 
 ----------------------------------------------------------------------------
 -- Item

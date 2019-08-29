@@ -6,7 +6,9 @@ module Guide.Database.Queries.Select
 (
   -- * Category
   selectCategoryRow,
+  selectCategory,
   selectCategoryRowMaybe,
+  selectCategoryMaybe,
   selectCategoryRows,
   selectCategoryRowByItemMaybe,
   selectCategoryIds,
@@ -45,6 +47,24 @@ import Guide.Uid
 ----------------------------------------------------------------------------
 -- Categories
 ----------------------------------------------------------------------------
+
+selectCategoryMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe Category)
+selectCategoryMaybe catId = do
+  let statement :: Statement (Uid Category) (Maybe Category)
+      statement = dimap SingleParam (fmap fromSingleColumn) $
+        [queryRowMaybe|
+          SELECT data
+          FROM categories
+          WHERE uid = $1
+        |]
+  lift $ HT.statement catId statement
+
+selectCategory :: Uid Category -> ExceptT DatabaseError Transaction Category
+selectCategory catId = do
+  mCatRow <- selectCategoryMaybe catId
+  case mCatRow of
+    Nothing     -> throwError $ CategoryNotFound catId
+    Just catRow -> pure catRow
 
 -- | Get a 'CategoryRow'.
 selectCategoryRowMaybe :: Uid Category -> ExceptT DatabaseError Transaction (Maybe CategoryRow)

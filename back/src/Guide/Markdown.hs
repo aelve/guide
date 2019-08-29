@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 -- | Everything concerning rendering and processing Markdown.
@@ -46,6 +46,9 @@ import ShortcutLinks.All (hackage)
 -- acid-state
 import Data.SafeCopy
 
+import Data.Functor.Contravariant ((>$<))
+
+import Guide.Database.Utils (FromPostgres (..), ToPostgres (..))
 import Guide.Utils
 
 import qualified CMark as MD
@@ -53,6 +56,8 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
 
 
 data MarkdownInline = MarkdownInline {
@@ -77,7 +82,7 @@ data MarkdownTree = MarkdownTree {
 -- | Table-of-contents heading
 data Heading = Heading
     { headingMarkdown :: MarkdownInline
-    , headingSlug :: Text
+    , headingSlug     :: Text
     } deriving (Generic, Data, Eq)
 
 makeClassWithLenses ''MarkdownInline
@@ -320,6 +325,19 @@ instance Aeson.ToJSON MarkdownTree where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownTreeSource md ]
 
+instance Aeson.FromJSON MarkdownInline where
+  parseJSON = Aeson.withObject "MarkdownInline" $ \o -> do
+    txt <- o Aeson..: "text"
+    pure $ toMarkdownInline txt
+instance Aeson.FromJSON MarkdownBlock where
+  parseJSON = Aeson.withObject "MarkdownBlock" $ \o -> do
+    txt <- o Aeson..: "text"
+    pure $ toMarkdownBlock txt
+instance Aeson.FromJSON MarkdownTree where
+  parseJSON = Aeson.withObject "MarkdownTree" $ \o -> do
+    txt <- o Aeson..: "text"
+    pure $ toMarkdownTree "" txt
+
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml
   toHtml    = toHtmlRaw . markdownInlineHtml
@@ -362,3 +380,21 @@ instance SafeCopy MarkdownTree where
     safePut (markdownTreeSource md)
   getCopy = contain $
     toMarkdownTree <$> safeGet <*> safeGet
+
+instance ToPostgres MarkdownInline where
+  toPostgres = markdownInlineSource >$< HE.text
+
+instance ToPostgres MarkdownBlock where
+  toPostgres = markdownBlockSource >$< HE.text
+
+instance ToPostgres MarkdownTree where
+  toPostgres = markdownTreeSource >$< HE.text
+
+instance FromPostgres MarkdownInline where
+  fromPostgres = toMarkdownInline <$> HD.text
+
+instance FromPostgres MarkdownBlock where
+  fromPostgres = toMarkdownBlock <$> HD.text
+
+instance FromPostgres MarkdownTree where
+  fromPostgres = toMarkdownTree "" <$> HD.text

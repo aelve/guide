@@ -2,6 +2,7 @@ module Guide.Database.Queries.Update
 (
   -- * Category
   updateCategoryRow,
+  updateCategory,
   -- * Item
   updateItemRow,
   -- * Trait
@@ -27,6 +28,21 @@ import Guide.Utils (fieldsPrefixed)
 ----------------------------------------------------------------------------
 -- Categories
 ----------------------------------------------------------------------------
+
+updateCategory
+  :: Uid Category
+  -> (Category -> Category)
+  -> ExceptT DatabaseError Transaction ()
+updateCategory catId update = do
+  old_category <- selectCategory catId
+  let new_category = update old_category
+  when (old_category /= new_category) $ do
+    let statement :: Statement (Uid Category, Category) ()
+        statement = [execute|
+          UPDATE categories
+          SET data = $2
+          WHERE uid = $1|]
+    lift $ HT.statement (catId, new_category) statement
 
 -- | Fetch a row corresponding to a category, apply a function and write it
 -- back. You can break database invariants with this function, so be

@@ -27,15 +27,16 @@ where
 
 import Imports
 
+import Data.Functor.Contravariant ((>$<))
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
+import Guide.Database.Utils (ToPostgres (..), FromPostgres (..), ToPostgresParams (..), FromPostgresRow (..))
 import Guide.Markdown
 import Guide.Types.Hue
-import Guide.Utils
 import Guide.Uid
-import Guide.Database.Utils (ToPostgres (..), FromPostgres (..))
+import Guide.Utils
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Text as T
@@ -73,6 +74,20 @@ deriveSafeCopySorted 3 'base ''Trait_v3
 instance Aeson.ToJSON Trait where
   toJSON = Aeson.genericToJSON Aeson.defaultOptions {
     Aeson.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
+
+instance Aeson.FromJSON Trait where
+  parseJSON = Aeson.withObject "Trait" $ \o -> do
+    traitUid     <- o Aeson..: "uid"
+    content      <- o Aeson..: "content"
+    traitContent <- toMarkdownInline <$> content Aeson..: "text"
+    pure Trait{..}
+
+instance ToPostgres Trait where
+  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
+
+instance FromPostgres Trait where
+  fromPostgres = HD.jsonbBytes $
+    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
 
 -- | ADT for trait type. Traits can be pros (positive traits) and cons
 -- (negative traits).
@@ -216,6 +231,33 @@ instance Aeson.ToJSON Item where
   toJSON = Aeson.genericToJSON Aeson.defaultOptions {
     Aeson.fieldLabelModifier = over _head toLower . drop (T.length "item") }
 
+instance Aeson.FromJSON Item where
+  parseJSON = Aeson.withObject "Item" $ \o -> do
+    itemUid         <- o Aeson..: "uid"
+    itemName        <- o Aeson..: "name"
+    itemCreated     <- o Aeson..: "created"
+    itemHackage     <- o Aeson..:? "hackage"
+    summary         <- o Aeson..: "summary"
+    itemSummary     <- toMarkdownBlock <$> summary Aeson..: "text"
+    itemPros        <- o Aeson..: "pros"
+    itemProsDeleted <- o Aeson..: "prosDeleted"
+    itemCons        <- o Aeson..: "cons"
+    itemConsDeleted <- o Aeson..: "consDeleted"
+    ecosystem       <- o Aeson..: "ecosystem"
+    itemEcosystem   <- toMarkdownBlock <$> ecosystem Aeson..: "text"
+    notes           <- o Aeson..: "notes"
+    let prefix = "item-notes-" <> uidToText itemUid <> "-"
+    itemNotes       <- toMarkdownTree prefix <$> notes Aeson..: "text"
+    itemLink        <- o Aeson..:? "link"
+    pure Item{..}
+
+instance ToPostgres Item where
+  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
+
+instance FromPostgres Item where
+  fromPostgres = HD.jsonbBytes $
+    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
+
 ----------------------------------------------------------------------------
 -- Category
 ----------------------------------------------------------------------------
@@ -318,6 +360,30 @@ deriveSafeCopySorted 8 'base ''Category_v8
 instance Aeson.ToJSON Category where
   toJSON = Aeson.genericToJSON Aeson.defaultOptions {
     Aeson.fieldLabelModifier = over _head toLower . drop (T.length "category") }
+
+instance Aeson.FromJSON Category where
+  parseJSON = Aeson.withObject "Category" $ \o -> do
+    categoryUid             <- o Aeson..: "uid"
+    categoryTitle           <- o Aeson..: "title"
+    categoryCreated         <- o Aeson..: "created"
+    categoryGroup           <- o Aeson..: "group"
+    categoryStatus          <- o Aeson..: "status"
+    notes                   <- o Aeson..: "notes"
+    categoryNotes           <- toMarkdownBlock <$> notes Aeson..: "text"
+    categoryItems           <- o Aeson..: "items"
+    categoryItemsDeleted    <- o Aeson..: "itemsDeleted"
+    categoryEnabledSections <- o Aeson..: "enabledSections"
+    pure Category{..}
+
+instance ToPostgres Category where
+  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
+
+instance FromPostgres Category where
+  fromPostgres = HD.jsonbBytes $
+    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
+
+instance ToPostgresParams Category
+instance FromPostgresRow Category
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be
