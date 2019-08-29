@@ -1,6 +1,6 @@
 import Router from 'vue-router'
 
-function createRouter () {
+function createRouter (store) {
   return new Router({
     mode: 'history',
     fallback: false,
@@ -24,10 +24,32 @@ function createRouter () {
         component: () => import('../page/Index.vue')
       },
       {
+        async beforeEnter (to, from, next) {
+          const categoryId = to.params.category.split('#').shift().split('-').pop()
+          const goTo404 = () => next({
+            name: 'Page404',
+            params: { 0: to.path } // params '0' property used as path for fallback routes like "Page404"
+          })
+          if (!categoryId) {
+            goTo404()
+          }
+          try {
+            await store.dispatch('category/loadCategory', categoryId)
+            next()
+          } catch (e) {
+            // if category with such id not found, replace component with 404 page
+            const is404 = e.response && e.response.status === 404
+            if (is404) {
+              goTo404()
+            } else {
+              // TODO create 500 error page page
+              throw e
+            }
+          }
+        },
         path: '/haskell/:category',
         name: 'Category',
         component: () => import('../page/CategoryPage.vue'),
-        props: (route) => ({ categoryId: route.params.category.split('#').shift().split('-').pop() })
       },
       {
         path: '/haskell/search/results/',

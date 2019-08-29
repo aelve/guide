@@ -17,18 +17,8 @@ import { Prop, Watch } from 'vue-property-decorator'
 })
 
 export default class CategoryPage extends Vue {
-  @Prop(String) categoryId!: string
-
   get category () {
     return this.$store.state.category.category
-  }
-
-  // TODO handle case when category was deleted. Go back in that case
-  async serverPrefetch () {
-    if (!this.categoryId) {
-      return
-    }
-    await this.$store.dispatch('category/loadCategory', this.categoryId)
   }
 
   beforeMount () {
