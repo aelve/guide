@@ -66,14 +66,11 @@ import Imports
 
 -- Monads and monad transformers
 import Control.Monad.Catch
--- Randomness
-import System.Random
 -- Network
 import Data.IP
 -- Web
 import Lucid hiding (for_)
 import Text.HTML.SanitizeXSS (sanitaryURI)
-import Web.HttpApiData
 import Web.Spock as Spock
 -- Feeds
 -- acid-state
