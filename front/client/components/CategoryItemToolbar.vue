@@ -83,6 +83,7 @@
               <v-btn
                 icon
                 small
+                :ripple="false"
                 title="Actions"
                 class="category-toolbar-mobile-menu-btn"
                 v-on="on"
