@@ -1,7 +1,5 @@
 <template>
-  <category
-    :categoryId="categoryId"
-  />
+  <category />
 </template>
 
 <script lang="ts">

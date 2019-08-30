@@ -38,6 +38,7 @@ function createRouter (store) {
             next()
           } catch (e) {
             // if category with such id not found, replace component with 404 page
+            // TODO use new api than this issue fixed https://github.com/vuejs/vue-router/issues/977
             const is404 = e.response && e.response.status === 404
             if (is404) {
               goTo404()

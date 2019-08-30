@@ -70,12 +70,14 @@ import AddItemDialog from 'client/components/AddItemDialog.vue'
   }
 })
 export default class Category extends Vue {
-  @Prop(String) categoryId!: string
-
   isAddItemDialogOpen: boolean = false
 
   get category () {
     return this.$store.state.category.category
+  }
+
+  get categoryId () {
+    return this.$store.state.category.category.id
   }
 
   get categoryUrl () {
