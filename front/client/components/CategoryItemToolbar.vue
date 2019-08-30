@@ -336,8 +336,8 @@ export default class CategoryItemToolbar extends Vue {
   display: flex;
   line-height: 1;
 }
-.category-item-anchor {
-  color: rgb(151, 151, 151);
+a.category-item-anchor {
+  color: #616161;
 }
 .category-item-name-and-badges {
   margin-left: 0.4rem;
