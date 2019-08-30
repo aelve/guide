@@ -271,7 +271,7 @@ export default class CategoryItemToolbar extends Vue {
     if (!trimmed) {
       return null
     }
-    return this.itemLink === trimmed ? this.itemLink : normalizeUrl(trimmed)
+    return this.itemLink === trimmed ? this.itemLink : normalizeUrl(trimmed, { stripWWW: false })
   }
 
   @Confirm({
