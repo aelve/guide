@@ -307,6 +307,10 @@ export default class CategoryItemToolbar extends Vue {
   max-height: 300px;
 }
 .category-item-toolbar__header >>> {
+  .v-toolbar__title {
+    overflow: visible;
+  }
+
   .v-toolbar__content {
     justify-content: space-between;
     /* Vuetify sets inline height style */
