@@ -160,7 +160,10 @@
     >
       <v-layout column class="pa-3">
         <v-flex>
-          <v-form @keydown.native.enter.ctrl="updateItemInfo">
+          <v-form
+            @keydown.native.enter.ctrl="updateItemInfo"
+            @keydown.native.enter.meta="updateItemInfo"
+          >
             <v-text-field
               v-model="itemNameEdit"
               label="Name"
