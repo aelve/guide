@@ -20,8 +20,7 @@
       <v-card-text>
         <v-form
           v-model="isValid"
-          @keydown.native.prevent.ctrl.enter="updateCategoryInfo"
-          @keydown.native.prevent.meta.enter="updateCategoryInfo"
+          @keydown.native.prevent.enter="updateCategoryInfo"
         >
           <!-- reason for "v-if" - see AddCategoryDialog.vue template-->
           <v-text-field
