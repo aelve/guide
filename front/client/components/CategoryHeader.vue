@@ -60,27 +60,27 @@
         </template>
 
         <v-list class="category-actions-menu-list">
-          <v-list-tile>
+          <v-list-item>
             <CategoryHeaderBtn
               text="New item"
               icon="plus"
               @click="openAddItemDialog"
             />
-          </v-list-tile>
-          <v-list-tile>
+          </v-list-item>
+          <v-list-item>
             <CategoryHeaderBtn
               text="Category settings"
               icon="cog"
               @click="openCategorySettingsEditDialog"
             />
-          </v-list-tile>
-          <v-list-tile>
+          </v-list-item>
+          <v-list-item>
             <CategoryHeaderBtn
               text="Delete category"
               icon="trash-alt"
               @click="deleteCategory"
             />
-          </v-list-tile>
+          </v-list-item>
         </v-list>
       </v-menu>
 
