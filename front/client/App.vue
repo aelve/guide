@@ -137,12 +137,23 @@ code {
   font-weight: 500;
   box-shadow: none;
   background: rgba(10, 10, 10, 0.04);
+
+  &:not(.sourceCode) {
+    font-weight: 800;
+    line-height: 125%;
+    padding: 2px 3px;
+    border: 1px solid rgba(29, 28, 29, 0.13);
+    border-radius: 3px;
+    background-color: #fafafa;
+    box-shadow: none;
+    font-weight: normal;
+  }
 }
 /* Vuetify css adds unwanted space to start and end of code and kbd tag */
-code:after,
-kbd:after,
-code:before,
-kbd:before {
+.v-application code:after,
+.v-application kbd:after,
+.v-application code:before,
+.v-application kbd:before {
   content: "";
   letter-spacing: initial;
 }
