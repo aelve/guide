@@ -15,8 +15,6 @@ import Data.Profunctor (lmap)
 
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Queries.Select
-import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils
 import Guide.Types.Core

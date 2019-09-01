@@ -37,6 +37,13 @@ loadIntoPostgres config@Config{..} = withLogger config $ \logger -> do
 postgresLoader :: Logger -> GlobalState -> IO ()
 postgresLoader logger globalState = do
     -- Postgres should be started and 'guide' base created.
+    -- Don't forget to drop and create schema
+    {-
+      DROP SCHEMA public CASCADE;
+      CREATE SCHEMA public;
+      GRANT ALL ON SCHEMA public TO postgres;
+      GRANT ALL ON SCHEMA public TO public;
+    -}
     setupDatabase
     -- Upload to Postgres
     conn <- connect

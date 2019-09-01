@@ -33,14 +33,13 @@ import Data.Functor.Contravariant ((>$<))
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
-import Guide.Database.Utils (ToPostgres (..), FromPostgres (..), ToPostgresParams (..), FromPostgresRow (..))
+import Guide.Database.Utils
 import Guide.Markdown
 import Guide.Types.Hue
 import Guide.Uid
 import Guide.Utils
 
 import qualified Data.Aeson as Aeson
-import qualified Data.Text as T
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 
@@ -73,22 +72,16 @@ changelog ''Trait (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance Aeson.ToJSON Trait where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
+  toJSON $(fields 'Trait) = Aeson.object [
+    "uid"             Aeson..= traitUid,
+    "content"         Aeson..= traitContent
+    ]
 
 instance Aeson.FromJSON Trait where
   parseJSON = Aeson.withObject "Trait" $ \o -> do
     traitUid     <- o Aeson..: "uid"
-    content      <- o Aeson..: "content"
-    traitContent <- toMarkdownInline <$> content Aeson..: "text"
+    traitContent <- o Aeson..: "content"
     pure Trait{..}
-
-instance ToPostgres Trait where
-  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
-
-instance FromPostgres Trait where
-  fromPostgres = HD.jsonbBytes $
-    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
 
 -- | ADT for trait type. Traits can be pros (positive traits) and cons
 -- (negative traits).
@@ -229,35 +222,36 @@ changelog ''Item (Past 11, Past 10) []
 deriveSafeCopySorted 10 'base ''Item_v10
 
 instance Aeson.ToJSON Item where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "item") }
+  toJSON $(fields 'Item) = Aeson.object [
+    "uid"           Aeson..= itemUid,
+    "name"          Aeson..= itemName,
+    "created"       Aeson..= itemCreated,
+    "hackage"       Aeson..= itemHackage,
+    "summary"       Aeson..= itemSummary,
+    "pros"          Aeson..= itemPros,
+    "prosDeleted"   Aeson..= itemProsDeleted,
+    "cons"          Aeson..= itemCons,
+    "consDeleted"   Aeson..= itemConsDeleted,
+    "ecosystem"     Aeson..= itemEcosystem,
+    "notes"         Aeson..= itemNotes,
+    "link"          Aeson..= itemLink
+    ]
 
 instance Aeson.FromJSON Item where
   parseJSON = Aeson.withObject "Item" $ \o -> do
-    itemUid         <- o Aeson..: "uid"
-    itemName        <- o Aeson..: "name"
-    itemCreated     <- o Aeson..: "created"
+    itemUid         <- o Aeson..:  "uid"
+    itemName        <- o Aeson..:  "name"
+    itemCreated     <- o Aeson..:  "created"
     itemHackage     <- o Aeson..:? "hackage"
-    summary         <- o Aeson..: "summary"
-    itemSummary     <- toMarkdownBlock <$> summary Aeson..: "text"
-    itemPros        <- o Aeson..: "pros"
-    itemProsDeleted <- o Aeson..: "prosDeleted"
-    itemCons        <- o Aeson..: "cons"
-    itemConsDeleted <- o Aeson..: "consDeleted"
-    ecosystem       <- o Aeson..: "ecosystem"
-    itemEcosystem   <- toMarkdownBlock <$> ecosystem Aeson..: "text"
-    notes           <- o Aeson..: "notes"
-    let prefix = "item-notes-" <> uidToText itemUid <> "-"
-    itemNotes       <- toMarkdownTree prefix <$> notes Aeson..: "text"
+    itemSummary     <- o Aeson..:  "summary"
+    itemPros        <- o Aeson..:  "pros"
+    itemProsDeleted <- o Aeson..:  "prosDeleted"
+    itemCons        <- o Aeson..:  "cons"
+    itemConsDeleted <- o Aeson..:  "consDeleted"
+    itemEcosystem   <- o Aeson..:  "ecosystem"
+    itemNotes       <- o Aeson..:  "notes"
     itemLink        <- o Aeson..:? "link"
     pure Item{..}
-
-instance ToPostgres Item where
-  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
-
-instance FromPostgres Item where
-  fromPostgres = HD.jsonbBytes $
-    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
 
 ----------------------------------------------------------------------------
 -- Category
@@ -359,8 +353,17 @@ changelog ''Category (Past 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8
 
 instance Aeson.ToJSON Category where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "category") }
+  toJSON $(fields 'Category) = Aeson.object [
+    "uid"             Aeson..= categoryUid,
+    "title"           Aeson..= categoryTitle,
+    "created"         Aeson..= categoryCreated,
+    "group"           Aeson..= categoryGroup,
+    "status"          Aeson..= categoryStatus,
+    "notes"           Aeson..= categoryNotes,
+    "items"           Aeson..= categoryItems,
+    "itemsDeleted"    Aeson..= categoryItemsDeleted,
+    "enabledSections" Aeson..= categoryEnabledSections
+    ]
 
 instance Aeson.FromJSON Category where
   parseJSON = Aeson.withObject "Category" $ \o -> do
@@ -369,8 +372,7 @@ instance Aeson.FromJSON Category where
     categoryCreated         <- o Aeson..: "created"
     categoryGroup           <- o Aeson..: "group"
     categoryStatus          <- o Aeson..: "status"
-    notes                   <- o Aeson..: "notes"
-    categoryNotes           <- toMarkdownBlock <$> notes Aeson..: "text"
+    categoryNotes           <- o Aeson..: "notes"
     categoryItems           <- o Aeson..: "items"
     categoryItemsDeleted    <- o Aeson..: "itemsDeleted"
     categoryEnabledSections <- o Aeson..: "enabledSections"
@@ -382,9 +384,6 @@ instance ToPostgres Category where
 instance FromPostgres Category where
   fromPostgres = HD.jsonbBytes $
     either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
-
-instance ToPostgresParams Category
-instance FromPostgresRow Category
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be

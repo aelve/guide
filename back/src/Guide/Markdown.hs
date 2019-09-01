@@ -47,9 +47,6 @@ import ShortcutLinks.All (hackage)
 -- acid-state
 import Data.SafeCopy
 
-import Data.Functor.Contravariant ((>$<))
-
-import Guide.Database.Utils (FromPostgres (..), ToPostgres (..))
 import Guide.Utils
 
 import qualified CMark as MD
@@ -57,8 +54,6 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
 import qualified Data.Set as S
 import qualified Data.Text as T
-import qualified Hasql.Decoders as HD
-import qualified Hasql.Encoders as HE
 
 
 data MarkdownInline = MarkdownInline {
@@ -90,10 +85,6 @@ deriving instance NFData (WithSource [MD.Node])
 deriving instance (NFData b, NFData t) => NFData (Document t b)
 deriving instance (NFData b, NFData t) => NFData (Section t b)
 deriving instance NFData Heading
--- instance NFData (Node a f) where
---   rnf tree = foldl1 (seq . rnf) tree `seq` rnf (measure tree)
-  -- rnf = (`seq` ())
-  -- rnf (Node info nodeType nodes) = Node (rnf info) (rnf nodeType) (map rnf nodes)
 
 -- | Table-of-contents heading
 data Heading = Heading
@@ -339,7 +330,8 @@ instance Aeson.ToJSON MarkdownBlock where
     "html" Aeson..= utf8ToText (markdownBlockHtml md) ]
 instance Aeson.ToJSON MarkdownTree where
   toJSON md = Aeson.object [
-    "text" Aeson..= markdownTreeSource md ]
+    "text" Aeson..= markdownTreeSource md,
+    "prefix" Aeson..= markdownTreeIdPrefix md ]
 
 instance Aeson.FromJSON MarkdownInline where
   parseJSON = Aeson.withObject "MarkdownInline" $ \o -> do
@@ -352,7 +344,8 @@ instance Aeson.FromJSON MarkdownBlock where
 instance Aeson.FromJSON MarkdownTree where
   parseJSON = Aeson.withObject "MarkdownTree" $ \o -> do
     txt <- o Aeson..: "text"
-    pure $ toMarkdownTree "" txt
+    prefix <- o Aeson..:? "prefix" Aeson..!= T.empty
+    pure $ toMarkdownTree prefix txt
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml
@@ -396,21 +389,3 @@ instance SafeCopy MarkdownTree where
     safePut (markdownTreeSource md)
   getCopy = contain $
     toMarkdownTree <$> safeGet <*> safeGet
-
-instance ToPostgres MarkdownInline where
-  toPostgres = markdownInlineSource >$< HE.text
-
-instance ToPostgres MarkdownBlock where
-  toPostgres = markdownBlockSource >$< HE.text
-
-instance ToPostgres MarkdownTree where
-  toPostgres = markdownTreeSource >$< HE.text
-
-instance FromPostgres MarkdownInline where
-  fromPostgres = toMarkdownInline <$> HD.text
-
-instance FromPostgres MarkdownBlock where
-  fromPostgres = toMarkdownBlock <$> HD.text
-
-instance FromPostgres MarkdownTree where
-  fromPostgres = toMarkdownTree "" <$> HD.text

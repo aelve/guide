@@ -2,6 +2,7 @@ module Guide.Database.Queries.Update
 (
   -- * Category
   updateCategory,
+  updateCategoryArchived,
   -- updateCategoryRow,
   -- * Item
   -- updateItemRow,
@@ -22,7 +23,6 @@ import Guide.Database.Types
 import Guide.Database.Utils
 import Guide.Types.Core
 import Guide.Uid
-import Guide.Utils (fieldsPrefixed)
 
 
 ----------------------------------------------------------------------------
@@ -47,11 +47,11 @@ updateCategory catId update = do
     lift $ HT.statement (catId, new_category) statement
 
 -- | Update category archived field when it is different then passed parameter.
-updateCategoryArchive
+updateCategoryArchived
   :: Uid Category
   -> "archived" :! Bool
   -> ExceptT DatabaseError Transaction ()
-updateCategoryArchive catId (arg #archived -> archived) = do
+updateCategoryArchived catId (arg #archived -> archived) = do
   isArchived <- isCategoryArchived catId
   when (isArchived /= archived) $ do
     let statement :: Statement (Uid Category, Bool) ()

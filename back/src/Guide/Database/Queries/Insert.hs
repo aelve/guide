@@ -21,7 +21,6 @@ import Hasql.Transaction (Transaction)
 
 import qualified Hasql.Transaction as HT
 
-import Guide.Database.Queries.Update
 import Guide.Database.Types
 import Guide.Database.Utils (execute)
 import Guide.Markdown (toMarkdownBlock)

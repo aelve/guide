@@ -37,7 +37,7 @@ import Imports
 
 import Hasql.Statement (Statement (..))
 import Hasql.Transaction (Transaction)
-import Data.Profunctor (rmap, dimap)
+import Data.Profunctor (dimap)
 
 import qualified Hasql.Transaction as HT
 
