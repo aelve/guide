@@ -53,8 +53,8 @@ jobs:
         - git remote set-url origin git@github.com:aelve/guide.git
       script:
         # Build
-        - stack --no-terminal build --test --no-run-tests --dependencies-only
-        - stack --no-terminal build --test --no-run-tests
+        - stack --no-terminal build --test --no-run-tests --bench --no-run-benchmarks --dependencies-only
+        - stack --no-terminal build --test --no-run-tests --bench --no-run-benchmarks
         # Regenerate Swagger and push to the same branch, even if the branch
         # is already ahead (which may happen if the previous build in the
         # pipeline also pushed to it)
@@ -87,7 +87,7 @@ jobs:
         # from scratch, then we build haddocks and count the lines for
         # "missing documentation".
         - stack --no-terminal exec -- ghc-pkg unregister guide
-        - stack --no-terminal build --test --no-run-tests --haddock --no-haddock-deps --haddock-arguments='--no-warnings' 2> haddock.log
+        - stack --no-terminal build --test --no-run-tests --bench --no-run-benchmarks --haddock --no-haddock-deps --haddock-arguments='--no-warnings' 2> haddock.log
         - export undocumented=$(awk '/\(src\// {count++} END{print count}' haddock.log)
         - |
           echo "Undocumented definitions: $undocumented"

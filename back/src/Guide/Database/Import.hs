@@ -20,12 +20,11 @@ import Guide.Database.Schema
 import Guide.Database.Types
 import Guide.State
 import Guide.Types.Core
-import Guide.Uid
 import Guide.Config
 import Guide.Logger
 
 
--- | Load categories and deleted categories from acid state to postgres
+-- | Load categories and archives categories from acid state to postgres
 -- and check if they are equal.
 --
 -- NOTE: It loads categories and categoriesDeleted fields of GlobalState only.
@@ -43,28 +42,30 @@ postgresLoader logger globalState = do
     conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
     -- Download from Postgres
-    (catPostgres, catDeletedPostgres)
-      <- runTransactionExceptT conn Read getCategories
+    catPostgres <- runTransactionExceptT conn Read $
+      selectCategories (#archived False)
+    catarchivedPostgres <- runTransactionExceptT conn Read $
+      selectCategories (#archived True)
     -- Check identity of available categories
     let checkedCat =
           sortOn categoryUid catPostgres ==
           sortOn categoryUid (categories globalState)
-    -- Check identity of deleted categories
+    -- Check identity of archived categories
     let checkedCatDeleted =
-          sortOn categoryUid catDeletedPostgres ==
+          sortOn categoryUid catarchivedPostgres ==
           sortOn categoryUid (categoriesDeleted globalState)
 
     let checked = checkedCat && checkedCatDeleted
     logDebugIO logger $ format "AcidState == Postgres: {}" checked
     unless checked exitFailure
   where
-    -- Insert all categories from AcidState either deleted or not.
+    -- Insert all categories from AcidState either archived or not.
     -- Categories be normilised before insertion. See 'normalizeUTC'.
     insertCategories :: GlobalState -> ExceptT DatabaseError Transaction ()
     insertCategories GlobalState{..} = do
-      mapM_ (insertCategoryWhole (#deleted False) . normalizeUTC)
+      mapM_ (insertCategoryWithCategory (#archived False) . normalizeUTC)
         categories
-      mapM_ (insertCategoryWhole (#deleted True) . normalizeUTC)
+      mapM_ (insertCategoryWithCategory (#archived True) . normalizeUTC)
         categoriesDeleted
 
 ----------------------------------------------------------------------------
@@ -97,98 +98,98 @@ cutUTCTime UTCTime{..} = UTCTime{utctDay, utctDayTime = utctDayTimeCut}
 ----------------------------------------------------------------------------
 
 -- | Insert category at whole (with items and traits).
-insertCategoryWhole
-  :: "deleted" :! Bool
-  -> Category
-  -> ExceptT DatabaseError Transaction ()
-insertCategoryWhole (arg #deleted -> deleted) category@Category{..} = do
-  insertCategoryByRow category (#deleted deleted)
-  insertItemsOfCategory category
-  mapM_ insertTraitsOfItem categoryItems
-  mapM_ insertTraitsOfItem categoryItemsDeleted
+-- insertCategoryWhole
+--   :: "deleted" :! Bool
+--   -> Category
+--   -> ExceptT DatabaseError Transaction ()
+-- insertCategoryWhole (arg #deleted -> deleted) category@Category{..} = do
+--   insertCategoryByRow category (#deleted deleted)
+--   insertItemsOfCategory category
+--   mapM_ insertTraitsOfItem categoryItems
+--   mapM_ insertTraitsOfItem categoryItemsDeleted
 
 -- | Insert to postgres all items of Category.
-insertItemsOfCategory :: Category -> ExceptT DatabaseError Transaction ()
-insertItemsOfCategory Category{..} = do
-  mapM_ (insertItemByRow categoryUid (#deleted False)) categoryItems
-  mapM_ (insertItemByRow categoryUid (#deleted True)) categoryItemsDeleted
+-- insertItemsOfCategory :: Category -> ExceptT DatabaseError Transaction ()
+-- insertItemsOfCategory Category{..} = do
+--   mapM_ (insertItemByRow categoryUid (#deleted False)) categoryItems
+--   mapM_ (insertItemByRow categoryUid (#deleted True)) categoryItemsDeleted
 
 -- | Insert to postgres all traits of Item.
-insertTraitsOfItem :: Item -> ExceptT DatabaseError Transaction ()
-insertTraitsOfItem Item{..} = do
-  mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypePro) itemPros
-  mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypePro) itemProsDeleted
-  mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypeCon) itemCons
-  mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypeCon) itemConsDeleted
+-- insertTraitsOfItem :: Item -> ExceptT DatabaseError Transaction ()
+-- insertTraitsOfItem Item{..} = do
+--   mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypePro) itemPros
+--   mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypePro) itemProsDeleted
+--   mapM_ (insertTraitByRow itemUid (#deleted False) TraitTypeCon) itemCons
+--   mapM_ (insertTraitByRow itemUid (#deleted True) TraitTypeCon) itemConsDeleted
 
 -- | Insert category passing 'Category'.
-insertCategoryByRow
-  :: Category
-  -> "deleted" :! Bool
-  -> ExceptT DatabaseError Transaction ()
-insertCategoryByRow category (arg #deleted -> deleted) = do
-    let categoryRow = categoryToRowCategory category (#deleted deleted)
-    insertCategoryWithCategoryRow categoryRow
+-- insertCategoryByRow
+--   :: Category
+--   -> "deleted" :! Bool
+--   -> ExceptT DatabaseError Transaction ()
+-- insertCategoryByRow category (arg #deleted -> deleted) = do
+--     let categoryRow = categoryToRowCategory category (#deleted deleted)
+--     insertCategoryWithCategoryRow categoryRow
 
 -- | Insert item passing 'Item'.
-insertItemByRow
-  :: Uid Category
-  -> "deleted" :! Bool
-  -> Item
-  -> ExceptT DatabaseError Transaction ()
-insertItemByRow catId (arg #deleted -> deleted) item = do
-  let itemRow = itemToRowItem catId (#deleted deleted) item
-  insertItemWithItemRow itemRow
+-- insertItemByRow
+--   :: Uid Category
+--   -> "deleted" :! Bool
+--   -> Item
+--   -> ExceptT DatabaseError Transaction ()
+-- insertItemByRow catId (arg #deleted -> deleted) item = do
+--   let itemRow = itemToRowItem catId (#deleted deleted) item
+--   insertItemWithItemRow itemRow
 
 -- | Insert trait passing 'Trait'.
-insertTraitByRow
-  :: Uid Item
-  -> "deleted" :! Bool
-  -> TraitType
-  -> Trait
-  -> ExceptT DatabaseError Transaction ()
-insertTraitByRow itemId (arg #deleted -> deleted) traitType trait = do
-  let traitRow = traitToTraitRow itemId (#deleted deleted) traitType trait
-  insertTraitWithTraitRow traitRow
+-- insertTraitByRow
+--   :: Uid Item
+--   -> "deleted" :! Bool
+--   -> TraitType
+--   -> Trait
+--   -> ExceptT DatabaseError Transaction ()
+-- insertTraitByRow itemId (arg #deleted -> deleted) traitType trait = do
+--   let traitRow = traitToTraitRow itemId (#deleted deleted) traitType trait
+--   insertTraitWithTraitRow traitRow
 
 ----------------------------------------------------------------------------
 -- Get helpers
 ----------------------------------------------------------------------------
 
 -- | Get all categories and categoriesDeleted.
-getCategories :: ExceptT DatabaseError Transaction ([Category], [Category])
-getCategories = do
-    categoryRowsAll <- selectCategoryRows
-    let (categoryRowsDeleted, categoryRows) =
-          partition categoryRowDeleted categoryRowsAll
-    categories <- traverse getCategoryByRow categoryRows
-    categoriesDeleted <- traverse getCategoryByRow categoryRowsDeleted
-    pure (categories, categoriesDeleted)
+-- getCategories :: ExceptT DatabaseError Transaction ([Category], [Category])
+-- getCategories = do
+--     categoryRowsAll <- selectCategoryRows
+--     let (categoryRowsDeleted, categoryRows) =
+--           partition categoryRowDeleted categoryRowsAll
+--     categories <- traverse getCategoryByRow categoryRows
+--     categoriesDeleted <- traverse getCategoryByRow categoryRowsDeleted
+--     pure (categories, categoriesDeleted)
 
 -- | Get category by CategoryRow
-getCategoryByRow :: CategoryRow -> ExceptT DatabaseError Transaction Category
-getCategoryByRow categoryRow@CategoryRow{..} = do
-  itemRows <- selectItemRowsByCategory categoryRowUid
-  items <- traverse getItemByRow itemRows
-  itemRowsDeleted <- selectDeletedItemRowsByCategory categoryRowUid
-  itemsDeleted <- traverse getItemByRow itemRowsDeleted
-  pure $ categoryRowToCategory (#items items)
-    (#itemsDeleted itemsDeleted) categoryRow
+-- getCategoryByRow :: CategoryRow -> ExceptT DatabaseError Transaction Category
+-- getCategoryByRow categoryRow@CategoryRow{..} = do
+--   itemRows <- selectItemRowsByCategory categoryRowUid
+--   items <- traverse getItemByRow itemRows
+--   itemRowsDeleted <- selectDeletedItemRowsByCategory categoryRowUid
+--   itemsDeleted <- traverse getItemByRow itemRowsDeleted
+--   pure $ categoryRowToCategory (#items items)
+--     (#itemsDeleted itemsDeleted) categoryRow
 
 -- | Get Item by ItemRow
-getItemByRow :: ItemRow -> ExceptT DatabaseError Transaction Item
-getItemByRow itemRow@ItemRow{..} = do
-  proTraitRows <- selectTraitRowsByItem itemRowUid TraitTypePro
-  let proTraits = map traitRowToTrait proTraitRows
-  proDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypePro
-  let proDeletedTraits = map traitRowToTrait proDeletedTraitRows
-  conTraitRows <- selectTraitRowsByItem itemRowUid TraitTypeCon
-  let conTraits = map traitRowToTrait conTraitRows
-  conDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypeCon
-  let conDeletedTraits = map traitRowToTrait conDeletedTraitRows
-  pure $ itemRowToItem
-    (#proTraits proTraits)
-    (#proDeletedTraits proDeletedTraits)
-    (#conTraits conTraits)
-    (#conDeletedTraits conDeletedTraits)
-    itemRow
+-- getItemByRow :: ItemRow -> ExceptT DatabaseError Transaction Item
+-- getItemByRow itemRow@ItemRow{..} = do
+--   proTraitRows <- selectTraitRowsByItem itemRowUid TraitTypePro
+--   let proTraits = map traitRowToTrait proTraitRows
+--   proDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypePro
+--   let proDeletedTraits = map traitRowToTrait proDeletedTraitRows
+--   conTraitRows <- selectTraitRowsByItem itemRowUid TraitTypeCon
+--   let conTraits = map traitRowToTrait conTraitRows
+--   conDeletedTraitRows <- selectDeletedTraitRowsByItem itemRowUid TraitTypeCon
+--   let conDeletedTraits = map traitRowToTrait conDeletedTraitRows
+--   pure $ itemRowToItem
+--     (#proTraits proTraits)
+--     (#proDeletedTraits proDeletedTraits)
+--     (#conTraits conTraits)
+--     (#conDeletedTraits conDeletedTraits)
+--     itemRow

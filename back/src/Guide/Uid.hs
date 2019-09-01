@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveAnyClass    #-}
 
 -- | A type for unique identifiers.
 module Guide.Uid

@@ -115,7 +115,9 @@ v0_createTableCategories = HS.statement () $
   [execute|
     CREATE TABLE categories (
       uid text PRIMARY KEY,           -- Unique category ID
-      data jsonb NOT NULL        -- Single category with all items and raits belong to it
+      data jsonb NOT NULL,            -- Single category with items and traits.
+      archived boolean                -- Whether the category is archived.
+        NOT NULL
     );
   |]
 
