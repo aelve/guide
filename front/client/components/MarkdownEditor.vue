@@ -7,9 +7,10 @@
       'markdown-editor_has-bottom-toolbar': bottomToolbar,
       'markdown-editor_has-top-toolbar': toolbar
     }"
-    @keydown.capture.enter="onEnterDown"
-    @keydown.ctrl.enter="onCtrlEnterDown"
-    @keydown.esc="cancel"
+    @keydown.exact.capture.enter="onEnterDown"
+    @keydown.exact.ctrl.enter="onCtrlEnterDown"
+    @keydown.exact.meta.enter="onCtrlEnterDown"
+    @keydown.exact.esc="cancel"
     v-show="editor && isReady"
   >
     <textarea ref="editor" />
@@ -80,7 +81,7 @@ export default class MarkdownEditor extends Vue {
   isReady: boolean = false
 
   get saveTip () {
-    return `press${this.saveOnEnter ? ' Enter or' : ''} Ctrl+Enter to save`
+    return `press${this.saveOnEnter ? ' Enter or' : ''} Ctrl/Cmd + Enter to save`
   }
 
   get heightValue () {
