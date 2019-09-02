@@ -174,10 +174,10 @@ export default class MarkdownEditor extends Vue {
       if (!line.styles) {
         return
       }
-      const isLineInCodeblock = line.styles.some(x => typeof x === 'string' && x.includes('comment'))
+      const isLineInCodeblock = line.styles
+        .some(x => typeof x === 'string' && x.includes('comment'))
       // Highlightens full line inside code block, since codeMirror itself highlights only symbols
       if (isLineInCodeblock) {
-        element.style.background = 'rgba(0, 0, 0, 0.05)'
         element.style.fontFamily = 'monospace, monospace'
         element.style.fontSize = '85%'
       }
@@ -264,10 +264,6 @@ export default class MarkdownEditor extends Vue {
   }
   .cm-header-6 {
     font-size: 0.67rem;
-  }
-
-  .cm-comment {
-    background: unset;
   }
 }
 .markdown-editor_has-top-toolbar >>> .CodeMirror {
