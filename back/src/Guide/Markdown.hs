@@ -344,7 +344,7 @@ instance Aeson.FromJSON MarkdownBlock where
 instance Aeson.FromJSON MarkdownTree where
   parseJSON = Aeson.withObject "MarkdownTree" $ \o -> do
     txt <- o Aeson..: "text"
-    prefix <- o Aeson..:? "prefix" Aeson..!= T.empty
+    prefix <- o Aeson..:? "prefix" Aeson..!= ""
     pure $ toMarkdownTree prefix txt
 
 instance ToHtml MarkdownInline where

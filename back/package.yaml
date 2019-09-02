@@ -204,10 +204,12 @@ benchmarks:
     source-dirs: benchmarks
     dependencies:
       - base <5
+      - containers
       - guide
       - gauge
       - hasql
       - hasql-transaction
+      - time
 
     ghc-options:
     - -O

@@ -24,7 +24,7 @@ import Guide.Config
 import Guide.Logger
 
 
--- | Load categories and archives categories from acid state to postgres
+-- | Load categories and archived categories from acid state to postgres
 -- and check if they are equal.
 --
 -- NOTE: It loads categories and categoriesDeleted fields of GlobalState only.
@@ -51,7 +51,7 @@ postgresLoader logger globalState = do
     -- Download from Postgres
     catPostgres <- runTransactionExceptT conn Read $
       selectCategories (#archived False)
-    catarchivedPostgres <- runTransactionExceptT conn Read $
+    catArchivedPostgres <- runTransactionExceptT conn Read $
       selectCategories (#archived True)
     -- Check identity of available categories
     let checkedCat =
@@ -59,7 +59,7 @@ postgresLoader logger globalState = do
           sortOn categoryUid (categories globalState)
     -- Check identity of archived categories
     let checkedCatDeleted =
-          sortOn categoryUid catarchivedPostgres ==
+          sortOn categoryUid catArchivedPostgres ==
           sortOn categoryUid (categoriesDeleted globalState)
 
     let checked = checkedCat && checkedCatDeleted

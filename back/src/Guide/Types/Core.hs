@@ -378,19 +378,14 @@ instance Aeson.FromJSON Category where
     categoryEnabledSections <- o Aeson..: "enabledSections"
     pure Category{..}
 
--- | jsonb encode data through JSON AST.
---
--- | If you want more speed then use jsonbBytes, it encodes through raw JSON.
+-- | 'jsonbBytes' is used to report an error as Left
+--   without using 'error' function.
 instance ToPostgres Category where
-  toPostgres = Aeson.toJSON >$< HE.jsonb
+  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
 
 instance FromPostgres Category where
-  fromPostgres = resultToEither . Aeson.fromJSON <$> HD.jsonb
-
--- | Unwarp result to category or fail.
-resultToEither :: Aeson.Result Category -> Category
-resultToEither (Aeson.Success category) = category
-resultToEither (Aeson.Error s) = error $ "fromJSON failed with error: " ++ s
+  fromPostgres = HD.jsonbBytes $
+    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be

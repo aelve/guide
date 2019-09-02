@@ -46,20 +46,20 @@ updateCategory catId update = do
           WHERE uid = $1|]
     lift $ HT.statement (catId, new_category) statement
 
--- | Update category archived field when it is different then passed parameter.
+-- | Update category archived field when it is different
 updateCategoryArchived
   :: Uid Category
   -> "archived" :! Bool
   -> ExceptT DatabaseError Transaction ()
-updateCategoryArchived catId (arg #archived -> archived) = do
-  isArchived <- isCategoryArchived catId
-  when (isArchived /= archived) $ do
+updateCategoryArchived catId (arg #archived -> new_archived) = do
+  old_archived <- isCategoryArchived catId
+  when (old_archived /= new_archived) $ do
     let statement :: Statement (Uid Category, Bool) ()
         statement = [execute|
           UPDATE categories
           SET archived = $2
           WHERE uid = $1|]
-    lift $ HT.statement (catId, archived) statement
+    lift $ HT.statement (catId, new_archived) statement
 
 -- | Fetch a row corresponding to a category, apply a function and write it
 -- back. You can break database invariants with this function, so be

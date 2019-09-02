@@ -9,17 +9,26 @@ import Imports
 import Gauge
 import Hasql.Transaction.Sessions (Mode (..))
 import Hasql.Connection (Connection)
+import qualified Data.Set as Set
 
 import Guide.Database.Queries.Update
 import Guide.Database.Queries.Select
+import Guide.Database.Queries.Insert
+import Guide.Database.Queries.Delete
 import Guide.Types.Core
 import Guide.Database.Connection
+import Guide.Markdown (toMarkdownBlock, toMarkdownTree)
 
 
+-- | See readme for instruction.
 main :: IO ()
 main = do
   conn <- connect
+  time <- getCurrentTime
+  runTransactionExceptT conn Write $
+    insertCategoryWithCategory (#archived False) $ category time
   defaultMain [databaseBenchmark conn]
+  runTransactionExceptT conn Write $ deleteCategory "categoryUid1"
 
 databaseBenchmark :: Connection -> Benchmark
 databaseBenchmark conn =
@@ -27,10 +36,39 @@ databaseBenchmark conn =
       update =  _categoryTitle <>~ " +"
   in bgroup "Database"
       [ bench "select" $ nfIO $
-          runTransactionExceptT conn Read $ selectCategory "category1111"
+          runTransactionExceptT conn Read $ selectCategory "categoryUid1"
       , bench "update" $ nfIO $
-          runTransactionExceptT conn Write $ updateCategory "category1111" update
+          runTransactionExceptT conn Write $ updateCategory "categoryUid1" update
       ]
+
+category :: UTCTime -> Category
+category time = Category
+  { categoryUid = "categoryUid1"
+  , categoryTitle = "catTitle1"
+  , categoryCreated =  time
+  , categoryGroup = "group1"
+  , categoryStatus = CategoryStub
+  , categoryNotes = toMarkdownBlock "notes"
+  , categoryItems = [item time]
+  , categoryItemsDeleted = []
+  , categoryEnabledSections = Set.fromList []
+  }
+
+item :: UTCTime -> Item
+item time = Item
+  { itemUid = "itemUid1234"
+  , itemName = "title"
+  , itemCreated = time
+  , itemHackage = Just "hello"
+  , itemSummary = toMarkdownBlock "summary"
+  , itemPros = []
+  , itemProsDeleted = []
+  , itemCons = []
+  , itemConsDeleted = []
+  , itemEcosystem = toMarkdownBlock "eco"
+  , itemNotes = toMarkdownTree "" "notes"
+  , itemLink = Just "google.ru"
+  }
 
 {-
 benchmarked Database/select
