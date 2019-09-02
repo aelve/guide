@@ -379,11 +379,15 @@ instance Aeson.FromJSON Category where
     pure Category{..}
 
 instance ToPostgres Category where
-  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
+  toPostgres = Aeson.toJSON >$< HE.jsonb
 
 instance FromPostgres Category where
-  fromPostgres = HD.jsonbBytes $
-    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
+  fromPostgres = resultToEither . Aeson.fromJSON <$> HD.jsonb
+
+-- | Unwrap result to category or fail.
+resultToEither :: Aeson.Result Category -> Category
+resultToEither (Aeson.Success category) = category
+resultToEither (Aeson.Error s) = error $ "fromJSON failed with error: " ++ s
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be
