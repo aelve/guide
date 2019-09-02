@@ -378,13 +378,16 @@ instance Aeson.FromJSON Category where
     categoryEnabledSections <- o Aeson..: "enabledSections"
     pure Category{..}
 
+-- | jsonb encode data through JSON AST.
+--
+-- | If you want more speed then use jsonbBytes, it encodes through raw JSON.
 instance ToPostgres Category where
   toPostgres = Aeson.toJSON >$< HE.jsonb
 
 instance FromPostgres Category where
   fromPostgres = resultToEither . Aeson.fromJSON <$> HD.jsonb
 
--- | Unwrap result to category or fail.
+-- | Unwarp result to category or fail.
 resultToEither :: Aeson.Result Category -> Category
 resultToEither (Aeson.Success category) = category
 resultToEither (Aeson.Error s) = error $ "fromJSON failed with error: " ++ s
