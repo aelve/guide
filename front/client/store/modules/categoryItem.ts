@@ -132,7 +132,7 @@ const actions: ActionTree<ICategoryItemState, any> = {
       original,
       modified
     })
-    dispatch('category/reloadCategory', null, { root: true })
+
     return createdDescription
   }
 }
