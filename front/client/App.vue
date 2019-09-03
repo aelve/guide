@@ -246,10 +246,13 @@ blockquote {
 }
 </style>
 
-<style scoped>
+<style lang="postcss" scoped>
 /* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
 .app-content {
   padding: 100px 0px 36px !important;
   line-height: 150%;
+}
+.app-content >>> > .v-content__wrap > .container {
+  padding: 12px;
 }
 </style>
