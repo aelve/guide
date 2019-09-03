@@ -11,6 +11,7 @@
     <v-spacer></v-spacer>
 
     <search-field
+      class="toolbar__search-field"
       :class="{ 'mobile-hidden': isSearchFieldHidden }"
       ref="searchField"
     />
@@ -59,6 +60,9 @@ export default class Toolbar extends Vue {
   display: none;
 }
 @media screen and (max-width: 475px) {
+  .toolbar__search-field {
+    margin-right: 6px;
+  }
   .mobile-hidden {
     display: none;
   }

@@ -52,7 +52,7 @@
 
           <v-btn
             text
-            class="ma-0 mt-1 px-1"
+            class="ma-0 mt-1 px-2"
             color="grey darken-2"
             title="Add new category"
             @click="openAddCategoryDialog(groupName)"
@@ -69,9 +69,6 @@
       v-model="isAddGroupDialogOpen"
       :groupName="addCategoryGroupName"
     />
-    <!-- <v-dialog v-model="isAddGroupDialogOpen">
-
-    </v-dialog> -->
   </div>
 </template>
 

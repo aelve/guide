@@ -7,10 +7,10 @@
       >
         <v-toolbar-title class="text-h2">
           <span class="category-item-toolbar-title">
-            <router-link
-              :to="{hash:`item-${itemUid}`}"
+            <a
+              :href="`#item-${itemUid}`"
               class="category-item-anchor"
-            >#</router-link>
+            >#</a>
 
             <div class="category-item-name-and-badges">
               <a-link

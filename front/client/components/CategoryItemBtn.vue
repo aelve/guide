@@ -1,6 +1,5 @@
 <template>
   <v-btn
-    class="font-weight-bold"
     v-bind="{
         color: 'grey darken-2',
         icon: !!icon && !showTitle,

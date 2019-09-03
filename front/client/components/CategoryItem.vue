@@ -68,28 +68,23 @@
           small
           dark
           rounded
-          title="Expand"
+          :title="areNotesExpanded ? 'Collapse' : 'Expand'"
           class="mx-0"
-          @click="expandNotes"
+          @click="toggleNotes"
         >
-          Expand
-        </v-btn>
-        <v-btn
-          small
-          dark
-          rounded
-          title="Collapse"
-          class="mx-0"
-          @click="collapseNotes"
-        >
-          Collapse
+          {{ areNotesExpanded ? 'Collapse' : 'Expand' }}
         </v-btn>
 
         <ul>
           <li
             v-for="(tocItem, index) in toc"
             :key="index"
+            style="position: relative;"
           >
+            <span
+              style="position: absolute; top: -96px;"
+              :id="`item-${itemUid}`"
+            />
             <a
               :href="`#${tocItem.slug}`"
               v-html="tocItem.content.html"
@@ -100,9 +95,15 @@
 
         <v-slide-y-transition hide-on-leave>
           <div
-            v-show="isNoteExpanded"
-            v-html="notes.html"
-          />
+            v-show="areNotesExpanded"
+            class="category-item__notes"
+          >
+            <div
+              v-if="notes.html"
+              v-html="notes.html"
+            />
+            <span v-else> &lt;notes are empty&gt; </span>
+          </div>
         </v-slide-y-transition>
       </category-item-section>
 
@@ -143,7 +144,7 @@ export default class CategoryItem extends Vue {
   @Prop(String) hackage!: string
   @Prop(Array) sections!: string[]
 
-  isNoteExpanded: boolean = false
+  areNotesExpanded: boolean = false
   isPropsEditing: boolean = false
   isConsEditing: boolean = false
 
@@ -162,12 +163,12 @@ export default class CategoryItem extends Vue {
     return this.sections.includes(section)
   }
 
-  expandNotes (): void {
-    this.isNoteExpanded = true
+  toggleNotes (): void {
+    this.areNotesExpanded = !this.areNotesExpanded
   }
 
-  collapseNotes (): void {
-    this.isNoteExpanded = false
+  expandNotes () {
+    this.areNotesExpanded = true
   }
 
   toggleItemEcosystemEditState () {
@@ -237,6 +238,14 @@ export default class CategoryItem extends Vue {
 
   @media screen and (max-width: 768px) {
     margin-right: 0;
+  }
+}
+
+.category-item__notes >>> {
+  span[id^="item-notes-"] {
+    /* Top offstet is required because of app toolbar */
+    position: relative;
+    top: -74px;
   }
 }
 

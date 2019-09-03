@@ -62,6 +62,7 @@
         <v-list class="category-actions-menu-list">
           <v-list-item>
             <CategoryHeaderBtn
+              block 
               text="New item"
               icon="plus"
               @click="openAddItemDialog"
@@ -69,6 +70,7 @@
           </v-list-item>
           <v-list-item>
             <CategoryHeaderBtn
+              block 
               text="Category settings"
               icon="cog"
               @click="openCategorySettingsEditDialog"
@@ -76,6 +78,7 @@
           </v-list-item>
           <v-list-item>
             <CategoryHeaderBtn
+              block 
               text="Delete category"
               icon="trash-alt"
               @click="deleteCategory"
@@ -209,14 +212,14 @@ export default class CategoryHeader extends Vue {
 }
 
 .category-actions-menu-list {
-  >>> .v-list__tile {
+  >>> .v-list-item {
     height: 36px;
-    padding: 0 6px;
+    padding: 0;
   }
 
   >>> button {
-    width: 100%;
-    padding: 5px;
+    height: 100% !important;
+    padding: 0 6px;
 
     .v-btn__content {
       justify-content: flex-start;

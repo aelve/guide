@@ -15,8 +15,8 @@
 
     <markdown-editor
       v-else
-      class="mb-2"
       toolbar
+      class="mb-2"
       :value="editText"
       :height="editorHeight"
       @cancel="toggleEdit"

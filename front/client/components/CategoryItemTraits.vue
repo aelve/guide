@@ -29,7 +29,7 @@
             </template>
             <v-list dense>
               <v-list-item
-                tag="div"
+                tag="button"
                 @click="moveTrait(trait, 'up')"
               >
                 <v-list-item-title>
@@ -38,7 +38,7 @@
               </v-list-item>
 
               <v-list-item
-                tag="div"
+                tag="button"
                 @click="moveTrait(trait, 'down')"
               >
                 <v-list-item-title>
@@ -47,7 +47,7 @@
               </v-list-item>
 
               <v-list-item
-                tag="div"
+                tag="button"
                 @click="trait.isEdit = true"
               >
                 <v-list-item-title>
@@ -56,7 +56,7 @@
               </v-list-item>
 
               <v-list-item
-                tag="div"
+                tag="button"
                 @click="deleteTrait(trait)"
               >
                 <v-list-item-title>
@@ -71,7 +71,7 @@
           v-if="trait.isEdit"
           saveOnEnter
           :value="trait.content.text"
-          :height="100"
+          :height="60"
           @cancel="trait.isEdit = false"
           @save="saveEdit({trait, original: trait.content.text, modified: $event})"
         />
@@ -81,7 +81,7 @@
     <markdown-editor
       v-if="isAddTrait"
       saveOnEnter
-      :height="100"
+      :height="60"
       @cancel="toggleAddTrait"
       @save="createTrait"
     />
@@ -211,5 +211,7 @@ export default class CategoryItemTraits extends Vue {
 }
 >>> .v-list-item {
   padding: 0 8px;
+  width: 100%;
+  text-align: left;
 }
 </style>
