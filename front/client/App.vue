@@ -49,6 +49,10 @@ export default class RootComponent extends Vue {
 *:after {
   box-sizing: border-box;
 }
+body, .v-application {
+  font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
 
 html {
   /*
