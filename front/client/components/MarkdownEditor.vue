@@ -81,13 +81,13 @@ export default class MarkdownEditor extends Vue {
   isReady: boolean = false
 
   get saveTip () {
-    return `press${this.saveOnEnter ? ' Enter or' : ''} Ctrl/Cmd + Enter to save`
+    return `press ${this.saveOnEnter ? 'Enter' : 'Ctrl/Cmd + Enter'} to save`
   }
 
   get heightValue () {
     return Number(this.height)
-      ? this.height
-      : `${this.height}px`
+      ? `${this.height}px`
+      : this.height
   }
 
   @Watch('value')
@@ -100,8 +100,8 @@ export default class MarkdownEditor extends Vue {
 
   async beforeMount () {
     await this.createEditorInstance()
-    this.setInputAreaHeight()
     this.isReady = true
+    this.$nextTick(() => this.setInputAreaHeight())
     this.focusInputArea()
   }
 
@@ -113,7 +113,7 @@ export default class MarkdownEditor extends Vue {
       initialValue: this.value,
       spellChecker: false,
       status: false,
-      // minHeight: this.heightValue,
+      minHeight: this.heightValue,
       toolbar: this.toolbar
         ? [
           'bold',
