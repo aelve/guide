@@ -1,15 +1,15 @@
 <template>
   <div class="category-header">
     <div class="category-header__first-row">
-      <a-link
-        openInNewTab
+      <a
+        class="rss-link"
+        :href="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
+        target="_blank"
         aria-label="RSS feed for all new items in this category"
         v-tooltip.bottom-start="{ content: 'RSS feed for all new items in this category'}"
-        :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-        class="rss-link"
       >
         <v-icon class="rss-link-icon">$vuetify.icons.rss</v-icon>
-      </a-link>
+      </a>
       <h1 class="category-name-title" :title="categoryTitle">{{categoryTitle}}</h1>
     </div>
 
@@ -98,14 +98,12 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
-import ALink from 'client/components/ALink.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 
 @Component({
   components: {
     CategoryInfoEdit,
-    ALink,
     CategoryHeaderBtn
   }
 })

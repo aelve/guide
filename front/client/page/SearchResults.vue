@@ -60,13 +60,8 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
-import ALink from 'client/components/ALink.vue'
 
-@Component({
-  components: {
-    ALink
-  }
-})
+@Component
 export default class SearchResults extends Vue {
   @Prop(String) query!: string
 

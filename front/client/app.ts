@@ -3,7 +3,6 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import vuetify from 'client/plugins/vuetify'
 import { sync } from 'vuex-router-sync'
-import ALink from 'client/components/ALink.vue'
 import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
 import VTooltip from 'v-tooltip'
 
@@ -23,7 +22,6 @@ function initVue () {
     defaultPlacement: 'bottom'
   })
   Vue.mixin(confirmDialogMixin)
-  Vue.component('ALink', ALink)
 }
 
 function createApp () {
