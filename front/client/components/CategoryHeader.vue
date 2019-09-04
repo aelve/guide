@@ -90,8 +90,8 @@
     </div>
     
 
-    <category-info-edit
-      v-model="isCategoryInfoEdit"
+    <CategorySettingsDialog
+      v-model="isCategorySettingsDialog"
       :categoryId="categoryId"
     />
   </div>
@@ -101,13 +101,13 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
-import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
+import CategorySettingsDialog from 'client/components/CategorySettingsDialog.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 
 @Component({
   components: {
-    CategoryInfoEdit,
+    CategorySettingsDialog,
     CategoryHeaderBtn
   }
 })
@@ -118,11 +118,11 @@ export default class CategoryHeader extends Vue {
   @Prop(String) categoryGroup!: string
   @Prop(String) categoryUrl!: string
 
-  isCategoryInfoEdit: boolean = false
+  isCategorySettingsDialog: boolean = false
   isAddItemDialogOpen: boolean = false
 
   openCategorySettingsEditDialog () {
-    this.isCategoryInfoEdit = true
+    this.isCategorySettingsDialog = true
   }
 
   openAddItemDialog () {
