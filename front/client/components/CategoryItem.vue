@@ -68,7 +68,7 @@
           small
           dark
           rounded
-          :title="areNotesExpanded ? 'Collapse' : 'Expand'"
+          :aria-label="areNotesExpanded ? 'Collapse' : 'Expand'"
           class="mx-0"
           @click="toggleNotes"
         >

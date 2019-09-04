@@ -1,22 +1,17 @@
 <template>
   <div class="category-header">
-    <h1 class="category-name-title" :title="categoryTitle">
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <a-link
-            openInNewTab
-            aria-label="RSS feed for all new items in this category"
-            :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
-            class="rss-link"
-            v-on="on"
-          >
-            <v-icon
-              class="rss-link-icon"
-            >$vuetify.icons.rss</v-icon>
-          </a-link>
-        </template>
-        <span>RSS feed for all new items in this category</span>
-      </v-tooltip>{{categoryTitle}}</h1>
+    <div class="category-header__first-row">
+      <a-link
+        openInNewTab
+        aria-label="RSS feed for all new items in this category"
+        v-tooltip.bottom-start="{ content: 'RSS feed for all new items in this category'}"
+        :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
+        class="rss-link"
+      >
+        <v-icon class="rss-link-icon">$vuetify.icons.rss</v-icon>
+      </a-link>
+      <h1 class="category-name-title" :title="categoryTitle">{{categoryTitle}}</h1>
+    </div>
 
     <div class="category-header__second-row">
       <div class="category-group-title-wrap">
@@ -48,7 +43,8 @@
           <v-btn
             text
             icon
-            title="Actions"
+            aria-label="Actions"
+            v-tooltip="'Actions'"
             class="category-actions-menu-btn"
             v-on="on"
           >
@@ -164,17 +160,18 @@ export default class CategoryHeader extends Vue {
   font-weight: 700;
   margin: 0 0 5px;
   letter-spacing: -1px;
+  display: inline;
 }
 
-/* Space beetwen category rss ling title  */
-.rss-link:after {
-  content: " ";
-  visibility: hidden;
+.rss-link {
+  margin-right: 2px;
+  height: calc(1.8rem - 5px);
+  display: inline-block;
+  vertical-align: top;
 }
 
 .rss-link-icon {
   height: calc(1.8rem - 5px) !important;
-  vertical-align: bottom;
 
   &:hover {
     color: #000;

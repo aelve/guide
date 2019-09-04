@@ -4,7 +4,7 @@
         color: 'grey darken-2',
         icon: !!icon && !showTitle,
         style,
-        title,
+        'aria-label': title,
         ...$attrs
     }"
     v-on="$listeners"
