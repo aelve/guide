@@ -98,14 +98,12 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategorySettingsDialog from 'client/components/CategorySettingsDialog.vue'
-import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 
 @Component({
   components: {
     CategorySettingsDialog,
-    CategoryInfoEdit,
     CategoryHeaderBtn
   }
 })
