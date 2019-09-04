@@ -13,31 +13,31 @@
     >
       <span>
         made by
-        <a-link
-          openInNewTab
-          url="https://aelve.com/"
+        <a
+          target="_blank"
+          href="https://aelve.com/"
         >
           Aelve
-        </a-link>
+        </a>
       </span>
       <span>
-        <a-link
-          openInNewTab
-          url="https://github.com/aelve/guide"
+        <a
           class="footer-link"
+          target="_blank"
+          href="https://github.com/aelve/guide"
         >
           source
-        </a-link>
+        </a>
         on GitHub
       </span>
       <span>
         licensed under
-        <a-link
-          openInNewTab
-          url="https://creativecommons.org/licenses/by-sa/4.0/"
+        <a
+          target="_blank"
+          href="https://creativecommons.org/licenses/by-sa/4.0/"
         >
           CC BY-SA 4.0
-        </a-link>
+        </a>
       </span>
     </v-layout>
   </v-footer>

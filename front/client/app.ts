@@ -3,7 +3,6 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import vuetify from 'client/plugins/vuetify'
 import { sync } from 'vuex-router-sync'
-import ALink from 'client/components/ALink.vue'
 import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
 
 import 'client/assets/code-highlight.css'
@@ -16,7 +15,6 @@ function initVue () {
   Vue.use(VueRouter)
   Vue.use(Vuex)
   Vue.mixin(confirmDialogMixin)
-  Vue.component('ALink', ALink)
 }
 
 function createApp () {

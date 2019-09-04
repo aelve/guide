@@ -13,12 +13,12 @@
             >#</a>
 
             <div class="category-item-name-and-badges">
-              <a-link
+              <a
                 v-if="itemLink"
                 class="category-item-name"
-                :url="itemLink"
-                openInNewTab
-              >{{ itemName }}</a-link>
+                target="_blank"
+                :href="itemLink"
+              >{{ itemName }}</a>
               <span class="category-item-name" v-else>{{ itemName }}</span>
               <div class="category-item-badges">
                 <a

@@ -3,17 +3,17 @@
     <h1 class="category-name-title" :title="categoryTitle">
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
-          <a-link
-            openInNewTab
+          <a
+            target="_blank"
             aria-label="RSS feed for all new items in this category"
-            :url="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
+            :href="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
             class="rss-link"
             v-on="on"
           >
             <v-icon
               class="rss-link-icon"
             >$vuetify.icons.rss</v-icon>
-          </a-link>
+          </a>
         </template>
         <span>RSS feed for all new items in this category</span>
       </v-tooltip>{{categoryTitle}}</h1>
@@ -102,14 +102,12 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
-import ALink from 'client/components/ALink.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 
 @Component({
   components: {
     CategoryInfoEdit,
-    ALink,
     CategoryHeaderBtn
   }
 })
