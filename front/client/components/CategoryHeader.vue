@@ -97,21 +97,15 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
-<<<<<<< HEAD
 import CategorySettingsDialog from 'client/components/CategorySettingsDialog.vue'
-=======
 import CategoryInfoEdit from 'client/components/CategoryInfoEdit.vue'
->>>>>>> Removed useless ALink component
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 
 @Component({
   components: {
-<<<<<<< HEAD
     CategorySettingsDialog,
-=======
     CategoryInfoEdit,
->>>>>>> Removed useless ALink component
     CategoryHeaderBtn
   }
 })
