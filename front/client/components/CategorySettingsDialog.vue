@@ -49,28 +49,28 @@
           <v-checkbox
             hide-details
             color="info"
-            class="category-info-edit__checkbox"
+            class="category-settings-dialog__checkbox"
             label="Pros/cons section"
             value="ItemProsConsSection"
-            :inputValue="checkboxSections"
+            :inputValue="sections"
             @click.native.capture.prevent.stop="updateSectionEnabling('ItemProsConsSection', 'Pros/Cons')"
           />
           <v-checkbox
             hide-details
             color="info"
-            class="category-info-edit__checkbox"
+            class="category-settings-dialog__checkbox"
             label="Ecosystem section"
             value="ItemEcosystemSection"
-            :inputValue="checkboxSections"
+            :inputValue="sections"
             @click.native.capture.prevent.stop="updateSectionEnabling('ItemEcosystemSection', 'Ecosystem')"
           />
           <v-checkbox
             hide-details
             color="info"
-            class="category-info-edit__checkbox"
+            class="category-settings-dialog__checkbox"
             label="Notes section"
             value="ItemNotesSection"
-            :inputValue="checkboxSections"
+            :inputValue="sections"
             @click.native.capture.prevent.stop="updateSectionEnabling('ItemNotesSection', 'Notes')"
           />
         </v-form>
@@ -88,7 +88,7 @@
         <v-btn
           color="info"
           aria-label="Submit"
-          :disabled="!isValid"
+          :disabled="!isValid || !hasChanges"
           @click="updateCategoryInfo"
         >
           Submit
@@ -102,15 +102,23 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
+import _isEqual from 'lodash/isEqual'
+import _sortBy from 'lodash/sortBy'
 
 @Component
-export default class CategoryInfoEdit extends Vue {
+export default class CategorySettingsDialog extends Vue {
   @Prop(Boolean) value!: boolean
 
   title: string = ''
   group: string = ''
   categoryStatus: object = {}
-  checkboxSections: any[] = []
+  sections: any[] = []
+  initialSettings = {
+    title: null,
+    group: null,
+    categoryStatus: null,
+    sections: null
+  }
   isValid: boolean = false
 
   // TODO replace ItemProsConsSection and other to constants
@@ -134,6 +142,15 @@ export default class CategoryInfoEdit extends Vue {
     return this.$store.state.category.category
   }
 
+  get hasChanges () {
+    const properties = ['title', 'group', 'sections', 'categoryStatus']
+    return properties
+      .some(x => {
+        const sortIfArray = (val) => Array.isArray(val) ? _sortBy(val) : val
+        return !_isEqual(sortIfArray(this[x]), sortIfArray(this.initialSettings[x]))
+      })
+  }
+
   @Watch('value')
   onOpen () {
     const { category } = this
@@ -143,8 +160,16 @@ export default class CategoryInfoEdit extends Vue {
     }
     this.title = category.title
     this.group = category.group
-    this.checkboxSections = category.sections.slice()
+    this.sections = category.sections.slice()
     this.categoryStatus = category.status
+
+    this.initialSettings = {
+      title: this.title,
+      group: this.group,
+      categoryStatus: this.categoryStatus,
+      sections: this.sections.slice()
+    }
+
     this.sectionDisableWarningAgreed = {
       ItemProsConsSection: false,
       ItemEcosystemSection: false,
@@ -152,11 +177,12 @@ export default class CategoryInfoEdit extends Vue {
     }
   }
 
+  // TODO refactor, rewrite simpler
   async updateSectionEnabling (sectionValue, sectionName) {
-    const index = this.checkboxSections.indexOf(sectionValue)
-    const isSectionRemoved = index !== -1
-    if (!isSectionRemoved) {
-      this.checkboxSections.push(sectionValue)
+    const index = this.sections.indexOf(sectionValue)
+    const isSectionDisabled = index !== -1
+    if (!isSectionDisabled) {
+      this.sections.push(sectionValue)
       return
     }
 
@@ -164,14 +190,16 @@ export default class CategoryInfoEdit extends Vue {
     const isSectionInEdit = this.$store.state.category.itemsSectionsInEdit[sectionValue].length
     const wasAgreedOnce = this.sectionDisableWarningAgreed[sectionValue]
     if (isOriginallyEnabled && isSectionInEdit && !wasAgreedOnce) {
-      const isConfirmed = await this._confirm({ fullText: `You have unsaved changes in one of items’ ${sectionName} section. If you disable this section, your changes will be lost.` })
+      const isConfirmed = await this._confirm({
+        fullText: `You have unsaved changes in one of items’ ${sectionName} section. If you disable this section, your changes will be lost.`
+      })
       if (!isConfirmed) {
         return
       }
       this.sectionDisableWarningAgreed[sectionValue] = true
     }
 
-    this.checkboxSections.splice(index, 1)
+    this.sections.splice(index, 1)
   }
 
   close () {
@@ -184,7 +212,7 @@ export default class CategoryInfoEdit extends Vue {
       title: this.title,
       group: this.group,
       status: this.categoryStatus,
-      sections: this.checkboxSections
+      sections: this.sections
     })
 
     await this.$store.dispatch('category/reloadCategory')
@@ -194,7 +222,7 @@ export default class CategoryInfoEdit extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-.category-info-edit__checkbox >>> {
+.category-settings-dialog__checkbox >>> {
   .v-input--selection-controls__input {
     margin-right: 12px;
   }
