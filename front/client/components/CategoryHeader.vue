@@ -74,7 +74,7 @@
           </v-list-item>
           <v-list-item>
             <CategoryHeaderBtn
-              block 
+              block
               text="Delete category"
               icon="trash-alt"
               @click="deleteCategory"
