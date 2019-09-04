@@ -23,13 +23,13 @@
               <div class="category-item-badges">
                 <a
                   v-if="this.itemHackage"
-                  class="text-h6 hackage-link"
+                  class="hackage-link"
                   target="_blank"
                   :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
                 >
                   <v-icon
                     color="#fff"
-                    size="10"
+                    size="0.6rem"
                   >$vuetify.icons.link</v-icon>hackage</a>
               </div>
             </div>
@@ -360,12 +360,12 @@ a.category-item-anchor {
 .category-item-badges {
   display: inline-flex;
   align-items: center;
-  vertical-align: bottom;
+  vertical-align: middle;
 
   > * {
     display: inline-flex;
     align-items: center;
-    line-height: 1;
+    font-size: 0.7rem;
     border-radius: 5px;
     padding: 4px 6px;
   }
