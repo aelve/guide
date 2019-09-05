@@ -242,7 +242,7 @@ blockquote {
 }
 /* Some useless and obstructive div that vuetify add along with "v-menu" component */
 .v-menu--inline {
-  display: none;
+  display: none !important;
 }
 </style>
 
