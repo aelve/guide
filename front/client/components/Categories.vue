@@ -54,7 +54,7 @@
             text
             class="ma-0 mt-1 px-2"
             color="grey darken-2"
-            title="Add new category"
+            aria-label="Add new category"
             @click="openAddCategoryDialog(groupName)"
           >
             <v-icon size="14" class="mr-1" left v-text="'$vuetify.icons.plus'"></v-icon>

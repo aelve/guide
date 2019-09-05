@@ -4,8 +4,10 @@ import Vuex from 'vuex'
 import vuetify from 'client/plugins/vuetify'
 import { sync } from 'vuex-router-sync'
 import confirmDialogMixin from 'client/mixins/confirmDialogMixin'
+import VTooltip from 'v-tooltip'
 
-import 'client/assets/code-highlight.css'
+import 'client/styles/tooltip.css'
+import 'client/styles/code-highlight.css'
 
 import AppComponent from './App.vue'
 import { createRouter } from './router'
@@ -14,6 +16,11 @@ import { createStore } from './store'
 function initVue () {
   Vue.use(VueRouter)
   Vue.use(Vuex)
+  Vue.use(VTooltip, {
+    defaultOffset: 5,
+    defaultDelay: 150,
+    defaultPlacement: 'bottom'
+  })
   Vue.mixin(confirmDialogMixin)
 }
 

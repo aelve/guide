@@ -22,6 +22,7 @@
                 class="trait-actions-menu-btn"
                 size="22px"
                 title="Actions"
+                v-tooltip="'Actions'"
                 iconSize="14"
                 icon="ellipsis-v"
                 v-on='on'

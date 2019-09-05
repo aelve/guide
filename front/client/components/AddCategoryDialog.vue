@@ -43,14 +43,14 @@
         <v-spacer></v-spacer>
         <v-btn
           text
-          title="Cancel"
+          aria-label="Cancel"
           color="primary"
           @click.native="close"
         >
           Cancel
         </v-btn>
         <v-btn
-          title="Submit"
+          aria-label="Submit"
           color="info"
           class="add-category-submit-btn"
           :disabled="!isValid"

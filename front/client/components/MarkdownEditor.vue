@@ -29,14 +29,14 @@
       <v-toolbar-items>
         <v-btn
           class="mr-2"
-          title="Cancel"
+          aria-label="Cancel"
           @click="cancel"
         >
           Cancel
         </v-btn>
         <v-btn
           color="info"
-          title="Save"
+          aria-label="Save"
           @click="save"
         >
           Save

@@ -25,7 +25,7 @@
         </v-card>
         <v-btn
           class="conflict-dialog-btn"
-          title="Submit this version, disregard changes on server"
+          aria-label="Submit this version, disregard changes on server"
           @click="save(modified)"
         >
           Submit this version, disregard changes on server
@@ -41,7 +41,7 @@
         </v-card>
         <v-btn
           class="conflict-dialog-btn"
-          title="Submit this version, disregard my changes"
+          aria-label="Submit this version, disregard my changes"
           @click="save(serverModified)"
         >
           Accept this version, disregard my changes
@@ -60,7 +60,7 @@
         />
         <v-btn
           class="conflict-dialog-btn"
-          title="Submit merged version"
+          aria-label="Submit merged version"
           @click="save(mergedEdit)"
         >
           Submit the merged version

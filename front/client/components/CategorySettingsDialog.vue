@@ -79,7 +79,7 @@
         <v-spacer />
         <v-btn
           text
-          title="Cancel"
+          aria-label="Cancel"
           color="primary"
           @click.native="close"
         >
@@ -87,7 +87,7 @@
         </v-btn>
         <v-btn
           color="info"
-          title="Submit"
+          aria-label="Submit"
           :disabled="!isValid || !hasChanges"
           @click="updateCategoryInfo"
         >

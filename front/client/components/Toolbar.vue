@@ -18,7 +18,8 @@
     <v-btn
       text
       icon
-      title="Search"
+      aria-label="Search"
+      v-tooltip="'Search'"
       color="#fff"
       class="mobile-displayed"
       @click="toggleSearchField"

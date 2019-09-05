@@ -37,7 +37,7 @@
         text
         class="ml-2"
         color="grey darken-2"
-        title="Add new item"
+        aria-label="Add new item"
         @click="openAddItemDialog"
       >
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>

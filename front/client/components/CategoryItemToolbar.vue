@@ -44,6 +44,7 @@
               size="40px"
               iconSize="18"
               title="Move item up"
+              v-tooltip="'Move item up'"
               icon="arrow-up"
               @click="moveItem('up')"
             />
@@ -51,6 +52,7 @@
               size="40px"
               iconSize="18"
               title="Move item down"
+              v-tooltip="'Move item down'"
               icon="arrow-down"
               @click="moveItem('down')"
             />
@@ -58,6 +60,7 @@
               size="40px"
               iconSize="18"
               title="Edit item info"
+              v-tooltip="'Edit item info'"
               icon="cog"
               @click="toggleEditItemInfoMenu"
             >
@@ -73,6 +76,7 @@
               size="40px"
               iconSize="18"
               title="Delete item"
+              v-tooltip="'Delete item'"
               icon="trash-alt"
               @click="deleteItem"
             />
@@ -84,7 +88,8 @@
                 icon
                 small
                 :ripple="false"
-                title="Actions"
+                aria-label="Actions"
+                v-tooltip="'Actions'"
                 class="category-toolbar-mobile-menu-btn"
                 v-on="on"
               >
@@ -181,14 +186,14 @@
         <v-flex align-self-end>
           <v-btn
             class="mr-1"
-            title="Cancel"
+            aria-label="Cancel"
             @click="resetAndToggleEditItemInfoMenu"
           >
             Cancel
           </v-btn>
           <v-btn
             color="info"
-            title="Save"
+            aria-label="Save"
             :disabled="!isInfoSaveEnabled"
             @click="updateItemInfo"
           >

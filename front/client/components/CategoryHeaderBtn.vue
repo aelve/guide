@@ -3,7 +3,7 @@
     text
     class="category-header-btn"
     color="grey darken-2"
-    :title="text"
+    :aria-label="text"
     v-bind="$attrs"
     v-on="$listeners"
   >

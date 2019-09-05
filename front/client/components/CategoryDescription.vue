@@ -22,7 +22,7 @@
       v-if="!isEditDescription"
       color="grey darken-2"
       class="mt-3"
-      :title="descriptionBtnText"
+      :aria-label="descriptionBtnText"
       @click="toggleEditDescription"
     >
       <v-icon size="14" class="mr-1" left>{{ descriptionBtnIcon }}</v-icon>
