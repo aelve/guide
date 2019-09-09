@@ -229,6 +229,10 @@ export default class CategoryHeader extends Vue {
   .category-actions {
     display: none;
   }
+  .category-header__second-row {
+    /* Cause menu btn appears after page loading and causes second row to jump */
+    min-height: 36px;
+  }
 }
 </style>
 
