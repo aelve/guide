@@ -42,10 +42,5 @@ tags
 # backend config
 /back/config.json
 
-# backend JavaScript artifacts
-/back/guidejs/node_modules/
-/back/guidejs/package-lock.json
-/back/static/js/
-
 # frontend
 /front/node_modules/
