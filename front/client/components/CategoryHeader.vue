@@ -165,7 +165,7 @@ export default class CategoryHeader extends Vue {
   margin-right: 2px;
   height: calc(1.8rem - 5px);
   display: inline-block;
-  vertical-align: top;
+  vertical-align: super;
 }
 
 .rss-link-icon {
