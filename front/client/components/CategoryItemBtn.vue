@@ -1,5 +1,7 @@
 <template>
   <v-btn
+    class="category-item-btn"
+    v-tooltip="titleTooltip ? title : undefined"
     v-bind="{
         color: 'grey darken-2',
         icon: !!icon && !showTitle,
@@ -34,6 +36,7 @@ export default class CategoryItemBtn extends Vue {
   @Prop(String) iconSize: string
   @Prop(String) title: string
   @Prop(Boolean) showTitle: boolean
+  @Prop(Boolean) titleTooltip: boolean
 
   get style () {
     // Size prop overlaps small prop
@@ -55,3 +58,9 @@ export default class CategoryItemBtn extends Vue {
   }
 }
 </script>
+
+<style>
+.category-item-btn {
+  text-transform: none;
+}
+</style>

@@ -4,8 +4,8 @@
       {{ title }}
       <category-item-btn
         small
+        titleTooltip
         :title="editBtnTitle"
-        v-tooltip="editBtnTitle"
         :icon="editBtnIcon"
         class="ml-1"
         @click="toggleEdit"

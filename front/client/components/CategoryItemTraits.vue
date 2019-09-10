@@ -19,10 +19,10 @@
           <v-menu bottom left offset-y>
             <template v-slot:activator="{ on }">
               <category-item-btn
+                titleTooltip
                 class="trait-actions-menu-btn"
                 size="22px"
                 title="Actions"
-                v-tooltip="'Actions'"
                 iconSize="14"
                 icon="ellipsis-v"
                 v-on='on'
