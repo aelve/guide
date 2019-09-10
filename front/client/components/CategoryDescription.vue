@@ -74,7 +74,7 @@ export default class CategoryDescription extends Vue {
 
   @CatchConflictDecorator
   async updateDescription ({ original, modified }) {
-    await this.$store.dispatch('categoryItem/updateCategoryDescription', {
+    await this.$store.dispatch('category/updateCategoryDescription', {
       id: this.categoryId,
       original,
       modified

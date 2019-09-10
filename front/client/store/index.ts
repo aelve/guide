@@ -4,15 +4,18 @@ import categoryItem from 'client/store/modules/categoryItem'
 import wiki from 'client/store/modules/wiki'
 
 function createStore () {
-  // TODO loggins mutations in dev
   return new Vuex.Store({
     state: {
-      isPageLoading: false
+      isPageLoading: false,
+      is404: false
     },
     actions: {},
     mutations: {
       tooglePageLoading (state) {
         state.isPageLoading = !state.isPageLoading
+      },
+      set404 (state, val) {
+        state.is404 = val
       }
     },
     modules: {

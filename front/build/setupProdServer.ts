@@ -9,6 +9,7 @@ import bundle from '../src/vue-ssr-server-bundle.json'
 import clientManifest from '../src/vue-ssr-client-manifest.json'
 import serve from 'koa-static'
 import koaMount from 'koa-mount'
+import serverRequestsHandler from './serverRequestsHandler'
 
 const fsAsync = fs.promises
 export default async function setupProdServer (app) {
@@ -21,15 +22,7 @@ export default async function setupProdServer (app) {
     runInNewContext: false
   })
 
-  async function handler (ctx) {
-    const { url } = ctx
-
-    try {
-      ctx.body = await renderer.renderToString({ url })
-    } catch (error) {
-      ctx.body = error
-    }
-  }
+  const handler = (ctx) => serverRequestsHandler(ctx, renderer)
 
   app.use(koaMount('/src', serve(path.resolve(__dirname, '../src/'))))
   app.use(handler)
