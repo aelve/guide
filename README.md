@@ -8,13 +8,16 @@ Installation instructions and the explanation of config variables (in `config.js
 
 ## Benchmarking
 
-Deploy postgres server and create `guide` database.
+Start Postgres and create the `guide` database.
 
-Add next parameter to benchmarks and library section of `package.yaml`:
+If you've been building with `stack build --fast`, do a cleanup:
 
-    ghc-options:
-      - -O
+```
+stack clean
+```
 
-Run benchmarks with command:
+Then build and run benchmarks:
 
-    stack bench
+```
+stack bench
+```
