@@ -21,7 +21,7 @@ apiRequest.interceptors.response.use(
     }
 
     axios.$app.errorToast({
-      message: `Something went wrong, could not process${requestName ? ` "${requestName}"` : ''} request.`,
+      message: `Could not process${requestName ? ` "${requestName}"` : ''} request.`,
       details: {
         path: error.request.responseURL,
         responseCode,
