@@ -82,6 +82,7 @@ export default class ErrorToast extends Vue {
     required: true
   }) message
   @Prop(Object) details
+  @Prop(Boolean) autohide
 
   value = false
   isDetailsVisible = false
@@ -100,11 +101,13 @@ export default class ErrorToast extends Vue {
   }
 
   startTimeout () {
-    this.timeout = setTimeout(() => this.close(), defaultTimeout)
+    if (this.autohide) {
+      this.timeout = setTimeout(() => this.close(), defaultTimeout)
+    }
   }
 
   clearTimeout () {
-    if (!this.timeout) {
+    if (!this.timeout || !this.autohide) {
       return
     }
     clearTimeout(this.timeout)
