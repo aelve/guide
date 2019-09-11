@@ -83,7 +83,7 @@
             :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
             target="_blank"
-          >{{ category.title }}</router-link>>
+          >{{ category.title }}</router-link>
         </li>
       </ul>
     </ConfirmDialog>
