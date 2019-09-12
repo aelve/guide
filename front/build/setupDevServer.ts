@@ -31,11 +31,6 @@ const mfs = new MemoryFs()
 const clientManifestFileName = 'vue-ssr-client-manifest.json'
 const serverBundleFileName = 'vue-ssr-server-bundle.json'
 
-// TODO add icon and refactor, change favicon serving
-const urlsToSkip = [
-  '/favicon.ico'
-]
-
 let bundle: object = null
 let clientManifest: object = null
 let renderer = null

@@ -13,8 +13,8 @@ apiRequest.interceptors.response.use(
     // skipErrorCodes used for catching 409 conflict error and displaying merge conflict dialog for some requests
     const { skipErrorCodes, requestName } = error.config
 
-    const isSkipErorr = skipErrorCodes && skipErrorCodes.includes(responseCode)
     const responseCode = error.response && error.response.status
+    const isSkipErorr = skipErrorCodes && skipErrorCodes.includes(responseCode)
 
     if (axios.$app.$isServer || !responseCode || isSkipErorr) {
       throw error
