@@ -34,6 +34,7 @@
         />
       </template>
       <v-btn
+        v-if="category.items && category.items.length"
         text
         class="ml-2"
         color="grey darken-2"
