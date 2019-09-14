@@ -24,6 +24,7 @@ const config = {
       '.tsx'
     ],
     alias: {
+      '~': path.resolve(__dirname, '../'),
       client: path.resolve(__dirname, '../client/'),
       utils: path.resolve(__dirname, '../utils/')
     },
@@ -168,7 +169,10 @@ const config = {
     new VueLoaderPlugin(),
     new FriendlyErrorsWebpackPlugin(),
     new DefinePlugin({
-      NODE_ENV: isProduction ? "'production'" : "'development'"
+      'process.env': {
+        'NODE_ENV': process.env.PORT,
+        'PORT': process.env.PORT
+      }
     }),
     new VuetifyLoaderPlugin()
   ]

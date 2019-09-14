@@ -82,6 +82,18 @@ const actions: ActionTree<ICategoryState, any> = {
   ) {
     commit('toggleSectionEditState', { sectionName: 'ItemNotesSection', itemId })
   },
+  async updateCategoryDescription (
+    { dispatch }: ActionContext<ICategoryState, any>,
+    { id, original, modified }: { id: string, original: string, modified: string }
+  ) {
+    const createdDescription = await CategoryService.updateCategoryDescription({
+      id,
+      original,
+      modified
+    })
+
+    return createdDescription
+  }
 }
 
 const mutations: MutationTree<ICategoryState> = {

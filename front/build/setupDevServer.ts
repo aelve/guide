@@ -5,6 +5,7 @@ import webpack from 'webpack'
 import { createBundleRenderer } from 'vue-server-renderer'
 import koaWebpack from 'koa-webpack'
 import DeferredPromise from '../utils/DeferredPromise'
+import serverRequestsHandler from './serverRequestsHandler'
 
 const fsAsync = fs.promises
 
@@ -30,11 +31,6 @@ const mfs = new MemoryFs()
 const clientManifestFileName = 'vue-ssr-client-manifest.json'
 const serverBundleFileName = 'vue-ssr-server-bundle.json'
 
-// TODO add icon and refactor, change favicon serving
-const urlsToSkip = [
-  '/favicon.ico'
-]
-
 let bundle: object = null
 let clientManifest: object = null
 let renderer = null
@@ -52,6 +48,7 @@ export default async function setupDevServer (app): Promise<void> {
   })
 
   await Promise.all([setupClientDevMiddlware(app, promise.resolve), setupTemplate()])
+  const handler = (ctx) => serverRequestsHandler(ctx, renderer)
   app.use(handler)
 
   // @ts-ignore
@@ -99,29 +96,5 @@ async function updateRenderer (resolveSetup: () => void) {
 
   if (resolveSetup) {
     resolveSetup()
-  }
-}
-
-async function handler (ctx) {
-  const { url } = ctx
-
-  // TODO add favicon skip favicon.
-  if (urlsToSkip.includes(url)) {
-    ctx.body = ''
-    return
-  }
-
-  if (!bundle || !clientManifest || !renderer) {
-    ctx.body = 'Please wait...'
-    return
-  }
-
-  try {
-    ctx.response.header['Content-Type'] = 'text/html'
-    ctx.body = await renderer.renderToString({ url })
-  } catch (error) {
-    console.error('[Error] SSR render error:', error)
-    ctx.body = 500
-    ctx.body = error.message || 'Unknown Internal Server Error'
   }
 }

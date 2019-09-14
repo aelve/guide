@@ -1,27 +1,24 @@
 import _get from 'lodash/get'
-import axios from 'axios'
 import { createApp } from './app'
-
-import config from '../config'
-
-axios.defaults.baseURL = `http://localhost:${config.port}`
 
 export default async context => {
   return new Promise((resolve, reject) => {
     const { app, router, store } = createApp()
 
-    router.push(context.url)
-    router.onReady(() => {
-      const matchedComponents = router.getMatchedComponents()
+    // Case when server tried to render some page but api request returned 404 and we render 404 page on same url
+    if (context.is404) {
+      router.push({
+        name: 'Page404',
+        params: { 0: context.url }
+      })
+    } else {
+      router.push(context.url)
+    }
 
-      // TODO not reject, create fallback to 404 component
-      if (!matchedComponents.length) {
-        return reject({
-          code: 404,
-          error: new Error('no component matched')
-        })
+    router.onReady(() => {
+      context.rendered = () => {
+        context.state = store.state
       }
-      context.state = store.state
       resolve(app)
     }, reject)
   })

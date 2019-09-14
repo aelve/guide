@@ -13,6 +13,14 @@ import { Component } from 'vue-property-decorator'
 
 @Component
 export default class Page404 extends Vue {
+  created () {
+    this.$store.commit('set404', true)
+  }
+
+  beforeDestroy () {
+    this.$store.commit('set404', false)
+  }
+
   beforeMount () {
     document.title = `Error 404 – Aelve Guide`
   }
