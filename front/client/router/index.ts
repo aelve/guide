@@ -20,6 +20,10 @@ function createRouter (store) {
     routes: [
       {
         path: '/',
+        redirect: '/haskell'
+      },
+      {
+        path: '/haskell',
         name: 'Index',
         component: () => import('../page/Index.vue')
       },
