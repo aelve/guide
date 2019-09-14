@@ -28,6 +28,7 @@
       </span>
       <v-toolbar-items>
         <v-btn
+          text
           class="mr-2"
           aria-label="Cancel"
           @click="cancel"
