@@ -30,6 +30,7 @@
             ref="categoryNameInput"
             class="mb-3"
             label="Category name"
+            data-testid="add-category-dialog_category-name-input"
             :rules="categoryValidationRules"
             v-model="categoryName"
           />
@@ -53,6 +54,7 @@
           aria-label="Submit"
           color="info"
           class="add-category-submit-btn"
+          data-testid="add-category-dialog_submit-btn"
           :disabled="!isValid"
           @click.native="submit"
         >
@@ -69,6 +71,10 @@
     <ConfirmDialog
       eager
       ref="duplicateConfirm"
+      data-testid="duplicate-category-dialog"
+      :confirmBtnProps="{
+        'data-testid': 'duplicate-category-dialog_confirm-btn'
+      }"
       max-width="500px"
       :value="isDuplicateConfirmShow"
     >
@@ -79,8 +85,6 @@
           :key="category.id"
         >
           <router-link
-            v-for="category in sameNameCategories"
-            :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
             target="_blank"
           >{{ category.title }}</router-link>
