@@ -44,9 +44,9 @@ postgresLoader logger globalState = do
       GRANT ALL ON SCHEMA public TO postgres;
       GRANT ALL ON SCHEMA public TO public;
     -}
-    setupDatabase
+    conn <- connect (#database "guide")
+    setupDatabase conn
     -- Upload to Postgres
-    conn <- connect
     runTransactionExceptT conn Write $ insertCategories globalState
     -- Download from Postgres
     catPostgres <- runTransactionExceptT conn Read $

@@ -8,13 +8,14 @@ where
 import Imports
 
 import Hasql.Session (Session)
+import Hasql.Connection (Connection)
 import Hasql.Statement (Statement (..))
 import Data.Profunctor (lmap)
 
 import qualified Hasql.Session as HS
 
 import Guide.Database.Utils
-import Guide.Database.Connection (connect, runSession)
+import Guide.Database.Connection (runSession)
 
 
 -- | List of all migrations.
@@ -32,12 +33,11 @@ migrations =
 -- not create a database if it does not exist yet. You should create the
 -- database manually by doing @CREATE DATABASE guide;@ or run Postgres with
 -- @POSTGRES_DB=guide@ when running when running the app for the first time.
-setupDatabase :: IO ()
-setupDatabase = do
-  conn <- connect
+setupDatabase :: Connection -> IO ()
+setupDatabase conn = do
   mbSchemaVersion <- runSession conn getSchemaVersion
   case mbSchemaVersion of
-    Nothing -> formatLn "No schema found. Creating tables and running all migrations."
+    Nothing -> formatLn "No schema found."
     Just v  -> formatLn "Schema version is {}." v
   let schemaVersion = fromMaybe (-1) mbSchemaVersion
   let neededMigrations =
@@ -47,7 +47,7 @@ setupDatabase = do
   if null neededMigrations then
     putStrLn "Schema is up to date."
   else do
-    putStrLn "Schema is not up to date, running migrations."
+    putStrLn "Running migrations:"
     for_ neededMigrations $ \(migrationVersion, migration) -> do
       format "Migration {}: " migrationVersion
       runSession conn (migration >> setSchemaVersion migrationVersion)

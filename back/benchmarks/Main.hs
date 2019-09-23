@@ -11,6 +11,7 @@ import Hasql.Transaction.Sessions (Mode (..))
 import Hasql.Connection (Connection)
 import qualified Data.Set as Set
 
+import Guide.Database.Schema (setupDatabase)
 import Guide.Database.Queries.Update
 import Guide.Database.Queries.Select
 import Guide.Database.Queries.Insert
@@ -23,7 +24,10 @@ import Guide.Markdown (toMarkdownBlock, toMarkdownTree)
 -- | See readme for instruction.
 main :: IO ()
 main = do
-  conn <- connect
+  putStrLn "Connecting to database guide-bench"
+  conn <- connect (#database "guide-bench")
+  putStrLn "Initializing database"
+  setupDatabase conn
   time <- getCurrentTime
   runTransactionExceptT conn Write $
     insertCategoryWithCategory (#archived False) $ category time

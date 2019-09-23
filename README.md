@@ -8,16 +8,19 @@ Installation instructions and the explanation of config variables (in `config.js
 
 ## Benchmarking
 
-Start Postgres and create the `guide` database.
-
-If you've been building with `stack build --fast`, do a cleanup:
+Start Postgres and create an empty database called `guide-bench`. An example
+with Docker:
 
 ```
-stack clean
+docker run --name guide-db -e POSTGRES_PASSWORD=3 -e POSTGRES_DB=guide-bench -p 5432:5432 -d postgres
 ```
 
-Then build and run benchmarks:
+Build and run benchmarks:
 
 ```
 stack bench
 ```
+
+If you have been building with `--fast` previously, or using `make`, Stack
+will detect that Guide has to be recompiled with `-O` and do it
+automatically.
