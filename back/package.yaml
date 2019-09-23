@@ -205,11 +205,9 @@ benchmarks:
     dependencies:
       - base <5
       - containers
-      - guide
       - gauge
+      - guide
       - hasql
       - hasql-transaction
+      - random
       - time
-
-    ghc-options:
-    - -O
