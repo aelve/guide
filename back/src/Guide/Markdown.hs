@@ -323,10 +323,12 @@ deriving instance Show Heading
 instance Aeson.ToJSON MarkdownInline where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownInlineSource md,
+    -- TODO: remove "html" when the old frontend is removed
     "html" Aeson..= utf8ToText (markdownInlineHtml md) ]
 instance Aeson.ToJSON MarkdownBlock where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownBlockSource md,
+    -- TODO: remove "html" when the old frontend is removed
     "html" Aeson..= utf8ToText (markdownBlockHtml md) ]
 instance Aeson.ToJSON MarkdownTree where
   toJSON md = Aeson.object [
