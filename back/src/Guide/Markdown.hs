@@ -93,10 +93,18 @@ parseMD s =
 renderMD :: [MD.Node] -> ByteString
 renderMD ns
   -- See https://github.com/jgm/cmark/issues/147
-  | any isInlineNode ns =
-      toUtf8ByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
-  | otherwise =
-      toUtf8ByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+  | any isInlineNode ns
+      = toUtf8ByteString
+      . sanitize
+      . T.concat
+      . map (nodeToHtml [] . linkToHtmlInline)
+      $ ns
+  | otherwise
+      = toUtf8ByteString
+      . sanitize
+      . nodeToHtml []
+      . linkToHtmlInline
+      $ MD.Node Nothing DOCUMENT ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
@@ -180,6 +188,23 @@ extractInlines = concatMap go
       HTML_BLOCK xs     -> [MD.Node Nothing (CODE xs) []]
       HTML_INLINE xs    -> [MD.Node Nothing (CODE xs) []]
       CODE_BLOCK _ xs   -> [MD.Node Nothing (CODE xs) []]
+
+-- | Convert LINK to HTML_INLINE with 'target="blank"' attribute added.
+linkToHtmlInline :: MD.Node -> MD.Node
+linkToHtmlInline (MD.Node pos (LINK url _) ns) =
+    MD.Node pos (HTML_INLINE blankLink) ns
+  where
+    blankLink = toText $
+      renderText $ a_ [href_ url, target_ "_blank"] $ title $ head ns
+    title (MD.Node _ (TEXT txt) _) = toHtml txt
+    title (MD.Node _ (IMAGE imageUrl _) alt) = go imageUrl alt
+    title _ = toHtml T.empty
+    go url' alt' = case altText $ head alt' of
+      "" -> img_ [src_ url']
+      txt' -> img_ [src_ url', alt_ txt']
+    altText (MD.Node _ (TEXT txt) _) = txt
+    altText _ = T.empty
+linkToHtmlInline (MD.Node pos tp ns) = MD.Node pos tp (map linkToHtmlInline ns)
 
 shortcutLinks :: MD.Node -> MD.Node
 shortcutLinks node@(MD.Node pos (LINK url title) ns) | "@" <- T.take 1 url =

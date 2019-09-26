@@ -40,7 +40,7 @@ tests = describe "Markdown" $ do
     it "Hackage links" $ do
       let s = "[text](@hk)"
       let html = snd (convert s)
-      let l = "<a href=\"https://hackage.haskell.org/package/text\">text</a>"
+      let l = "<a href=\"https://hackage.haskell.org/package/text\" target=\"_blank\">text</a>"
       html `shouldSatisfy` (`elem` [l, "<p>"<>l<>"</p>\n"])
 
   describe "inline Markdown" $ do
