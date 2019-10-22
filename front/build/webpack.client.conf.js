@@ -9,8 +9,8 @@ const baseConfig = require('./webpack.base.conf')
 const isProduction = process.env.NODE_ENV === 'production'
 
 const webpackConfig = merge(baseConfig, {
-  // Entry should be array cause of webpack-hot-client requirements
   mode: isProduction ? 'production' : 'development',
+  // Entry should be array cause of webpack-hot-client requirements
   entry: [path.resolve(__dirname, '../client/entry.client.ts')],
   devtool: isProduction ? false : 'cheap-module-source-map',
   optimization: {
