@@ -170,8 +170,8 @@ const config = {
     new FriendlyErrorsWebpackPlugin(),
     new DefinePlugin({
       'process.env': {
-        'NODE_ENV': process.env.PORT,
-        'PORT': process.env.PORT
+        'NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+        'PORT': JSON.stringify(process.env.PORT)
       }
     }),
     new VuetifyLoaderPlugin()
