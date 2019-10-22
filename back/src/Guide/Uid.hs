@@ -24,7 +24,7 @@ newtype Uid a = Uid {uidToText :: Text}
   deriving stock (Generic, Eq, Ord, Data)
   deriving newtype
     (Read, Show, IsString, Buildable, ToHttpApiData, FromHttpApiData,
-     Hashable, ToJSON, FromJSON)
+     Hashable, ToJSON, FromJSON, NFData)
 
 ----------------------------------------------------------------------------
 -- Instances

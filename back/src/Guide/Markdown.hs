@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 -- | Everything concerning rendering and processing Markdown.
@@ -59,25 +60,36 @@ data MarkdownInline = MarkdownInline {
   markdownInlineSource   :: Text,
   markdownInlineHtml     :: ByteString,
   markdownInlineMarkdown :: ![MD.Node] }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
 
 data MarkdownBlock = MarkdownBlock {
   markdownBlockSource   :: Text,
   markdownBlockHtml     :: ByteString,
   markdownBlockMarkdown :: ![MD.Node] }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
 
 data MarkdownTree = MarkdownTree {
   markdownTreeSource    :: Text,
   markdownTreeStructure :: !(Document Text ByteString),
   markdownTreeIdPrefix  :: Text,
   markdownTreeTOC       :: Forest Heading }
-  deriving (Generic, Data, Eq)
+  deriving (Generic, Data, Eq, NFData)
+
+deriving instance NFData MD.Node
+deriving instance NFData MD.NodeType
+deriving instance NFData MD.ListAttributes
+deriving instance NFData MD.DelimType
+deriving instance NFData MD.ListType
+deriving instance NFData MD.PosInfo
+deriving instance NFData (WithSource [MD.Node])
+deriving instance (NFData b, NFData t) => NFData (Document t b)
+deriving instance (NFData b, NFData t) => NFData (Section t b)
+deriving instance NFData Heading
 
 -- | Table-of-contents heading
 data Heading = Heading
     { headingMarkdown :: MarkdownInline
-    , headingSlug :: Text
+    , headingSlug     :: Text
     } deriving (Generic, Data, Eq)
 
 makeClassWithLenses ''MarkdownInline
@@ -311,14 +323,31 @@ deriving instance Show Heading
 instance Aeson.ToJSON MarkdownInline where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownInlineSource md,
+    -- TODO: remove "html" when the old frontend is removed
     "html" Aeson..= utf8ToText (markdownInlineHtml md) ]
 instance Aeson.ToJSON MarkdownBlock where
   toJSON md = Aeson.object [
     "text" Aeson..= markdownBlockSource md,
+    -- TODO: remove "html" when the old frontend is removed
     "html" Aeson..= utf8ToText (markdownBlockHtml md) ]
 instance Aeson.ToJSON MarkdownTree where
   toJSON md = Aeson.object [
-    "text" Aeson..= markdownTreeSource md ]
+    "text" Aeson..= markdownTreeSource md,
+    "prefix" Aeson..= markdownTreeIdPrefix md ]
+
+instance Aeson.FromJSON MarkdownInline where
+  parseJSON = Aeson.withObject "MarkdownInline" $ \o -> do
+    txt <- o Aeson..: "text"
+    pure $ toMarkdownInline txt
+instance Aeson.FromJSON MarkdownBlock where
+  parseJSON = Aeson.withObject "MarkdownBlock" $ \o -> do
+    txt <- o Aeson..: "text"
+    pure $ toMarkdownBlock txt
+instance Aeson.FromJSON MarkdownTree where
+  parseJSON = Aeson.withObject "MarkdownTree" $ \o -> do
+    txt <- o Aeson..: "text"
+    prefix <- o Aeson..:? "prefix" Aeson..!= ""
+    pure $ toMarkdownTree prefix txt
 
 instance ToHtml MarkdownInline where
   toHtmlRaw = toHtml

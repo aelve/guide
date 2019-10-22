@@ -28,6 +28,7 @@ module Guide.Database.Utils
 where
 
 import Imports
+
 import Hasql.Statement
 import Data.Functor.Contravariant ((>$<))
 import Data.Functor.Contravariant.Divisible (divided, lost, chosen)

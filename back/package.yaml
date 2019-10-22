@@ -197,3 +197,17 @@ tests:
     - temporary
     - webdriver
     - yaml
+
+benchmarks:
+  benchmarks:
+    main: Main.hs
+    source-dirs: benchmarks
+    dependencies:
+      - base <5
+      - containers
+      - gauge
+      - guide
+      - hasql
+      - hasql-transaction
+      - random
+      - time

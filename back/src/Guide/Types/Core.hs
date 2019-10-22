@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 -- | Core types for content.
@@ -27,18 +28,18 @@ where
 
 import Imports
 
+import Data.Functor.Contravariant ((>$<))
 -- acid-state
 import Data.SafeCopy hiding (kind)
 import Data.SafeCopy.Migrate
 
+import Guide.Database.Utils
 import Guide.Markdown
 import Guide.Types.Hue
-import Guide.Utils
 import Guide.Uid
-import Guide.Database.Utils (ToPostgres (..), FromPostgres (..))
+import Guide.Utils
 
 import qualified Data.Aeson as Aeson
-import qualified Data.Text as T
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 
@@ -62,7 +63,7 @@ For an explanation of deriveSafeCopySorted, see Note [acid-state].
 data Trait = Trait {
   traitUid     :: Uid Trait,
   traitContent :: MarkdownInline }
-  deriving (Show, Generic, Data, Eq)
+  deriving (Show, Generic, Data, Eq, NFData)
 
 deriveSafeCopySorted 4 'extension ''Trait
 makeClassWithLenses ''Trait
@@ -71,8 +72,16 @@ changelog ''Trait (Current 4, Past 3) []
 deriveSafeCopySorted 3 'base ''Trait_v3
 
 instance Aeson.ToJSON Trait where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "trait") }
+  toJSON $(fields 'Trait) = Aeson.object [
+    "uid"             Aeson..= traitUid,
+    "content"         Aeson..= traitContent
+    ]
+
+instance Aeson.FromJSON Trait where
+  parseJSON = Aeson.withObject "Trait" $ \o -> do
+    traitUid     <- o Aeson..: "uid"
+    traitContent <- o Aeson..: "content"
+    pure Trait{..}
 
 -- | ADT for trait type. Traits can be pros (positive traits) and cons
 -- (negative traits).
@@ -146,7 +155,7 @@ data ItemSection
   = ItemProsConsSection
   | ItemEcosystemSection
   | ItemNotesSection
-  deriving (Eq, Ord, Show, Generic, Data)
+  deriving (Eq, Ord, Show, Generic, Data, NFData)
 
 deriveSafeCopySimple 0 'base ''ItemSection
 
@@ -188,7 +197,7 @@ data Item = Item {
   itemNotes       :: MarkdownTree,    -- ^ The notes section
   itemLink        :: Maybe Url        -- ^ Link to homepage or something
   }
-  deriving (Generic, Data, Eq, Show)
+  deriving (Generic, Data, Eq, Show, NFData)
 
 deriveSafeCopySorted 13 'extension ''Item
 makeClassWithLenses ''Item
@@ -213,8 +222,36 @@ changelog ''Item (Past 11, Past 10) []
 deriveSafeCopySorted 10 'base ''Item_v10
 
 instance Aeson.ToJSON Item where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "item") }
+  toJSON $(fields 'Item) = Aeson.object [
+    "uid"           Aeson..= itemUid,
+    "name"          Aeson..= itemName,
+    "created"       Aeson..= itemCreated,
+    "hackage"       Aeson..= itemHackage,
+    "summary"       Aeson..= itemSummary,
+    "pros"          Aeson..= itemPros,
+    "prosDeleted"   Aeson..= itemProsDeleted,
+    "cons"          Aeson..= itemCons,
+    "consDeleted"   Aeson..= itemConsDeleted,
+    "ecosystem"     Aeson..= itemEcosystem,
+    "notes"         Aeson..= itemNotes,
+    "link"          Aeson..= itemLink
+    ]
+
+instance Aeson.FromJSON Item where
+  parseJSON = Aeson.withObject "Item" $ \o -> do
+    itemUid         <- o Aeson..:  "uid"
+    itemName        <- o Aeson..:  "name"
+    itemCreated     <- o Aeson..:  "created"
+    itemHackage     <- o Aeson..:? "hackage"
+    itemSummary     <- o Aeson..:  "summary"
+    itemPros        <- o Aeson..:  "pros"
+    itemProsDeleted <- o Aeson..:  "prosDeleted"
+    itemCons        <- o Aeson..:  "cons"
+    itemConsDeleted <- o Aeson..:  "consDeleted"
+    itemEcosystem   <- o Aeson..:  "ecosystem"
+    itemNotes       <- o Aeson..:  "notes"
+    itemLink        <- o Aeson..:? "link"
+    pure Item{..}
 
 ----------------------------------------------------------------------------
 -- Category
@@ -225,7 +262,7 @@ data CategoryStatus
   = CategoryStub                -- ^ “Stub” = just created
   | CategoryWIP                 -- ^ “WIP” = work in progress
   | CategoryFinished            -- ^ “Finished” = complete or nearly complete
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic, Data, NFData)
 
 deriveSafeCopySimple 2 'extension ''CategoryStatus
 
@@ -282,7 +319,7 @@ data Category = Category {
   -- 'ItemNotesSection', then notes will be shown for each item
   categoryEnabledSections :: Set ItemSection
   }
-  deriving (Generic, Data, Eq, Show)
+  deriving (Generic, Data, Eq, Show, NFData)
 
 deriveSafeCopySorted 13 'extension ''Category
 makeClassWithLenses ''Category
@@ -316,8 +353,39 @@ changelog ''Category (Past 9, Past 8) []
 deriveSafeCopySorted 8 'base ''Category_v8
 
 instance Aeson.ToJSON Category where
-  toJSON = Aeson.genericToJSON Aeson.defaultOptions {
-    Aeson.fieldLabelModifier = over _head toLower . drop (T.length "category") }
+  toJSON $(fields 'Category) = Aeson.object [
+    "uid"             Aeson..= categoryUid,
+    "title"           Aeson..= categoryTitle,
+    "created"         Aeson..= categoryCreated,
+    "group"           Aeson..= categoryGroup,
+    "status"          Aeson..= categoryStatus,
+    "notes"           Aeson..= categoryNotes,
+    "items"           Aeson..= categoryItems,
+    "itemsDeleted"    Aeson..= categoryItemsDeleted,
+    "enabledSections" Aeson..= categoryEnabledSections
+    ]
+
+instance Aeson.FromJSON Category where
+  parseJSON = Aeson.withObject "Category" $ \o -> do
+    categoryUid             <- o Aeson..: "uid"
+    categoryTitle           <- o Aeson..: "title"
+    categoryCreated         <- o Aeson..: "created"
+    categoryGroup           <- o Aeson..: "group"
+    categoryStatus          <- o Aeson..: "status"
+    categoryNotes           <- o Aeson..: "notes"
+    categoryItems           <- o Aeson..: "items"
+    categoryItemsDeleted    <- o Aeson..: "itemsDeleted"
+    categoryEnabledSections <- o Aeson..: "enabledSections"
+    pure Category{..}
+
+-- | 'jsonbBytes' is used to report an error as Left
+--   without using 'error' function.
+instance ToPostgres Category where
+  toPostgres = toByteString . Aeson.encode >$< HE.jsonbBytes
+
+instance FromPostgres Category where
+  fromPostgres = HD.jsonbBytes $
+    either (Left . toText) (Right . id) . Aeson.eitherDecodeStrict
 
 -- | Category identifier (used in URLs). E.g. for a category with title
 -- “Performance optimization” and UID “t3c9hwzo” the slug would be
