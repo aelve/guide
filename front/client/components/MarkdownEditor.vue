@@ -13,7 +13,10 @@
     @keydown.exact.esc="cancel"
     v-show="editor && isReady"
   >
-    <textarea ref="editor" />
+    <textarea
+      data-testid="MarkdownEditor-OriginalTextarea"
+      ref="editor"
+    />
 
     <v-toolbar
       flat
@@ -36,6 +39,7 @@
           Cancel
         </v-btn>
         <v-btn
+          data-testid="MarkdownEditor-SaveBtn"
           color="info"
           aria-label="Save"
           @click="save"
@@ -110,6 +114,7 @@ export default class MarkdownEditor extends Vue {
     const EasyMDE = (await import('easymde')).default
     this.editor = new EasyMDE({
       element: this.$refs.editor,
+      forceSync: true,
       autofocus: true,
       initialValue: this.value,
       spellChecker: false,

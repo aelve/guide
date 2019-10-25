@@ -1,4 +1,5 @@
 import Router from 'vue-router'
+import categoryPathToId from 'client/helpers/categoryPathToId'
 
 function createRouter (store) {
   return new Router({
@@ -31,7 +32,7 @@ function createRouter (store) {
         path: '/haskell/:category',
         name: 'Category',
         component: () => import('../page/CategoryPage.vue'),
-        props: (route) => ({ categoryId: route.params.category.split('#').shift().split('-').pop() })
+        props: (route) => ({ categoryId: categoryPathToId(route.params.category) })
       },
       {
         path: '/haskell/search/results/',
