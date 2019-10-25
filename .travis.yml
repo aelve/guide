@@ -34,7 +34,7 @@ jobs:
         - |
           if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
             export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-            make front/travis-docker "tag=$BRANCH--front"
+            make front/travis-docker "tag=$BRANCH--front" || travis_terminate 1
             docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
             docker push "quay.io/aelve/guide:$BRANCH--front"
           fi
