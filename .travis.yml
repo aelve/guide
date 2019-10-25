@@ -49,8 +49,7 @@ jobs:
         - npm install
         - npm run build
         - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
-        - API_URL=https://localhost:4400/ npm run test:prod
+        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back" & API_URL=https://localhost:4400/ npm run test:prod
 
       # # Test dev desktop
       # script:
