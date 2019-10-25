@@ -23,6 +23,57 @@ cache:
 
 jobs:
   include:
+    
+    - stage: "Build the frontend and upload a Docker image, test frontend"
+      # Build the frontend and upload a Docker image
+      script:
+        # Build
+        - cd front
+        - npm install
+        - npm run build
+        - cd -
+        # Upload the Docker image
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+            make front/travis-docker "tag=$BRANCH--front"
+            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            docker push "quay.io/aelve/guide:$BRANCH--front"
+          fi
+      # Test prod desktop
+      script:
+        # Build
+        - cd front
+        - npm install
+        - npm run build
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
+        - npm run test test:prod
+      # Test dev desktop
+      script:
+        # Build
+        - cd front
+        - npm install
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
+        - npm run test test:dev
+      # Test prod mobile
+      script:
+        # Build
+        - cd front
+        - npm install
+        - npm run build
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
+        - npm run test test:prod:mobile
+      # Test dev mobile
+      script:
+        # Build
+        - cd front
+        - npm install
+        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
+        - npm run test test:dev:mobile
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
@@ -109,57 +160,6 @@ jobs:
         - make back/load-into-postgres
       before_cache:
         - rm -rf $HOME/.stack/programs # GHC is faster to install than to cache
-
-    - stage: "Build the frontend and upload a Docker image, test frontend"
-      # Build the frontend and upload a Docker image
-      script:
-        # Build
-        - cd front
-        - npm install
-        - npm run build
-        - cd -
-        # Upload the Docker image
-        - |
-          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
-            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-            make front/travis-docker "tag=$BRANCH--front"
-            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-            docker push "quay.io/aelve/guide:$BRANCH--front"
-          fi
-      # Test prod desktop
-      script:
-        # Build
-        - cd front
-        - npm install
-        - npm run build
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
-        - npm run test test:prod
-      # Test dev desktop
-      script:
-        # Build
-        - cd front
-        - npm install
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
-        - npm run test test:dev
-      # Test prod mobile
-      script:
-        # Build
-        - cd front
-        - npm install
-        - npm run build
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
-        - npm run test test:prod:mobile
-      # Test dev mobile
-      script:
-        # Build
-        - cd front
-        - npm install
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - docker run -p 4400:4400 "quay.io/aelve/guide:$BRANCH--back"
-        - npm run test test:dev:mobile
 
 notifications:
   slack:
