@@ -42,43 +42,43 @@ jobs:
       #       docker push "quay.io/aelve/guide:$BRANCH--front"
       #     fi
 
-      # Test prod desktop
-      script:
-        - . ./scripts/ci-functions.sh
-        - cd front
-        - npm install
-        - npm run build
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - run_back $BRANCH
-        - API_URL=http://localhost:4400/ npm run test:prod
+    # Test prod desktop
+    - script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - npm run build
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=http://localhost:4400/ npm run test:prod
 
-      # # Test dev desktop
-      script:
-        - . ./scripts/ci-functions.sh
-        - cd front
-        - npm install
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - run_back $BRANCH
-        - API_URL=https://localhost:4400/ npm run test:dev
+    # Test dev desktop
+    - script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=https://localhost:4400/ npm run test:dev
 
-      # # Test prod mobile
-      script:
-        - . ./scripts/ci-functions.sh
-        - cd front
-        - npm install
-        - npm run build
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - run_back $BRANCH
-        - API_URL=https://localhost:4400/ npm run test:prod:mobile
+    # Test prod mobile
+    - script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - npm run build
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=https://localhost:4400/ npm run test:prod:mobile
 
-      # # Test dev mobile
-      script:
-        - . ./scripts/ci-functions.sh
-        - cd front
-        - npm install
-        - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-        - run_back $BRANCH
-        - API_URL=https://localhost:4400/ npm run test:dev:mobile
+    # Test dev mobile
+    - script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=https://localhost:4400/ npm run test:dev:mobile
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
