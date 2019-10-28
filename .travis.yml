@@ -3,7 +3,8 @@ dist: xenial
 
 language: generic
 
-node_js: lts/*
+node_js: 
+  - lts/*
 
 addons:
   chrome: stable
