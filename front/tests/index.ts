@@ -4,6 +4,7 @@ import createTestCafe from 'testcafe'
   try {
     const isProduction = process.env.NODE_ENV === 'production'
     const startingServer = isProduction
+      // @ts-ignore cause typescript throws compilation error if can't find the file
       ? (await import('../dist/server'))
       : (await import('../server'))
 
