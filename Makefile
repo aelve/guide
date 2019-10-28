@@ -59,11 +59,12 @@ back/travis-docker:
 	docker build docker/back -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/back/files
 
-# Create a Docker image for the front;
+# Create a Docker image for the front
 .PHONY: front/travis-docker
 front/travis-docker:
 	rm -rf docker/front/files && mkdir docker/front/files
 	cp -R front/dist docker/front/files/
 	cd ./docker/front/files/dist/ && export NODE_ENV=production && npm install
+	if grep -q "Vue in development mode" docker/front/files/dist/src/main.js; then echo "The frontend has been built in development mode"; exit 1; fi
 	docker build docker/front -t quay.io/aelve/guide:$(tag)
 	rm -rf docker/front/files
