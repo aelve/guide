@@ -46,8 +46,8 @@ async function clickBtnIfVisible (t, btnSelector) {
   }
 }
 
-async function openCategoryMobileActionsMenu (t, index) {
-  await clickBtnIfVisible(t, 'CategoryHeader-MobileMenuBtn', index)
+async function openCategoryMobileActionsMenu (t) {
+  await clickBtnIfVisible(t, 'CategoryHeader-MobileMenuBtn')
 }
 
 async function createItem (t, { name, hackage, link } = {}) {
