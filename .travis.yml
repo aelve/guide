@@ -1,12 +1,7 @@
 sudo: true
 dist: xenial
 
-matrix:
-  include:
-    - language: generic
-    - language: node_js
-      node_js: 
-        - lts/*
+language: generic
 
 addons:
   chrome: stable
@@ -15,7 +10,8 @@ services:
   - xvfb
   - postgresql
 
-# before_install:
+before_install:
+  - nvm install --lts
 #   -  # start your web application and listen on `localhost`
 #   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=5000 http://localhost &
 
