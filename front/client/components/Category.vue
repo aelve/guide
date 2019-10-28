@@ -36,7 +36,7 @@
       <v-btn
         v-if="category.items && category.items.length"
         text
-        class="ml-2"
+        class="ml-2 category__add-item-lower-btn"
         color="grey darken-2"
         aria-label="Add new item"
         @click="openAddItemDialog"
@@ -95,6 +95,10 @@ export default class Category extends Vue {
 .category-wrapper {
   max-width: 800px;
   margin: 0 auto;
+}
+
+.category__add-item-lower-btn{
+  background: #e6e9eaa8;
 }
 
 @media screen and (max-width: 768px) {
