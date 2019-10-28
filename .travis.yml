@@ -46,6 +46,7 @@ jobs:
 
     # Test prod desktop
     - script:
+      - node -v
       - . ./scripts/ci-functions.sh
       - cd front
       - npm install
