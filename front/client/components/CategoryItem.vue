@@ -18,17 +18,20 @@
       <category-item-section
         title="Summary"
         class="mb-3"
+        data-testid="CategoryItem-SummarySection"
         :editText="summary.text"
         @save="updateSummary({original: summary.text, modified: $event})"
       >
         <div
           class="mb-2"
+          data-testid="CategoryItem-SummarySection-Content"
           v-html="summary.html"
         />
       </category-item-section>
 
       <div
         v-if="isSectionEnabled('ItemProsConsSection')"
+        data-testid="CategoryItem-TraitsSection"
         class="category-item-traits mb-3"
       >
         <category-item-traits
@@ -49,17 +52,22 @@
         v-if="isSectionEnabled('ItemEcosystemSection')"
         title="Ecosystem"
         class="mb-3"
+        data-testid="CategoryItem-EcosystemSection"
         :editText="ecosystem.text"
         @save="updateEcosystem({original: ecosystem.text, modified: $event})"
         @toggleEdit="toggleItemEcosystemEditState"
       >
-        <div v-html="ecosystem.html" />
+        <div
+          v-html="ecosystem.html" 
+          data-testid="CategoryItem-EcosystemSection-Content"
+        />
       </category-item-section>
 
       <category-item-section
         v-if="isSectionEnabled('ItemNotesSection')"
         title="Notes"
         class="mb-3"
+        data-testid="CategoryItem-NotesSection"
         :editText="notes.text"
         @save="updateNotes({original: notes.text, modified: $event})"
         @toggleEdit="toggleItemNotesEditState"
@@ -101,6 +109,7 @@
             <div
               v-if="notes.html"
               v-html="notes.html"
+              data-testid="CategoryItem-NotesSection-Content"
             />
             <span v-else> &lt;notes are empty&gt; </span>
           </div>
@@ -154,7 +163,7 @@ export default class CategoryItem extends Vue {
 
   @Watch('isAnyTraitEditing', { immediate: true })
   updateItemTraitEditingState (newVal, prevVal) {
-    if (newVal !== prevVal) {
+    if (!!newVal !== !!prevVal) {
       this.$store.dispatch('category/toggleItemProsConsSectionEdit', this.itemUid)
     }
   }

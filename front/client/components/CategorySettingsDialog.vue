@@ -28,12 +28,14 @@
             autofocus
             class="mb-2"
             label="Title"
+            data-testid="CategorySettings-TitleInput"
             :rules="inputValidationRules"
             v-model="title"
           />
           <v-text-field
             class="mb-2"
             label="Group"
+            data-testid="CategorySettings-GroupInput"
             :rules="inputValidationRules"
             v-model="group"
           />
@@ -50,6 +52,7 @@
             hide-details
             color="info"
             class="category-settings-dialog__checkbox"
+            data-testid="CategorySettings-ItemTraitsSectionCheckbox"
             label="Pros/cons section"
             value="ItemProsConsSection"
             :inputValue="sections"
@@ -59,6 +62,7 @@
             hide-details
             color="info"
             class="category-settings-dialog__checkbox"
+            data-testid="CategorySettings-ItemEcosystemSectionCheckbox"
             label="Ecosystem section"
             value="ItemEcosystemSection"
             :inputValue="sections"
@@ -68,6 +72,7 @@
             hide-details
             color="info"
             class="category-settings-dialog__checkbox"
+            data-testid="CategorySettings-ItemNotesSectionCheckbox"
             label="Notes section"
             value="ItemNotesSection"
             :inputValue="sections"
@@ -88,6 +93,7 @@
         <v-btn
           color="info"
           aria-label="Submit"
+          data-testid="CategorySettings-SubmitBtn"
           :disabled="!isValid || !hasChanges"
           @click="updateCategoryInfo"
         >

@@ -11,8 +11,7 @@ services:
   - postgresql
 
 before_install:
-  - # start your web application and listen on `localhost`
-  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=5000 http://localhost &
+  - nvm install --lts
 
 cache:
   directories:
@@ -23,22 +22,6 @@ cache:
 
 jobs:
   include:
-    - stage: "Build the frontend and upload a Docker image"
-      script:
-        # Build
-        - cd front
-        - npm install
-        - npm run build
-        - cd -
-        # Upload the Docker image
-        - |
-          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
-            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-            make front/travis-docker "tag=$BRANCH--front" || travis_terminate 1
-            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-            docker push "quay.io/aelve/guide:$BRANCH--front"
-          fi
-
     - stage: "Build the backend and upload a Docker image"
       before_script:
         - sudo apt-get install -y libgmp-dev
@@ -97,10 +80,68 @@ jobs:
             exit 1
           fi
       before_cache:
-        - rm -rf $HOME/.stack/programs  #  GHC is faster to install than to cache
+        - rm -rf $HOME/.stack/programs #  GHC is faster to install than to cache
+    
+    - stage: "Build the frontend and upload a Docker image, test frontend"
+    - name: "Build the frontend and upload a Docker image"
+      script:
+        # Build
+        - cd front
+        - npm install
+        - npm run build
+        - cd -
+        # Upload the Docker image
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+            make front/travis-docker "tag=$BRANCH--front"
+            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            docker push "quay.io/aelve/guide:$BRANCH--front"
+          fi
+
+    - name: "Test frontend prod desktop"
+      script:
+      - node -v
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - npm run build
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=http://localhost:4400/ npm run test:prod
+
+    - name: "Test frontend dev desktop"
+      script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=http://localhost:4400/ npm run test:dev
+
+    - name: "Test frontend prod mobile"
+      script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - npm run build
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=http://localhost:4400/ npm run test:prod:mobile
+
+    - name: "Test frontend dev mobile"
+      script:
+      - . ./scripts/ci-functions.sh
+      - cd front
+      - npm install
+      - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+      - run_back $BRANCH
+      - API_URL=http://localhost:4400/ npm run test:dev:mobile
+
 
     - stage: "Test the backend"
       before_script:
+        - google-chrome-stable --headless --dis able-gpu --remote-debugging-port=5000 http://localhost &
         - sudo apt-get install -y libgmp-dev fluxbox
         - curl -sSL https://get.haskellstack.org/ | sh
         # travis_retry works around https://github.com/commercialhaskell/stack/issues/4888
@@ -123,14 +164,7 @@ jobs:
         - make back/test-db
         - make back/load-into-postgres
       before_cache:
-        - rm -rf $HOME/.stack/programs  # GHC is faster to install than to cache
-
-    # - stage: "Test the frontend"
-    #     - sleep 10
-    #     - fluxbox >/dev/null 2>&1 &
-    #   script:
-    #     # Run testcafe e2e testing
-    #     - npm run test
+        - rm -rf $HOME/.stack/programs # GHC is faster to install than to cache
 
 notifications:
   slack:

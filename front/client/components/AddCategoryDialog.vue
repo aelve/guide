@@ -30,11 +30,13 @@
             ref="categoryNameInput"
             class="mb-3"
             label="Category name"
-            data-testid="add-category-dialog_category-name-input"
+            data-testid="AddCategoryDialog-NameInput"
             :rules="categoryValidationRules"
             v-model="categoryName"
           />
           <v-text-field
+            data-testid="AddCategoryDialog-GroupInput"
+            :rules="groupValidationRules"
             v-model="groupNameInternal"
             label="Group"
           />
@@ -54,7 +56,7 @@
           aria-label="Submit"
           color="info"
           class="add-category-submit-btn"
-          data-testid="add-category-dialog_submit-btn"
+          data-testid="AddCategoryDialog-SubmitBtn"
           :disabled="!isValid"
           @click.native="submit"
         >
@@ -71,25 +73,26 @@
     <ConfirmDialog
       eager
       ref="duplicateConfirm"
-      data-testid="duplicate-category-dialog"
       :confirmBtnProps="{
-        'data-testid': 'duplicate-category-dialog_confirm-btn'
+        'data-testid': 'DuplicateCategoryDialog-ConfirmBtn'
       }"
       max-width="500px"
       :value="isDuplicateConfirmShow"
     >
-      This group already has categories with the same name:
-      <ul class="duplicate-categories-list">
-        <li
-          v-for="category in sameNameCategories"
-          :key="category.id"
-        >
-          <router-link
-            :to="`/haskell/${getCategoryUrl(category)}`"
-            target="_blank"
-          >{{ category.title }}</router-link>
-        </li>
-      </ul>
+      <div data-testid="DuplicateCategoryDialog">
+        This group already has categories with the same name:
+        <ul class="duplicate-categories-list">
+          <li
+            v-for="category in sameNameCategories"
+            :key="category.id"
+          >
+            <router-link
+              :to="`/haskell/${getCategoryUrl(category)}`"
+              target="_blank"
+            >{{ category.title }}</router-link>
+          </li>
+        </ul>
+      </div>
     </ConfirmDialog>
 
   </v-dialog>
@@ -118,36 +121,44 @@ export default class AddCategoryDialog extends Vue {
   categoryValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || `Category name can't be empty`
   ]
+  groupValidationRules: Array<(x: string) => boolean | string> = [
+    (x: string) => !!x || `Group can't be empty`
+  ]
   isValid: boolean = false
   isDuplicateConfirmShow: boolean = false
+  sameNameCategories = []
 
   get categories () {
     return this.$store.state.category.categoryList
   }
 
-  get sameNameCategories () {
-    if (!this.categoryName || !this.groupName) {
-      return []
-    }
-    return this.categories
-      .filter(x => x.group === this.groupName && x.title === this.categoryName)
-  }
-
   @Watch('value')
   onOpen (newVal: boolean) {
-    this.categoryName = ''
-    this.groupNameInternal = this.groupName
+    // wait for vue to render form
+    this.$nextTick(() => {
+      this.$refs.form.resetValidation()
+      this.categoryName = ''
+      this.groupNameInternal = this.groupName
+    })
   }
 
   close () {
     this.$emit('input', false)
   }
 
+  calcSameNameCategories () {
+    if (!this.categoryName || !this.groupNameInternal) {
+      return []
+    }
+    return this.categories
+      .filter(x => x.group === this.groupNameInternal && x.title === this.categoryName)
+  }
+
   async submit () {
     if (!this.$refs.form.validate()) {
       return
     }
-
+    this.sameNameCategories = this.calcSameNameCategories()
     if (this.sameNameCategories.length) {
       const isDuplicationConfirmed = await this.confirmDuplicate()
       if (!isDuplicationConfirmed) {

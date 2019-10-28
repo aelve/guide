@@ -1,5 +1,8 @@
 <template>
-  <div class="category-item-toolbar">
+  <div
+    class="category-item-toolbar"
+    data-testid="CategoryItemToolbar"
+  >
     <div class="category-item-toolbar__header">
       <v-toolbar
         color="#dedede"
@@ -17,14 +20,20 @@
                 v-if="itemLink"
                 class="category-item-name"
                 target="_blank"
+                data-testid="CategoryItemToolbar-ItemName"
                 :href="itemLink"
               >{{ itemName }}</a>
-              <span class="category-item-name" v-else>{{ itemName }}</span>
+              <span
+                v-else
+                data-testid="CategoryItemToolbar-ItemName"
+                class="category-item-name"
+              >{{ itemName }}</span>
               <div class="category-item-badges">
                 <a
                   v-if="this.itemHackage"
                   class="hackage-link"
                   target="_blank"
+                  data-testid="CategoryItemToolbar-HackageLink"
                   :href="`https://hackage.haskell.org/package/${this.itemHackage}`"
                 >
                   <v-icon
@@ -38,13 +47,14 @@
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items>
+        <v-toolbar-items class="category-item__actions">
           <div class="category-item-toolbar-btns">
             <category-item-btn
               titleTooltip
               size="40px"
               iconSize="18"
               title="Move item up"
+              data-testid="CategoryItemToolbar-MoveUpBtn"
               icon="arrow-up"
               @click="moveItem('up')"
             />
@@ -53,6 +63,7 @@
               size="40px"
               iconSize="18"
               title="Move item down"
+              data-testid="CategoryItemToolbar-MoveDownBtn"
               icon="arrow-down"
               @click="moveItem('down')"
             />
@@ -61,6 +72,7 @@
               size="40px"
               iconSize="18"
               title="Edit item info"
+              data-testid="CategoryItemToolbar-EditInfoBtn"
               icon="cog"
               @click="toggleEditItemInfoMenu"
             >
@@ -78,11 +90,17 @@
               iconSize="18"
               title="Delete item"
               icon="trash-alt"
+              data-testid="CategoryItemToolbar-DeleteBtn"
               @click="deleteItem"
             />
           </div>
 
-          <v-menu bottom left offset-y>
+          <v-menu
+            bottom
+            left
+            offset-y
+            attach=".category-item__actions"
+          >
             <template v-slot:activator="{ on }">
               <v-btn
                 icon
@@ -91,6 +109,7 @@
                 aria-label="Actions"
                 v-tooltip="'Actions'"
                 class="category-toolbar-mobile-menu-btn"
+                data-testid="CategoryItemToolbar-MobileMenuBtn"
                 v-on="on"
               >
                 <v-icon
@@ -109,6 +128,7 @@
                   iconSize="18"
                   title="Move item up"
                   icon="arrow-up"
+                  data-testid="CategoryItemToolbar-MoveUpBtn"
                   @click="moveItem('up')"
                 />
               </v-list-item>
@@ -120,6 +140,7 @@
                   iconSize="18"
                   title="Move item down"
                   icon="arrow-down"
+                  data-testid="CategoryItemToolbar-MoveDownBtn"
                   @click="moveItem('down')"
                 />
               </v-list-item>
@@ -131,6 +152,7 @@
                   iconSize="18"
                   title="Edit item info"
                   icon="cog"
+                  data-testid="CategoryItemToolbar-EditInfoBtn"
                   @click="toggleEditItemInfoMenu"
                 >
                   <v-icon
@@ -149,6 +171,7 @@
                   iconSize="18"
                   title="Delete item"
                   icon="trash-alt"
+                  data-testid="CategoryItemToolbar-DeleteBtn"
                   @click="deleteItem"
                 />
               </v-list-item>
@@ -171,14 +194,17 @@
           >
             <v-text-field
               v-model="itemNameEdit"
+              data-testid="CategoryItemToolbar-InfoEdit-NameInput"
               label="Name"
             />
             <v-text-field
               v-model="itemHackageEdit"
+              data-testid="CategoryItemToolbar-InfoEdit-HackageInput"
               label="Name on Hackage (optional)"
             />
             <v-text-field
               v-model="itemLinkEdit"
+              data-testid="CategoryItemToolbar-InfoEdit-LinkInput"
               label="Site (optional)"
             />
           </v-form>
@@ -195,6 +221,7 @@
             color="info"
             aria-label="Save"
             :disabled="!isInfoSaveEnabled"
+            data-testid="CategoryItemToolbar-InfoEdit-SaveBtn"
             @click="updateItemInfo"
           >
             Save
@@ -286,7 +313,8 @@ export default class CategoryItemToolbar extends Vue {
     text: 'delete this item',
     confirmBtnText: 'Delete',
     confirmBtnProps: {
-      color: 'error'
+      'color': 'error',
+      'data-testid': 'ItemDeleteDialog-ConfirmBtn'
     }
   })
   async deleteItem (): Promise<void> {

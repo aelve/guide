@@ -28,17 +28,20 @@
             autofocus
             class="mb-2"
             label="Item name"
+            data-testid="AddItemDialog-NameInput"
             :rules="nameValidationRules"
             v-model="name"
           />
           <v-text-field
             class="mb-2"
             label="Name on Hackage (optional)"
+            data-testid="AddItemDialog-HackageInput"
             v-model="hackage"
           />
           <v-text-field
             class="mb-2"
             label="Link to the official site, if exists"
+            data-testid="AddItemDialog-LinkInput"
             v-model="link"
           />
 
@@ -57,6 +60,7 @@
         <v-btn
           color="info"
           :disabled="!isValid"
+          data-testid="AddItemDialog-SubmitBtn"
           aria-label="Create"
           @click.native="submit"
         >

@@ -6,12 +6,14 @@
         v-else
         v-html="categoryDescription"
         class="category-description__content"
+        data-testid="CategoryDescription-Content"
       />
     </div>
 
     <markdown-editor
       v-else
       toolbar
+      data-testid="CategoryDescription-Editor"
       :value="categoryDescriptionRaw"
       @cancel="toggleEditDescription"
       @save="updateDescription({ original: categoryDescriptionRaw, modified: $event})"
@@ -19,6 +21,7 @@
 
     <v-btn
       text
+      data-testid="Category-EditDescriptionBtn"
       v-if="!isEditDescription"
       color="grey darken-2"
       class="mt-3"

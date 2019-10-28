@@ -14,7 +14,10 @@
       />
     </template>
 
-    <div class="conflict-box">
+    <div
+      data-testid="ConflictDialog"
+      class="conflict-box"
+    >
       <div class="conflict-item">
         <h2 class="mt-0">Your version</h2>
         <v-card
@@ -25,6 +28,7 @@
         </v-card>
         <v-btn
           class="conflict-dialog-btn"
+          data-testid="ConflictDialog-SubmitLocalBtn"
           aria-label="Submit this version, disregard changes on server"
           @click="save(modified)"
         >
@@ -41,6 +45,7 @@
         </v-card>
         <v-btn
           class="conflict-dialog-btn"
+          data-testid="ConflictDialog-SubmitServerBtn"
           aria-label="Submit this version, disregard my changes"
           @click="save(serverModified)"
         >
@@ -60,6 +65,7 @@
         />
         <v-btn
           class="conflict-dialog-btn"
+          data-testid="ConflictDialog-SubmitMergedBtn"
           aria-label="Submit merged version"
           @click="save(mergedEdit)"
         >

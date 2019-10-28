@@ -10,34 +10,47 @@
       >
         <v-icon class="rss-link-icon">$vuetify.icons.rss</v-icon>
       </a>
-      <h1 class="category-name-title" :title="categoryTitle">{{categoryTitle}}</h1>
+      <h1
+        class="category-name-title" 
+        data-testid="CategoryHeader-Title"
+        :title="categoryTitle"
+      >{{categoryTitle}}</h1>
     </div>
 
     <div class="category-header__second-row">
       <div class="category-group-title-wrap">
-        in <span :title="categoryGroup" class="category-group-title"> {{ categoryGroup }} </span>
+        in
+        <span 
+          class="category-group-title"
+          data-testid="CategoryHeader-Group"
+          :title="categoryGroup"
+        >{{ categoryGroup }}</span>
       </div>
 
       <div class="category-actions">
         <CategoryHeaderBtn
+          class="mr-1"
           text="New item"
           icon="plus"
-          class="mr-1"
+          data-testid="CategoryHeader-NewItemBtn"
           @click="openAddItemDialog"
         />
         <CategoryHeaderBtn
-          text="Category settings"
-          icon="cog "
           class="mr-1"
+          text="Category settings"
+          icon="cog"
+          data-testid="CategoryHeader-CategorySettingsBtn"
           @click="openCategorySettingsEditDialog"
         />
         <CategoryHeaderBtn
           text="Delete category"
           icon="trash-alt"
+          data-testid="CategoryHeader-CategoryDeleteBtn"
           @click="deleteCategory"
         />
       </div>
 
+      <!-- TODO create responsive toolbar component to get rid of duplication of buttons -->
       <v-menu bottom left offset-y>
         <template v-slot:activator="{ on }">
           <v-btn
@@ -45,6 +58,7 @@
             icon
             aria-label="Actions"
             v-tooltip="'Actions'"
+            data-testid="CategoryHeader-MobileMenuBtn"
             class="category-actions-menu-btn"
             v-on="on"
           >
@@ -58,17 +72,19 @@
         <v-list class="category-actions-menu-list">
           <v-list-item>
             <CategoryHeaderBtn
-              block 
+              block
               text="New item"
               icon="plus"
+              data-testid="CategoryHeader-NewItemBtn"
               @click="openAddItemDialog"
             />
           </v-list-item>
           <v-list-item>
             <CategoryHeaderBtn
-              block 
+              block
               text="Category settings"
               icon="cog"
+              data-testid="CategoryHeader-CategorySettingsBtn"
               @click="openCategorySettingsEditDialog"
             />
           </v-list-item>
@@ -77,6 +93,7 @@
               block
               text="Delete category"
               icon="trash-alt"
+              data-testid="CategoryHeader-CategoryDeleteBtn"
               @click="deleteCategory"
             />
           </v-list-item>
@@ -129,7 +146,8 @@ export default class CategoryHeader extends Vue {
     text: 'delete this category',
     confirmBtnText: 'Delete',
     confirmBtnProps: {
-      color: 'error'
+      'color': 'error',
+      'data-testid': 'DeleteCategoryDialog-ConfirmBtn'
     }
   })
   async deleteCategory () {

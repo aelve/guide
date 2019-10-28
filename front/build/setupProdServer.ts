@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import { createBundleRenderer } from 'vue-server-renderer'
 // TODO move 'src' prefix to config
+// TODO do not copy setupDevServer, webpack configs to builded front
 // TODO find a way to get rid of ts ignore and still build without errors
 // @ts-ignore
 import bundle from '../src/vue-ssr-server-bundle.json'

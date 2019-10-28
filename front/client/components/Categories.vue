@@ -2,18 +2,32 @@
   <div class="categories">
     <div class="categories-flex-container">
 
+      <AddCategoryBtn
+        class="mt-4"
+        v-if="!categories || !categories.length"
+        @click="openAddCategoryDialog()"
+      />
+
       <div
         class="categories-column"
         v-for="(groupCategories, groupName, index) in groups"
         :key="index"
       >
-        <div class="category-group">
-          <h2 class="mt-0 mb-2 group-title">
+        <div
+          class="category-group"
+          data-testid="Categories-CategoryGroup"
+        >
+          <h2
+            class="mt-0 mb-2 group-title"
+            data-testid="Categories-CategoryGroup-Title"
+          >
             {{ groupName }}
           </h2>
 
+          <!-- TODO remove duplication of category title links (move to component or refactor v-for) -->
           <router-link
             class="category-title ml-2"
+            data-testid="Categories-CategoryTitle"
             v-for="category in groupCategories[CategoryStatus.finished]"
             :key="category.id"
             :to="`/haskell/${getCategoryUrl(category)}`"
@@ -27,6 +41,7 @@
             </h3>
             <router-link
               class="category-title ml-3"
+              data-testid="Categories-CategoryTitle"
               v-for="category in groupCategories[CategoryStatus.inProgress]"
               :key="category.id"
               :to="`/haskell/${getCategoryUrl(category)}`"
@@ -42,6 +57,7 @@
 
             <router-link
               class="category-title ml-3"
+              data-testid="Categories-CategoryTitle"
               v-for="category in groupCategories[CategoryStatus.toBeWritten]"
               :key="category.id"
               :to="`/haskell/${getCategoryUrl(category)}`"
@@ -50,16 +66,7 @@
             </router-link>
           </template>
 
-          <v-btn
-            text
-            class="ma-0 mt-1 px-2"
-            color="grey darken-2"
-            aria-label="Add new category"
-            @click="openAddCategoryDialog(groupName)"
-          >
-            <v-icon size="14" class="mr-1" left v-text="'$vuetify.icons.plus'"></v-icon>
-            Add new category
-          </v-btn>
+          <AddCategoryBtn @click="openAddCategoryDialog(groupName)"/>
         </div>
       </div>
 
@@ -76,6 +83,7 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
+import AddCategoryBtn from 'client/components/AddCategoryBtn.vue'
 import _groupBy from 'lodash/groupBy'
 import _sortBy from 'lodash/sortBy'
 import _fromPairs from 'lodash/fromPairs'
@@ -84,7 +92,8 @@ import { ICategoryInfo, CategoryStatus } from 'client/service/Category'
 
 @Component({
   components: {
-    AddCategoryDialog
+    AddCategoryDialog,
+    AddCategoryBtn
   }
 })
 export default class Categories extends Vue {
