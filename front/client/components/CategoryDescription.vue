@@ -20,8 +20,8 @@
     <v-btn
       text
       v-if="!isEditDescription"
+      class="category-description__edit-btn mt-3"
       color="grey darken-2"
-      class="mt-3"
       :aria-label="descriptionBtnText"
       @click="toggleEditDescription"
     >
@@ -94,6 +94,9 @@ export default class CategoryDescription extends Vue {
 }
 .category-description__content > :last-child {
   margin-bottom: 0;
+}
+.category-description__edit-btn {
+  background: #e6e9eaa8;
 }
 </style>
 

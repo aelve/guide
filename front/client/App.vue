@@ -248,6 +248,11 @@ blockquote {
 .v-menu--inline {
   display: none !important;
 }
+.v-btn--text {
+  text-transform: none;
+  letter-spacing: 0.03rem;
+  font-size: 1em;
+}
 </style>
 
 <style lang="postcss" scoped>

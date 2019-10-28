@@ -28,7 +28,5 @@ export default class CategoryHeaderBtn extends Vue {
 /* .v-btn selector added for more specificity to override vuetify styles without using !important*/
 .v-btn.category-header-btn {
   padding: 0 4px;
-  font-size: 0.8rem;
-  text-transform: none;
 }
 </style>
