@@ -1,9 +1,12 @@
 sudo: true
 dist: xenial
 
-language: node_js
-node_js: 
-  - lts/*
+matrix:
+  include:
+    - language: generic
+    - language: node_js
+      node_js: 
+        - lts/*
 
 addons:
   chrome: stable
@@ -62,7 +65,7 @@ jobs:
       - npm install
       - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
       - run_back $BRANCH
-      - API_URL=https://localhost:4400/ npm run test:dev
+      - API_URL=http://localhost:4400/ npm run test:dev
 
     # Test prod mobile
     - script:
@@ -72,7 +75,7 @@ jobs:
       - npm run build
       - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
       - run_back $BRANCH
-      - API_URL=https://localhost:4400/ npm run test:prod:mobile
+      - API_URL=http://localhost:4400/ npm run test:prod:mobile
 
     # Test dev mobile
     - script:
@@ -81,7 +84,7 @@ jobs:
       - npm install
       - export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
       - run_back $BRANCH
-      - API_URL=https://localhost:4400/ npm run test:dev:mobile
+      - API_URL=http://localhost:4400/ npm run test:dev:mobile
 
     - stage: "Build the backend and upload a Docker image"
       before_script:
