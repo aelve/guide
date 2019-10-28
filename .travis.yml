@@ -24,25 +24,23 @@ jobs:
   include:
     
     - stage: "Build the frontend and upload a Docker image, test frontend"
+    - name: "Build the frontend and upload a Docker image"
+      script:
+        # Build
+        - cd front
+        - npm install
+        - npm run build
+        - cd -
+        # Upload the Docker image
+        - |
+          if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
+            export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
+            make front/travis-docker "tag=$BRANCH--front"
+            docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            docker push "quay.io/aelve/guide:$BRANCH--front"
+          fi
 
-      # # Build the frontend and upload a Docker image
-      # script:
-      #   # Build
-      #   - cd front
-      #   - npm install
-      #   - npm run build
-      #   - cd -
-      #   # Upload the Docker image
-      #   - |
-      #     if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then
-      #       export BRANCH="$(echo "$TRAVIS_BRANCH" | tr '/' '-')"
-      #       make front/travis-docker "tag=$BRANCH--front"
-      #       docker login quay.io -u "$DOCKER_USER" -p "$DOCKER_PASS"
-      #       docker push "quay.io/aelve/guide:$BRANCH--front"
-      #     fi
-
-    # Test prod desktop
-    - name: "Test frontend production desktop"
+    - name: "Test frontend prod desktop"
       script:
       - node -v
       - . ./scripts/ci-functions.sh
@@ -53,8 +51,8 @@ jobs:
       - run_back $BRANCH
       - API_URL=http://localhost:4400/ npm run test:prod
 
-    # Test dev desktop
-    - script:
+    - name: "Test frontend dev desktop"
+      script:
       - . ./scripts/ci-functions.sh
       - cd front
       - npm install
@@ -62,8 +60,8 @@ jobs:
       - run_back $BRANCH
       - API_URL=http://localhost:4400/ npm run test:dev
 
-    # Test prod mobile
-    - script:
+    - name: "Test frontend prod mobile"
+      script:
       - . ./scripts/ci-functions.sh
       - cd front
       - npm install
@@ -72,8 +70,8 @@ jobs:
       - run_back $BRANCH
       - API_URL=http://localhost:4400/ npm run test:prod:mobile
 
-    # Test dev mobile
-    - script:
+    - name: "Test frontend dev mobile"
+      script:
       - . ./scripts/ci-functions.sh
       - cd front
       - npm install
