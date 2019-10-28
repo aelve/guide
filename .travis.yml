@@ -1,8 +1,7 @@
 sudo: true
 dist: xenial
 
-language: generic
-
+language: node_js
 node_js: 
   - lts/*
 
