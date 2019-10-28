@@ -42,7 +42,8 @@ jobs:
       #     fi
 
     # Test prod desktop
-    - script:
+    - name: "Test frontend production desktop"
+      script:
       - node -v
       - . ./scripts/ci-functions.sh
       - cd front
