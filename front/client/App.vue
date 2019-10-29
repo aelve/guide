@@ -164,7 +164,7 @@ code {
 pre code {
   background-color: rgba(10, 10, 10, 0.04);
   color: #bd4147;
-  font-weight: 900;
+  font-weight: normal;
   border-radius: 5px;
   border-width: 1px;
   border-style: solid;
