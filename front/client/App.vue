@@ -150,7 +150,6 @@ code {
     border-radius: 3px;
     background-color: #fafafa;
     box-shadow: none;
-    font-weight: normal;
   }
 }
 /* Vuetify css adds unwanted space to start and end of code and kbd tag */
@@ -164,7 +163,6 @@ code {
 pre code {
   background-color: rgba(10, 10, 10, 0.04);
   color: #bd4147;
-  font-weight: 900;
   border-radius: 5px;
   border-width: 1px;
   border-style: solid;
@@ -263,5 +261,8 @@ blockquote {
 }
 .app-content >>> > .v-content__wrap > .container {
   padding: 12px;
+}
+.app-content >>> code, kbd {
+  font-weight: normal;
 }
 </style>
