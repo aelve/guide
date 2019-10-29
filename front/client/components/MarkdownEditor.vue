@@ -10,7 +10,7 @@
     @keydown.exact.capture.enter="onEnterDown"
     @keydown.exact.ctrl.enter="onCtrlEnterDown"
     @keydown.exact.meta.enter="onCtrlEnterDown"
-    @keydown.exact.esc="cancel"
+    @keydown.exact.esc="onEsc"
     v-show="editor && isReady"
   >
     <textarea
@@ -225,6 +225,22 @@ export default class MarkdownEditor extends Vue {
 
   save () {
     this.$emit('save', this.editor.value())
+  }
+
+  async onEsc () {
+    let isConfirmed = true
+    if (this.value !== this.editor.value()) {
+      isConfirmed = await this._confirm({
+        fullText: 'You have unsaved changes. Do you really want to discard them?',
+        confirmBtnText: 'Disacrd',
+        confirmBtnProps: {
+          color: 'error'
+        }
+      })
+    }
+    if (isConfirmed) {
+      this.cancel()
+    }
   }
 
   cancel () {
