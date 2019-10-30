@@ -191,9 +191,10 @@ extractInlines = concatMap go
       HTML_INLINE xs    -> [MD.Node Nothing (CODE xs) []]
       CODE_BLOCK _ xs   -> [MD.Node Nothing (CODE xs) []]
 
--- | Convert LINK to HTML_INLINE with 'target="_blank"' attribute added.
+-- | Convert 'LINK' to 'HTML_INLINE' with @target="_blank"@ attribute added.
 --
--- It is necessary that the rendered html page be opened in a new tab.
+-- It will cause the link to be opened in a new tab, which is the behavior
+-- we want for links in user-submitted content.
 addTargetBlank :: MD.Node -> MD.Node
 addTargetBlank (MD.Node pos (LINK url title) ns) =
     MD.Node pos (HTML_INLINE blankLink) []
