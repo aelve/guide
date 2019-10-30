@@ -123,11 +123,11 @@ export default class CategoryItemTraits extends Vue {
   get title () {
     return this.type + 's'
   }
-  get isAnyTraitEditingOrAdding () {
+  get isAnyTraitEditingInternal () {
     return this.traitsModel.some(x => x.isEdit) || this.isAddTrait
   }
 
-  @Watch('isAnyTraitEditingOrAdding', { immediate: true })
+  @Watch('isAnyTraitEditingInternal', { immediate: true })
   updateIsEditing (newVal) {
     this.$emit('update:isAnyTraitEditing', newVal)
   }
