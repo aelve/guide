@@ -37,10 +37,12 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import _get from 'lodash/get'
+import { Prop } from 'vue-property-decorator'
 import MarkdownEditor from 'client/components/MarkdownEditor.vue'
 import conflictDialogMixin from 'client/mixins/conflictDialogMixin'
 import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
+import { ICategoryFull } from 'client/service/Category'
+import _get from 'lodash/get'
 
 @Component({
   components: {
@@ -49,18 +51,16 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
   mixins: [conflictDialogMixin]
 })
 export default class CategoryDescription extends Vue {
+  @Prop(Object) category!: ICategoryFull
+
   isEditDescription: boolean = false
 
   get categoryDescription () {
-    return _get(this, '$store.state.category.category.description.html')
+    return _get(this, 'category.description.html')
   }
 
   get categoryDescriptionRaw () {
-    return _get(this, '$store.state.category.category.description.text')
-  }
-
-  get categoryId () {
-    return this.$store.state.category.category.id
+    return _get(this, 'category.description.text')
   }
 
   get descriptionBtnIcon () {
@@ -78,7 +78,7 @@ export default class CategoryDescription extends Vue {
   @CatchConflictDecorator
   async updateDescription ({ original, modified }) {
     await this.$store.dispatch('category/updateCategoryDescription', {
-      id: this.categoryId,
+      id: this.category.id,
       original,
       modified
     })

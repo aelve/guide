@@ -3,7 +3,7 @@
     <div class="category-header__first-row">
       <a
         class="rss-link"
-        :href="`https://guide.aelve.com/haskell/feed/category/${categoryId}`"
+        :href="`https://guide.aelve.com/haskell/feed/category/${category.id}`"
         target="_blank"
         aria-label="RSS feed for all new items in this category"
         v-tooltip.bottom-start="{ content: 'RSS feed for all new items in this category'}"
@@ -13,8 +13,8 @@
       <h1
         class="category-name-title" 
         data-testid="CategoryHeader-Title"
-        :title="categoryTitle"
-      >{{categoryTitle}}</h1>
+        :title="category.title"
+      >{{category.title}}</h1>
     </div>
 
     <div class="category-header__second-row">
@@ -23,8 +23,8 @@
         <span 
           class="category-group-title"
           data-testid="CategoryHeader-Group"
-          :title="categoryGroup"
-        >{{ categoryGroup }}</span>
+          :title="category.group"
+        >{{ category.group }}</span>
       </div>
 
       <div class="category-actions">
@@ -105,7 +105,7 @@
 
     <CategorySettingsDialog
       v-model="isCategorySettingsDialog"
-      :categoryId="categoryId"
+      :categoryId="category.id"
     />
   </div>
 </template>
@@ -117,6 +117,7 @@ import { Prop } from 'vue-property-decorator'
 import CategorySettingsDialog from 'client/components/CategorySettingsDialog.vue'
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
+import { ICategoryFull } from 'client/service/Category'
 
 @Component({
   components: {
@@ -125,11 +126,7 @@ import Confirm from 'client/helpers/ConfirmDecorator'
   }
 })
 export default class CategoryHeader extends Vue {
-  @Prop(Object) category!: object
-  @Prop(String) categoryId!: string
-  @Prop(String) categoryTitle!: string
-  @Prop(String) categoryGroup!: string
-  @Prop(String) categoryUrl!: string
+  @Prop(Object) category!: ICategoryFull
 
   isCategorySettingsDialog: boolean = false
   isAddItemDialogOpen: boolean = false
@@ -154,7 +151,7 @@ export default class CategoryHeader extends Vue {
     if (!this.category) {
       return
     }
-    await this.$store.dispatch('category/deleteCategory', this.categoryId)
+    await this.$store.dispatch('category/deleteCategory', this.category.id)
     this.$router.back()
   }
 }

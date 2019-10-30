@@ -1,38 +1,23 @@
 <template>
   <v-container>
-    <div class="category-wrapper">
-      <template v-if="category">
-        <CategoryHeader
-          :category="category" 
-          :categoryId="categoryId"
-          :categoryTitle="category.title"
-          :categoryGroup="category.group"
-          :categoryUrl="categoryUrl"
-          @openAddItemDialog="openAddItemDialog"
-        />
-      </template>
+    <div
+      class="category-wrapper"
+      v-if="category"
+    >
+      <CategoryHeader
+        :category="category" 
+        @openAddItemDialog="openAddItemDialog"
+      />
 
-      <category-description />
+      <CategoryDescription :category="category" />
 
-      <template v-if="category">
-        <category-item
-          v-for="value in category.items"
-          :key="value.id"
-          :itemUid="value.id"
-          :link="value.link"
-          :name="value.name"
-          :group="value.group"
-          :summary="value.summary"
-          :pros="value.pros"
-          :cons="value.cons"
-          :ecosystem="value.ecosystem"
-          :hackage="value.hackage"
-          :toc="value.toc"
-          :notes="value.notes"
-          :kind="value.kind"
-          :sections="category.sections"
-        />
-      </template>
+      <CategoryItem
+        v-for="value in category.items"
+        :key="value.id"
+        :item="value"
+        :sections="category.sections"
+      />
+
       <v-btn
         v-if="category.items && category.items.length"
         text
@@ -44,6 +29,7 @@
         <v-icon size="14" class="mr-1" left>$vuetify.icons.plus</v-icon>
         Add new item
       </v-btn>
+
       <add-item-dialog
         v-model="isAddItemDialogOpen"
         :categoryId="categoryId"
@@ -97,7 +83,7 @@ export default class Category extends Vue {
   margin: 0 auto;
 }
 
-.category__add-item-lower-btn{
+.category__add-item-lower-btn {
   background: #e6e9eaa8;
 }
 

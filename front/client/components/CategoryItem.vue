@@ -3,14 +3,14 @@
     <!-- This "hacky" element used as anchor and located with top offset because of page toolbar which can overlay category item header -->
     <span
       style="position: absolute; top: -96px;"
-      :id="`item-${itemUid}`"
+      :id="`item-${item.id}`"
     />
 
     <category-item-toolbar
-      :itemUid="itemUid"
-      :itemName="name"
-      :itemLink="link"
-      :itemHackage="hackage"
+      :itemUid="item.id"
+      :itemName="item.name"
+      :itemLink="item.link"
+      :itemHackage="item.hackage"
     />
 
     <div class="category-item-body">
@@ -19,13 +19,13 @@
         title="Summary"
         class="mb-3"
         data-testid="CategoryItem-SummarySection"
-        :editText="summary.text"
-        @save="updateSummary({original: summary.text, modified: $event})"
+        :editText="item.summary.text"
+        @save="updateSummary({original: item.summary.text, modified: $event})"
       >
         <div
           class="mb-2"
           data-testid="CategoryItem-SummarySection-Content"
-          v-html="summary.html"
+          v-html="item.summary.html"
         />
       </category-item-section>
 
@@ -36,14 +36,14 @@
       >
         <category-item-traits
           type="Pro"
-          :itemId="itemUid"
-          :traits="pros"
+          :itemId="item.id"
+          :traits="item.pros"
           :isAnyTraitEditing.sync="isPropsEditing"
         />
         <category-item-traits
           type="Con"
-          :itemId="itemUid"
-          :traits="cons"
+          :itemId="item.id"
+          :traits="item.cons"
           :isAnyTraitEditing.sync="isConsEditing"
         />
       </div>
@@ -53,12 +53,12 @@
         title="Ecosystem"
         class="mb-3"
         data-testid="CategoryItem-EcosystemSection"
-        :editText="ecosystem.text"
-        @save="updateEcosystem({original: ecosystem.text, modified: $event})"
+        :editText="item.ecosystem.text"
+        @save="updateEcosystem({original: item.ecosystem.text, modified: $event})"
         @toggleEdit="toggleItemEcosystemEditState"
       >
         <div
-          v-html="ecosystem.html" 
+          v-html="item.ecosystem.html" 
           data-testid="CategoryItem-EcosystemSection-Content"
         />
       </category-item-section>
@@ -68,8 +68,8 @@
         title="Notes"
         class="mb-3"
         data-testid="CategoryItem-NotesSection"
-        :editText="notes.text"
-        @save="updateNotes({original: notes.text, modified: $event})"
+        :editText="item.notes.text"
+        @save="updateNotes({original: item.notes.text, modified: $event})"
         @toggleEdit="toggleItemNotesEditState"
       >
         <v-btn
@@ -85,13 +85,13 @@
 
         <ul>
           <li
-            v-for="(tocItem, index) in toc"
+            v-for="(tocItem, index) in item.toc"
             :key="index"
             style="position: relative;"
           >
             <span
               style="position: absolute; top: -96px;"
-              :id="`item-${itemUid}`"
+              :id="`item-${item.id}`"
             />
             <a
               :href="`#${tocItem.slug}`"
@@ -107,8 +107,8 @@
             class="category-item__notes"
           >
             <div
-              v-if="notes.html"
-              v-html="notes.html"
+              v-if="item.notes.html"
+              v-html="item.notes.html"
               data-testid="CategoryItem-NotesSection-Content"
             />
             <span v-else> &lt;notes are empty&gt; </span>
@@ -129,6 +129,7 @@ import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemTraits from 'client/components/CategoryItemTraits.vue'
 import conflictDialogMixin from 'client/mixins/conflictDialogMixin'
 import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
+import { ICategoryItem } from 'client/service/CategoryItem'
 
 @Component({
   components: {
@@ -139,18 +140,7 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
   mixins: [conflictDialogMixin]
 })
 export default class CategoryItem extends Vue {
-  // TODO get rid of so many props get data from Vuex
-  @Prop(String) name!: string
-  @Prop(Object) summary!: { text: string, html: string }
-  @Prop(Array) pros!: any[]
-  @Prop(Array) cons!: any[]
-  @Prop(Object) ecosystem!: { text: string, html: string }
-  @Prop(Array) toc!: any[]
-  @Prop(Object) tocItemContent!: object
-  @Prop(Object) notes!: { text: string, html: string }
-  @Prop(String) itemUid!: string
-  @Prop(String) link!: string
-  @Prop(String) hackage!: string
+  @Prop(Object) item: ICategoryItem
   @Prop(Array) sections!: string[]
 
   areNotesExpanded: boolean = false
@@ -164,7 +154,7 @@ export default class CategoryItem extends Vue {
   @Watch('isAnyTraitEditing', { immediate: true })
   updateItemTraitEditingState (newVal, prevVal) {
     if (!!newVal !== !!prevVal) {
-      this.$store.dispatch('category/toggleItemProsConsSectionEdit', this.itemUid)
+      this.$store.dispatch('category/toggleItemProsConsSectionEdit', this.item.id)
     }
   }
 
@@ -181,17 +171,17 @@ export default class CategoryItem extends Vue {
   }
 
   toggleItemEcosystemEditState () {
-    this.$store.dispatch('category/toggleItemEcosystemSectionEdit', this.itemUid)
+    this.$store.dispatch('category/toggleItemEcosystemSectionEdit', this.item.id)
   }
 
   toggleItemNotesEditState () {
-    this.$store.dispatch('category/toggleItemNotesSectionEdit', this.itemUid)
+    this.$store.dispatch('category/toggleItemNotesSectionEdit', this.item.id)
   }
 
   @CatchConflictDecorator
   async updateSummary ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemSummary', {
-      id: this.itemUid,
+      id: this.item.id,
       original,
       modified
     })
@@ -201,7 +191,7 @@ export default class CategoryItem extends Vue {
   @CatchConflictDecorator
   async updateEcosystem ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemEcosystem', {
-      id: this.itemUid,
+      id: this.item.id,
       original,
       modified
     })
@@ -211,7 +201,7 @@ export default class CategoryItem extends Vue {
   @CatchConflictDecorator
   async updateNotes ({ original, modified }): Promise<void> {
     await this.$store.dispatch('categoryItem/updateItemNotes', {
-      id: this.itemUid,
+      id: this.item.id,
       original,
       modified
     })

@@ -60,6 +60,7 @@ const config = {
         test: /\.ts$/,
         use: [
           {
+            // TODO update ts-loader when fixed https://github.com/TypeStrong/ts-loader/issues/653#issuecomment-390889335
             loader: 'ts-loader',
             options: {
               transpileOnly: true,
