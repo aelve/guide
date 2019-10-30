@@ -24,30 +24,23 @@
             {{ groupName }}
           </h2>
 
-          <!-- TODO remove duplication of category title links (move to component or refactor v-for) -->
-          <router-link
-            class="category-title ml-2"
-            data-testid="Categories-CategoryTitle"
+          <CategoriesCategoryLink
             v-for="category in groupCategories[CategoryStatus.finished]"
             :key="category.id"
-            :to="`/haskell/${getCategoryUrl(category)}`"
-          >
-            {{ category.title }}
-          </router-link>
+            :category="category"
+            class="ml-2"
+          />
 
           <template v-if="groupCategories[CategoryStatus.inProgress]">
             <h3 class="status-title">
               In progress
             </h3>
-            <router-link
-              class="category-title ml-3"
-              data-testid="Categories-CategoryTitle"
+            <CategoriesCategoryLink
               v-for="category in groupCategories[CategoryStatus.inProgress]"
               :key="category.id"
-              :to="`/haskell/${getCategoryUrl(category)}`"
-            >
-              {{ category.title }}
-            </router-link>
+              :category="category"
+              class="ml-3"
+            />
           </template>
 
           <template v-if="groupCategories[CategoryStatus.toBeWritten]">
@@ -55,15 +48,12 @@
               To be written
             </h3>
 
-            <router-link
-              class="category-title ml-3"
-              data-testid="Categories-CategoryTitle"
+            <CategoriesCategoryLink
               v-for="category in groupCategories[CategoryStatus.toBeWritten]"
               :key="category.id"
-              :to="`/haskell/${getCategoryUrl(category)}`"
-            >
-              {{ category.title }}
-            </router-link>
+              :category="category"
+              class="ml-3"
+            />
           </template>
 
           <AddCategoryBtn @click="openAddCategoryDialog(groupName)"/>
@@ -84,6 +74,7 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import AddCategoryDialog from 'client/components/AddCategoryDialog.vue'
 import AddCategoryBtn from 'client/components/AddCategoryBtn.vue'
+import CategoriesCategoryLink from 'client/components/CategoriesCategoryLink.vue'
 import _groupBy from 'lodash/groupBy'
 import _sortBy from 'lodash/sortBy'
 import _fromPairs from 'lodash/fromPairs'
@@ -93,7 +84,8 @@ import { ICategoryInfo, CategoryStatus } from 'client/service/Category'
 @Component({
   components: {
     AddCategoryDialog,
-    AddCategoryBtn
+    AddCategoryBtn,
+    CategoriesCategoryLink
   }
 })
 export default class Categories extends Vue {
@@ -127,8 +119,6 @@ export default class Categories extends Vue {
     this.addCategoryGroupName = groupName
     this.isAddGroupDialogOpen = true
   }
-
-  getCategoryUrl = getCategoryUrl
 }
 </script>
 
@@ -194,12 +184,6 @@ export default class Categories extends Vue {
   max-width: 90%;
   word-break: break-word;
 }
-.category-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-top: 5px;
-}
-.category-title,
 .status-title {
   line-height: 1.2;
 }
@@ -207,7 +191,7 @@ export default class Categories extends Vue {
   font-size: 0.9rem;
   margin: 6px 0 4px 8px;
 
-  + .category-title {
+  + >>> .categories__category-link {
     margin-top: 0;
   }
 }
