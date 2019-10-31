@@ -40,8 +40,29 @@ tests = describe "Markdown" $ do
     it "Hackage links" $ do
       let s = "[text](@hk)"
       let html = snd (convert s)
-      let l = "<a href=\"https://hackage.haskell.org/package/text\">text</a>"
+      let l = "<a href=\"https://hackage.haskell.org/package/text\" target=\"_blank\">text</a>"
       html `shouldSatisfy` (`elem` [l, "<p>"<>l<>"</p>\n"])
+    it "Common links" $ do
+      let s = "[Just link](http://guide.aelve.com)"
+      let html = snd (convert s)
+      let l = "<a href=\"http://guide.aelve.com\" target=\"_blank\">Just link</a>"
+      html `shouldSatisfy` (`elem` [l, "<p>"<>l<>"</p>\n"])
+    it "Links with image" $ do
+      let s = "[![BSD3 license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/aelve/guide/blob/master/LICENSE)"
+      let html = snd (convert s)
+      let l = "<a href=\"https://github.com/aelve/guide/blob/master/LICENSE\" target=\"_blank\"><img src=\"https://img.shields.io/badge/license-BSD3-blue.svg\" alt=\"BSD3 license\" /></a>"
+      html `shouldSatisfy` (`elem` [l, "<p>"<>l<>"</p>\n"])
+    it "Test addTargetBlank" $ do
+      let node = MD.Node
+            Nothing
+            ( LINK "https://github.com/aelve/guide/blob/master/LICENSE" "" )
+            [ MD.Node Nothing ( IMAGE "https://img.shields.io/badge/license-BSD3-blue.svg" "" )
+              [ MD.Node Nothing ( TEXT "BSD3 license" ) [] ]]
+      let nodeBlanked = MD.Node
+            Nothing
+            ( HTML_INLINE "<a href=\"https://github.com/aelve/guide/blob/master/LICENSE\" target=\"_blank\"><img src=\"https://img.shields.io/badge/license-BSD3-blue.svg\" alt=\"BSD3 license\" /></a>" )
+            []
+      nodeBlanked `shouldBe` addTargetBlank node
 
   describe "inline Markdown" $ do
     it "works" $ do

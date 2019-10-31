@@ -24,6 +24,7 @@ module Guide.Markdown
   -- * Misc
   renderMD,
   extractPreface,
+  addTargetBlank,
 )
 where
 
@@ -93,16 +94,25 @@ parseMD s =
 renderMD :: [MD.Node] -> ByteString
 renderMD ns
   -- See https://github.com/jgm/cmark/issues/147
-  | any isInlineNode ns =
-      toUtf8ByteString . sanitize . T.concat . map (nodeToHtml []) $ ns
-  | otherwise =
-      toUtf8ByteString . sanitize . nodeToHtml [] $ MD.Node Nothing DOCUMENT ns
+  | any isInlineNode ns
+      = toUtf8ByteString
+      . sanitize
+      . T.concat
+      . map (nodeToHtml [] . addTargetBlank)
+      $ ns
+  | otherwise
+      = toUtf8ByteString
+      . sanitize
+      . nodeToHtml []
+      . addTargetBlank
+      $ MD.Node Nothing DOCUMENT ns
 
 isInlineNode :: MD.Node -> Bool
 isInlineNode (MD.Node _ tp _) = case tp of
   EMPH              -> True
   STRONG            -> True
   LINK _ _          -> True
+  IMAGE _ _         -> True
   CUSTOM_INLINE _ _ -> True
   SOFTBREAK         -> True
   LINEBREAK         -> True
@@ -180,6 +190,19 @@ extractInlines = concatMap go
       HTML_BLOCK xs     -> [MD.Node Nothing (CODE xs) []]
       HTML_INLINE xs    -> [MD.Node Nothing (CODE xs) []]
       CODE_BLOCK _ xs   -> [MD.Node Nothing (CODE xs) []]
+
+-- | Convert 'LINK' to 'HTML_INLINE' with @target="_blank"@ attribute added.
+--
+-- It will cause the link to be opened in a new tab, which is the behavior
+-- we want for links in user-submitted content.
+addTargetBlank :: MD.Node -> MD.Node
+addTargetBlank (MD.Node pos (LINK url title) ns) =
+    MD.Node pos (HTML_INLINE blankLink) []
+  where
+    blankLink = toText $ renderText
+      $ a_ ([href_ url, target_ "_blank"] ++ [title_ title | title /= ""])
+      $ toHtmlRaw $ renderMD ns
+addTargetBlank (MD.Node pos tp ns) = MD.Node pos tp (map addTargetBlank ns)
 
 shortcutLinks :: MD.Node -> MD.Node
 shortcutLinks node@(MD.Node pos (LINK url title) ns) | "@" <- T.take 1 url =
