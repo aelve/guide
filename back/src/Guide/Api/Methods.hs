@@ -97,10 +97,21 @@ deleteCategory catId =
 ----------------------------------------------------------------------------
 
 -- | Get item by item ID.
-getItem :: Uid Item -> Guider CItemFull
-getItem itemId =
+--
+-- Pass 'True' to ignore disabled sections and get full item.
+getItem :: Bool -> Uid Item -> Guider CItemFull
+getItem isIgnored itemId =
   logHandler "getItem" [attr "itemId" itemId] $ do
-    toCItemFull <$> getItemOrFail itemId
+    item <- getItemOrFail itemId
+    sections <- categoryEnabledSections <$> dbQuery (GetCategoryByItem itemId)
+    if isIgnored then pure $ toCItemFull allSections item
+    else pure $ toCItemFull sections item
+  where
+    allSections = S.fromList
+      [ ItemProsConsSection
+      , ItemEcosystemSection
+      , ItemNotesSection
+      ]
 
 -- | Create a new item, given the name.
 --
