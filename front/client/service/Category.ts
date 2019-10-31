@@ -49,6 +49,12 @@ export enum CategoryStatus {
   toBeWritten = 'CategoryStub'
 }
 
+export enum CategorySection {
+  prosCons = 'ItemProsConsSection',
+  ecosystem = 'ItemEcosystemSection',
+  notes = 'ItemNotesSection'
+}
+
 export interface ICategoryInfo {
   id: string
   title: string
@@ -62,7 +68,8 @@ export interface ICategoryFull {
   title: string
   group: string
   status: CategoryStatus
-  description: object
+  description: object,
+  sections: CategorySection[],
   items: ICategoryItem[]
 }
 

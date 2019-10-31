@@ -105,7 +105,7 @@
 
     <CategorySettingsDialog
       v-model="isCategorySettingsDialog"
-      :categoryId="category.id"
+      :category="category"
     />
   </div>
 </template>
