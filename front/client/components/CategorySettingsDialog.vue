@@ -43,40 +43,22 @@
             item-text="name"
             item-value="value"
             :menu-props="{ offsetY: true, closeOnClick: true }"
-            :items="categoryStatuses"
+            :items="$options.categoryStatuses"
             v-model="categoryStatus"
             label="Status"
             class="mb-2"
           />
           <v-checkbox
+            v-for="section of $options.categorySections"
+            :key="section.value"
             hide-details
             color="info"
             class="category-settings-dialog__checkbox"
             data-testid="CategorySettings-ItemTraitsSectionCheckbox"
-            label="Pros/cons section"
-            value="ItemProsConsSection"
+            :label="section.name"
+            :value="section.value"
             :inputValue="sections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemProsConsSection', 'Pros/Cons')"
-          />
-          <v-checkbox
-            hide-details
-            color="info"
-            class="category-settings-dialog__checkbox"
-            data-testid="CategorySettings-ItemEcosystemSectionCheckbox"
-            label="Ecosystem section"
-            value="ItemEcosystemSection"
-            :inputValue="sections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemEcosystemSection', 'Ecosystem')"
-          />
-          <v-checkbox
-            hide-details
-            color="info"
-            class="category-settings-dialog__checkbox"
-            data-testid="CategorySettings-ItemNotesSectionCheckbox"
-            label="Notes section"
-            value="ItemNotesSection"
-            :inputValue="sections"
-            @click.native.capture.prevent.stop="updateSectionEnabling('ItemNotesSection', 'Notes')"
+            @click.native.capture.prevent.stop="updateSectionEnabling(section.value, section.name)"
           />
         </v-form>
       </v-card-text>
@@ -110,15 +92,39 @@ import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
 import _isEqual from 'lodash/isEqual'
 import _sortBy from 'lodash/sortBy'
+import { CategoryStatus, CategorySection, ICategoryFull } from 'client/service/Category'
 
-@Component
+const categoryStatusNames = {
+  [CategoryStatus.finished]: 'Complete',
+  [CategoryStatus.inProgress]: 'Work in progress',
+  [CategoryStatus.toBeWritten]: 'Stub'
+}
+
+const categorySectionNames = {
+  [CategorySection.prosCons]: 'Pros/cons section',
+  [CategorySection.ecosystem]: 'Ecosystem section',
+  [CategorySection.notes]: 'Notes section'
+}
+
+const categoryStatuses = Object.entries(categoryStatusNames)
+  .map(([value, name]) => ({ value, name }))
+
+const categorySections = Object.entries(categorySectionNames)
+  .map(([value, name]) => ({ value, name }))
+
+@Component({
+  // categoryStatuses, categorySections is here to use in template but without reactivity
+  categoryStatuses,
+  categorySections
+})
 export default class CategorySettingsDialog extends Vue {
-  @Prop(Boolean) value!: boolean
+  @Prop(Boolean) value: boolean
+  @Prop(Object) category: ICategoryFull
 
-  title: string = ''
-  group: string = ''
-  categoryStatus: object = {}
-  sections: any[] = []
+  title: string = null
+  group: string = null
+  categoryStatus: CategoryStatus = null
+  sections: CategorySection[] = []
   initialSettings = {
     title: null,
     group: null,
@@ -126,44 +132,29 @@ export default class CategorySettingsDialog extends Vue {
     sections: null
   }
   isValid: boolean = false
-
-  // TODO replace ItemProsConsSection and other to constants
-  sectionDisableWarningAgreed = {
-    ItemProsConsSection: false,
-    ItemEcosystemSection: false,
-    ItemNotesSection: false
-  }
-
-  categoryStatuses = [
-    { name: 'Complete', value: 'CategoryFinished' },
-    { name: 'Work in progress', value: 'CategoryWIP' },
-    { name: 'Stub', value: 'CategoryStub' }
-  ]
-
-  inputValidationRules: Function[] = [
+  isSectionDisableAgreed = this.isSetSectionDisableAgreedInit()
+  inputValidationRules: Array<(x: string) => boolean | string> = [
     (x: string) => !!x || 'Input can not be empty'
   ]
 
-  get category () {
-    return this.$store.state.category.category
-  }
-
   get hasChanges () {
     const properties = ['title', 'group', 'sections', 'categoryStatus']
+
     return properties
       .some(x => {
         const sortIfArray = (val) => Array.isArray(val) ? _sortBy(val) : val
-        return !_isEqual(sortIfArray(this[x]), sortIfArray(this.initialSettings[x]))
+        const current = sortIfArray(this[x])
+        const initial = sortIfArray(this.initialSettings[x])
+        return !_isEqual(current, initial)
       })
   }
 
   @Watch('value')
-  onOpen () {
-    const { category } = this
-    if (!this.category) {
-      this.close()
+  onOpen (newVal) {
+    if (!newVal) {
       return
     }
+    const { category } = this
     this.title = category.title
     this.group = category.group
     this.sections = category.sections.slice()
@@ -176,14 +167,16 @@ export default class CategorySettingsDialog extends Vue {
       sections: this.sections.slice()
     }
 
-    this.sectionDisableWarningAgreed = {
-      ItemProsConsSection: false,
-      ItemEcosystemSection: false,
-      ItemNotesSection: false
-    }
+    this.isSectionDisableAgreed = this.isSetSectionDisableAgreedInit()
   }
 
-  // TODO refactor, rewrite simpler
+  isSetSectionDisableAgreedInit () {
+    return Object.values(CategorySection).reduce((acc, cur) => {
+      acc[cur] = false
+      return acc
+    }, {})
+  }
+
   async updateSectionEnabling (sectionValue, sectionName) {
     const index = this.sections.indexOf(sectionValue)
     const isSectionDisabled = index !== -1
@@ -192,17 +185,18 @@ export default class CategorySettingsDialog extends Vue {
       return
     }
 
-    const isOriginallyEnabled = this.category.sections.includes(sectionValue)
+    const isOriginallyEnabled = this.initialSettings.sections.includes(sectionValue)
     const isSectionInEdit = this.$store.state.category.itemsSectionsInEdit[sectionValue].length
-    const wasAgreedOnce = this.sectionDisableWarningAgreed[sectionValue]
-    if (isOriginallyEnabled && isSectionInEdit && !wasAgreedOnce) {
+    const wasAgreedBefore = this.isSectionDisableAgreed[sectionValue]
+    if (isOriginallyEnabled && isSectionInEdit && !wasAgreedBefore) {
+      const confirmText = `You have unsaved changes in one of items ${sectionName}. If you disable this section, your changes will be lost.`
       const isConfirmed = await this._confirm({
-        fullText: `You have unsaved changes in one of items’ ${sectionName} section. If you disable this section, your changes will be lost.`
+        fullText: confirmText
       })
       if (!isConfirmed) {
         return
       }
-      this.sectionDisableWarningAgreed[sectionValue] = true
+      this.isSectionDisableAgreed[sectionValue] = true
     }
 
     this.sections.splice(index, 1)
@@ -233,7 +227,7 @@ export default class CategorySettingsDialog extends Vue {
     margin-right: 12px;
   }
 
-  /* We using fontawesome icons which turned out to be bigger than vuetify default icons
+  /* We are using fontawesome icons which turned out to be bigger than vuetify default icons
      and checkbox icon gets some strange offset if overflow is visible */
   svg {
     overflow: hidden;
