@@ -54,7 +54,7 @@
             hide-details
             color="info"
             class="category-settings-dialog__checkbox"
-            data-testid="CategorySettings-ItemTraitsSectionCheckbox"
+            :data-testid="section.dataTestId"
             :label="section.name"
             :value="section.value"
             :inputValue="sections"
@@ -106,11 +106,17 @@ const categorySectionNames = {
   [CategorySection.notes]: 'Notes section'
 }
 
+const categorySectionDataTestId = {
+  [CategorySection.prosCons]: 'CategorySettings-ItemTraitsSectionCheckbox',
+  [CategorySection.ecosystem]: 'CategorySettings-ItemEcosystemSectionCheckbox',
+  [CategorySection.notes]: 'CategorySettings-ItemNotesSectionCheckbox'
+}
+
 const categoryStatuses = Object.entries(categoryStatusNames)
   .map(([value, name]) => ({ value, name }))
 
 const categorySections = Object.entries(categorySectionNames)
-  .map(([value, name]) => ({ value, name }))
+  .map(([value, name]) => ({ value, name, dataTestId: categorySectionDataTestId[value] }))
 
 @Component({
   // categoryStatuses, categorySections is here to use in template but without reactivity
