@@ -12,7 +12,6 @@ fixture`Index`
     const failMessage = `\n\nFollowing errors occuried in console during the test:\n${error.map(x => `${x}\n`)}\n\n`
     await t.expect(error.length).notOk(failMessage)
   })
-// TODO add hook that checks for console errors on each test and fail if errors exist
 
 test('Resize window if mobile test', testFunctions.resizeWindowIfMobile)
 test('Create category, create category with duplicate name', testFunctions.createCategoryAndDuplicate)
