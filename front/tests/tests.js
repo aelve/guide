@@ -7,6 +7,7 @@ fixture`Index`
     // sometimes it takes long for index page to load and tests can fail
     await t.wait(2000)
   })
+// TODO add hook that checks for console errors on each test and fail if errors exist
 
 test('Resize window if mobile test', testFunctions.resizeWindowIfMobile)
 test('Create category, create category with duplicate name', testFunctions.createCategoryAndDuplicate)
