@@ -1,34 +1,24 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify/lib'
-
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { fas } from '@fortawesome/free-solid-svg-icons'
-import { faSquare, faCheckSquare } from '@fortawesome/free-regular-svg-icons'
-library.add(fas, faSquare, faCheckSquare)
+import icons from 'client/icons'
 
-const icons = {}
-const addIcon = ({ prefix, iconName }, iconUsageName = iconName) => {
-  icons[iconUsageName] = {
+const vuetifyIcons = {}
+const addIcon = ({ prefix, iconName }) => {
+  vuetifyIcons[iconName] = {
     component: 'font-awesome-icon',
     props: {
       icon: [prefix, iconName]
     }
   }
 }
-// TODO import and add only used icons for production
-Object.values({ ...fas, faSquare, faCheckSquare }).forEach(x => addIcon(x))
-
-// This is for vuetify v-checkbox, v-select components, which uses by default icons with such names
-addIcon(faCheckSquare, 'checkboxOn')
-addIcon(faSquare, 'checkboxOff')
-addIcon(fas.faCaretDown, 'dropdown')
+icons.forEach(addIcon)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 Vue.use(Vuetify)
 
 export default new Vuetify({
   icons: {
-    values: icons
+    values: vuetifyIcons
   }
 })
