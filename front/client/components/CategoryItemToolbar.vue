@@ -47,7 +47,7 @@
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items class="category-item__actions">
+        <v-toolbar-items ref="categoryItemActions">
           <div class="category-item-toolbar-btns">
             <category-item-btn
               titleTooltip
@@ -99,7 +99,7 @@
             bottom
             left
             offset-y
-            attach=".category-item__actions"
+            :attach="$refs.categoryItemActions && $refs.categoryItemActions.$el"
           >
             <template v-slot:activator="{ on }">
               <v-btn
