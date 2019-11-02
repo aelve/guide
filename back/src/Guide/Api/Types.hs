@@ -153,7 +153,7 @@ data ItemSite route = ItemSite
   { _getItem :: route :-
       Summary "Get item by id"
       :> ErrorResponse 404 "Item not found"
-      :> "ignore selections"
+      :> "ignore_selections"
       :> QueryParam' '[Required, Strict,
                        Description "Ignore disabled sections to get full item"]
            "bool" Bool
