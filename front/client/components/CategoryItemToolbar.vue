@@ -49,49 +49,17 @@
 
         <v-toolbar-items ref="categoryItemActions">
           <div class="category-item-toolbar-btns">
-            <category-item-btn
+            <CategoryItemBtn
+              v-for="btn in actionBtns"
+              :key="btn.dataTestId"
               titleTooltip
               size="40px"
               iconSize="18"
-              title="Move item up"
-              data-testid="CategoryItemToolbar-MoveUpBtn"
-              icon="arrow-up"
-              @click="moveItem('up')"
-            />
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Move item down"
-              data-testid="CategoryItemToolbar-MoveDownBtn"
-              icon="arrow-down"
-              @click="moveItem('down')"
-            />
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Edit item info"
-              data-testid="CategoryItemToolbar-EditInfoBtn"
-              icon="cog"
-              @click="toggleEditItemInfoMenu"
-            >
-              <v-icon
-                v-if="isItemInfoEdited"
-                class="unsaved-changes-icon"
-                color="#6495ed"
-                size="8"
-              >$vuetify.icons.circle</v-icon>
-            </category-item-btn>
-
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Delete item"
-              icon="trash-alt"
-              data-testid="CategoryItemToolbar-DeleteBtn"
-              @click="deleteItem"
+              :title="btn.title"
+              :data-testid="btn.dataTestId"
+              :icon="btn.icon"
+              :showUnsavedIcon="btn.showUnsavedIcon"
+              @click="btn.clickFunc"
             />
           </div>
 
@@ -120,59 +88,20 @@
             </template>
 
             <v-list class="category-item-toolbar__mobile-menu-list">
-              <v-list-item>
-                <category-item-btn
+              <v-list-item
+                v-for="btn in actionBtns"
+                :key="btn.dataTestId"
+              >
+                <CategoryItemBtn
                   block
                   text
                   showTitle
                   iconSize="18"
-                  title="Move item up"
-                  icon="arrow-up"
-                  data-testid="CategoryItemToolbar-MoveUpBtn"
-                  @click="moveItem('up')"
-                />
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Move item down"
-                  icon="arrow-down"
-                  data-testid="CategoryItemToolbar-MoveDownBtn"
-                  @click="moveItem('down')"
-                />
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Edit item info"
-                  icon="cog"
-                  data-testid="CategoryItemToolbar-EditInfoBtn"
-                  @click="toggleEditItemInfoMenu"
-                >
-                  <v-icon
-                    v-if="isItemInfoEdited"
-                    class="unsaved-changes-icon"
-                    color="#6495ed"
-                    size="8"
-                  >$vuetify.icons.circle</v-icon>
-                </category-item-btn>
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Delete item"
-                  icon="trash-alt"
-                  data-testid="CategoryItemToolbar-DeleteBtn"
-                  @click="deleteItem"
+                  :title="btn.title"
+                  :data-testid="btn.dataTestId"
+                  :icon="btn.icon"
+                  :showUnsavedIcon="btn.showUnsavedIcon"
+                  @click="btn.clickFunc"
                 />
               </v-list-item>
             </v-list>
@@ -181,10 +110,9 @@
       </v-toolbar>
     </div>
 
-    <div
-      class="category-item-toolbar__expanding-content"
-      :class="{ 'category-item-toolbar__expanding-content_expanded': isEditItemInfoMenuOpen }"
-      :aria-hidden="!isEditItemInfoMenuOpen"
+    <ExpandingPanel
+      class="category-item-toolbar__edit-item-info-panel"
+      :value="isEditItemInfoMenuOpen"
     >
       <v-layout column class="pa-3">
         <v-flex>
@@ -228,7 +156,7 @@
           </v-btn>
         </v-flex>
       </v-layout>
-    </div>
+    </ExpandingPanel>
   </div>
 </template>
 
@@ -239,10 +167,12 @@ import { Prop, Watch } from 'vue-property-decorator'
 import normalizeUrl from 'normalize-url'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
+import ExpandingPanel from 'client/components/ExpandingPanel.vue'
 
 @Component({
   components: {
-    CategoryItemBtn
+    CategoryItemBtn,
+    ExpandingPanel
   }
 })
 export default class CategoryItemToolbar extends Vue {
@@ -255,6 +185,36 @@ export default class CategoryItemToolbar extends Vue {
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
   itemHackageEdit: string = this.itemHackage
+
+  get actionBtns () {
+    return [
+      {
+        title: 'Move item up',
+        dataTestId: 'CategoryItemToolbar-MoveUpBtn',
+        icon: 'arrow-up',
+        clickFunc: () => this.moveItem('up')
+      },
+      {
+        title: 'Move item down',
+        dataTestId: 'CategoryItemToolbar-MoveDownBtn',
+        icon: 'arrow-down',
+        clickFunc: () => this.moveItem('down')
+      },
+      {
+        title: 'Edit item info',
+        dataTestId: 'CategoryItemToolbar-EditInfoBtn',
+        icon: 'cog',
+        showUnsavedIcon: this.isItemInfoEdited,
+        clickFunc: () => this.toggleEditItemInfoMenu()
+      },
+      {
+        title: 'Delete item',
+        icon: 'trash-alt',
+        dataTestId: 'CategoryItemToolbar-DeleteBtn',
+        clickFunc: () => this.deleteItem()
+      }
+    ]
+  }
 
   get isItemInfoEdited () {
     return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit || this.itemHackage !== this.itemHackageEdit
@@ -333,15 +293,8 @@ export default class CategoryItemToolbar extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-/* TODO move expanding panel to external component */
-.category-item-toolbar__expanding-content {
-  max-height: 0;
-  overflow: hidden;
+.category-item-toolbar__edit-item-info-panel {
   background: #d6d6d6;
-  transition: max-height 0.2s ease-in-out;
-}
-.category-item-toolbar__expanding-content_expanded {
-  max-height: 300px;
 }
 .category-item-toolbar__header >>> {
   .v-toolbar__title {
@@ -412,11 +365,6 @@ a.category-item-anchor {
     }
   }
 }
-.unsaved-changes-icon {
-  position: absolute;
-  bottom: 0;
-  right: 5px;
-}
 
 .category-item-toolbar-btns {
   display: flex;
@@ -467,10 +415,6 @@ a.category-item-anchor {
     display: flex;
     flex-wrap: wrap;
     margin: 6px 0 0 0;
-  }
-  .unsaved-changes-icon {
-    right: unset;
-    left: 13px;
   }
   >>> .v-toolbar__items {
     margin-left: 5px;
