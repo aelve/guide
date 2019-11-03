@@ -111,10 +111,11 @@ import CatchConflictDecorator from 'client/helpers/CatchConflictDecorator'
 
 })
 export default class CategoryItemTraits extends Vue {
-  // TODO change [any] type
   @Prop(Array) traits!: any[]
   @Prop(String) type!: string
   @Prop(String) itemId: string
+  // TODO consider using more elegant PropSync api
+  // https://github.com/kaorun343/vue-property-decorator#-propsyncpropname-string-options-propoptions--constructor--constructor---decorator
   @Prop(Boolean) isAnyTraitEditing: boolean
 
   isAddTrait: boolean = false
