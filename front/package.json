@@ -75,6 +75,7 @@
     "file-loader": "^4.1.0",
     "fork-ts-checker-webpack-plugin": "^1.4.3",
     "friendly-errors-webpack-plugin": "^1.7.0",
+    "ignore-not-found-export-webpack-plugin": "^1.0.1",
     "koa-webpack": "^5.2.4",
     "memory-fs": "^0.4.1",
     "nodemon": "^1.19.1",
