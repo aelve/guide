@@ -27,7 +27,24 @@
         >{{ category.group }}</span>
       </div>
 
-      <div class="category-actions">
+      <ResponsiveBtnsContainer>
+        <template #menuBtn="{ on }">
+          <v-btn
+            text
+            icon
+            aria-label="Actions"
+            v-tooltip="'Actions'"
+            data-testid="CategoryHeader-MobileMenuBtn"
+            class="category-actions-mobile-menu-btn"
+            v-on="on" 
+          >
+            <v-icon
+              color="grey darken-2"
+              size="18"
+            >$vuetify.icons.bars</v-icon>
+          </v-btn>
+        </template>
+
         <CategoryHeaderBtn
           class="mr-1"
           text="New item"
@@ -48,58 +65,7 @@
           data-testid="CategoryHeader-CategoryDeleteBtn"
           @click="deleteCategory"
         />
-      </div>
-
-      <!-- TODO create responsive toolbar component to get rid of duplication of buttons -->
-      <v-menu bottom left offset-y>
-        <template v-slot:activator="{ on }">
-          <v-btn
-            text
-            icon
-            aria-label="Actions"
-            v-tooltip="'Actions'"
-            data-testid="CategoryHeader-MobileMenuBtn"
-            class="category-actions-menu-btn"
-            v-on="on"
-          >
-            <v-icon
-              color="grey darken-2"
-              size="18"
-            >$vuetify.icons.bars</v-icon>
-          </v-btn>
-        </template>
-
-        <v-list class="category-actions-menu-list">
-          <v-list-item>
-            <CategoryHeaderBtn
-              block
-              text="New item"
-              icon="plus"
-              data-testid="CategoryHeader-NewItemBtn"
-              @click="openAddItemDialog"
-            />
-          </v-list-item>
-          <v-list-item>
-            <CategoryHeaderBtn
-              block
-              text="Category settings"
-              icon="cog"
-              data-testid="CategoryHeader-CategorySettingsBtn"
-              @click="openCategorySettingsEditDialog"
-            />
-          </v-list-item>
-          <v-list-item>
-            <CategoryHeaderBtn
-              block
-              text="Delete category"
-              icon="trash-alt"
-              data-testid="CategoryHeader-CategoryDeleteBtn"
-              @click="deleteCategory"
-            />
-          </v-list-item>
-        </v-list>
-      </v-menu>
-
+      </ResponsiveBtnsContainer>
     </div>
     
 
@@ -118,11 +84,13 @@ import CategorySettingsDialog from 'client/components/CategorySettingsDialog.vue
 import CategoryHeaderBtn from 'client/components/CategoryHeaderBtn.vue'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import { ICategoryFull } from 'client/service/Category'
+import ResponsiveBtnsContainer from 'client/components/ResponsiveBtnsContainer.vue'
 
 @Component({
   components: {
     CategorySettingsDialog,
-    CategoryHeaderBtn
+    CategoryHeaderBtn,
+    ResponsiveBtnsContainer
   }
 })
 export default class CategoryHeader extends Vue {
@@ -209,41 +177,13 @@ export default class CategoryHeader extends Vue {
   font-weight: 600;
 }
 
-.category-actions-menu-btn {
-  display: none;
+.category-actions-mobile-menu-btn {
   margin: 0;
   width: 36px;
   height: 36px;
 }
 
-.category-actions {
-  white-space: nowrap;
-  flex: 1;
-}
-
-.category-actions-menu-list {
-  >>> .v-list-item {
-    height: 36px;
-    padding: 0;
-  }
-
-  >>> button {
-    height: 100% !important;
-    padding: 0 6px;
-
-    .v-btn__content {
-      justify-content: flex-start;
-    }
-  }
-}
-
 @media (max-width: 768px) {
-  .category-actions-menu-btn {
-    display: block;
-  }
-  .category-actions {
-    display: none;
-  }
   .category-header__second-row {
     /* Cause menu btn appears after page loading and causes second row to jump */
     min-height: 36px;

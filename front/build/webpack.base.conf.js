@@ -66,12 +66,15 @@ const config = {
               transpileOnly: true,
               appendTsSuffixTo: [/\.vue$/]
             }
-          }
+          },
         ]
       },
       {
         test: /\.tsx$/,
         use: [
+          {
+            loader: 'babel-loader'
+          },
           {
             loader: 'ts-loader',
             options: {
