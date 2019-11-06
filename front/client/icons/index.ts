@@ -14,6 +14,7 @@ import {
   faSearch,
   faCaretDown,
   faPen,
+  faPencilAlt,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { faSquare, faCheckSquare } from '@fortawesome/free-regular-svg-icons'
@@ -38,6 +39,7 @@ const icons = [
   faSearch,
   faCaretDown,
   faPen,
+  faPencilAlt,
   faExclamationTriangle,
   faSquare,
   faCheckSquare
