@@ -47,9 +47,9 @@
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items ref="toolbarItems">
+        <v-toolbar-items>
           <ResponsiveBtnsContainer
-            :menuAttach="toolbarItemsEl"
+            :menuAttach="el"
             class="category-item-toolbar-btns"
           >
             <template #menuBtn="{ on }">
@@ -103,10 +103,9 @@
       </v-toolbar>
     </div>
 
-    <div
-      class="category-item-toolbar__expanding-content"
-      :class="{ 'category-item-toolbar__expanding-content_expanded': isEditItemInfoMenuOpen }"
-      :aria-hidden="!isEditItemInfoMenuOpen"
+    <ExpandingPanel
+      class="category-item-toolbar__edit-item-info-panel"
+      :value="isEditItemInfoMenuOpen"
     >
       <v-layout column class="pa-3">
         <v-flex>
@@ -150,7 +149,7 @@
           </v-btn>
         </v-flex>
       </v-layout>
-    </div>
+    </ExpandingPanel>
   </div>
 </template>
 
@@ -162,11 +161,13 @@ import normalizeUrl from 'normalize-url'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import ResponsiveBtnsContainer from 'client/components/ResponsiveBtnsContainer.vue'
+import ExpandingPanel from 'client/components/ExpandingPanel.vue'
 
 @Component({
   components: {
     CategoryItemBtn,
-    ResponsiveBtnsContainer
+    ResponsiveBtnsContainer,
+    ExpandingPanel
   }
 })
 export default class CategoryItemToolbar extends Vue {
@@ -179,7 +180,8 @@ export default class CategoryItemToolbar extends Vue {
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
   itemHackageEdit: string = this.itemHackage
-  toolbarItemsEl = null
+  el = null
+
   get actionBtns () {
     return [
       {
@@ -229,8 +231,8 @@ export default class CategoryItemToolbar extends Vue {
   }
 
   mounted () {
-    // Cause $refs is not reactive we need to set it manually after its available
-    this.toolbarItemsEl = this.$refs.toolbarItems
+    // Cause $el is not reactive we need to set it manually after its available
+    this.el = this.$el
   }
 
   toggleEditItemInfoMenu () {
@@ -292,15 +294,8 @@ export default class CategoryItemToolbar extends Vue {
 </script>
 
 <style lang="postcss" scoped>
-/* TODO move expanding panel to external component */
-.category-item-toolbar__expanding-content {
-  max-height: 0;
-  overflow: hidden;
+.category-item-toolbar__edit-item-info-panel {
   background: #d6d6d6;
-  transition: max-height 0.2s ease-in-out;
-}
-.category-item-toolbar__expanding-content_expanded {
-  max-height: 300px;
 }
 .category-item-toolbar__header >>> {
   .v-toolbar__title {
@@ -371,11 +366,6 @@ a.category-item-anchor {
     }
   }
 }
-.unsaved-changes-icon {
-  position: absolute;
-  bottom: 0;
-  right: 5px;
-}
 
 .category-item-toolbar-btns {
   >>> .responsive-bar__desktop-wrap {
@@ -422,10 +412,6 @@ a.category-item-anchor {
     display: flex;
     flex-wrap: wrap;
     margin: 6px 0 0 0;
-  }
-  .unsaved-changes-icon {
-    right: unset;
-    left: 13px;
   }
   >>> .v-toolbar__items {
     margin-left: 5px;

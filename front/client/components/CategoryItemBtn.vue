@@ -18,6 +18,12 @@
       :size="iconSizeValue"
     >{{ iconText }}</v-icon>
     <template v-if="showTitle"> {{ title }} </template>
+    <v-icon
+      v-if="showUnsavedIcon"
+      class="category-item-btn__unsaved-icon"
+      color="#6495ed"
+      size="8"
+    >$vuetify.icons.circle</v-icon>
     <slot />
   </v-btn>
 </template>
@@ -36,6 +42,7 @@ export default class CategoryItemBtn extends Vue {
   @Prop(String) title: string
   @Prop(Boolean) showTitle: boolean
   @Prop(Boolean) titleTooltip: boolean
+  @Prop(Boolean) showUnsavedIcon: boolean
 
   get style () {
     // Size prop overlaps small prop
@@ -61,5 +68,11 @@ export default class CategoryItemBtn extends Vue {
 <style>
 .category-item-btn {
   text-transform: none;
+  position: relative;
+}
+.category-item-btn__unsaved-icon {
+  position: absolute;
+  bottom: 0;
+  left: 13px;
 }
 </style>
