@@ -15,6 +15,10 @@ class CategoryItemService {
       link
     }, { requestName: 'create item' })
   }
+
+  async getItemById (id: ICategoryItem['id']): Promise<void> {
+    return api.get(`item/${id}`, { requestName: 'get item' })
+  }
   async deleteItemById (id: ICategoryItem['id']): Promise<void> {
     await api.delete(`item/${id}`, { requestName: 'delete item' })
   }

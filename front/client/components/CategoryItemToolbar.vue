@@ -11,7 +11,7 @@
         <v-toolbar-title class="text-h2">
           <span class="category-item-toolbar-title">
             <a
-              :href="`#item-${itemUid}`"
+              :href="`#item-${itemId}`"
               class="category-item-anchor"
             >#</a>
 
@@ -170,7 +170,7 @@ import ResponsiveBtnsContainer from 'client/components/ResponsiveBtnsContainer.v
   }
 })
 export default class CategoryItemToolbar extends Vue {
-  @Prop(String) itemUid!: string
+  @Prop(String) itemId!: string
   @Prop(String) itemName!: string
   @Prop(String) itemLink!: string
   @Prop(String) itemHackage!: string
@@ -249,14 +249,14 @@ export default class CategoryItemToolbar extends Vue {
       return
     }
     await this.$store.dispatch('categoryItem/updateItemInfo', {
-      id: this.itemUid,
+      id: this.itemId,
       body: {
         name: this.itemNameEdit,
         link: this.getLinkForSave(),
         hackage: this.itemHackageEdit
       }
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.itemId })
     this.toggleEditItemInfoMenu()
   }
 
@@ -277,13 +277,13 @@ export default class CategoryItemToolbar extends Vue {
     }
   })
   async deleteItem (): Promise<void> {
-    await this.$store.dispatch('categoryItem/deleteItemById', this.itemUid)
+    await this.$store.dispatch('categoryItem/deleteItemById', this.itemId)
     await this.$store.dispatch('category/reloadCategory')
   }
 
   async moveItem (direction: string) {
     await this.$store.dispatch('categoryItem/moveItem', {
-      id: this.itemUid,
+      id: this.itemId,
       direction
     })
     await this.$store.dispatch('category/reloadCategory')

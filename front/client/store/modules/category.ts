@@ -1,6 +1,6 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
 import { ICategoryInfo, ICategoryFull, CategoryService } from 'client/service/Category'
-import { ICategoryItem } from 'client/service/CategoryItem'
+import { ICategoryItem, CategoryItemService } from 'client/service/CategoryItem'
 import { set } from '../helpers'
 
 interface ICategoryState {
@@ -94,6 +94,13 @@ const actions: ActionTree<ICategoryState, any> = {
     })
 
     return createdDescription
+  },
+  async reloadItem (
+    { commit }: ActionContext<ICategoryState, any>,
+    { id }: { id: ICategoryItem['id'] }
+  ) {
+    const item = await CategoryItemService.getItemById(id)
+    commit('resetItem', item)
   }
 }
 
@@ -109,6 +116,11 @@ const mutations: MutationTree<ICategoryState> = {
     } else {
       sectionEditState.push(itemId)
     }
+  },
+  resetItem (state, item) {
+    const { items } = state.category
+    const index = items.map(({ id }) => id).indexOf(item.id)
+    items.splice(index, 1, item)
   }
 }
 

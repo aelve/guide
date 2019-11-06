@@ -7,7 +7,7 @@
     />
 
     <category-item-toolbar
-      :itemUid="item.id"
+      :itemId="item.id"
       :itemName="item.name"
       :itemLink="item.link"
       :itemHackage="item.hackage"
@@ -185,7 +185,7 @@ export default class CategoryItem extends Vue {
       original,
       modified
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.item.id })
   }
 
   @CatchConflictDecorator
@@ -195,7 +195,7 @@ export default class CategoryItem extends Vue {
       original,
       modified
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.item.id })
   }
 
   @CatchConflictDecorator
@@ -205,7 +205,7 @@ export default class CategoryItem extends Vue {
       original,
       modified
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.item.id })
   }
 }
 </script>

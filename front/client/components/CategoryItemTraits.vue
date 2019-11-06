@@ -148,7 +148,7 @@ export default class CategoryItemTraits extends Vue {
       modified
     })
     trait.isEdit = false
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.itemId })
   }
 
   async moveTrait (trait: any, direction: string) {
@@ -157,7 +157,7 @@ export default class CategoryItemTraits extends Vue {
       traitId: trait.id,
       direction
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.itemId })
   }
 
   toggleAddTrait () {
@@ -171,7 +171,7 @@ export default class CategoryItemTraits extends Vue {
       content: traitText
     })
     this.toggleAddTrait()
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.itemId })
   }
 
   @Confirm({
@@ -186,7 +186,7 @@ export default class CategoryItemTraits extends Vue {
       itemId: this.itemId,
       traitId: trait.id
     })
-    await this.$store.dispatch('category/reloadCategory')
+    await this.$store.dispatch('category/reloadItem', { id: this.itemId })
   }
 }
 </script>
