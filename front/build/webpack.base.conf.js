@@ -3,7 +3,7 @@ const { DefinePlugin } = require('webpack')
 const { VueLoaderPlugin } = require('vue-loader')
 const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin')
 const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
-// TODO workaroun for https://github.com/TypeStrong/ts-loader/issues/653 Remove when fixed
+// TODO workaround for https://github.com/TypeStrong/ts-loader/issues/653 Remove when fixed
 const IgnoreNotFoundExportPlugin = require('ignore-not-found-export-webpack-plugin')
 
 const isProduction = process.env.NODE_ENV === 'production'
