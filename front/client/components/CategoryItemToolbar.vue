@@ -47,9 +47,9 @@
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items ref="toolbarItems">
+        <v-toolbar-items>
           <ResponsiveBtnsContainer
-            :menuAttach="toolbarItemsEl"
+            :menuAttach="el"
             class="category-item-toolbar-btns"
           >
             <template #menuBtn="{ on }">
@@ -161,11 +161,13 @@ import normalizeUrl from 'normalize-url'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
 import ResponsiveBtnsContainer from 'client/components/ResponsiveBtnsContainer.vue'
+import ExpandingPanel from 'client/components/ExpandingPanel.vue'
 
 @Component({
   components: {
     CategoryItemBtn,
-    ResponsiveBtnsContainer
+    ResponsiveBtnsContainer,
+    ExpandingPanel
   }
 })
 export default class CategoryItemToolbar extends Vue {
@@ -178,7 +180,7 @@ export default class CategoryItemToolbar extends Vue {
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
   itemHackageEdit: string = this.itemHackage
-  toolbarItemsEl = null
+  el = null
 
   get actionBtns () {
     return [
@@ -229,8 +231,8 @@ export default class CategoryItemToolbar extends Vue {
   }
 
   mounted () {
-    // Cause $refs is not reactive we need to set it manually after its available
-    this.toolbarItemsEl = this.$refs.toolbarItems
+    // Cause $el is not reactive we need to set it manually after its available
+    this.el = this.$el
   }
 
   toggleEditItemInfoMenu () {
