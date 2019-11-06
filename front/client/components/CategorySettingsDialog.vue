@@ -127,15 +127,15 @@ export default class CategorySettingsDialog extends Vue {
   @Prop(Boolean) value: boolean
   @Prop(Object) category: ICategoryFull
 
-  title: string = null
-  group: string = null
-  categoryStatus: CategoryStatus = null
-  sections: CategorySection[] = []
+  title: string = this.category.title
+  group: string = this.category.group
+  categoryStatus: CategoryStatus = this.category.status
+  sections: CategorySection[] = this.category.sections.slice()
   initialSettings = {
-    title: null,
-    group: null,
-    categoryStatus: null,
-    sections: null
+    title: this.category.title,
+    group: this.category.group,
+    categoryStatus: this.category.status,
+    sections: this.category.sections.slice()
   }
   isValid: boolean = false
   isSectionDisableAgreed = this.isSetSectionDisableAgreedInit()
@@ -156,24 +156,10 @@ export default class CategorySettingsDialog extends Vue {
   }
 
   @Watch('value')
-  onOpen (newVal) {
-    if (!newVal) {
-      return
+  onToggle (val) {
+    if (val) {
+      Object.assign(this.$data, this.$options.data.apply(this))
     }
-    const { category } = this
-    this.title = category.title
-    this.group = category.group
-    this.sections = category.sections.slice()
-    this.categoryStatus = category.status
-
-    this.initialSettings = {
-      title: this.title,
-      group: this.group,
-      categoryStatus: this.categoryStatus,
-      sections: this.sections.slice()
-    }
-
-    this.isSectionDisableAgreed = this.isSetSectionDisableAgreedInit()
   }
 
   isSetSectionDisableAgreedInit () {
