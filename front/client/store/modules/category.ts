@@ -1,6 +1,7 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
 import { ICategoryInfo, ICategoryFull, CategoryService } from 'client/service/Category'
 import { ICategoryItem } from 'client/service/CategoryItem'
+import { set } from '../helpers'
 
 interface ICategoryState {
   categoryList: ICategoryInfo[],
@@ -97,12 +98,8 @@ const actions: ActionTree<ICategoryState, any> = {
 }
 
 const mutations: MutationTree<ICategoryState> = {
-  setCategoryList: (state: ICategoryState, payload: ICategoryInfo[]) => {
-    state.categoryList = payload
-  },
-  setCategory: (state: ICategoryState, payload: ICategoryFull) => {
-    state.category = payload
-  },
+  setCategoryList: set('categoryList'),
+  setCategory: set('category'),
   toggleSectionEditState (state, { sectionName, itemId }) {
     const sectionEditState = state.itemsSectionsInEdit[sectionName]
 
