@@ -179,35 +179,6 @@ export default class CategoryItemToolbar extends Vue {
   itemLinkEdit: string = this.itemLink
   itemHackageEdit: string = this.itemHackage
   toolbarItemsEl = null
-  get actionBtns () {
-    return [
-      {
-        title: 'Move item up',
-        dataTestId: 'CategoryItemToolbar-MoveUpBtn',
-        icon: 'arrow-up',
-        clickFunc: () => this.moveItem('up')
-      },
-      {
-        title: 'Move item down',
-        dataTestId: 'CategoryItemToolbar-MoveDownBtn',
-        icon: 'arrow-down',
-        clickFunc: () => this.moveItem('down')
-      },
-      {
-        title: 'Edit item info',
-        dataTestId: 'CategoryItemToolbar-EditInfoBtn',
-        icon: 'cog',
-        showUnsavedIcon: this.isItemInfoEdited,
-        clickFunc: () => this.toggleEditItemInfoMenu()
-      },
-      {
-        title: 'Delete item',
-        icon: 'trash-alt',
-        dataTestId: 'CategoryItemToolbar-DeleteBtn',
-        clickFunc: () => this.deleteItem()
-      }
-    ]
-  }
 
   get actionBtns () {
     return [
