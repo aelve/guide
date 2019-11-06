@@ -47,61 +47,12 @@
 
         <v-spacer></v-spacer>
 
-        <v-toolbar-items ref="categoryItemActions">
-          <div class="category-item-toolbar-btns">
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Move item up"
-              data-testid="CategoryItemToolbar-MoveUpBtn"
-              icon="arrow-up"
-              @click="moveItem('up')"
-            />
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Move item down"
-              data-testid="CategoryItemToolbar-MoveDownBtn"
-              icon="arrow-down"
-              @click="moveItem('down')"
-            />
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Edit item info"
-              data-testid="CategoryItemToolbar-EditInfoBtn"
-              icon="cog"
-              @click="toggleEditItemInfoMenu"
-            >
-              <v-icon
-                v-if="isItemInfoEdited"
-                class="unsaved-changes-icon"
-                color="#6495ed"
-                size="8"
-              >$vuetify.icons.circle</v-icon>
-            </category-item-btn>
-
-            <category-item-btn
-              titleTooltip
-              size="40px"
-              iconSize="18"
-              title="Delete item"
-              icon="trash-alt"
-              data-testid="CategoryItemToolbar-DeleteBtn"
-              @click="deleteItem"
-            />
-          </div>
-
-          <v-menu
-            bottom
-            left
-            offset-y
-            :attach="$refs.categoryItemActions && $refs.categoryItemActions.$el"
+        <v-toolbar-items ref="toolbarItems">
+          <ResponsiveBtnsContainer
+            :menuAttach="toolbarItemsEl"
+            class="category-item-toolbar-btns"
           >
-            <template v-slot:activator="{ on }">
+            <template #menuBtn="{ on }">
               <v-btn
                 icon
                 small
@@ -119,64 +70,35 @@
               </v-btn>
             </template>
 
-            <v-list class="category-item-toolbar__mobile-menu-list">
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Move item up"
-                  icon="arrow-up"
-                  data-testid="CategoryItemToolbar-MoveUpBtn"
-                  @click="moveItem('up')"
-                />
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Move item down"
-                  icon="arrow-down"
-                  data-testid="CategoryItemToolbar-MoveDownBtn"
-                  @click="moveItem('down')"
-                />
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Edit item info"
-                  icon="cog"
-                  data-testid="CategoryItemToolbar-EditInfoBtn"
-                  @click="toggleEditItemInfoMenu"
-                >
-                  <v-icon
-                    v-if="isItemInfoEdited"
-                    class="unsaved-changes-icon"
-                    color="#6495ed"
-                    size="8"
-                  >$vuetify.icons.circle</v-icon>
-                </category-item-btn>
-              </v-list-item>
-              <v-list-item>
-                <category-item-btn
-                  block
-                  text
-                  showTitle
-                  iconSize="18"
-                  title="Delete item"
-                  icon="trash-alt"
-                  data-testid="CategoryItemToolbar-DeleteBtn"
-                  @click="deleteItem"
-                />
-              </v-list-item>
-            </v-list>
-          </v-menu>
+            <CategoryItemBtn
+              v-for="btn in actionBtns"
+              :key="btn.dataTestId"
+              titleTooltip
+              size="40px"
+              iconSize="18"
+              :title="btn.title"
+              :data-testid="btn.dataTestId"
+              :icon="btn.icon"
+              :showUnsavedIcon="btn.showUnsavedIcon"
+              @click="btn.clickFunc"
+            />
+
+            <template slot="menuItems">
+              <CategoryItemBtn
+                v-for="btn in actionBtns"
+                :key="btn.dataTestId"
+                block
+                text
+                showTitle
+                iconSize="18"
+                :title="btn.title"
+                :data-testid="btn.dataTestId"
+                :icon="btn.icon"
+                :showUnsavedIcon="btn.showUnsavedIcon"
+                @click="btn.clickFunc"
+              />
+            </template>
+          </ResponsiveBtnsContainer>
         </v-toolbar-items>
       </v-toolbar>
     </div>
@@ -239,10 +161,12 @@ import { Prop, Watch } from 'vue-property-decorator'
 import normalizeUrl from 'normalize-url'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
+import ResponsiveBtnsContainer from 'client/components/ResponsiveBtnsContainer.vue'
 
 @Component({
   components: {
-    CategoryItemBtn
+    CategoryItemBtn,
+    ResponsiveBtnsContainer
   }
 })
 export default class CategoryItemToolbar extends Vue {
@@ -255,6 +179,36 @@ export default class CategoryItemToolbar extends Vue {
   itemNameEdit: string = this.itemName
   itemLinkEdit: string = this.itemLink
   itemHackageEdit: string = this.itemHackage
+  toolbarItemsEl = null
+  get actionBtns () {
+    return [
+      {
+        title: 'Move item up',
+        dataTestId: 'CategoryItemToolbar-MoveUpBtn',
+        icon: 'arrow-up',
+        clickFunc: () => this.moveItem('up')
+      },
+      {
+        title: 'Move item down',
+        dataTestId: 'CategoryItemToolbar-MoveDownBtn',
+        icon: 'arrow-down',
+        clickFunc: () => this.moveItem('down')
+      },
+      {
+        title: 'Edit item info',
+        dataTestId: 'CategoryItemToolbar-EditInfoBtn',
+        icon: 'cog',
+        showUnsavedIcon: this.isItemInfoEdited,
+        clickFunc: () => this.toggleEditItemInfoMenu()
+      },
+      {
+        title: 'Delete item',
+        icon: 'trash-alt',
+        dataTestId: 'CategoryItemToolbar-DeleteBtn',
+        clickFunc: () => this.deleteItem()
+      }
+    ]
+  }
 
   get isItemInfoEdited () {
     return this.itemName !== this.itemNameEdit || this.itemLink !== this.itemLinkEdit || this.itemHackage !== this.itemHackageEdit
@@ -272,6 +226,11 @@ export default class CategoryItemToolbar extends Vue {
   @Watch('itemLink')
   onItemLinkChange (newVal: string) {
     this.itemLinkEdit = newVal
+  }
+
+  mounted () {
+    // Cause $refs is not reactive we need to set it manually after its available
+    this.toolbarItemsEl = this.$refs.toolbarItems
   }
 
   toggleEditItemInfoMenu () {
@@ -419,24 +378,26 @@ a.category-item-anchor {
 }
 
 .category-item-toolbar-btns {
-  display: flex;
-  align-items: center;
-  flex: 1;
+  >>> .responsive-bar__desktop-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
 
-  > * {
-    width: 1.6rem !important;
-    height: 1.6rem !important;
-  }
+    > * {
+      width: 1.6rem !important;
+      height: 1.6rem !important;
+    }
 
-  > *:not(:last-child) {
-    margin-right: 6px;
+    > *:not(:last-child) {
+      margin-right: 6px;
+    }
   }
 }
 .category-toolbar-mobile-menu-btn {
-  display: none;
-  /* Somewhy vuetify sets important "height: 100%"" for direct child buttons of toolbar */
+  /* For some reason vuetify sets important "height: 100%"" for direct child buttons of toolbar */
   height: 1.6rem !important;
   width: 1.6rem !important;
+  border-radius: 0;
   margin: 0;
 }
 
@@ -457,12 +418,6 @@ a.category-item-anchor {
 }
 
 @media (max-width: 768px) {
-  .category-toolbar-mobile-menu-btn {
-    display: flex;
-  }
-  .category-item-toolbar-btns {
-    display: none;
-  }
   .category-item-badges {
     display: flex;
     flex-wrap: wrap;
