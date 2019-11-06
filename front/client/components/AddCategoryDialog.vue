@@ -133,13 +133,12 @@ export default class AddCategoryDialog extends Vue {
   }
 
   @Watch('value')
-  onOpen (newVal: boolean) {
-    // wait for vue to render form
-    this.$nextTick(() => {
+  onToggle (val) {
+    if (val) {
+      Object.assign(this.$data, this.$options.data.apply(this))
+    } else {
       this.$refs.form.resetValidation()
-      this.categoryName = ''
-      this.groupNameInternal = this.groupName
-    })
+    }
   }
 
   close () {

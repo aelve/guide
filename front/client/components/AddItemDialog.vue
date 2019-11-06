@@ -89,13 +89,11 @@ export default class AddItemDialog extends Vue {
   link: string = ''
   isValid: boolean = false
 
-  // TODO create mixin or external dialog component which reset data on new open,
-  // cause this code is duplicated in another dialog components (AddCategoryDialog, CategorySettingsDialog)
   @Watch('value')
-  onOpen () {
-    this.name = ''
-    this.hackage = ''
-    this.link = ''
+  onToggle (val) {
+    if (val) {
+      Object.assign(this.$data, this.$options.data.apply(this))
+    }
   }
 
   close () {
