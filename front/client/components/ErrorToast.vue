@@ -93,7 +93,6 @@ export default class ErrorToast extends Vue {
     this.$nextTick(() => this.startTimeout())
   }
 
-  // TODO set timeout to 0 if hovered and reset on blur
   onInput (value) {
     if (!value) {
       this.close()
