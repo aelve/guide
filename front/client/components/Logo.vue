@@ -18,6 +18,7 @@ export default class Logo extends Vue {}
 
 <style scoped>
 .logo {
+  font-size: 1.25rem;
   text-decoration: none;
   color: #ffffff;
 }
