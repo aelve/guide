@@ -132,19 +132,10 @@ export default class Categories extends Vue {
   flex-wrap: wrap;
   justify-content: center;
   margin: -15px -15px 0 0;
-  padding: 0 100px;
 
   &:after {
     content: "";
     flex: 1;
-  }
-
-  @media screen and (max-width: 1150px) {
-    padding: 0 60px;
-  }
-
-  @media screen and (max-width: 830px) {
-    padding: 0 40px;
   }
 }
 .categories-column {

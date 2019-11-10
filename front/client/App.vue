@@ -1,9 +1,9 @@
 <template>
   <v-app>
     <toolbar />
-    <v-content class="app-content">
+    <main class="app-content desktop-centered">
       <router-view />
-    </v-content>
+    </main>
     <a-footer />
   </v-app>
 </template>
@@ -49,7 +49,8 @@ export default class RootComponent extends Vue {
 *:after {
   box-sizing: border-box;
 }
-body, .v-application {
+body,
+.v-application {
   font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 }
@@ -251,18 +252,27 @@ blockquote {
   letter-spacing: 0.03rem;
   font-size: 1em;
 }
+.desktop-centered {
+  padding-left: 20px;
+  padding-right: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 780px) {
+  .desktop-centered {
+    width: 90%;
+  }
+}
 </style>
 
 <style lang="postcss" scoped>
-/* Should be same padding on any screen cause it changes with toolbar and we fixed toolbar's height (see Toolbar.vue) height on each screen  */
 .app-content {
-  padding: 100px 0px 36px !important;
+  padding-top: 100px;
+  height: 100%;
   line-height: 150%;
 }
-.app-content >>> > .v-content__wrap > .container {
-  padding: 12px;
-}
-.app-content >>> code, kbd {
+.app-content >>> code,
+kbd {
   font-weight: normal;
 }
 </style>
