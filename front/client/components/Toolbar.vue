@@ -1,68 +1,76 @@
 <template>
-  <v-app-bar
-    dark
-    app
-    color="#232323"
-  >
-    <v-toolbar-title>
-      <logo :class="{ 'mobile-hidden': !isSearchFieldHidden }"/>
-    </v-toolbar-title>
+  <header class="app-toolbar">
+    <div class="app-toolbar__items content-centered">
+      <Logo :class="{ 'mobile-hidden': !isSearchBarHidden }"/>
 
-    <v-spacer></v-spacer>
-
-    <search-field
-      class="toolbar__search-field"
-      :class="{ 'mobile-hidden': isSearchFieldHidden }"
-      ref="searchField"
-    />
-    <v-btn
-      text
-      icon
-      aria-label="Search"
-      v-tooltip="'Search'"
-      color="#fff"
-      class="mobile-displayed"
-      @click="toggleSearchField"
-    >
-      <v-icon size="20">$vuetify.icons.search</v-icon>
-    </v-btn>
-  </v-app-bar>
+      <SearchBar
+        class="app-toolbar__search-bar"
+        :class="{ 'mobile-hidden': isSearchBarHidden }"
+        ref="searchBar"
+      />
+      <v-btn
+        text
+        icon
+        small
+        aria-label="Search"
+        v-tooltip="'Search'"
+        color="#fff"
+        class="mobile-displayed ml-2"
+        @click="toggleSearchBar"
+      >
+        <v-icon size="1rem">$vuetify.icons.{{isSearchBarHidden ? 'search' : 'times'}}</v-icon>
+      </v-btn>
+    </div>
+  </header>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import SearchField from 'client/components/SearchField.vue'
+import SearchBar from 'client/components/SearchBar.vue'
 import Logo from 'client/components/Logo.vue'
 import Component from 'vue-class-component'
 
 @Component({
   components: {
-    SearchField,
+    SearchBar,
     Logo
   }
 })
 export default class Toolbar extends Vue {
-  isSearchFieldHidden: boolean = true
+  isSearchBarHidden: boolean = false
 
-  toggleSearchField () {
-    this.isSearchFieldHidden = !this.isSearchFieldHidden
-    if (!this.isSearchFieldHidden) {
-      this.$nextTick(() => this.$refs.searchField.focus())
+  toggleSearchBar () {
+    this.isSearchBarHidden = !this.isSearchBarHidden
+    if (!this.isSearchBarHidden) {
+      this.$nextTick(() => this.$refs.searchBar.focus())
     }
   }
 }
 </script>
 
 <style lang="postcss" scoped>
->>> .v-toolbar__content {
-  height: 64px !important;
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #232323;
+  height: 64px;
+  z-index: 5;
+}
+.app-toolbar__items {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
 }
 .mobile-displayed {
   display: none;
 }
 @media screen and (max-width: 475px) {
-  .toolbar__search-field {
-    margin-right: 6px;
+  .app-toolbar__search-bar {
+    width: 100%;
+    max-width: unset;
   }
   .mobile-hidden {
     display: none;

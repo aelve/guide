@@ -1,5 +1,6 @@
 import { ActionTree, GetterTree, MutationTree, ActionContext, Module } from 'vuex'
 import { WikiService } from 'client/service/Wiki'
+import { set } from '../helpers'
 
 interface IWikiState {
   searchResults: any[],
@@ -21,12 +22,8 @@ const actions: ActionTree<IWikiState, any> = {
 }
 
 const mutations: MutationTree<IWikiState> = {
-  setSearchResults (state: IWikiState, payload: any[]) {
-    state.searchResults = payload
-  },
-  setSearchInput (state: IWikiState, payload: string) {
-    state.searchInput = payload
-  }
+  setSearchResults: set('searchResults'),
+  setSearchInput: set('searchInput')
 }
 
 const wiki: Module<IWikiState, any> = {

@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <toolbar />
-    <main class="app-content desktop-centered">
+    <main class="app-content content-centered">
       <router-view />
     </main>
     <a-footer />
@@ -252,14 +252,14 @@ blockquote {
   letter-spacing: 0.03rem;
   font-size: 1em;
 }
-.desktop-centered {
+.content-centered {
   padding-left: 20px;
   padding-right: 20px;
   margin-left: auto;
   margin-right: auto;
 }
 @media (min-width: 780px) {
-  .desktop-centered {
+  .content-centered {
     width: 90%;
   }
 }
