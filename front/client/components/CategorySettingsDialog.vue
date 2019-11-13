@@ -224,6 +224,10 @@ export default class CategorySettingsDialog extends Vue {
   svg {
     overflow: hidden;
   }
+
+  label {
+    color: #000;
+  }
 }
 </style>
 
