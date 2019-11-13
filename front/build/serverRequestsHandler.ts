@@ -1,17 +1,5 @@
-
-// TODO add icon and refactor, change favicon serving
-const urlsToSkip = [
-  '/favicon.ico'
-]
-
 export default async function handler (ctx, renderer) {
   const { url } = ctx
-
-  // TODO add favicon skip favicon.
-  if (urlsToSkip.includes(url)) {
-    ctx.body = ''
-    return
-  }
 
   try {
     ctx.response.header['Content-Type'] = 'text/html'

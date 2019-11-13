@@ -1,5 +1,6 @@
 import Koa from 'koa'
 import bodyparser from 'koa-bodyparser'
+import koaStatic from 'koa-static'
 import proxy from 'koa-proxy'
 import DefferedPromise from './utils/DeferredPromise'
 import config from './config.js'
@@ -21,6 +22,7 @@ export default (async () => {
       match: /^\/api\//,
       map: (path: string) => path.replace('/api', '')
     }))
+    app.use(koaStatic('./static'))
     app.use(bodyparser())
 
     const setupServer = isProduction
