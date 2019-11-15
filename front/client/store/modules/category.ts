@@ -38,7 +38,6 @@ const actions: ActionTree<ICategoryState, any> = {
     categoryId: ICategoryInfo['id']
   ): Promise<any> {
     const data: ICategoryFull = await CategoryService.getCategoryById(categoryId)
-    // TODO create set function for all the store
     commit('setCategory', data)
   },
   async loadCategoryList ({ commit }: ActionContext<ICategoryState, any>): Promise<any> {
