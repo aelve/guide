@@ -232,7 +232,7 @@ export default class MarkdownEditor extends Vue {
     if (this.value !== this.editor.value()) {
       isConfirmed = await this._confirm({
         fullText: 'You have unsaved changes. Do you really want to discard them?',
-        confirmBtnText: 'Disacrd',
+        confirmBtnText: 'Discard',
         confirmBtnProps: {
           color: 'error'
         }
