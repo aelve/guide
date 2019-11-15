@@ -7,7 +7,7 @@
       'markdown-editor_has-bottom-toolbar': bottomToolbar,
       'markdown-editor_has-top-toolbar': toolbar
     }"
-    @keydown.exact.capture.enter="onEnterDown"
+    @keydown.exact.enter="onEnterDown"
     @keydown.exact.ctrl.enter="onCtrlEnterDown"
     @keydown.exact.meta.enter="onCtrlEnterDown"
     @keydown.exact.esc="onEsc"
@@ -240,7 +240,9 @@ export default class MarkdownEditor extends Vue {
     }
     if (isConfirmed) {
       this.cancel()
+      return
     }
+    this.focusInputArea()
   }
 
   cancel () {

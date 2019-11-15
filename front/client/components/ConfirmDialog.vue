@@ -1,4 +1,3 @@
-<!-- Universal confirmation dialog, just pass text and function in Props -->
 <template>
   <v-dialog
     :value="value"
@@ -6,6 +5,8 @@
     max-width="500px"
     v-bind="$attrs"
     @input="cancel"
+    @keydown.esc.stop="cancel"
+    @keydown.enter.stop=""
   >
 
     <template
@@ -73,6 +74,13 @@ export default class ConfirmDialog extends Vue {
   @Prop({ default: 'Cancel' }) cancelBtnText!: string
   @Prop(Object) confirmBtnProps!: object
   @Prop(Object) cancelBtnProps!: object
+
+  test (event: Event) {
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+    event.preventDefault()
+    console.log('ENTER FOCKIN CAPTURED')
+  }
 
   close () {
     this.$emit('input', false)
