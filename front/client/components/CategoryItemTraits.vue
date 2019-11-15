@@ -8,8 +8,8 @@
   >
     <ul v-if="traitsModel && traitsModel.length">
       <li
-        v-for="(trait, index) in traitsModel"
-        :key="index"
+        v-for="trait in traitsModel"
+        :key="trait.id"
         class="position-relative category-item-trait"
       >
 
@@ -93,7 +93,6 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop, Watch } from 'vue-property-decorator'
-import _cloneDeep from 'lodash/cloneDeep'
 import Confirm from 'client/helpers/ConfirmDecorator'
 import CategoryItemSection from 'client/components/CategoryItemSection.vue'
 import CategoryItemBtn from 'client/components/CategoryItemBtn.vue'
@@ -114,9 +113,6 @@ export default class CategoryItemTraits extends Vue {
   @Prop(Array) traits!: any[]
   @Prop(String) type!: string
   @Prop(String) itemId: string
-  // TODO consider using more elegant PropSync api
-  // https://github.com/kaorun343/vue-property-decorator#-propsyncpropname-string-options-propoptions--constructor--constructor---decorator
-  @Prop(Boolean) isAnyTraitEditing: boolean
 
   isAddTrait: boolean = false
   traitsModel = []
@@ -124,19 +120,22 @@ export default class CategoryItemTraits extends Vue {
   get title () {
     return this.type + 's'
   }
-  get isAnyTraitEditingInternal () {
+
+  get isAnyTraitEditing () {
     return this.traitsModel.some(x => x.isEdit) || this.isAddTrait
   }
 
-  @Watch('isAnyTraitEditingInternal', { immediate: true })
+  @Watch('isAnyTraitEditing')
   updateIsEditing (newVal) {
     this.$emit('update:isAnyTraitEditing', newVal)
   }
 
   @Watch('traits', { immediate: true })
   setTraitsModel (traits) {
-    this.traitsModel = _cloneDeep(traits)
-    this.traitsModel.forEach(x => this.$set(x, 'isEdit', false))
+    const editingTraitIds = this.traitsModel.filter(x => x.isEdit).map(x => x.id)
+    // Destructering into new object to avoid prop mutation when adding new property later ("isEdit")
+    this.traitsModel = traits.map(x => ({ ...x }))
+    this.traitsModel.forEach(x => this.$set(x, 'isEdit', editingTraitIds.includes(x.id)))
   }
 
   @CatchConflictDecorator
