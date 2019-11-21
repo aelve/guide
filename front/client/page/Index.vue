@@ -10,7 +10,8 @@ import Component from 'vue-class-component'
 @Component({
   components: {
     Categories
-  }})
+  }
+})
 export default class Index extends Vue {
   beforeMount () {
     document.title = `Aelve Guide`
