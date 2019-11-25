@@ -93,10 +93,6 @@ export default class Categories extends Vue {
   addCategoryGroupName: string = ''
   isAddGroupDialogOpen: boolean = false
 
-  async serverPrefetch () {
-    return this.$store.dispatch('category/loadCategoryList')
-  }
-
   get categories () {
     return this.$store.state.category.categoryList
   }
@@ -113,6 +109,10 @@ export default class Categories extends Vue {
     const entriesGroupNameIndex = 0
     const sortedAlphabetically = _sortBy(groupedAlsoByStatus, entriesGroupNameIndex)
     return _fromPairs(sortedAlphabetically)
+  }
+
+  async serverPrefetch () {
+    return this.$store.dispatch('category/loadCategoryList')
   }
 
   openAddCategoryDialog (groupName: string) {
@@ -176,13 +176,10 @@ export default class Categories extends Vue {
   word-break: break-word;
 }
 .status-title {
-  line-height: 1.2;
-}
-.status-title {
   font-size: 0.9rem;
+  line-height: 1.2;
   margin: 6px 0 4px 8px;
-
-  + >>> .categories__category-link {
+  & + .categories__category-link {
     margin-top: 0;
   }
 }
