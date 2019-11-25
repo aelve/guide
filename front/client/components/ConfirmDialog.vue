@@ -75,13 +75,6 @@ export default class ConfirmDialog extends Vue {
   @Prop(Object) confirmBtnProps!: object
   @Prop(Object) cancelBtnProps!: object
 
-  test (event: Event) {
-    event.stopPropagation()
-    event.stopImmediatePropagation()
-    event.preventDefault()
-    console.log('ENTER FOCKIN CAPTURED')
-  }
-
   close () {
     this.$emit('input', false)
   }
