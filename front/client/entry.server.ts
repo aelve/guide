@@ -1,5 +1,6 @@
 import _get from 'lodash/get'
 import { createApp } from './app'
+import { getRouteDocumentTitle } from './router'
 
 export default async context => {
   return new Promise((resolve, reject) => {
@@ -19,6 +20,7 @@ export default async context => {
       context.rendered = () => {
         context.state = store.state
       }
+      context.title = getRouteDocumentTitle(router.currentRoute)
       resolve(app)
     }, reject)
   })

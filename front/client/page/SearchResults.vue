@@ -76,7 +76,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
-import { Prop, Watch } from 'vue-property-decorator'
+import { Watch } from 'vue-property-decorator'
 
 const resultTagCodes = {
   category: 'Category',
@@ -85,7 +85,9 @@ const resultTagCodes = {
 
 @Component
 export default class SearchResults extends Vue {
-  @Prop(String) query!: string
+  get query () {
+    return this.$store.state.wiki.searchQuery
+  }
 
   get results () {
     return this.$store.state.wiki.searchResults
@@ -99,26 +101,13 @@ export default class SearchResults extends Vue {
     return this.results.filter(x => x.tag === resultTagCodes.item)
   }
 
-  beforeMount () {
-    // This watch should be added in beforeMount (only on client) hook because setDocumentTitle function uses DOM api which is undefined on server
-    this.$watch('query', this.setDocumentTitle, { immediate: true })
-  }
-
-  mounted () {
-    this.$store.commit('wiki/setSearchInput', this.query)
-  }
-
-  async serverPrefetch () {
-    await this.search()
-  }
-
   @Watch('query')
   async search () {
     await this.$store.dispatch('wiki/search', this.query)
   }
 
-  setDocumentTitle (query) {
-    document.title = `${query} – Search results – Aelve Guide`
+  async serverPrefetch () {
+    await this.search()
   }
 }
 </script>

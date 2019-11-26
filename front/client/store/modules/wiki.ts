@@ -4,12 +4,12 @@ import { set } from '../helpers'
 
 interface IWikiState {
   searchResults: any[],
-  searchInput: string
+  searchQuery: string
 }
 
 const state = (): IWikiState => ({
   searchResults: [],
-  searchInput: ''
+  searchQuery: ''
 })
 
 const getters: GetterTree<IWikiState, any> = {}
@@ -23,7 +23,7 @@ const actions: ActionTree<IWikiState, any> = {
 
 const mutations: MutationTree<IWikiState> = {
   setSearchResults: set('searchResults'),
-  setSearchInput: set('searchInput')
+  setSearchQuery: set('searchQuery')
 }
 
 const wiki: Module<IWikiState, any> = {

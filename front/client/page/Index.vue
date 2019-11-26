@@ -12,9 +12,5 @@ import Component from 'vue-class-component'
     Categories
   }
 })
-export default class Index extends Vue {
-  beforeMount () {
-    document.title = `Aelve Guide`
-  }
-}
+export default class Index extends Vue {}
 </script>

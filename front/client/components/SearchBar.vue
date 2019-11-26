@@ -1,7 +1,7 @@
 <template>
   <v-form
     class="search-bar"
-    @keydown.enter.native.prevent="processSearchInput"
+    @keydown.enter.native.prevent="processSearchQuery"
   >
     <v-text-field
       solo
@@ -10,7 +10,7 @@
       label="Search in all pages"
       class="search-bar__input"
       ref="input"
-      v-model="searchInput"
+      v-model="searchQuery"
       @focus="isFocused = true"
       @blur="isFocused= false"
     >
@@ -25,7 +25,7 @@
         size="0.9rem"
         class="search-bar__input__clear-btn"
         :color="inputIconsColor"
-        v-show="searchInput"
+        v-show="searchQuery"
         @click="clear"
       >$vuetify.icons.times</v-icon>
     </v-text-field>
@@ -40,19 +40,17 @@ import Component from 'vue-class-component'
 export default class SearchBar extends Vue {
 
   isFocused = false
+  searchQuery = this.$store.state.wiki.searchQuery
 
-  processSearchInput () {
-    this.$router.push({ name: 'SearchResults', query: { query: this.searchInput } })
-  }
-
-  // TODO investigate is using computed necessary here
-  // TODO serever rendering doesnt render value in text field
-  get searchInput () {
-    return this.$store.state.wiki.searchInput
-  }
-
-  set searchInput (value) {
-    this.$store.commit('wiki/setSearchInput', value)
+  processSearchQuery () {
+    const searchResultsRouteName = 'SearchResults'
+    const isSearchCurrentRoute = this.$route.name === searchResultsRouteName
+    // same commit statement called in router 'SearchResults' route's "beforeEnter", but if its same route its not called
+    // searchQuery is watched used in "SearchResults" component
+    if (isSearchCurrentRoute) {
+      this.$store.commit('wiki/setSearchQuery', this.searchQuery)
+    }
+    this.$router.push({ name: searchResultsRouteName, query: { query: this.searchQuery } })
   }
 
   get inputIconsColor () {
@@ -60,7 +58,7 @@ export default class SearchBar extends Vue {
   }
 
   clear () {
-    this.searchInput = ''
+    this.searchQuery = ''
   }
 
   focus () {

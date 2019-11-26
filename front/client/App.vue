@@ -2,7 +2,9 @@
   <v-app>
     <toolbar />
     <main class="app-content content-centered">
-      <router-view />
+      <ClientServerPrefetch>
+        <RouterView />
+      </ClientServerPrefetch>
     </main>
     <a-footer />
   </v-app>
@@ -14,24 +16,21 @@ import Component from 'vue-class-component'
 import { Watch } from 'vue-property-decorator'
 import AFooter from 'client/components/AFooter.vue'
 import Toolbar from 'client/components/Toolbar.vue'
+import ClientServerPrefetch from 'client/components/ClientServerPrefetch.vue'
 import * as nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import { getRouteDocumentTitle } from 'client/router'
 
 nprogress.configure({ showSpinner: false })
 
 @Component({
   components: {
     Toolbar,
-    AFooter
+    AFooter,
+    ClientServerPrefetch
   }
 })
 export default class RootComponent extends Vue {
-  beforeMount () {
-    // This package can only be loaded after mounted (on client only) cause it uses "document"
-    // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
-    import('easymde')
-  }
-
   get isPageLoading () {
     return this.$store.state.isPageLoading
   }
@@ -39,6 +38,16 @@ export default class RootComponent extends Vue {
   @Watch('isPageLoading')
   toogleLoading (isPageLoading: boolean) {
     isPageLoading ? nprogress.start() : nprogress.done()
+
+    if (!isPageLoading) {
+      document.title = getRouteDocumentTitle(this.$route)
+    }
+  }
+
+  beforeMount () {
+    // This package can only be loaded after mounted (on client only) cause it uses "document"
+    // it is used in MarkdownEditor.vue and to make it work faster in that component we preload it here
+    import('easymde')
   }
 }
 </script>

@@ -11,7 +11,7 @@ function createStore () {
     },
     actions: {},
     mutations: {
-      tooglePageLoading (state) {
+      togglePageLoading (state) {
         state.isPageLoading = !state.isPageLoading
       },
       set404 (state, val) {
