@@ -20,10 +20,6 @@ export default class Page404 extends Vue {
   beforeDestroy () {
     this.$store.commit('set404', false)
   }
-
-  beforeMount () {
-    document.title = `Error 404 – Aelve Guide`
-  }
 }
 </script>
 
