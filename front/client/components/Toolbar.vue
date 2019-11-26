@@ -37,7 +37,7 @@ import Component from 'vue-class-component'
   }
 })
 export default class Toolbar extends Vue {
-  isSearchBarHidden: boolean = false
+  isSearchBarHidden: boolean = true
 
   toggleSearchBar () {
     this.isSearchBarHidden = !this.isSearchBarHidden
