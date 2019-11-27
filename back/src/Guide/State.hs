@@ -845,6 +845,7 @@ deriving instance Show GetGlobalState
 -- category
 deriving instance Show GetCategories
 deriving instance Show GetCategoryMaybe
+deriving instance Show GetCategoryByItem
 deriving instance Show AddCategory
 deriving instance Show DeleteCategory
 deriving instance Show SetCategoryGroup

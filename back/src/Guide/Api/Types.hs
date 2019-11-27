@@ -153,6 +153,10 @@ data ItemSite route = ItemSite
   { _getItem :: route :-
       Summary "Get item by id"
       :> ErrorResponse 404 "Item not found"
+      :> "ignore_selections"
+      :> QueryParam' '[Required, Strict,
+                       Description "Ignore disabled sections to get full item"]
+           "bool" Bool
       :> "item"
       :> Capture "itemId" (Uid Item)
       :> Get '[JSON] CItemFull
@@ -505,7 +509,7 @@ toCCategoryFull $(fields 'Category) = CCategoryFull
   , ccfStatus      = categoryStatus
   , ccfDescription = toCMarkdown categoryNotes
   , ccfSections    = categoryEnabledSections
-  , ccfItems       = fmap toCItemFull categoryItems
+  , ccfItems       = fmap (toCItemFull categoryEnabledSections) categoryItems
   }
   where
     -- Ignored fields
@@ -674,23 +678,34 @@ instance ToSchema CItemFull where
         field "toc" . inlineSchema . description ?= "Table of contents"
 
 -- | Factory to create a 'CItemFull' from an 'Item'
-toCItemFull :: Item -> CItemFull
-toCItemFull $(fields 'Item) = CItemFull
+--
+-- Pass to 'Set ItemSection' all kinds of sections
+-- to ignore disabled sections and get full item content.
+toCItemFull :: Set ItemSection -> Item -> CItemFull
+toCItemFull selections $(fields 'Item) = CItemFull
   { cifId          = itemUid
   , cifName        = itemName
   , cifCreated     = itemCreated
   , cifHackage     = itemHackage
   , cifSummary     = toCMarkdown itemSummary
-  , cifPros        = fmap toCTrait itemPros
-  , cifCons        = fmap toCTrait itemCons
-  , cifEcosystem   = toCMarkdown itemEcosystem
-  , cifNotes       = toCMarkdown itemNotes
+  , cifPros        = fmap toCTrait pros
+  , cifCons        = fmap toCTrait cons
+  , cifEcosystem   = toCMarkdown ecosystem
+  , cifNotes       = toCMarkdown notes
   , cifLink        = itemLink
   , cifToc         = map toCTocHeading (markdownTreeTOC itemNotes)
   }
   where
-    -- Ignored fields
     _ = (itemProsDeleted, itemConsDeleted)
+    ecosystem = if (ItemEcosystemSection `elem` selections)
+      then itemEcosystem
+      else toMarkdownBlock ""
+    notes = if (ItemNotesSection `elem` selections)
+      then itemNotes
+      else toMarkdownTree "" ""
+    (pros, cons) = if (ItemProsConsSection `elem` selections)
+      then (itemPros, itemCons)
+      else ([],[])
 
 ----------------------------------------------------------------------------
 -- CTrait

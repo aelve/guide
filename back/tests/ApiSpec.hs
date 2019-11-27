@@ -81,7 +81,7 @@ tests = describe "api" $ do
     it "get item by id" $ do
       req <- withItem $ \(Uid itemId) -> do
         request     <- makeRequest
-          (Path $ "item/" <> toString itemId)
+          (Path $ "ignore_selections/item/" <> toString itemId <> "?bool=false")
           (Method "GET")
         (Status 200 "OK", _ :: CItemFull) <- runRequest request
         pure request

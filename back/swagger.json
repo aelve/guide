@@ -725,35 +725,6 @@
             }
         },
         "/item/{itemId}": {
-            "get": {
-                "summary": "Get item by id",
-                "responses": {
-                    "404": {
-                        "description": "Item not found"
-                    },
-                    "200": {
-                        "schema": {
-                            "$ref": "#/definitions/CItemFull"
-                        },
-                        "description": ""
-                    }
-                },
-                "produces": [
-                    "application/json;charset=utf-8"
-                ],
-                "parameters": [
-                    {
-                        "format": "Item ID",
-                        "required": true,
-                        "in": "path",
-                        "name": "itemId",
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "02. Items"
-                ]
-            },
             "delete": {
                 "summary": "Delete an item",
                 "responses": {
@@ -1059,6 +1030,44 @@
                         },
                         "in": "body",
                         "name": "body"
+                    }
+                ],
+                "tags": [
+                    "02. Items"
+                ]
+            }
+        },
+        "/ignore_selections/item/{itemId}": {
+            "get": {
+                "summary": "Get item by id",
+                "responses": {
+                    "404": {
+                        "description": "Item not found"
+                    },
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/CItemFull"
+                        },
+                        "description": ""
+                    }
+                },
+                "produces": [
+                    "application/json;charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "required": true,
+                        "in": "query",
+                        "name": "bool",
+                        "type": "boolean",
+                        "description": "Ignore disabled sections to get full item"
+                    },
+                    {
+                        "format": "Item ID",
+                        "required": true,
+                        "in": "path",
+                        "name": "itemId",
+                        "type": "string"
                     }
                 ],
                 "tags": [
