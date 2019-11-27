@@ -2,6 +2,7 @@
   <v-form
     class="search-bar"
     @keydown.enter.native.prevent="processSearchQuery"
+    @keydown.esc.native.prevent="blur"
   >
     <v-text-field
       solo
@@ -28,6 +29,12 @@
         v-show="searchQuery"
         @click="clear"
       >$vuetify.icons.times</v-icon>
+      <span
+        slot="append"
+        class="search-bar__input__shortcut-tip"
+        v-show="!isFocused"
+        @click="clear"
+      >/</span>
     </v-text-field>
   </v-form>
 </template>
@@ -35,12 +42,41 @@
 <script lang="ts">
 import Vue from 'vue'
 import Component from 'vue-class-component'
-
+import isEventTypingOrDialog from 'client/helpers/isEventTypingOrDialog'
 @Component
 export default class SearchBar extends Vue {
-
+  shortcutListener
   isFocused = false
   searchQuery = this.$store.state.wiki.searchQuery
+
+  get inputIconsColor () {
+    return this.isFocused ? '#717171' : 'rgba(255, 255, 255, 0.7)'
+  }
+
+  mounted () {
+    this.addShortcutListener()
+  }
+
+  beforeDestroy () {
+    this.removeShortcutListener()
+  }
+
+  addShortcutListener () {
+    this.shortcutListener = document.addEventListener('keydown', event => {
+      const { keyCode } = event
+      const slashButtonCode = 191
+      if (keyCode !== slashButtonCode || this.isFocused || isEventTypingOrDialog(event)) {
+        return
+      }
+
+      event.preventDefault()
+      this.focus()
+    })
+  }
+
+  removeShortcutListener () {
+    document.removeEventListener('keydown', this.shortcutListener)
+  }
 
   processSearchQuery () {
     const searchResultsRouteName = 'SearchResults'
@@ -53,16 +89,18 @@ export default class SearchBar extends Vue {
     this.$router.push({ name: searchResultsRouteName, query: { query: this.searchQuery } })
   }
 
-  get inputIconsColor () {
-    return this.isFocused ? '#717171' : 'rgba(255, 255, 255, 0.7)'
-  }
-
   clear () {
     this.searchQuery = ''
   }
 
   focus () {
     this.$refs.input.focus()
+  }
+
+  blur () {
+    if (this.isFocused) {
+      this.$refs.input.blur()
+    }
   }
 }
 </script>
@@ -96,8 +134,21 @@ export default class SearchBar extends Vue {
 .search-bar__input__clear-btn {
   cursor: pointer;
 }
+.search-bar__input__shortcut-tip {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.6rem;
+  border: rgba(255, 255, 255, 0.3) solid 1px;
+  border-radius: 3px;
+  line-height: 0.3rem;
+  padding: 0.4rem;
+}
 @media screen and (min-width: 780px) {
   .search-bar__input__clear-btn {
+    display: none;
+  }
+}
+@media screen and (max-width: 780px) {
+  .search-bar__input__shortcut-tip {
     display: none;
   }
 }
